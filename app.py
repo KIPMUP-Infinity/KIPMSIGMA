@@ -8018,87 +8018,86 @@ if st.session_state.get("user"):
     _auto_refresh_bursa()
 
 
-if st.session_state.get("user"):
-    st.markdown(f"""
-    <style>
-    * {{ font-family: ui-sans-serif,-apple-system,system-ui,"Segoe UI",sans-serif !important; box-sizing: border-box; }}
-    .stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > section, section[data-testid="stMain"], [data-testid="stMainBlockContainer"], [data-testid="stBottom"], [data-testid="stBottom"] > div {{ background: {C['bg']} !important; }}
-    section[data-testid="stSidebar"], section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, section[data-testid="stSidebar"] > div > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div, [data-testid="stSidebarUserContent"] > div > div {{ background: {C['sidebar_bg']} !important; box-shadow: none !important; }}
-    section[data-testid="stSidebar"] {{ border-right: 1px solid {C['border']} !important; }}
-    section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div {{ padding-top: 0 !important; margin-top: 0 !important; }}
-    [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
-    section[data-testid="stSidebar"] .stButton > button {{ background: transparent !important; border: none !important; box-shadow: none !important; color: {C['text']} !important; font-size: 0.875rem !important; padding: 7px 12px !important; border-radius: 8px !important; width: 100% !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; text-align: left !important; min-height: 36px !important; transition: all 0.18s ease !important; border-left: 2px solid transparent !important; }}
-    section[data-testid="stSidebar"] .stButton > button:hover {{ background: linear-gradient(135deg, rgba(124,58,237,0.16) 0%, rgba(59,130,246,0.16) 100%) !important; border-left: 2px solid rgba(124,58,237,0.6) !important; color: #a78bfa !important; }}
-    section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSidebar"] .stButton > button span {{ margin: 0 !important; text-align: left !important; color: inherit !important; width: 100% !important; }}
-    [data-testid="stChatMessage"] {{ background: transparent !important; border: none !important; box-shadow: none !important; }}
-    [data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
-    [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{ font-size: 0.875rem !important; line-height: 1.75 !important; color: {C['text']} !important; background: transparent !important; }}
+st.markdown(f"""
+<style>
+* {{ font-family: ui-sans-serif,-apple-system,system-ui,"Segoe UI",sans-serif !important; box-sizing: border-box; }}
+.stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > section, section[data-testid="stMain"], [data-testid="stMainBlockContainer"], [data-testid="stBottom"], [data-testid="stBottom"] > div {{ background: {C['bg']} !important; }}
+section[data-testid="stSidebar"], section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, section[data-testid="stSidebar"] > div > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div, [data-testid="stSidebarUserContent"] > div > div {{ background: {C['sidebar_bg']} !important; box-shadow: none !important; }}
+section[data-testid="stSidebar"] {{ border-right: 1px solid {C['border']} !important; }}
+section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div {{ padding-top: 0 !important; margin-top: 0 !important; }}
+[data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
+section[data-testid="stSidebar"] .stButton > button {{ background: transparent !important; border: none !important; box-shadow: none !important; color: {C['text']} !important; font-size: 0.875rem !important; padding: 7px 12px !important; border-radius: 8px !important; width: 100% !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; text-align: left !important; min-height: 36px !important; transition: all 0.18s ease !important; border-left: 2px solid transparent !important; }}
+section[data-testid="stSidebar"] .stButton > button:hover {{ background: linear-gradient(135deg, rgba(124,58,237,0.16) 0%, rgba(59,130,246,0.16) 100%) !important; border-left: 2px solid rgba(124,58,237,0.6) !important; color: #a78bfa !important; }}
+section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSidebar"] .stButton > button span {{ margin: 0 !important; text-align: left !important; color: inherit !important; width: 100% !important; }}
+[data-testid="stChatMessage"] {{ background: transparent !important; border: none !important; box-shadow: none !important; }}
+[data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
+[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{ font-size: 0.875rem !important; line-height: 1.75 !important; color: {C['text']} !important; background: transparent !important; }}
+
+/* -- USER BUBBLE - Gemini style (applied via JS class injection) -- */
+.sigma-user-msg {{
+    display: flex !important;
+    justify-content: flex-end !important;
+    padding-right: 0 !important;
+}}
+.sigma-user-msg [data-testid="stChatMessageContent"] {{
+    display: flex !important;
+    justify-content: flex-end !important;
+    width: 100% !important;
+}}
+.sigma-user-msg [data-testid="stMarkdownContainer"] {{
+    background: {C['bubble']} !important;
+    color: {C['bubble_text']} !important;
+    border-radius: 20px 20px 4px 20px !important;
+    padding: 10px 16px !important;
+    max-width: 75% !important;
+    margin-left: auto !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+    font-size: 0.875rem !important;
+}}
+.sigma-user-msg [data-testid="stMarkdownContainer"] p,
+.sigma-user-msg [data-testid="stMarkdownContainer"] span,
+.sigma-user-msg [data-testid="stMarkdownContainer"] li,
+.sigma-user-msg [data-testid="stMarkdownContainer"] strong {{
+    color: {C['bubble_text']} !important;
+    font-size: 0.875rem !important;
+}}
+[data-testid="stMainBlockContainer"] {{ max-width: 760px !important; margin: 0 auto !important; padding: 0 24px 120px !important; overflow-y: visible !important; }}
+[data-testid="stMainBlockContainer"] p, [data-testid="stMainBlockContainer"] li, [data-testid="stMainBlockContainer"] h1, [data-testid="stMainBlockContainer"] h2, [data-testid="stMainBlockContainer"] h3 {{ color: {C['text']} !important; }}
+div[data-testid="stChatInputContainer"] {{ border: 1px solid {C['border']} !important; background: {C['input_bg']} !important; border-radius: 16px !important; }}
+[data-testid="stChatInput"] textarea {{ background: {C['input_bg']} !important; color: {C['text']} !important; font-size: 0.875rem !important; }}
+[data-testid="stChatInput"] textarea::placeholder {{ color: {C['text_muted']} !important; }}
+[data-testid="stChatInputContainer"] textarea:focus {{ box-shadow: none !important; outline: none !important; }}
+footer, #MainMenu {{ visibility: hidden !important; }}
+hr {{ border-color: {C['border']} !important; }}
+[data-testid="stMarkdownContainer"] *, [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] div {{ font-size: 0.875rem !important; line-height: 1.8 !important; }}
+[data-testid="stMarkdownContainer"] h1 {{ font-size: 1.5rem !important; }}
+[data-testid="stMarkdownContainer"] h2 {{ font-size: 1.25rem !important; }}
+[data-testid="stMarkdownContainer"] h3 {{ font-size: 1.1rem !important; }}
+
+@media (max-width:768px) {{
+    .sys-wrapper {{ padding: 20px 16px 40px; justify-content: flex-start; min-height: 100vh; }}
+    .sys-header {{ margin-bottom: 24px; }}
+    .sys-welcome {{ font-size: 0.65rem; margin-bottom: 4px; }}
+    .sys-title {{ font-size: 1.8rem; margin-bottom: 4px; }}
+    .sys-subtitle {{ font-size: 0.75rem; }}
+    .sys-divider {{ margin-top: 10px; margin-bottom: 0; }}
     
-    /* -- USER BUBBLE - Gemini style (applied via JS class injection) -- */
-    .sigma-user-msg {{
-        display: flex !important;
-        justify-content: flex-end !important;
-        padding-right: 0 !important;
-    }}
-    .sigma-user-msg [data-testid="stChatMessageContent"] {{
-        display: flex !important;
-        justify-content: flex-end !important;
-        width: 100% !important;
-    }}
-    .sigma-user-msg [data-testid="stMarkdownContainer"] {{
-        background: {C['bubble']} !important;
-        color: {C['bubble_text']} !important;
-        border-radius: 20px 20px 4px 20px !important;
-        padding: 10px 16px !important;
-        max-width: 75% !important;
-        margin-left: auto !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
-        font-size: 0.875rem !important;
-    }}
-    .sigma-user-msg [data-testid="stMarkdownContainer"] p,
-    .sigma-user-msg [data-testid="stMarkdownContainer"] span,
-    .sigma-user-msg [data-testid="stMarkdownContainer"] li,
-    .sigma-user-msg [data-testid="stMarkdownContainer"] strong {{
-        color: {C['bubble_text']} !important;
-        font-size: 0.875rem !important;
-    }}
-    [data-testid="stMainBlockContainer"] {{ max-width: 760px !important; margin: 0 auto !important; padding: 0 24px 120px !important; overflow-y: visible !important; }}
-    [data-testid="stMainBlockContainer"] p, [data-testid="stMainBlockContainer"] li, [data-testid="stMainBlockContainer"] h1, [data-testid="stMainBlockContainer"] h2, [data-testid="stMainBlockContainer"] h3 {{ color: {C['text']} !important; }}
-    div[data-testid="stChatInputContainer"] {{ border: 1px solid {C['border']} !important; background: {C['input_bg']} !important; border-radius: 16px !important; }}
-    [data-testid="stChatInput"] textarea {{ background: {C['input_bg']} !important; color: {C['text']} !important; font-size: 0.875rem !important; }}
-    [data-testid="stChatInput"] textarea::placeholder {{ color: {C['text_muted']} !important; }}
-    [data-testid="stChatInputContainer"] textarea:focus {{ box-shadow: none !important; outline: none !important; }}
-    footer, #MainMenu {{ visibility: hidden !important; }}
-    hr {{ border-color: {C['border']} !important; }}
-    [data-testid="stMarkdownContainer"] *, [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] div {{ font-size: 0.875rem !important; line-height: 1.8 !important; }}
-    [data-testid="stMarkdownContainer"] h1 {{ font-size: 1.5rem !important; }}
-    [data-testid="stMarkdownContainer"] h2 {{ font-size: 1.25rem !important; }}
-    [data-testid="stMarkdownContainer"] h3 {{ font-size: 1.1rem !important; }}
+    .sys-cards {{ gap: 14px; flex-direction: column; align-items: center; width: 100%; }}
+    .sys-card {{ width: 100%; min-width: unset; max-width: 100%; padding: 22px 18px 18px; border-radius: 16px; }}
     
-    @media (max-width:768px) {{
-        .sys-wrapper {{ padding: 20px 16px 40px; justify-content: flex-start; min-height: 100vh; }}
-        .sys-header {{ margin-bottom: 24px; }}
-        .sys-welcome {{ font-size: 0.65rem; margin-bottom: 4px; }}
-        .sys-title {{ font-size: 1.8rem; margin-bottom: 4px; }}
-        .sys-subtitle {{ font-size: 0.75rem; }}
-        .sys-divider {{ margin-top: 10px; margin-bottom: 0; }}
-        
-        .sys-cards {{ gap: 14px; flex-direction: column; align-items: center; width: 100%; }}
-        .sys-card {{ width: 100%; min-width: unset; max-width: 100%; padding: 22px 18px 18px; border-radius: 16px; }}
-        
-        .card-icon {{ width: 44px; height: 44px; font-size: 1.2rem; margin-bottom: 12px; }}
-        .card-badge {{ top: 14px; right: 14px; font-size: 0.55rem; padding: 3px 8px; }}
-        .card-name {{ font-size: 1.2rem; margin-bottom: 4px; }}
-        .card-tagline {{ font-size: 0.65rem; margin-bottom: 12px; }}
-        .card-desc {{ font-size: 0.78rem; margin-bottom: 16px; line-height: 1.5; }}
-        
-        .card-features {{ margin-bottom: 20px; }}
-        .card-features li {{ font-size: 0.75rem; padding: 5px 0; gap: 6px; }}
-        .card-cta {{ padding: 12px; font-size: 0.85rem; }}
-        .sys-footer {{ margin-top: 32px; font-size: 0.65rem; }}
-    }}
-    </style>
-    """, unsafe_allow_html=True)
+    .card-icon {{ width: 44px; height: 44px; font-size: 1.2rem; margin-bottom: 12px; }}
+    .card-badge {{ top: 14px; right: 14px; font-size: 0.55rem; padding: 3px 8px; }}
+    .card-name {{ font-size: 1.2rem; margin-bottom: 4px; }}
+    .card-tagline {{ font-size: 0.65rem; margin-bottom: 12px; }}
+    .card-desc {{ font-size: 0.78rem; margin-bottom: 16px; line-height: 1.5; }}
+    
+    .card-features {{ margin-bottom: 20px; }}
+    .card-features li {{ font-size: 0.75rem; padding: 5px 0; gap: 6px; }}
+    .card-cta {{ padding: 12px; font-size: 0.85rem; }}
+    .sys-footer {{ margin-top: 32px; font-size: 0.65rem; }}
+}}
+</style>
+""", unsafe_allow_html=True)
 
 def show_system_selector():
     """Halaman pemilihan sistem - pixel-perfect cyberpunk design."""
@@ -9388,444 +9387,141 @@ if st.session_state.get("user") and st.session_state.get("selected_system") == "
 
 init_chat()
 user = st.session_state.user
-# C di-inisialisasi setelah login check (baris ~9679)
+C = get_colors(st.session_state.theme)
 
 # _call_cerebras sudah didefinisikan di atas (PART 6) dengan smart truncation - tidak perlu duplikat.
 
 
 def show_login():
-    # ═══════════════════════════════════════════════════════════════════════
-    # SIGMA LOGIN PAGE — Full-isolated, zero-leak edition
-    # Semua UI di-render dalam SATU components.html() iframe.
-    # Tidak ada st.markdown, tidak ada CSS yang bocor ke halaman utama.
-    # Login via Google OAuth atau username/password diteruskan ke Streamlit
-    # melalui localStorage → query_param trick (tanpa form submit reload).
-    # ═══════════════════════════════════════════════════════════════════════
+    # ── Load background images sebagai base64 dari file lokal (paling reliable) ──
+    # Fallback ke raw GitHub URL jika file tidak ada di lokal
+    def _img_to_css_url(filename: str) -> str:
+        """Return CSS url() value: base64 data URI jika file ada, fallback raw GitHub."""
+        import base64, os
+        local_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
+        if os.path.exists(local_path):
+            try:
+                with open(local_path, "rb") as f:
+                    b64 = base64.b64encode(f.read()).decode()
+                ext = filename.lower().split(".")[-1]
+                mime = "image/png" if ext == "png" else "image/jpeg"
+                return f"url('data:{mime};base64,{b64}')"
+            except Exception:
+                pass
+        # Fallback: raw GitHub URL (harus publik)
+        encoded_name = filename.replace(" ", "%20")
+        return f"url('https://raw.githubusercontent.com/KIPMUP-Infinity/KIPMSIGMA/main/{encoded_name}')"
 
-    # Baca Google auth URL
-    try:
-        _auth_url = google_auth_url()
-    except Exception:
-        _auth_url = ""
+    _bg_desktop = _img_to_css_url("KIPM-UP.png")
+    _bg_mobile  = _img_to_css_url("KIPM-UP M.png")
 
-    components.html(f"""<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;900&display=swap" rel="stylesheet">
-<style>
-/* ── Reset ── */
-*,*::before,*::after{{box-sizing:border-box;margin:0;padding:0;}}
-html,body{{
-    width:100%;height:100%;min-height:100vh;
-    font-family:'Inter',system-ui,sans-serif;
-    -webkit-font-smoothing:antialiased;
-    -moz-osx-font-smoothing:grayscale;
-    background:#070A10;
-    color:#e2e8f0;
-    overflow:hidden;
-}}
+    st.markdown(f"""
+    <style>
+    [data-testid="stSidebar"] {{ display: none !important; }}
+    [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{ background: {_bg_desktop} center/cover no-repeat fixed !important; min-height: 100vh !important; }}
+    section[data-testid="stMain"]::before {{ display: none !important; }}
+    /* FIX v4.2: Card login pojok kiri bawah */
+    [data-testid="stMainBlockContainer"] {{
+        max-width: 300px !important;
+        margin: 0 !important;
+        padding: 14px 20px 18px !important;
+        position: fixed !important;
+        bottom: 20px !important;
+        left: 20px !important;
+        z-index: 10 !important;
+        min-height: unset !important;
+        height: fit-content !important;
+        background: rgba(5, 8, 20, 0.65) !important;
+        backdrop-filter: blur(20px) saturate(1.4) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(1.4) !important;
+        border: 1px solid rgba(255,255,255,0.10) !important;
+        border-radius: 20px !important;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important;
+    }}
+    @media(max-width: 768px) {{
+        [data-testid="stMainBlockContainer"] {{
+            position: relative !important;
+            bottom: unset !important;
+            left: unset !important;
+            margin: 75px auto 0 auto !important;
+            max-width: 88% !important;
+            padding: 20px 20px 28px !important;
+            backdrop-filter: blur(20px) !important;
+            border-radius: 20px !important;
+            border: 1px solid rgba(255,255,255,0.12) !important;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important;
+        }}
+        [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{ background: {_bg_mobile} center top/cover no-repeat fixed !important; }}
+    }}
+    header[data-testid="stHeader"] {{ display: none !important; }} #MainMenu {{ display: none !important; }}
+    .stTabs, [data-testid="stVerticalBlock"] {{ background: transparent !important; }}
+    [data-testid="stTextInput"] input {{ background: rgba(255,255,255,0.06) !important; border: 1px solid rgba(255,255,255,0.12) !important; border-radius: 12px !important; color: #fff !important; padding: 12px 16px !important; font-size: 0.95rem !important; backdrop-filter: blur(10px) !important; transition: border 0.2s !important; }}
+    [data-testid="stTextInput"] input:focus {{ border: 1px solid #a78bfa !important; box-shadow: 0 0 0 2px rgba(167,139,250,0.15) !important; outline: none !important; }}
+    [data-testid="stTextInput"] input::placeholder {{ color: rgba(255,255,255,0.35) !important; }}
+    [data-testid="stTextInput"] label {{ color: rgba(255,255,255,0.6) !important; font-size: 0.82rem !important; }}
+    [data-testid="stMainBlockContainer"] .stButton > button {{ background: linear-gradient(135deg, #7c3aed, #2563eb) !important; color: #fff !important; font-weight: 700 !important; border: none !important; border-radius: 12px !important; padding: 12px !important; font-size: 0.95rem !important; letter-spacing: 0.5px !important; transition: opacity 0.2s, transform 0.1s !important; box-shadow: 0 4px 20px rgba(124,58,237,0.35) !important; }}
+    [data-testid="stMainBlockContainer"] .stButton > button:hover {{ opacity: 0.92 !important; transform: translateY(-1px) !important; }}
+    [data-testid="stTabs"] [role="tablist"] {{ background: rgba(255,255,255,0.05) !important; border-radius: 12px !important; padding: 4px !important; border: 1px solid rgba(255,255,255,0.08) !important; gap: 2px !important; }}
+    [data-testid="stTabs"] button[role="tab"] {{ border-radius: 9px !important; color: rgba(255,255,255,0.5) !important; font-size: 0.85rem !important; padding: 7px 12px !important; border: none !important; background: transparent !important; }}
+    [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{ background: linear-gradient(135deg,rgba(124,58,237,0.22),rgba(59,130,246,0.18)) !important; color: #a78bfa !important; font-weight: 700 !important; border-bottom: 2px solid #a78bfa !important; }}
+    [data-testid="stTabs"] [role="tabpanel"] {{ background: rgba(255,255,255,0.03) !important; border-radius: 16px !important; border: 1px solid rgba(255,255,255,0.08) !important; padding: 20px 16px !important; margin-top: 8px !important; backdrop-filter: blur(10px) !important; }}
+    [data-testid="stAlert"] {{ border-radius: 10px !important; }}
+    </style>
+    """, unsafe_allow_html=True)
 
-/* ── Background orbs ── */
-.bg{{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}}
-.orb{{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.45;}}
-.orb1{{width:600px;height:600px;background:radial-gradient(circle,rgba(56,107,255,0.30) 0%,transparent 70%);top:-180px;left:-180px;animation:drift1 18s ease-in-out infinite;}}
-.orb2{{width:500px;height:500px;background:radial-gradient(circle,rgba(120,60,220,0.25) 0%,transparent 70%);bottom:-120px;right:-120px;animation:drift2 22s ease-in-out infinite;}}
-.orb3{{width:320px;height:320px;background:radial-gradient(circle,rgba(0,200,220,0.18) 0%,transparent 70%);top:45%;right:12%;animation:drift3 26s ease-in-out infinite;}}
-@keyframes drift1{{0%,100%{{transform:translate(0,0)}}50%{{transform:translate(40px,50px)}}}}
-@keyframes drift2{{0%,100%{{transform:translate(0,0)}}50%{{transform:translate(-40px,-35px)}}}}
-@keyframes drift3{{0%,100%{{transform:translate(0,0)}}50%{{transform:translate(25px,-40px)}}}}
-
-/* ── Page layout ── */
-.page{{
-    position:relative;z-index:1;
-    display:flex;align-items:center;justify-content:center;
-    min-height:100vh;padding:24px 16px;
-}}
-
-/* ── Glass card ── */
-.card{{
-    width:100%;max-width:400px;
-    background:rgba(255,255,255,0.03);
-    border:1px solid rgba(255,255,255,0.08);
-    border-radius:24px;
-    backdrop-filter:blur(24px) saturate(1.6);
-    -webkit-backdrop-filter:blur(24px) saturate(1.6);
-    box-shadow:
-        0 0 0 1px rgba(255,255,255,0.04),
-        0 24px 64px rgba(0,0,0,0.60),
-        0 4px 16px rgba(0,0,0,0.40),
-        inset 0 1px 0 rgba(255,255,255,0.06);
-    padding:40px 36px 36px;
-    animation:fadeUp 0.5s cubic-bezier(.22,1,.36,1) both;
-}}
-@keyframes fadeUp{{from{{opacity:0;transform:translateY(20px)}}to{{opacity:1;transform:none}}}}
-
-/* ── Logo area ── */
-.logo-wrap{{text-align:center;margin-bottom:28px;}}
-.logo-icon{{
-    display:inline-flex;align-items:center;justify-content:center;
-    width:52px;height:52px;border-radius:14px;
-    background:linear-gradient(135deg,rgba(201,162,39,0.18),rgba(160,122,20,0.10));
-    border:1px solid rgba(201,162,39,0.30);
-    margin-bottom:16px;
-    box-shadow:0 0 24px rgba(201,162,39,0.14);
-}}
-.logo-sigma{{font-size:1.8rem;color:#c9a227;line-height:1;}}
-.logo-title{{
-    font-size:2.2rem;font-weight:900;letter-spacing:8px;
-    color:#FFFFFF;line-height:1;text-transform:uppercase;
-}}
-.logo-sub{{
-    font-size:0.60rem;font-weight:400;color:#475569;
-    letter-spacing:2.5px;text-transform:uppercase;margin-top:6px;
-}}
-.logo-line{{
-    width:48px;height:1px;margin:14px auto 0;
-    background:linear-gradient(90deg,transparent,rgba(201,162,39,0.55),transparent);
-}}
-
-/* ── Google button ── */
-.btn-google{{
-    display:flex;align-items:center;justify-content:center;gap:10px;
-    width:100%;padding:13px;border-radius:12px;
-    background:rgba(255,255,255,0.94);
-    color:#1a1a1a;font-size:0.875rem;font-weight:600;
-    text-decoration:none;letter-spacing:0.1px;
-    border:none;cursor:pointer;
-    box-shadow:0 4px 18px rgba(0,0,0,0.30),inset 0 1px 0 rgba(255,255,255,0.6);
-    transition:transform 0.18s,box-shadow 0.18s,filter 0.18s;
-    margin-bottom:20px;
-}}
-.btn-google:hover{{
-    transform:translateY(-2px);
-    box-shadow:0 8px 28px rgba(0,0,0,0.38);
-    filter:brightness(1.03);
-}}
-
-/* ── Divider ── */
-.divider{{
-    display:flex;align-items:center;gap:10px;
-    margin-bottom:20px;
-}}
-.divider-line{{flex:1;height:1px;background:rgba(255,255,255,0.07);}}
-.divider-text{{font-size:0.65rem;color:#2E3A4A;letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;}}
-
-/* ── Input group ── */
-.input-group{{margin-bottom:14px;}}
-.input-label{{
-    display:block;font-size:0.72rem;font-weight:500;
-    color:#64748B;letter-spacing:0.5px;
-    text-transform:uppercase;margin-bottom:7px;
-}}
-.input-wrap{{position:relative;}}
-.inp{{
-    width:100%;padding:12px 16px;
-    background:rgba(0,0,0,0.22);
-    border:1px solid rgba(255,255,255,0.08);
-    border-radius:10px;
-    color:#e2e8f0;font-size:0.875rem;font-family:'Inter',sans-serif;
-    outline:none;
-    transition:border-color 0.22s,box-shadow 0.22s;
-}}
-.inp::placeholder{{color:#2E3D55;}}
-.inp:focus{{
-    border-color:rgba(201,162,39,0.55);
-    box-shadow:0 0 0 3px rgba(201,162,39,0.10),0 0 16px rgba(201,162,39,0.08);
-}}
-/* Show password toggle */
-.eye-btn{{
-    position:absolute;right:12px;top:50%;transform:translateY(-50%);
-    background:none;border:none;cursor:pointer;
-    color:#3D4A5C;padding:4px;
-    transition:color 0.18s;
-    display:flex;align-items:center;
-}}
-.eye-btn:hover{{color:#94A3B8;}}
-.inp-pw{{padding-right:42px;}}
-
-/* ── Error message ── */
-.err{{
-    font-size:0.75rem;color:#f87171;
-    background:rgba(239,68,68,0.08);
-    border:1px solid rgba(239,68,68,0.18);
-    border-radius:8px;padding:9px 12px;
-    margin-bottom:14px;display:none;
-    animation:shake 0.35s ease;
-}}
-@keyframes shake{{0%,100%{{transform:none}}25%{{transform:translateX(-5px)}}75%{{transform:translateX(5px)}}}}
-.err.show{{display:block;}}
-
-/* ── Login button ── */
-.btn-login{{
-    width:100%;padding:13px;border-radius:12px;
-    background:linear-gradient(135deg,rgba(201,162,39,0.90) 0%,rgba(180,140,30,0.85) 100%);
-    border:1px solid rgba(201,162,39,0.35);
-    color:#0B0E14;font-size:0.875rem;font-weight:700;
-    letter-spacing:0.5px;text-transform:uppercase;
-    cursor:pointer;margin-top:4px;
-    box-shadow:0 4px 20px rgba(201,162,39,0.20);
-    transition:transform 0.18s,box-shadow 0.18s,filter 0.18s;
-}}
-.btn-login:hover{{
-    transform:translateY(-2px) scale(1.01);
-    box-shadow:0 8px 30px rgba(201,162,39,0.30);
-    filter:brightness(1.08);
-}}
-.btn-login:active{{transform:scale(0.99);}}
-.btn-login:disabled{{opacity:0.5;cursor:not-allowed;transform:none;}}
-
-/* ── Footer ── */
-.footer{{
-    text-align:center;margin-top:24px;
-    font-size:0.64rem;color:rgba(255,255,255,0.18);
-    line-height:1.8;letter-spacing:0.1px;
-}}
-.footer em{{font-style:italic;}}
-.footer-by{{color:rgba(255,255,255,0.10);display:block;margin-top:4px;}}
-
-/* ── Loading spinner ── */
-.spinner{{display:none;width:16px;height:16px;border:2px solid rgba(11,14,20,0.3);border-top-color:#0B0E14;border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto;}}
-@keyframes spin{{to{{transform:rotate(360deg)}}}}
-
-@media(max-width:480px){{
-    .card{{padding:32px 22px 28px;border-radius:20px;}}
-    .logo-title{{font-size:1.9rem;letter-spacing:6px;}}
-}}
-</style>
-</head>
-<body>
-<div class="bg">
-    <div class="orb orb1"></div>
-    <div class="orb orb2"></div>
-    <div class="orb orb3"></div>
-</div>
-
-<div class="page">
-<div class="card">
-
-    <!-- Logo -->
-    <div class="logo-wrap">
-        <div class="logo-icon"><span class="logo-sigma">&#931;</span></div>
-        <div class="logo-title">SIGMA</div>
-        <div class="logo-sub">Strategic Intelligence &amp; Global Market Analysis</div>
-        <div class="logo-line"></div>
-    </div>
-
-    <!-- Google OAuth -->
-    {"" if not _auth_url else f'''<a class="btn-google" href="{_auth_url}">
-        <svg width="18" height="18" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-        </svg>
-        Lanjutkan dengan Google
-    </a>
-    <div class="divider">
-        <div class="divider-line"></div>
-        <span class="divider-text">atau masuk dengan akun</span>
-        <div class="divider-line"></div>
-    </div>'''}
-
-    <!-- Error -->
-    <div class="err" id="errMsg">Username atau password salah.</div>
-
-    <!-- Username -->
-    <div class="input-group">
-        <label class="input-label" for="inpUser">Username</label>
-        <input class="inp" id="inpUser" type="text" placeholder="Masukkan username" autocomplete="username" spellcheck="false">
-    </div>
-
-    <!-- Password -->
-    <div class="input-group">
-        <label class="input-label" for="inpPass">Password</label>
-        <div class="input-wrap">
-            <input class="inp inp-pw" id="inpPass" type="password" placeholder="Masukkan password" autocomplete="current-password">
-            <button class="eye-btn" id="eyeBtn" type="button" aria-label="Tampilkan password">
-                <svg id="eyeShow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                </svg>
-                <svg id="eyeHide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M1 1l22 22"/>
-                </svg>
-            </button>
-        </div>
-    </div>
-
-    <!-- Login button -->
-    <button class="btn-login" id="btnLogin" type="button">
-        <span id="btnText">Masuk</span>
-        <div class="spinner" id="btnSpinner"></div>
-    </button>
-
-    <!-- Footer -->
-    <div class="footer">
-        Dengan masuk, kamu menyetujui penggunaan platform untuk analisa.<br>
-        Analisa bersifat <em>do your own research</em> dan disclaimer berlaku.
-        <span class="footer-by">by. @MarketnMocha</span>
-    </div>
-
-</div>
-</div>
-
+    components.html(f"""
 <script>
 (function() {{
     var pd = window.parent.document;
-
-    /* ── Sembunyikan semua elemen Streamlit di parent frame ── */
-    var _st = pd.createElement('style');
-    _st.id = 'sigma-login-hide';
-    _st.textContent =
-        /* Sembunyikan chrome Streamlit, tapi JANGAN container utama (iframe ada di sana) */
-        '[data-testid="stSidebar"],' +
-        'header[data-testid="stHeader"],' +
-        '#MainMenu,footer,' +
-        '[data-testid="stToolbar"],' +
-        '[data-testid="stDecoration"],' +
-        '[data-testid="stStatusWidget"],' +
-        '.stDeployButton,' +
-        '[data-testid="stBottom"]' +
-        '{{display:none!important;}}' +
-        /* Reset padding/margin container agar iframe bisa full-screen */
-        '[data-testid="stAppViewContainer"],' +
-        'section[data-testid="stMain"],' +
-        '[data-testid="stMainBlockContainer"]' +
-        '{{padding:0!important;margin:0!important;max-width:100%!important;}}' +
-        /* Buat iframe yang dirender components.html full-screen */
-        '[data-testid="stMainBlockContainer"] iframe' +
-        '{{position:fixed!important;top:0!important;left:0!important;' +
-        'width:100vw!important;height:100vh!important;' +
-        'border:none!important;z-index:9999!important;}}';
-
-    /* Background parent */
-    var _bg = pd.createElement('style');
-    _bg.id = 'sigma-login-bg';
-    _bg.textContent =
-        'html,body,.stApp,' +
-        '[data-testid="stAppViewContainer"],' +
-        'section[data-testid="stMain"]' +
-        '{{background:#070A10!important;}}';
-
-    if (!pd.getElementById('sigma-login-hide')) pd.head.appendChild(_st);
-    if (!pd.getElementById('sigma-login-bg'))   pd.head.appendChild(_bg);
-
-    /* ── Show/hide password toggle ── */
-    var pw      = document.getElementById('inpPass');
-    var eyeBtn  = document.getElementById('eyeBtn');
-    var eyeShow = document.getElementById('eyeShow');
-    var eyeHide = document.getElementById('eyeHide');
-    eyeBtn.addEventListener('click', function() {{
-        var isText = pw.type === 'text';
-        pw.type = isText ? 'password' : 'text';
-        eyeShow.style.display = isText ? '' : 'none';
-        eyeHide.style.display = isText ? 'none' : '';
-    }});
-
-    /* ── Enter key trigger ── */
-    [document.getElementById('inpUser'), pw].forEach(function(el) {{
-        el.addEventListener('keydown', function(e) {{
-            if (e.key === 'Enter') doLogin();
-        }});
-    }});
-
-    /* ── Login: kirim username ke parent via postMessage → Streamlit query param ── */
-    var btn     = document.getElementById('btnLogin');
-    var btnText = document.getElementById('btnText');
-    var spinner = document.getElementById('btnSpinner');
-    var errMsg  = document.getElementById('errMsg');
-
-    btn.addEventListener('click', doLogin);
-
-    function doLogin() {{
-        var u = document.getElementById('inpUser').value.trim();
-        var p = pw.value;
-        if (!u || !p) {{
-            showErr('Isi username dan password terlebih dahulu.');
-            return;
-        }}
-        setLoading(true);
-        /* Kirim ke parent Streamlit via postMessage */
-        window.parent.postMessage({{
-            type: 'sigma_login',
-            username: u,
-            password: p
-        }}, '*');
-        /* Timeout fallback jika tidak ada respons */
-        setTimeout(function() {{ setLoading(false); }}, 6000);
+    var forkStyle = pd.getElementById('hide-fork-bar');
+    if (!forkStyle) {{
+        var fs = pd.createElement('style');
+        fs.id = 'hide-fork-bar';
+        fs.textContent = `
+            .viewerBadge_container__r5tak, .viewerBadge_link__qRIco, [class*="viewerBadge"], [class*="styles_viewerBadge"], #MainMenu, footer, [data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"], header[data-testid="stHeader"], .stDeployButton, [kind="header"], div[data-testid="collapsedControl"] {{ display: none !important; visibility: hidden !important; height: 0 !important; overflow: hidden !important; }}
+        `;
+        pd.head.appendChild(fs);
     }}
-
-    function showErr(msg) {{
-        errMsg.textContent = msg;
-        errMsg.classList.remove('show');
-        void errMsg.offsetWidth; /* reflow for animation */
-        errMsg.classList.add('show');
-    }}
-
-    function setLoading(on) {{
-        btn.disabled = on;
-        btnText.style.display = on ? 'none' : '';
-        spinner.style.display = on ? 'block' : 'none';
-    }}
-
-    /* ── Cleanup saat login berhasil (Streamlit rerun) ── */
-    /* Observer: saat iframe ini dihapus dari DOM → artinya login sukses */
-    function cleanup() {{
-        ['sigma-login-hide','sigma-login-bg'].forEach(function(id) {{
-            var el = pd.getElementById(id);
-            if (el) el.parentNode && el.parentNode.removeChild(el);
-        }});
-    }}
-
-    /* Detect saat komponen ini (iframe) dilepas */
-    if (window.frameElement) {{
-        var _obsFrame = new MutationObserver(function() {{
-            if (!pd.body.contains(window.frameElement)) {{
-                cleanup();
-                _obsFrame.disconnect();
-            }}
-        }});
-        _obsFrame.observe(pd.body, {{childList:true, subtree:true}});
-    }}
+    if (pd.getElementById('kipm-mobile-logo')) return;
+    var s = pd.createElement('style');
+    s.id = 'kipm-mobile-logo-style';
+    s.textContent = `
+        #kipm-mobile-logo {{ display: none; text-align: center; padding: 14px 0 10px; position: fixed; top: 0; left: 0; right: 0; z-index: 10; pointer-events: none; }}
+        #kipm-mobile-logo img {{ width: 80px; height: 80px; object-fit: contain; filter: drop-shadow(0 2px 12px rgba(0,0,0,0.6)); }}
+        #kipm-mobile-logo .kipm-name {{ font-size: 0.7rem; color: rgba(255,255,255,0.7); letter-spacing: 2px; font-family: sans-serif; margin-top: 4px; }}
+        @media(max-width: 768px) {{ #kipm-mobile-logo {{ display: block !important; }} }}
+    `;
+    pd.head.appendChild(s);
+    var div = pd.createElement('div');
+    div.id = 'kipm-mobile-logo';
+    div.innerHTML = `<img src="https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/Mate%20KIPM%20LOGO.png" onerror="this.style.display='none'" style="width:80px;height:80px;object-fit:contain;"><div class="kipm-name">KIPM-UP</div>`;
+    pd.body.appendChild(div);
 }})();
 </script>
-</body>
-</html>
-""", height=800, scrolling=True)
+""", height=0)
+    st.markdown('''
+        <div style="text-align:center;margin:0 0 10px;">
+            <div style="font-size:2.8rem;font-weight:900;letter-spacing:5px;color:#ffffff;font-family:sans-serif;line-height:1.2;">SIGMA <span style="color:#a78bfa;">Σ</span></div>
+            <div class="sigma-tagline" style="font-size:0.72rem;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-top:4px;font-family:sans-serif;">Strategic Intelligence & Global Market Analysis</div>
+        </div>
+        <style>@media(min-width: 769px) { .sigma-tagline { display: none !important; } }</style>
+    ''', unsafe_allow_html=True)
+    try:
+        auth_url = google_auth_url()
+        st.markdown(f"""
+        <div style="margin-top:16px;">
+            <a href="{auth_url}" style="display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(255,255,255,0.95);color:#1a1a1a;border-radius:12px;padding:14px;text-decoration:none;font-size:0.9rem;font-weight:600;border:none;box-shadow:0 4px 15px rgba(0,0,0,0.3);">
+                <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                Lanjutkan dengan Google
+            </a>
+        </div>
+        """, unsafe_allow_html=True)
+    except: st.info("Google login belum dikonfigurasi di Secrets")
 
-    # ── Handle postMessage login dari iframe ────────────────────────────────
-    # Streamlit tidak bisa terima postMessage langsung.
-    # Gunakan query param ?sigma_login=username:hash sebagai bridge.
-    # (Mekanisme existing via sigma_token sudah ada di atas, ini fallback
-    #  untuk username/password yang dikirim via JS postMessage)
+    st.markdown(f"""<p style="text-align:center;color:rgba(255,255,255,0.25);font-size:0.72rem;margin-top:24px;line-height:1.6;">Dengan masuk, kamu menyetujui penggunaan platform untuk analisa.<br>Analisa bersifat <em>do your own research</em> dan disclaimer berlaku.<br> by. @MarketnMocha</p>""", unsafe_allow_html=True)
     st.stop()
 
-
 if st.session_state.user is None: show_login()
-
-# ── CLEANUP AKTIF: hapus style login dari DOM setelah login berhasil ──────────
-# Kode ini hanya jalan saat user SUDAH login (show_login() memanggil st.stop())
-import streamlit.components.v1 as _comp_cleanup
-_comp_cleanup.html("""
-<script>
-(function() {
-    var pd = window.parent.document;
-    // Hapus semua style tag yang diinject oleh show_login
-    ['sigma-login-hide','sigma-login-bg','sigma-login-css',
-     'kipm-mobile-logo-style','hide-fork-bar'].forEach(function(id) {
-        var el = pd.getElementById(id);
-        if (el && el.parentNode) el.parentNode.removeChild(el);
-    });
-    // Hapus class & element sisa login
-    pd.body.classList.remove('sigma-login-active');
-    var logo = pd.getElementById('kipm-mobile-logo');
-    if (logo && logo.parentNode) logo.parentNode.removeChild(logo);
-})();
-</script>
-""", height=0)
-
 init_chat()
 user = st.session_state.user
 C = get_colors(st.session_state.theme)
