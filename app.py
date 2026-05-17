@@ -9417,170 +9417,191 @@ def show_login():
     if st.session_state.get("user") is not None:
         return  # sudah login, jangan render login page
 
-    st.markdown(f"""
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;900&display=swap" rel="stylesheet">
-    <style id="sigma-login-css">
+    # ── Inject CSS + Font via components.html → parent document head ──────
+    # PENTING: Gunakan components.html bukan st.markdown agar CSS tidak
+    # dirender sebagai plain text oleh Streamlit versi terbaru.
+    components.html(f"""
+<script>
+(function() {{
+    var pd = window.parent.document;
 
-    /* ── Hanya aktif saat body.sigma-login-active ── */
-    body.sigma-login-active [data-testid="stSidebar"]        {{ display: none !important; }}
-    body.sigma-login-active header[data-testid="stHeader"]   {{ display: none !important; }}
-    body.sigma-login-active #MainMenu                        {{ display: none !important; }}
-    body.sigma-login-active footer                           {{ display: none !important; }}
-    body.sigma-login-active [data-testid="stToolbar"]        {{ display: none !important; }}
-    body.sigma-login-active [data-testid="stDecoration"]     {{ display: none !important; }}
-    body.sigma-login-active [data-testid="stStatusWidget"]   {{ display: none !important; }}
-    body.sigma-login-active .stDeployButton                  {{ display: none !important; }}
-
-    body.sigma-login-active [data-testid="stAppViewContainer"],
-    body.sigma-login-active section[data-testid="stMain"] {{
-        background: {_bg_desktop} center/cover no-repeat fixed !important;
-        min-height: 100vh !important;
-    }}
-    body.sigma-login-active section[data-testid="stMain"]::before {{ display: none !important; }}
-
-    body.sigma-login-active [data-testid="stAppViewContainer"]::after {{
-        content: '';
-        position: fixed;
-        inset: 0;
-        background: linear-gradient(135deg, rgba(4,6,18,0.52) 0%, rgba(7,10,22,0.42) 100%);
-        pointer-events: none;
-        z-index: 0;
+    // Inject Google Font
+    if (!pd.getElementById('sigma-login-font')) {{
+        var lnk = pd.createElement('link');
+        lnk.id = 'sigma-login-font';
+        lnk.rel = 'stylesheet';
+        lnk.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;900&display=swap';
+        pd.head.appendChild(lnk);
     }}
 
-    /* ── Login card ── */
-    body.sigma-login-active [data-testid="stMainBlockContainer"] {{
-        position: fixed !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        width: 420px !important;
-        max-width: 92vw !important;
-        min-height: unset !important;
-        height: fit-content !important;
-        padding: 40px 36px 36px !important;
-        margin: 0 !important;
-        z-index: 10 !important;
-        background: rgba(255,255,255,0.03) !important;
-        backdrop-filter: blur(24px) saturate(1.6) !important;
-        -webkit-backdrop-filter: blur(24px) saturate(1.6) !important;
-        border: 1px solid rgba(255,255,255,0.08) !important;
-        border-radius: 24px !important;
-        box-shadow:
-            0 0 0 1px rgba(255,255,255,0.04),
-            0 24px 64px rgba(0,0,0,0.55),
-            0 4px 16px rgba(0,0,0,0.35),
-            inset 0 1px 0 rgba(255,255,255,0.06) !important;
-    }}
+    // Inject scoped CSS
+    if (!pd.getElementById('sigma-login-css')) {{
+        var st = pd.createElement('style');
+        st.id = 'sigma-login-css';
+        st.textContent = `
+        /* Hanya aktif saat body.sigma-login-active */
+        body.sigma-login-active [data-testid="stSidebar"]       {{ display: none !important; }}
+        body.sigma-login-active header[data-testid="stHeader"]  {{ display: none !important; }}
+        body.sigma-login-active #MainMenu                       {{ display: none !important; }}
+        body.sigma-login-active footer                          {{ display: none !important; }}
+        body.sigma-login-active [data-testid="stToolbar"]       {{ display: none !important; }}
+        body.sigma-login-active [data-testid="stDecoration"]    {{ display: none !important; }}
+        body.sigma-login-active [data-testid="stStatusWidget"]  {{ display: none !important; }}
+        body.sigma-login-active .stDeployButton                 {{ display: none !important; }}
 
-    @media(max-width: 768px) {{
-        body.sigma-login-active [data-testid="stMainBlockContainer"] {{
-            position: relative !important;
-            top: unset !important;
-            left: unset !important;
-            transform: none !important;
-            margin: 80px auto 40px auto !important;
-            width: 88% !important;
-            padding: 32px 24px 28px !important;
-            border-radius: 20px !important;
-        }}
         body.sigma-login-active [data-testid="stAppViewContainer"],
         body.sigma-login-active section[data-testid="stMain"] {{
-            background: {_bg_mobile} center top/cover no-repeat fixed !important;
+            background: {_bg_desktop} center/cover no-repeat fixed !important;
+            min-height: 100vh !important;
         }}
-    }}
+        body.sigma-login-active section[data-testid="stMain"]::before {{ display: none !important; }}
 
-    body.sigma-login-active .stTabs,
-    body.sigma-login-active [data-testid="stVerticalBlock"] {{ background: transparent !important; }}
+        body.sigma-login-active [data-testid="stAppViewContainer"]::after {{
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(4,6,18,0.52) 0%, rgba(7,10,22,0.42) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }}
 
-    /* ── Inputs ── */
-    body.sigma-login-active [data-testid="stTextInput"] input {{
-        background: rgba(0,0,0,0.20) !important;
-        border: 1px solid rgba(255,255,255,0.10) !important;
-        border-radius: 12px !important;
-        color: #FFFFFF !important;
-        padding: 13px 16px !important;
-        font-size: 0.92rem !important;
-        font-family: 'Inter', sans-serif !important;
-        transition: border-color 0.25s ease, box-shadow 0.25s ease !important;
-    }}
-    body.sigma-login-active [data-testid="stTextInput"] input:focus {{
-        border-color: rgba(201,162,39,0.70) !important;
-        box-shadow: 0 0 0 3px rgba(201,162,39,0.12), 0 0 14px rgba(201,162,39,0.10) !important;
-        outline: none !important;
-        background: rgba(0,0,0,0.28) !important;
-    }}
-    body.sigma-login-active [data-testid="stTextInput"] input::placeholder {{ color: rgba(255,255,255,0.28) !important; }}
-    body.sigma-login-active [data-testid="stTextInput"] label {{
-        color: #94A3B8 !important;
-        font-size: 0.78rem !important;
-        font-family: 'Inter', sans-serif !important;
-        font-weight: 500 !important;
-        letter-spacing: 0.6px !important;
-        text-transform: uppercase !important;
-    }}
+        /* Login card */
+        body.sigma-login-active [data-testid="stMainBlockContainer"] {{
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            width: 420px !important;
+            max-width: 92vw !important;
+            min-height: unset !important;
+            height: fit-content !important;
+            padding: 40px 36px 36px !important;
+            margin: 0 !important;
+            z-index: 10 !important;
+            background: rgba(255,255,255,0.03) !important;
+            backdrop-filter: blur(24px) saturate(1.6) !important;
+            -webkit-backdrop-filter: blur(24px) saturate(1.6) !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            border-radius: 24px !important;
+            box-shadow:
+                0 0 0 1px rgba(255,255,255,0.04),
+                0 24px 64px rgba(0,0,0,0.55),
+                0 4px 16px rgba(0,0,0,0.35),
+                inset 0 1px 0 rgba(255,255,255,0.06) !important;
+        }}
 
-    /* ── Buttons: HANYA di dalam login card ── */
-    body.sigma-login-active [data-testid="stMainBlockContainer"] .stButton > button {{
-        background: linear-gradient(135deg, #c9a227 0%, #a07a14 100%) !important;
-        color: #0A0C12 !important;
-        font-family: 'Inter', sans-serif !important;
-        font-weight: 700 !important;
-        font-size: 0.92rem !important;
-        letter-spacing: 0.6px !important;
-        border: none !important;
-        border-radius: 12px !important;
-        padding: 13px !important;
-        width: 100% !important;
-        transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease !important;
-        box-shadow: 0 4px 18px rgba(201,162,39,0.28), 0 2px 6px rgba(0,0,0,0.3) !important;
-    }}
-    body.sigma-login-active [data-testid="stMainBlockContainer"] .stButton > button:hover {{
-        transform: translateY(-2px) scale(1.008) !important;
-        filter: brightness(1.10) !important;
-        box-shadow: 0 8px 28px rgba(201,162,39,0.40), 0 4px 12px rgba(0,0,0,0.35) !important;
-    }}
-    body.sigma-login-active [data-testid="stMainBlockContainer"] .stButton > button:active {{
-        transform: translateY(0px) scale(0.997) !important;
-        filter: brightness(0.96) !important;
-    }}
+        @media(max-width: 768px) {{
+            body.sigma-login-active [data-testid="stMainBlockContainer"] {{
+                position: relative !important;
+                top: unset !important;
+                left: unset !important;
+                transform: none !important;
+                margin: 80px auto 40px auto !important;
+                width: 88% !important;
+                padding: 32px 24px 28px !important;
+                border-radius: 20px !important;
+            }}
+            body.sigma-login-active [data-testid="stAppViewContainer"],
+            body.sigma-login-active section[data-testid="stMain"] {{
+                background: {_bg_mobile} center top/cover no-repeat fixed !important;
+            }}
+        }}
 
-    /* ── Tabs ── */
-    body.sigma-login-active [data-testid="stTabs"] [role="tablist"] {{
-        background: rgba(255,255,255,0.04) !important;
-        border-radius: 12px !important;
-        padding: 4px !important;
-        border: 1px solid rgba(255,255,255,0.07) !important;
+        body.sigma-login-active .stTabs,
+        body.sigma-login-active [data-testid="stVerticalBlock"] {{ background: transparent !important; }}
+
+        /* Inputs */
+        body.sigma-login-active [data-testid="stTextInput"] input {{
+            background: rgba(0,0,0,0.20) !important;
+            border: 1px solid rgba(255,255,255,0.10) !important;
+            border-radius: 12px !important;
+            color: #FFFFFF !important;
+            padding: 13px 16px !important;
+            font-size: 0.92rem !important;
+            font-family: 'Inter', sans-serif !important;
+            transition: border-color 0.25s ease, box-shadow 0.25s ease !important;
+        }}
+        body.sigma-login-active [data-testid="stTextInput"] input:focus {{
+            border-color: rgba(201,162,39,0.70) !important;
+            box-shadow: 0 0 0 3px rgba(201,162,39,0.12), 0 0 14px rgba(201,162,39,0.10) !important;
+            outline: none !important;
+            background: rgba(0,0,0,0.28) !important;
+        }}
+        body.sigma-login-active [data-testid="stTextInput"] input::placeholder {{ color: rgba(255,255,255,0.28) !important; }}
+        body.sigma-login-active [data-testid="stTextInput"] label {{
+            color: #94A3B8 !important;
+            font-size: 0.78rem !important;
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 500 !important;
+            letter-spacing: 0.6px !important;
+            text-transform: uppercase !important;
+        }}
+
+        /* Buttons */
+        body.sigma-login-active [data-testid="stMainBlockContainer"] .stButton > button {{
+            background: linear-gradient(135deg, #c9a227 0%, #a07a14 100%) !important;
+            color: #0A0C12 !important;
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 700 !important;
+            font-size: 0.92rem !important;
+            letter-spacing: 0.6px !important;
+            border: none !important;
+            border-radius: 12px !important;
+            padding: 13px !important;
+            width: 100% !important;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease !important;
+            box-shadow: 0 4px 18px rgba(201,162,39,0.28), 0 2px 6px rgba(0,0,0,0.3) !important;
+        }}
+        body.sigma-login-active [data-testid="stMainBlockContainer"] .stButton > button:hover {{
+            transform: translateY(-2px) scale(1.008) !important;
+            filter: brightness(1.10) !important;
+            box-shadow: 0 8px 28px rgba(201,162,39,0.40), 0 4px 12px rgba(0,0,0,0.35) !important;
+        }}
+        body.sigma-login-active [data-testid="stMainBlockContainer"] .stButton > button:active {{
+            transform: translateY(0px) scale(0.997) !important;
+            filter: brightness(0.96) !important;
+        }}
+
+        /* Tabs */
+        body.sigma-login-active [data-testid="stTabs"] [role="tablist"] {{
+            background: rgba(255,255,255,0.04) !important;
+            border-radius: 12px !important;
+            padding: 4px !important;
+            border: 1px solid rgba(255,255,255,0.07) !important;
+        }}
+        body.sigma-login-active [data-testid="stTabs"] button[role="tab"] {{
+            border-radius: 9px !important;
+            color: rgba(255,255,255,0.40) !important;
+            font-size: 0.84rem !important;
+            font-family: 'Inter', sans-serif !important;
+            padding: 7px 12px !important;
+            border: none !important;
+            background: transparent !important;
+        }}
+        body.sigma-login-active [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{
+            background: rgba(201,162,39,0.12) !important;
+            color: #c9a227 !important;
+            font-weight: 700 !important;
+            border-bottom: 2px solid #c9a227 !important;
+        }}
+        body.sigma-login-active [data-testid="stTabs"] [role="tabpanel"] {{
+            background: rgba(255,255,255,0.02) !important;
+            border-radius: 14px !important;
+            border: 1px solid rgba(255,255,255,0.06) !important;
+            padding: 20px 16px !important;
+            margin-top: 8px !important;
+            backdrop-filter: blur(10px) !important;
+        }}
+        body.sigma-login-active [data-testid="stAlert"] {{
+            border-radius: 10px !important;
+            font-family: 'Inter', sans-serif !important;
+        }}
+        `;
+        pd.head.appendChild(st);
     }}
-    body.sigma-login-active [data-testid="stTabs"] button[role="tab"] {{
-        border-radius: 9px !important;
-        color: rgba(255,255,255,0.40) !important;
-        font-size: 0.84rem !important;
-        font-family: 'Inter', sans-serif !important;
-        padding: 7px 12px !important;
-        border: none !important;
-        background: transparent !important;
-    }}
-    body.sigma-login-active [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{
-        background: rgba(201,162,39,0.12) !important;
-        color: #c9a227 !important;
-        font-weight: 700 !important;
-        border-bottom: 2px solid #c9a227 !important;
-    }}
-    body.sigma-login-active [data-testid="stTabs"] [role="tabpanel"] {{
-        background: rgba(255,255,255,0.02) !important;
-        border-radius: 14px !important;
-        border: 1px solid rgba(255,255,255,0.06) !important;
-        padding: 20px 16px !important;
-        margin-top: 8px !important;
-        backdrop-filter: blur(10px) !important;
-    }}
-    body.sigma-login-active [data-testid="stAlert"] {{
-        border-radius: 10px !important;
-        font-family: 'Inter', sans-serif !important;
-    }}
-    </style>
-    """, unsafe_allow_html=True)
+}})();
+</script>
+""", height=0)
 
     # ── JS: tambah class ke <body>, hide fork bar, mobile logo ───────────
     components.html(f"""
@@ -9611,14 +9632,16 @@ def show_login():
         pd.body.appendChild(div);
     }}
 
-    /* Poll: kalau user sudah login (sigma-login-active tidak relevan lagi),
-       remove class dari body saat Streamlit rerun menghapus elemen login */
+    /* Poll: deteksi apakah iframe login ini masih ada di parent DOM.
+       Kalau sudah hilang (Streamlit rerun setelah login), cleanup semua. */
+    var _thisFrame = window.frameElement;
     var _poll = setInterval(function() {{
-        var loginCss = pd.getElementById('sigma-login-css');
-        if (!loginCss) {{
+        if (!_thisFrame || !pd.contains(_thisFrame)) {{
             pd.body.classList.remove('sigma-login-active');
             var logo = pd.getElementById('kipm-mobile-logo');
             if (logo) logo.remove();
+            var css = pd.getElementById('sigma-login-css');
+            if (css) css.remove();
             clearInterval(_poll);
         }}
     }}, 400);
