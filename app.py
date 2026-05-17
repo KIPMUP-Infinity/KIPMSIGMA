@@ -21137,155 +21137,8 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 with st.container(border=True):
                     st.markdown(_ipo_result["result"])
 
-                # ── RISK PROFILE / MONEY MANAGEMENT CALCULATOR ─────────────────────
-                st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-                st.markdown(
-                    "<div class='trm-section'><div class='trm-section-line'></div>"
-                    "<span class='trm-section-label'>⚠️ PROFIL RISIKO & MONEY MANAGEMENT IPO</span>"
-                    "<div class='trm-section-line'></div></div>",
-                    unsafe_allow_html=True
-                )
-                st.markdown(
-                    f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
-                    f"color:{text_sub};margin-bottom:12px;'>"
-                    "Masukkan jumlah saham yang ditawarkan (dalam LOT) untuk menghitung "
-                    "threshold volume risiko. <b>1 Lot = 100 Lembar.</b> "
-                    "Jika PDF menyebutkan jumlah dalam LEMBAR, bagi dengan 100 terlebih dahulu.</p>",
-                    unsafe_allow_html=True
-                )
 
-                _risk_col1, _risk_col2 = st.columns([2, 1])
-                with _risk_col1:
-                    _ipo_lot_input = st.number_input(
-                        "Total Saham Ditawarkan (dalam LOT)",
-                        min_value=0,
-                        max_value=500_000_000,
-                        value=st.session_state.get("ipo_lot_val", 0),
-                        step=100_000,
-                        format="%d",
-                        key="ipo_risk_lot_input",
-                        help="Contoh: Jika PDF tulis 1.800.000.000 lembar → masukkan 18.000.000 lot"
-                    )
-                    st.session_state["ipo_lot_val"] = _ipo_lot_input
-                with _risk_col2:
-                    st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-                    _ipo_calc = st.button("⚙️ HITUNG RISIKO", key="btn_ipo_risk_calc", use_container_width=True)
 
-                if _ipo_lot_input > 0:
-                    # Tentukan kondisi dan threshold
-                    _lot = int(_ipo_lot_input)
-                    if _lot < 12_000_000:
-                        _kondisi = "KONDISI A — Saham Ditawarkan < 12 Juta Lot"
-                        _kondisi_desc = "Float kecil → pergerakan harga lebih agresif, bandar lebih mudah kontrol harga. High-volatility."
-                        _r1_pct = 0.30
-                        _r2_pct = 0.50
-                        _r1_label = "30%"
-                        _r2_label = "50%"
-                        _kondisi_color = "#E24B4A"
-                        _kondisi_icon = "🔴"
-                    elif _lot <= 30_000_000:
-                        _kondisi = "KONDISI B — Saham Ditawarkan 12–30 Juta Lot"
-                        _kondisi_desc = "Float sedang → likuiditas cukup, pergerakan lebih terkontrol. Medium-volatility."
-                        _r1_pct = 0.10
-                        _r2_pct = 0.30
-                        _r1_label = "10%"
-                        _r2_label = "30%"
-                        _kondisi_color = "#F0A500"
-                        _kondisi_icon = "🟡"
-                    else:
-                        _kondisi = "KONDISI C — Saham Ditawarkan > 30 Juta Lot"
-                        _kondisi_desc = "Float besar → banyak supply, harga cenderung lebih berat naik. Low-volatility / distribution risk."
-                        _r1_pct = 0.10
-                        _r2_pct = 0.20
-                        _r1_label = "10%"
-                        _r2_label = "20%"
-                        _kondisi_color = "#26a69a"
-                        _kondisi_icon = "🟢"
-
-                    _r1_lot = int(_lot * _r1_pct)
-                    _r2_lot = int(_lot * _r2_pct)
-                    _r1_lembar = _r1_lot * 100
-                    _r2_lembar = _r2_lot * 100
-
-                    # Render risk card — pakai string concat, BUKAN f-string
-                    # supaya karakter { } di CSS tidak konflik dengan Python f-string
-                    _lot_fmt       = f"{_lot:,}"
-                    _lot_lem_fmt   = f"{_lot*100:,}"
-                    _r1_lot_fmt    = f"{_r1_lot:,}"
-                    _r2_lot_fmt    = f"{_r2_lot:,}"
-                    _r1_lem_fmt    = f"{_r1_lembar:,}"
-                    _r2_lem_fmt    = f"{_r2_lembar:,}"
-
-                    _risk_html = (
-                        "<div style='background:rgba(8,12,22,0.95);border:1px solid " + _kondisi_color + ";border-left:4px solid " + _kondisi_color + ";"
-                        "border-radius:10px;padding:18px 22px;margin-top:12px;font-family:IBM Plex Mono,monospace;'>"
-
-                        "<div style='font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:" + _kondisi_color + ";margin-bottom:6px;'>"
-                        + _kondisi_icon + " " + _kondisi + "</div>"
-                        "<div style='font-size:0.78rem;color:rgba(255,255,255,0.6);margin-bottom:16px;'>" + _kondisi_desc + "</div>"
-
-                        "<div style='display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;'>"
-                        "<div style='background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);"
-                        "border-radius:8px;padding:10px 16px;flex:1;min-width:180px;'>"
-                        "<div style='font-size:0.68rem;color:rgba(255,255,255,0.45);margin-bottom:4px;letter-spacing:0.08em;'>TOTAL DITAWARKAN</div>"
-                        "<div style='font-size:1.1rem;font-weight:700;color:#fff;'>" + _lot_fmt + " Lot</div>"
-                        "<div style='font-size:0.72rem;color:rgba(255,255,255,0.4);'>= " + _lot_lem_fmt + " Lembar</div>"
-                        "</div></div>"
-
-                        "<div style='display:flex;gap:10px;flex-wrap:wrap;'>"
-
-                        "<div style='background:rgba(240,165,0,0.08);border:1px solid rgba(240,165,0,0.35);"
-                        "border-radius:8px;padding:14px 18px;flex:1;min-width:220px;'>"
-                        "<div style='font-size:0.68rem;color:#F0A500;margin-bottom:6px;letter-spacing:0.1em;font-weight:700;'>"
-                        "⚠️ STATUS RISIKO 1 — MULAI WASPADA</div>"
-                        "<div style='font-size:0.72rem;color:rgba(255,255,255,0.5);margin-bottom:4px;'>"
-                        + _lot_fmt + " Lot × " + _r1_label + " = </div>"
-                        "<div style='font-size:1.35rem;font-weight:700;color:#F0A500;margin-bottom:4px;'>" + _r1_lot_fmt + " Lot</div>"
-                        "<div style='font-size:0.72rem;color:rgba(255,255,255,0.4);margin-bottom:8px;'>= " + _r1_lem_fmt + " Lembar saham</div>"
-                        "<div style='font-size:0.75rem;color:rgba(255,255,255,0.7);line-height:1.5;'>"
-                        "📌 Jika volume transaksi harian telah mencapai <b>" + _r1_lot_fmt + " Lot</b>, "
-                        "<b>JUAL SEBAGIAN atau WAIT &amp; SEE</b>. Distribusi bandar kemungkinan mulai. "
-                        "Perketat trailing stop.</div>"
-                        "</div>"
-
-                        "<div style='background:rgba(226,75,74,0.08);border:1px solid rgba(226,75,74,0.35);"
-                        "border-radius:8px;padding:14px 18px;flex:1;min-width:220px;'>"
-                        "<div style='font-size:0.68rem;color:#E24B4A;margin-bottom:6px;letter-spacing:0.1em;font-weight:700;'>"
-                        "🚨 STATUS RISIKO 2 — SEGERA JUAL</div>"
-                        "<div style='font-size:0.72rem;color:rgba(255,255,255,0.5);margin-bottom:4px;'>"
-                        + _lot_fmt + " Lot × " + _r2_label + " = </div>"
-                        "<div style='font-size:1.35rem;font-weight:700;color:#E24B4A;margin-bottom:4px;'>" + _r2_lot_fmt + " Lot</div>"
-                        "<div style='font-size:0.72rem;color:rgba(255,255,255,0.4);margin-bottom:8px;'>= " + _r2_lem_fmt + " Lembar saham</div>"
-                        "<div style='font-size:0.75rem;color:rgba(255,255,255,0.7);line-height:1.5;'>"
-                        "🚨 Jika volume kumulatif telah mencapai <b>" + _r2_lot_fmt + " Lot</b>, "
-                        "<b>JUAL SEGERA</b>. ARA berpotensi dibongkar. "
-                        "Jangan serakah — amankan profit sekarang.</div>"
-                        "</div>"
-
-                        "</div>"
-
-                        "<div style='margin-top:14px;padding:10px 14px;background:rgba(255,255,255,0.03);"
-                        "border-radius:6px;border:1px solid rgba(255,255,255,0.08);'>"
-                        "<div style='font-size:0.68rem;color:rgba(255,255,255,0.4);letter-spacing:0.08em;margin-bottom:4px;'>"
-                        "📌 CARA MEMBACA</div>"
-                        "<div style='font-size:0.75rem;color:rgba(255,255,255,0.65);line-height:1.6;'>"
-                        "Volume yang dimaksud adalah <b>kumulatif total volume transaksi</b> (bukan hanya volume 1 hari) "
-                        "sejak saham mulai listing/diperdagangkan. Pantau via RTI, Stockbit, atau IDX. "
-                        "Angka ini adalah perkiraan kapan distribusi bandar mulai terlihat berdasarkan ukuran float."
-                        "<br>⚠️ <b>DYOR</b> — Perhitungan ini adalah panduan money management, bukan jaminan hasil. "
-                        "Selalu pertimbangkan kondisi pasar dan fundamental emiten."
-                        "</div></div>"
-                        "</div>"
-                    )
-                    _risk_html_full = f"""<!DOCTYPE html><html><head>
-<meta charset='utf-8'>
-<style>
-  body {{ margin:0; padding:0; background:transparent; font-family:'IBM Plex Mono',monospace; }}
-  b {{ font-weight:700; }}
-</style>
-</head><body>{_risk_html}</body></html>"""
-                    components.html(_risk_html_full, height=420, scrolling=False)
-                # ── END RISK PROFILE ─────────────────────────────────────────────────
 
                 # Tombol download hasil
                 st.download_button(
@@ -21316,6 +21169,158 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     <span style='color:#a78bfa;font-weight:700;'>Didukung: Gemini &middot; Cerebras &middot; Groq</span>
                     </div>
                 </div>""", unsafe_allow_html=True)
+
+            # ════════════════════════════════════════════════════════════════
+            # ⚠️ PROFIL RISIKO & MONEY MANAGEMENT IPO — Selalu Tampil
+            # ════════════════════════════════════════════════════════════════
+            st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
+            st.markdown(
+                "<div class='trm-section'><div class='trm-section-line'></div>"
+                "<span class='trm-section-label'>⚠️ PROFIL RISIKO & MONEY MANAGEMENT IPO</span>"
+                "<div class='trm-section-line'></div></div>",
+                unsafe_allow_html=True
+            )
+            st.markdown(
+                f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
+                f"color:{text_sub};margin-bottom:12px;'>"
+                "Masukkan jumlah saham yang ditawarkan (dalam LOT) untuk menghitung "
+                "threshold volume risiko. <b>1 Lot = 100 Lembar.</b> "
+                "Jika PDF menyebutkan jumlah dalam LEMBAR, bagi dengan 100 terlebih dahulu.</p>",
+                unsafe_allow_html=True
+            )
+
+            _risk_col1, _risk_col2 = st.columns([2, 1])
+            with _risk_col1:
+                _ipo_lot_input = st.number_input(
+                    "Total Saham Ditawarkan (dalam LOT)",
+                    min_value=0,
+                    max_value=500_000_000,
+                    value=st.session_state.get("ipo_lot_val", 0),
+                    step=100_000,
+                    format="%d",
+                    key="ipo_risk_lot_input",
+                    help="Contoh: Jika PDF tulis 1.800.000.000 lembar → masukkan 18.000.000 lot"
+                )
+                st.session_state["ipo_lot_val"] = _ipo_lot_input
+            with _risk_col2:
+                st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+                _ipo_calc = st.button("⚙️ HITUNG RISIKO", key="btn_ipo_risk_calc", use_container_width=True)
+
+            if _ipo_lot_input > 0:
+                # Tentukan kondisi dan threshold
+                _lot = int(_ipo_lot_input)
+                if _lot < 12_000_000:
+                    _kondisi = "KONDISI A — Saham Ditawarkan < 12 Juta Lot"
+                    _kondisi_desc = "Float kecil → pergerakan harga lebih agresif, bandar lebih mudah kontrol harga. High-volatility."
+                    _r1_pct = 0.30
+                    _r2_pct = 0.50
+                    _r1_label = "30%"
+                    _r2_label = "50%"
+                    _kondisi_color = "#E24B4A"
+                    _kondisi_icon = "🔴"
+                elif _lot <= 30_000_000:
+                    _kondisi = "KONDISI B — Saham Ditawarkan 12–30 Juta Lot"
+                    _kondisi_desc = "Float sedang → likuiditas cukup, pergerakan lebih terkontrol. Medium-volatility."
+                    _r1_pct = 0.10
+                    _r2_pct = 0.30
+                    _r1_label = "10%"
+                    _r2_label = "30%"
+                    _kondisi_color = "#F0A500"
+                    _kondisi_icon = "🟡"
+                else:
+                    _kondisi = "KONDISI C — Saham Ditawarkan > 30 Juta Lot"
+                    _kondisi_desc = "Float besar → banyak supply, harga cenderung lebih berat naik. Low-volatility / distribution risk."
+                    _r1_pct = 0.10
+                    _r2_pct = 0.20
+                    _r1_label = "10%"
+                    _r2_label = "20%"
+                    _kondisi_color = "#26a69a"
+                    _kondisi_icon = "🟢"
+
+                _r1_lot = int(_lot * _r1_pct)
+                _r2_lot = int(_lot * _r2_pct)
+                _r1_lembar = _r1_lot * 100
+                _r2_lembar = _r2_lot * 100
+
+                # Render risk card — pakai string concat, BUKAN f-string
+                # supaya karakter { } di CSS tidak konflik dengan Python f-string
+                _lot_fmt       = f"{_lot:,}"
+                _lot_lem_fmt   = f"{_lot*100:,}"
+                _r1_lot_fmt    = f"{_r1_lot:,}"
+                _r2_lot_fmt    = f"{_r2_lot:,}"
+                _r1_lem_fmt    = f"{_r1_lembar:,}"
+                _r2_lem_fmt    = f"{_r2_lembar:,}"
+
+                _risk_html = (
+                    "<div style='background:rgba(8,12,22,0.95);border:1px solid " + _kondisi_color + ";border-left:4px solid " + _kondisi_color + ";"
+                    "border-radius:10px;padding:18px 22px;margin-top:12px;font-family:IBM Plex Mono,monospace;'>"
+
+                    "<div style='font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:" + _kondisi_color + ";margin-bottom:6px;'>"
+                    + _kondisi_icon + " " + _kondisi + "</div>"
+                    "<div style='font-size:0.78rem;color:rgba(255,255,255,0.6);margin-bottom:16px;'>" + _kondisi_desc + "</div>"
+
+                    "<div style='display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;'>"
+                    "<div style='background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);"
+                    "border-radius:8px;padding:10px 16px;flex:1;min-width:180px;'>"
+                    "<div style='font-size:0.68rem;color:rgba(255,255,255,0.45);margin-bottom:4px;letter-spacing:0.08em;'>TOTAL DITAWARKAN</div>"
+                    "<div style='font-size:1.1rem;font-weight:700;color:#fff;'>" + _lot_fmt + " Lot</div>"
+                    "<div style='font-size:0.72rem;color:rgba(255,255,255,0.4);'>= " + _lot_lem_fmt + " Lembar</div>"
+                    "</div></div>"
+
+                    "<div style='display:flex;gap:10px;flex-wrap:wrap;'>"
+
+                    "<div style='background:rgba(240,165,0,0.08);border:1px solid rgba(240,165,0,0.35);"
+                    "border-radius:8px;padding:14px 18px;flex:1;min-width:220px;'>"
+                    "<div style='font-size:0.68rem;color:#F0A500;margin-bottom:6px;letter-spacing:0.1em;font-weight:700;'>"
+                    "⚠️ STATUS RISIKO 1 — MULAI WASPADA</div>"
+                    "<div style='font-size:0.72rem;color:rgba(255,255,255,0.5);margin-bottom:4px;'>"
+                    + _lot_fmt + " Lot × " + _r1_label + " = </div>"
+                    "<div style='font-size:1.35rem;font-weight:700;color:#F0A500;margin-bottom:4px;'>" + _r1_lot_fmt + " Lot</div>"
+                    "<div style='font-size:0.72rem;color:rgba(255,255,255,0.4);margin-bottom:8px;'>= " + _r1_lem_fmt + " Lembar saham</div>"
+                    "<div style='font-size:0.75rem;color:rgba(255,255,255,0.7);line-height:1.5;'>"
+                    "📌 Jika volume transaksi harian telah mencapai <b>" + _r1_lot_fmt + " Lot</b>, "
+                    "<b>JUAL SEBAGIAN atau WAIT &amp; SEE</b>. Distribusi bandar kemungkinan mulai. "
+                    "Perketat trailing stop.</div>"
+                    "</div>"
+
+                    "<div style='background:rgba(226,75,74,0.08);border:1px solid rgba(226,75,74,0.35);"
+                    "border-radius:8px;padding:14px 18px;flex:1;min-width:220px;'>"
+                    "<div style='font-size:0.68rem;color:#E24B4A;margin-bottom:6px;letter-spacing:0.1em;font-weight:700;'>"
+                    "🚨 STATUS RISIKO 2 — SEGERA JUAL</div>"
+                    "<div style='font-size:0.72rem;color:rgba(255,255,255,0.5);margin-bottom:4px;'>"
+                    + _lot_fmt + " Lot × " + _r2_label + " = </div>"
+                    "<div style='font-size:1.35rem;font-weight:700;color:#E24B4A;margin-bottom:4px;'>" + _r2_lot_fmt + " Lot</div>"
+                    "<div style='font-size:0.72rem;color:rgba(255,255,255,0.4);margin-bottom:8px;'>= " + _r2_lem_fmt + " Lembar saham</div>"
+                    "<div style='font-size:0.75rem;color:rgba(255,255,255,0.7);line-height:1.5;'>"
+                    "🚨 Jika volume kumulatif telah mencapai <b>" + _r2_lot_fmt + " Lot</b>, "
+                    "<b>JUAL SEGERA</b>. ARA berpotensi dibongkar. "
+                    "Jangan serakah — amankan profit sekarang.</div>"
+                    "</div>"
+
+                    "</div>"
+
+                    "<div style='margin-top:14px;padding:10px 14px;background:rgba(255,255,255,0.03);"
+                    "border-radius:6px;border:1px solid rgba(255,255,255,0.08);'>"
+                    "<div style='font-size:0.68rem;color:rgba(255,255,255,0.4);letter-spacing:0.08em;margin-bottom:4px;'>"
+                    "📌 CARA MEMBACA</div>"
+                    "<div style='font-size:0.75rem;color:rgba(255,255,255,0.65);line-height:1.6;'>"
+                    "Volume yang dimaksud adalah <b>kumulatif total volume transaksi</b> (bukan hanya volume 1 hari) "
+                    "sejak saham mulai listing/diperdagangkan. Pantau via RTI, Stockbit, atau IDX. "
+                    "Angka ini adalah perkiraan kapan distribusi bandar mulai terlihat berdasarkan ukuran float."
+                    "<br>⚠️ <b>DYOR</b> — Perhitungan ini adalah panduan money management, bukan jaminan hasil. "
+                    "Selalu pertimbangkan kondisi pasar dan fundamental emiten."
+                    "</div></div>"
+                    "</div>"
+                )
+                _risk_html_full = f"""<!DOCTYPE html><html><head>
+<meta charset='utf-8'>
+<style>
+  body {{ margin:0; padding:0; background:transparent; font-family:'IBM Plex Mono',monospace; }}
+  b {{ font-weight:700; }}
+</style>
+</head><body>{_risk_html}</body></html>"""
+                components.html(_risk_html_full, height=420, scrolling=False)
+            # ── END RISK PROFILE ─────────────────────────────────────────────────
 
         with alpha_tab_trackrecord:
             # ════════════════════════════════════════════════════════════════
