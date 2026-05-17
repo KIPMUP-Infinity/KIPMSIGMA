@@ -12037,24 +12037,16 @@ if current_view == "dashboard":
 
         return result
 
-    tab_marketdata, tab_rotation, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
+    tab_live, tab_marketdata, tab_rotation, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
+        "  📡 MARKET LIVE  ",
         "  📈 MARKET DATA  ",
         "  📊 INDEX & SECTOR ROTATION  ",
         "  ⚡ ALPHA SCREENER  ",
         "  🔧 TOOLS  ",
         "  📖 PANDUAN  ",
     ])
-    # tab_idxmap (Market Map) telah dihapus — dummy container agar tidak error referensi
-    class _DeadTab:
-        """Context manager dummy — menelan semua konten tanpa render."""
-        def __enter__(self): return self
-        def __exit__(self, *a): return True
-        def tabs(self, *a, **kw):
-            import contextlib
-            return [_DeadTab() for _ in (a[0] if a else [])]
-        def __getattr__(self, name):
-            return lambda *a, **kw: None
-    tab_idxmap = _DeadTab()
+    # tab_idxmap alias ke tab_live agar blok lama (globe dkk) tetap berjalan
+    tab_idxmap = tab_live
     tab_macro = tab_marketdata  # alias — Economic Calendar dirender di tab_macro = tab_marketdata context
 
 
@@ -12339,7 +12331,7 @@ if current_view == "dashboard":
     # MARKET MAP tab dihapus — blok di bawah masuk ke _DeadTab (tidak dirender)
 
     with tab_idxmap:
-        # ── Sub-tab Market Map ──────────────────────────────────────────────
+        # ── Sub-tab Market Live (Globe dihapus) ─────────────────────────────
         _mm_subtab_globe, _mm_subtab_news, _mm_subtab_cal = st.tabs([
             "  🌐 Index, Komoditas & Forex  ",
             "  📰 News  ",
@@ -13397,42 +13389,7 @@ table{{margin-bottom:0!important;}}
 }})();
 </script></body></html>""", height=_total_h, scrolling=False)
 
-
-        # ── MARKET MAP GLOBE ───────────────────────────────────────────────
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-        st.markdown(
-            "<div class='trm-section'><div class='trm-section-line'></div>"
-            "<span class='trm-section-label'>MARKET MAP</span>"
-            "<div class='trm-section-line'></div></div>",
-            unsafe_allow_html=True,
-        )
-        # ── Refresh Globe (hanya tampil di tab Market Map) ──
-        _gc1, _gc2 = st.columns([4, 1])
-        with _gc2:
-            if st.button("🔄 Refresh Globe", key="globe_refresh_btn", use_container_width=True,
-                         help="Paksa fetch harga live baru untuk Market Map Globe"):
-                _fetch_globe_live_data.clear()
-                _globe_live = _fetch_globe_live_data(_globe_slot)
-                st.session_state["globe_last_refresh"] = datetime.now().strftime("%d %b %Y %H:%M WIB")
-                st.rerun()
-        _globe_ts = st.session_state.get("globe_last_refresh", "Auto")
-        with _gc1:
-            st.caption(f"🕐 Data globe terakhir diperbarui: {_globe_ts} · Auto-refresh jam 12:30 & 19:00 WIB")
-        # Staleness check: alert jika globe_live berisi data statis lebih dari 2 jam
-        try:
-            _globe_fetch_age = st.session_state.get("_globe_fetch_age_ts")
-            if _globe_fetch_age:
-                _age_mins = (datetime.now() - _globe_fetch_age).seconds // 60
-                if _age_mins > 120:
-                    st.caption(f"⚠️ Data live mungkin tidak fresh ({_age_mins} menit lalu). Klik Refresh Globe untuk update.")
-        except Exception:
-            pass
-        _idx_globe_html = (
-            _idx_globe_html
-            .replace("__SIGMA_LIVE_DATA__", _globe_live_js)
-            .replace("__SIGMA_STATIC_META__", _globe_static_meta_js)
-        )
-        components.html(_idx_globe_html, height=1100, scrolling=False)
+        # ── MARKET MAP GLOBE dihapus dari sistem ──────────────────────────
 
     with tab_marketdata:
         # ════════════════════════════════════════════════════════════════
@@ -14059,311 +14016,320 @@ Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur dan tegas.""
         # TAB: DIVIDEND — Full Implementation (hardcoded 2025–2026)
         # ════════════════════════════════════════════════════════════════
         with _md_subtab_dividend:
-            st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>💰 DIVIDEND TRACKER — DATA DIVIDEN EMITEN IDX</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            # ── SUB-TABS DIVIDEND ──────────────────────────────────────────
+            _dv_subtab_tracker, _dv_subtab_ai = st.tabs([
+                "  💰 DIVIDEND TRACKER  ",
+                "  🤖 AI ANALYST  ",
+            ])
+            with _dv_subtab_tracker:
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>💰 DIVIDEND TRACKER — DATA DIVIDEN EMITEN IDX</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
-            # ── Database Dividen IDX 2025–2026 (hardcoded) ──
-            _DIV_DB = [
-                # Format: ticker, nama, cum_date, ex_date, pay_date, dps (Rp), yield_pct, freq, tahun
-                # ── PERBANKAN ─────────────────────────────────────────────────────
-                {"ticker":"BBCA","nama":"Bank Central Asia","cum_date":"2025-03-27","ex_date":"2025-03-28","pay_date":"2025-04-14","dps":144,"yield_pct":1.55,"freq":"Interim","tahun":2025},
-                {"ticker":"BBCA","nama":"Bank Central Asia","cum_date":"2025-08-21","ex_date":"2025-08-22","pay_date":"2025-09-09","dps":215,"yield_pct":2.28,"freq":"Final","tahun":2025},
-                {"ticker":"BBCA","nama":"Bank Central Asia","cum_date":"2026-03-26","ex_date":"2026-03-27","pay_date":"2026-04-13","dps":155,"yield_pct":1.68,"freq":"Interim","tahun":2026},
-                {"ticker":"BBRI","nama":"Bank Rakyat Indonesia","cum_date":"2025-04-10","ex_date":"2025-04-11","pay_date":"2025-04-28","dps":174,"yield_pct":4.02,"freq":"Final","tahun":2025},
-                {"ticker":"BBRI","nama":"Bank Rakyat Indonesia","cum_date":"2025-09-18","ex_date":"2025-09-19","pay_date":"2025-10-06","dps":98,"yield_pct":2.27,"freq":"Interim","tahun":2025},
-                {"ticker":"BBRI","nama":"Bank Rakyat Indonesia","cum_date":"2026-04-09","ex_date":"2026-04-10","pay_date":"2026-04-28","dps":165,"yield_pct":3.79,"freq":"Final","tahun":2026},
-                {"ticker":"BMRI","nama":"Bank Mandiri","cum_date":"2025-04-16","ex_date":"2025-04-17","pay_date":"2025-05-05","dps":354,"yield_pct":5.22,"freq":"Final","tahun":2025},
-                {"ticker":"BMRI","nama":"Bank Mandiri","cum_date":"2026-04-15","ex_date":"2026-04-16","pay_date":"2026-05-02","dps":320,"yield_pct":4.71,"freq":"Final","tahun":2026},
-                {"ticker":"BBNI","nama":"Bank Negara Indonesia","cum_date":"2025-04-23","ex_date":"2025-04-24","pay_date":"2025-05-12","dps":270,"yield_pct":5.70,"freq":"Final","tahun":2025},
-                {"ticker":"BBNI","nama":"Bank Negara Indonesia","cum_date":"2026-04-22","ex_date":"2026-04-23","pay_date":"2026-05-08","dps":255,"yield_pct":5.38,"freq":"Final","tahun":2026},
-                {"ticker":"BBTN","nama":"Bank Tabungan Negara","cum_date":"2025-05-08","ex_date":"2025-05-09","pay_date":"2025-05-27","dps":48,"yield_pct":3.38,"freq":"Final","tahun":2025},
-                {"ticker":"BRIS","nama":"Bank Syariah Indonesia","cum_date":"2025-04-29","ex_date":"2025-04-30","pay_date":"2025-05-19","dps":56,"yield_pct":2.47,"freq":"Final","tahun":2025},
-                {"ticker":"BRIS","nama":"Bank Syariah Indonesia","cum_date":"2026-04-28","ex_date":"2026-04-29","pay_date":"2026-05-15","dps":62,"yield_pct":2.74,"freq":"Final","tahun":2026},
-                # ── CONSUMER & RETAIL ──────────────────────────────────────────
-                {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2025-03-20","ex_date":"2025-03-21","pay_date":"2025-04-08","dps":78,"yield_pct":3.00,"freq":"Q1","tahun":2025},
-                {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-08","dps":78,"yield_pct":3.00,"freq":"Q2","tahun":2025},
-                {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2025-09-18","ex_date":"2025-09-19","pay_date":"2025-10-07","dps":78,"yield_pct":3.00,"freq":"Q3","tahun":2025},
-                {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2025-12-18","ex_date":"2025-12-19","pay_date":"2026-01-07","dps":78,"yield_pct":3.00,"freq":"Q4","tahun":2025},
-                {"ticker":"ICBP","nama":"Indofood CBP Sukses Makmur","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-25","dps":440,"yield_pct":4.71,"freq":"Final","tahun":2025},
-                {"ticker":"ICBP","nama":"Indofood CBP Sukses Makmur","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-23","dps":460,"yield_pct":4.92,"freq":"Final","tahun":2026},
-                {"ticker":"MYOR","nama":"Mayora Indah","cum_date":"2025-06-12","ex_date":"2025-06-13","pay_date":"2025-06-30","dps":96,"yield_pct":4.47,"freq":"Final","tahun":2025},
-                {"ticker":"KLBF","nama":"Kalbe Farma","cum_date":"2025-05-29","ex_date":"2025-05-30","pay_date":"2025-06-17","dps":35,"yield_pct":2.24,"freq":"Final","tahun":2025},
-                {"ticker":"KLBF","nama":"Kalbe Farma","cum_date":"2026-05-28","ex_date":"2026-05-29","pay_date":"2026-06-16","dps":38,"yield_pct":2.43,"freq":"Final","tahun":2026},
-                {"ticker":"MIKA","nama":"Mitra Keluarga Karyasehat","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-07","dps":52,"yield_pct":2.02,"freq":"Final","tahun":2025},
-                {"ticker":"SIDO","nama":"Sido Muncul","cum_date":"2025-05-22","ex_date":"2025-05-23","pay_date":"2025-06-10","dps":30,"yield_pct":5.17,"freq":"Final","tahun":2025},
-                {"ticker":"SIDO","nama":"Sido Muncul","cum_date":"2026-05-21","ex_date":"2026-05-22","pay_date":"2026-06-09","dps":32,"yield_pct":5.52,"freq":"Final","tahun":2026},
-                # ── ENERGI & KOMODITAS ─────────────────────────────────────────
-                {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2025-05-15","ex_date":"2025-05-16","pay_date":"2025-06-02","dps":510,"yield_pct":17.35,"freq":"Final","tahun":2025},
-                {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2025-10-16","ex_date":"2025-10-17","pay_date":"2025-11-03","dps":180,"yield_pct":6.12,"freq":"Interim","tahun":2025},
-                {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2026-05-14","ex_date":"2026-05-15","pay_date":"2026-06-01","dps":430,"yield_pct":14.63,"freq":"Final","tahun":2026},
-                {"ticker":"ITMG","nama":"Indo Tambangraya Megah","cum_date":"2025-05-22","ex_date":"2025-05-23","pay_date":"2025-06-09","dps":3850,"yield_pct":15.71,"freq":"Final","tahun":2025},
-                {"ticker":"ITMG","nama":"Indo Tambangraya Megah","cum_date":"2025-10-23","ex_date":"2025-10-24","pay_date":"2025-11-10","dps":1200,"yield_pct":4.89,"freq":"Interim","tahun":2025},
-                {"ticker":"ADRO","nama":"Adaro Energy Indonesia","cum_date":"2025-05-08","ex_date":"2025-05-09","pay_date":"2025-05-26","dps":152,"yield_pct":6.91,"freq":"Final","tahun":2025},
-                {"ticker":"HRUM","nama":"Harum Energy","cum_date":"2025-05-29","ex_date":"2025-05-30","pay_date":"2025-06-16","dps":120,"yield_pct":10.00,"freq":"Final","tahun":2025},
-                {"ticker":"PGAS","nama":"Perusahaan Gas Negara","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":64,"yield_pct":4.44,"freq":"Final","tahun":2025},
-                {"ticker":"AALI","nama":"Astra Agro Lestari","cum_date":"2025-06-12","ex_date":"2025-06-13","pay_date":"2025-06-30","dps":425,"yield_pct":5.74,"freq":"Final","tahun":2025},
-                {"ticker":"LSIP","nama":"PP London Sumatra","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-07","dps":80,"yield_pct":5.97,"freq":"Final","tahun":2025},
-                # ── TELEKOMUNIKASI & INFRASTRUKTUR ─────────────────────────────
-                {"ticker":"TLKM","nama":"Telkom Indonesia","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":183,"yield_pct":4.67,"freq":"Final","tahun":2025},
-                {"ticker":"TLKM","nama":"Telkom Indonesia","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":175,"yield_pct":4.47,"freq":"Final","tahun":2026},
-                {"ticker":"JSMR","nama":"Jasa Marga","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-07","dps":156,"yield_pct":3.71,"freq":"Final","tahun":2025},
-                {"ticker":"TOWR","nama":"Sarana Menara Nusantara","cum_date":"2025-09-11","ex_date":"2025-09-12","pay_date":"2025-09-29","dps":24,"yield_pct":2.93,"freq":"Interim","tahun":2025},
-                # ── PROPERTI ───────────────────────────────────────────────────
-                {"ticker":"BSDE","nama":"Bumi Serpong Damai","cum_date":"2025-07-10","ex_date":"2025-07-11","pay_date":"2025-07-28","dps":18,"yield_pct":2.02,"freq":"Final","tahun":2025},
-                {"ticker":"CTRA","nama":"Ciputra Development","cum_date":"2025-07-17","ex_date":"2025-07-18","pay_date":"2025-08-04","dps":30,"yield_pct":2.27,"freq":"Final","tahun":2025},
-                {"ticker":"PWON","nama":"Pakuwon Jati","cum_date":"2025-07-03","ex_date":"2025-07-04","pay_date":"2025-07-21","dps":12,"yield_pct":2.74,"freq":"Final","tahun":2025},
-                # ── INDUSTRI & DIVERSIFIED ─────────────────────────────────────
-                {"ticker":"ASII","nama":"Astra International","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":254,"yield_pct":5.18,"freq":"Final","tahun":2025},
-                {"ticker":"ASII","nama":"Astra International","cum_date":"2025-11-06","ex_date":"2025-11-07","pay_date":"2025-11-24","dps":110,"yield_pct":2.24,"freq":"Interim","tahun":2025},
-                {"ticker":"ASII","nama":"Astra International","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":245,"yield_pct":5.00,"freq":"Final","tahun":2026},
-                {"ticker":"UNTR","nama":"United Tractors","cum_date":"2025-05-15","ex_date":"2025-05-16","pay_date":"2025-06-02","dps":3140,"yield_pct":12.82,"freq":"Final","tahun":2025},
-                {"ticker":"UNTR","nama":"United Tractors","cum_date":"2025-10-16","ex_date":"2025-10-17","pay_date":"2025-11-03","dps":1100,"yield_pct":4.49,"freq":"Interim","tahun":2025},
-                {"ticker":"SMGR","nama":"Semen Indonesia","cum_date":"2025-06-26","ex_date":"2025-06-27","pay_date":"2025-07-14","dps":95,"yield_pct":1.74,"freq":"Final","tahun":2025},
-                {"ticker":"INTP","nama":"Indocement Tunggal Perkasa","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-07","dps":350,"yield_pct":6.36,"freq":"Final","tahun":2025},
-                {"ticker":"CPIN","nama":"Charoen Pokphand Indonesia","cum_date":"2025-06-12","ex_date":"2025-06-13","pay_date":"2025-06-30","dps":110,"yield_pct":2.29,"freq":"Final","tahun":2025},
-                {"ticker":"JPFA","nama":"Japfa Comfeed Indonesia","cum_date":"2025-07-10","ex_date":"2025-07-11","pay_date":"2025-07-28","dps":42,"yield_pct":2.84,"freq":"Final","tahun":2025},
-                # ── BASIC MATERIALS ───────────────────────────────────────────
-                {"ticker":"AMMN","nama":"Amman Mineral","cum_date":"2025-08-21","ex_date":"2025-08-22","pay_date":"2025-09-08","dps":96,"yield_pct":1.23,"freq":"Interim","tahun":2025},
-                {"ticker":"MDKA","nama":"Merdeka Copper Gold","cum_date":"2025-09-11","ex_date":"2025-09-12","pay_date":"2025-09-29","dps":18,"yield_pct":0.73,"freq":"Special","tahun":2025},
-                {"ticker":"TPIA","nama":"Chandra Asri","cum_date":"2025-07-24","ex_date":"2025-07-25","pay_date":"2025-08-11","dps":220,"yield_pct":2.68,"freq":"Final","tahun":2025},
-                {"ticker":"INKP","nama":"Indah Kiat Pulp & Paper","cum_date":"2025-06-26","ex_date":"2025-06-27","pay_date":"2025-07-14","dps":380,"yield_pct":4.63,"freq":"Final","tahun":2025},
-                # ── FINANCIALS NON-BANK ────────────────────────────────────────
-                {"ticker":"ADMF","nama":"Adira Dinamika Multi Finance","cum_date":"2025-04-10","ex_date":"2025-04-11","pay_date":"2025-04-28","dps":680,"yield_pct":8.10,"freq":"Final","tahun":2025},
-                {"ticker":"ADMF","nama":"Adira Dinamika Multi Finance","cum_date":"2025-10-09","ex_date":"2025-10-10","pay_date":"2025-10-27","dps":280,"yield_pct":3.33,"freq":"Interim","tahun":2025},
-                {"ticker":"PNLF","nama":"Panin Financial","cum_date":"2025-07-10","ex_date":"2025-07-11","pay_date":"2025-07-28","dps":8,"yield_pct":4.76,"freq":"Final","tahun":2025},
-                # ── HIGH YIELD SPECIALS ────────────────────────────────────────
-                {"ticker":"ESSA","nama":"Surya Esa Perkasa","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":180,"yield_pct":11.11,"freq":"Final","tahun":2025},
-                {"ticker":"RAJA","nama":"Rukun Raharja","cum_date":"2025-07-03","ex_date":"2025-07-04","pay_date":"2025-07-21","dps":560,"yield_pct":14.43,"freq":"Final","tahun":2025},
-                {"ticker":"DMAS","nama":"Puradelta Lestari","cum_date":"2025-07-10","ex_date":"2025-07-11","pay_date":"2025-07-28","dps":14,"yield_pct":7.14,"freq":"Final","tahun":2025},
-                {"ticker":"MLBI","nama":"Multi Bintang Indonesia","cum_date":"2025-04-10","ex_date":"2025-04-11","pay_date":"2025-04-28","dps":1050,"yield_pct":10.71,"freq":"Final","tahun":2025},
-                {"ticker":"MBSS","nama":"Mitrabahtera Segara Sejati","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-07","dps":68,"yield_pct":9.19,"freq":"Final","tahun":2025},
-                {"ticker":"AKRA","nama":"AKR Corporindo","cum_date":"2025-07-17","ex_date":"2025-07-18","pay_date":"2025-08-04","dps":120,"yield_pct":7.41,"freq":"Final","tahun":2025},
-                {"ticker":"INDF","nama":"Indofood Sukses Makmur","cum_date":"2025-06-12","ex_date":"2025-06-13","pay_date":"2025-06-30","dps":390,"yield_pct":5.82,"freq":"Final","tahun":2025},
-                {"ticker":"LPPF","nama":"Matahari Department Store","cum_date":"2025-05-29","ex_date":"2025-05-30","pay_date":"2025-06-16","dps":220,"yield_pct":7.97,"freq":"Final","tahun":2025},
-                {"ticker":"MAPI","nama":"Mitra Adiperkasa","cum_date":"2025-06-26","ex_date":"2025-06-27","pay_date":"2025-07-14","dps":50,"yield_pct":2.98,"freq":"Final","tahun":2025},
-                {"ticker":"TAPG","nama":"Triputra Agro Persada","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":98,"yield_pct":8.60,"freq":"Final","tahun":2025},
-                {"ticker":"GOOD","nama":"Garudafood Putra Putri Jaya","cum_date":"2025-06-12","ex_date":"2025-06-13","pay_date":"2025-06-30","dps":22,"yield_pct":5.12,"freq":"Final","tahun":2025},
-                {"ticker":"CMRY","nama":"Cisarua Mountain Dairy","cum_date":"2025-07-10","ex_date":"2025-07-11","pay_date":"2025-07-28","dps":165,"yield_pct":4.11,"freq":"Final","tahun":2025},
-                {"ticker":"MIDI","nama":"Midi Utama Indonesia","cum_date":"2025-06-26","ex_date":"2025-06-27","pay_date":"2025-07-14","dps":26,"yield_pct":4.33,"freq":"Final","tahun":2025},
-                {"ticker":"HEAL","nama":"Medikaloka Hermina","cum_date":"2025-07-03","ex_date":"2025-07-04","pay_date":"2025-07-21","dps":36,"yield_pct":2.31,"freq":"Final","tahun":2025},
-                {"ticker":"BREN","nama":"Barito Renewables Energy","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-07","dps":80,"yield_pct":0.95,"freq":"Final","tahun":2025},
-                {"ticker":"PGEO","nama":"Pertamina Geothermal Energy","cum_date":"2025-07-17","ex_date":"2025-07-18","pay_date":"2025-08-04","dps":38,"yield_pct":3.06,"freq":"Final","tahun":2025},
-                {"ticker":"INDY","nama":"Indika Energy","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":126,"yield_pct":6.92,"freq":"Final","tahun":2025},
-                # ── 2026 Additions ────────────────────────────────────────────
-                {"ticker":"UNTR","nama":"United Tractors","cum_date":"2026-05-14","ex_date":"2026-05-15","pay_date":"2026-06-01","dps":2850,"yield_pct":11.63,"freq":"Final","tahun":2026},
-                {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2026-10-15","ex_date":"2026-10-16","pay_date":"2026-11-02","dps":160,"yield_pct":5.44,"freq":"Interim","tahun":2026},
-                {"ticker":"ITMG","nama":"Indo Tambangraya Megah","cum_date":"2026-05-21","ex_date":"2026-05-22","pay_date":"2026-06-08","dps":3200,"yield_pct":13.06,"freq":"Final","tahun":2026},
-                {"ticker":"ADMF","nama":"Adira Dinamika Multi Finance","cum_date":"2026-04-09","ex_date":"2026-04-10","pay_date":"2026-04-27","dps":620,"yield_pct":7.38,"freq":"Final","tahun":2026},
-                {"ticker":"MLBI","nama":"Multi Bintang Indonesia","cum_date":"2026-04-09","ex_date":"2026-04-10","pay_date":"2026-04-27","dps":980,"yield_pct":10.00,"freq":"Final","tahun":2026},
-                {"ticker":"ESSA","nama":"Surya Esa Perkasa","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":190,"yield_pct":11.73,"freq":"Final","tahun":2026},
-                {"ticker":"LPPF","nama":"Matahari Department Store","cum_date":"2026-05-28","ex_date":"2026-05-29","pay_date":"2026-06-15","dps":205,"yield_pct":7.43,"freq":"Final","tahun":2026},
-                {"ticker":"INDF","nama":"Indofood Sukses Makmur","cum_date":"2026-06-11","ex_date":"2026-06-12","pay_date":"2026-06-29","dps":410,"yield_pct":6.12,"freq":"Final","tahun":2026},
-                {"ticker":"AKRA","nama":"AKR Corporindo","cum_date":"2026-07-16","ex_date":"2026-07-17","pay_date":"2026-08-03","dps":130,"yield_pct":8.02,"freq":"Final","tahun":2026},
-                # ── 2026 Tambahan Emiten Blue Chip ────────────────────────────
-                {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2026-03-19","ex_date":"2026-03-20","pay_date":"2026-04-07","dps":78,"yield_pct":3.00,"freq":"Q1","tahun":2026},
-                {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-07","dps":78,"yield_pct":3.00,"freq":"Q2","tahun":2026},
-                {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2026-09-17","ex_date":"2026-09-18","pay_date":"2026-10-06","dps":78,"yield_pct":3.00,"freq":"Q3","tahun":2026},
-                {"ticker":"ASII","nama":"Astra International","cum_date":"2026-11-05","ex_date":"2026-11-06","pay_date":"2026-11-23","dps":115,"yield_pct":2.35,"freq":"Interim","tahun":2026},
-                {"ticker":"ICBP","nama":"Indofood CBP Sukses Makmur","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-23","dps":460,"yield_pct":4.92,"freq":"Final","tahun":2026},
-                {"ticker":"MYOR","nama":"Mayora Indah","cum_date":"2026-06-11","ex_date":"2026-06-12","pay_date":"2026-06-29","dps":100,"yield_pct":4.65,"freq":"Final","tahun":2026},
-                {"ticker":"KLBF","nama":"Kalbe Farma","cum_date":"2026-05-28","ex_date":"2026-05-29","pay_date":"2026-06-16","dps":38,"yield_pct":2.43,"freq":"Final","tahun":2026},
-                {"ticker":"SMGR","nama":"Semen Indonesia","cum_date":"2026-06-25","ex_date":"2026-06-26","pay_date":"2026-07-13","dps":90,"yield_pct":1.65,"freq":"Final","tahun":2026},
-                {"ticker":"INTP","nama":"Indocement Tunggal Perkasa","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":340,"yield_pct":6.18,"freq":"Final","tahun":2026},
-                {"ticker":"CPIN","nama":"Charoen Pokphand Indonesia","cum_date":"2026-06-11","ex_date":"2026-06-12","pay_date":"2026-06-29","dps":115,"yield_pct":2.40,"freq":"Final","tahun":2026},
-                {"ticker":"JPFA","nama":"Japfa Comfeed Indonesia","cum_date":"2026-07-09","ex_date":"2026-07-10","pay_date":"2026-07-27","dps":45,"yield_pct":3.04,"freq":"Final","tahun":2026},
-                {"ticker":"BBTN","nama":"Bank Tabungan Negara","cum_date":"2026-05-07","ex_date":"2026-05-08","pay_date":"2026-05-25","dps":44,"yield_pct":3.10,"freq":"Final","tahun":2026},
-                {"ticker":"PGAS","nama":"Perusahaan Gas Negara","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":62,"yield_pct":4.31,"freq":"Final","tahun":2026},
-                {"ticker":"BSDE","nama":"Bumi Serpong Damai","cum_date":"2026-07-09","ex_date":"2026-07-10","pay_date":"2026-07-27","dps":20,"yield_pct":2.25,"freq":"Final","tahun":2026},
-                {"ticker":"CTRA","nama":"Ciputra Development","cum_date":"2026-07-16","ex_date":"2026-07-17","pay_date":"2026-08-03","dps":32,"yield_pct":2.42,"freq":"Final","tahun":2026},
-                {"ticker":"PWON","nama":"Pakuwon Jati","cum_date":"2026-07-02","ex_date":"2026-07-03","pay_date":"2026-07-20","dps":13,"yield_pct":2.97,"freq":"Final","tahun":2026},
-                {"ticker":"AALI","nama":"Astra Agro Lestari","cum_date":"2026-06-11","ex_date":"2026-06-12","pay_date":"2026-06-29","dps":440,"yield_pct":5.95,"freq":"Final","tahun":2026},
-                {"ticker":"LSIP","nama":"PP London Sumatra","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":84,"yield_pct":6.27,"freq":"Final","tahun":2026},
-                {"ticker":"ADRO","nama":"Adaro Energy Indonesia","cum_date":"2026-05-07","ex_date":"2026-05-08","pay_date":"2026-05-25","dps":145,"yield_pct":6.59,"freq":"Final","tahun":2026},
-                {"ticker":"HRUM","nama":"Harum Energy","cum_date":"2026-05-28","ex_date":"2026-05-29","pay_date":"2026-06-15","dps":115,"yield_pct":9.58,"freq":"Final","tahun":2026},
-                {"ticker":"RAJA","nama":"Rukun Raharja","cum_date":"2026-07-02","ex_date":"2026-07-03","pay_date":"2026-07-20","dps":580,"yield_pct":14.95,"freq":"Final","tahun":2026},
-                {"ticker":"TAPG","nama":"Triputra Agro Persada","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":102,"yield_pct":8.95,"freq":"Final","tahun":2026},
-                {"ticker":"TOWR","nama":"Sarana Menara Nusantara","cum_date":"2026-09-10","ex_date":"2026-09-11","pay_date":"2026-09-28","dps":26,"yield_pct":3.17,"freq":"Interim","tahun":2026},
-                {"ticker":"JSMR","nama":"Jasa Marga","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":162,"yield_pct":3.86,"freq":"Final","tahun":2026},
-                {"ticker":"TLKM","nama":"Telkom Indonesia","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":175,"yield_pct":4.47,"freq":"Final","tahun":2026},
-                {"ticker":"INKP","nama":"Indah Kiat Pulp & Paper","cum_date":"2026-06-25","ex_date":"2026-06-26","pay_date":"2026-07-13","dps":390,"yield_pct":4.76,"freq":"Final","tahun":2026},
-                {"ticker":"TPIA","nama":"Chandra Asri","cum_date":"2026-07-23","ex_date":"2026-07-24","pay_date":"2026-08-10","dps":230,"yield_pct":2.80,"freq":"Final","tahun":2026},
-                {"ticker":"BREN","nama":"Barito Renewables Energy","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":85,"yield_pct":1.01,"freq":"Final","tahun":2026},
-                {"ticker":"PGEO","nama":"Pertamina Geothermal Energy","cum_date":"2026-07-16","ex_date":"2026-07-17","pay_date":"2026-08-03","dps":40,"yield_pct":3.23,"freq":"Final","tahun":2026},
-                {"ticker":"MIKA","nama":"Mitra Keluarga Karyasehat","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":55,"yield_pct":2.13,"freq":"Final","tahun":2026},
-                {"ticker":"MBSS","nama":"Mitrabahtera Segara Sejati","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":72,"yield_pct":9.73,"freq":"Final","tahun":2026},
-                {"ticker":"PNLF","nama":"Panin Financial","cum_date":"2026-07-09","ex_date":"2026-07-10","pay_date":"2026-07-27","dps":9,"yield_pct":5.36,"freq":"Final","tahun":2026},
-                {"ticker":"DMAS","nama":"Puradelta Lestari","cum_date":"2026-07-09","ex_date":"2026-07-10","pay_date":"2026-07-27","dps":15,"yield_pct":7.65,"freq":"Final","tahun":2026},
-            ]
+                # ── Database Dividen IDX 2025–2026 (hardcoded) ──
+                _DIV_DB = [
+                    # Format: ticker, nama, cum_date, ex_date, pay_date, dps (Rp), yield_pct, freq, tahun
+                    # ── PERBANKAN ─────────────────────────────────────────────────────
+                    {"ticker":"BBCA","nama":"Bank Central Asia","cum_date":"2025-03-27","ex_date":"2025-03-28","pay_date":"2025-04-14","dps":144,"yield_pct":1.55,"freq":"Interim","tahun":2025},
+                    {"ticker":"BBCA","nama":"Bank Central Asia","cum_date":"2025-08-21","ex_date":"2025-08-22","pay_date":"2025-09-09","dps":215,"yield_pct":2.28,"freq":"Final","tahun":2025},
+                    {"ticker":"BBCA","nama":"Bank Central Asia","cum_date":"2026-03-26","ex_date":"2026-03-27","pay_date":"2026-04-13","dps":155,"yield_pct":1.68,"freq":"Interim","tahun":2026},
+                    {"ticker":"BBRI","nama":"Bank Rakyat Indonesia","cum_date":"2025-04-10","ex_date":"2025-04-11","pay_date":"2025-04-28","dps":174,"yield_pct":4.02,"freq":"Final","tahun":2025},
+                    {"ticker":"BBRI","nama":"Bank Rakyat Indonesia","cum_date":"2025-09-18","ex_date":"2025-09-19","pay_date":"2025-10-06","dps":98,"yield_pct":2.27,"freq":"Interim","tahun":2025},
+                    {"ticker":"BBRI","nama":"Bank Rakyat Indonesia","cum_date":"2026-04-09","ex_date":"2026-04-10","pay_date":"2026-04-28","dps":165,"yield_pct":3.79,"freq":"Final","tahun":2026},
+                    {"ticker":"BMRI","nama":"Bank Mandiri","cum_date":"2025-04-16","ex_date":"2025-04-17","pay_date":"2025-05-05","dps":354,"yield_pct":5.22,"freq":"Final","tahun":2025},
+                    {"ticker":"BMRI","nama":"Bank Mandiri","cum_date":"2026-04-15","ex_date":"2026-04-16","pay_date":"2026-05-02","dps":320,"yield_pct":4.71,"freq":"Final","tahun":2026},
+                    {"ticker":"BBNI","nama":"Bank Negara Indonesia","cum_date":"2025-04-23","ex_date":"2025-04-24","pay_date":"2025-05-12","dps":270,"yield_pct":5.70,"freq":"Final","tahun":2025},
+                    {"ticker":"BBNI","nama":"Bank Negara Indonesia","cum_date":"2026-04-22","ex_date":"2026-04-23","pay_date":"2026-05-08","dps":255,"yield_pct":5.38,"freq":"Final","tahun":2026},
+                    {"ticker":"BBTN","nama":"Bank Tabungan Negara","cum_date":"2025-05-08","ex_date":"2025-05-09","pay_date":"2025-05-27","dps":48,"yield_pct":3.38,"freq":"Final","tahun":2025},
+                    {"ticker":"BRIS","nama":"Bank Syariah Indonesia","cum_date":"2025-04-29","ex_date":"2025-04-30","pay_date":"2025-05-19","dps":56,"yield_pct":2.47,"freq":"Final","tahun":2025},
+                    {"ticker":"BRIS","nama":"Bank Syariah Indonesia","cum_date":"2026-04-28","ex_date":"2026-04-29","pay_date":"2026-05-15","dps":62,"yield_pct":2.74,"freq":"Final","tahun":2026},
+                    # ── CONSUMER & RETAIL ──────────────────────────────────────────
+                    {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2025-03-20","ex_date":"2025-03-21","pay_date":"2025-04-08","dps":78,"yield_pct":3.00,"freq":"Q1","tahun":2025},
+                    {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-08","dps":78,"yield_pct":3.00,"freq":"Q2","tahun":2025},
+                    {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2025-09-18","ex_date":"2025-09-19","pay_date":"2025-10-07","dps":78,"yield_pct":3.00,"freq":"Q3","tahun":2025},
+                    {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2025-12-18","ex_date":"2025-12-19","pay_date":"2026-01-07","dps":78,"yield_pct":3.00,"freq":"Q4","tahun":2025},
+                    {"ticker":"ICBP","nama":"Indofood CBP Sukses Makmur","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-25","dps":440,"yield_pct":4.71,"freq":"Final","tahun":2025},
+                    {"ticker":"ICBP","nama":"Indofood CBP Sukses Makmur","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-23","dps":460,"yield_pct":4.92,"freq":"Final","tahun":2026},
+                    {"ticker":"MYOR","nama":"Mayora Indah","cum_date":"2025-06-12","ex_date":"2025-06-13","pay_date":"2025-06-30","dps":96,"yield_pct":4.47,"freq":"Final","tahun":2025},
+                    {"ticker":"KLBF","nama":"Kalbe Farma","cum_date":"2025-05-29","ex_date":"2025-05-30","pay_date":"2025-06-17","dps":35,"yield_pct":2.24,"freq":"Final","tahun":2025},
+                    {"ticker":"KLBF","nama":"Kalbe Farma","cum_date":"2026-05-28","ex_date":"2026-05-29","pay_date":"2026-06-16","dps":38,"yield_pct":2.43,"freq":"Final","tahun":2026},
+                    {"ticker":"MIKA","nama":"Mitra Keluarga Karyasehat","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-07","dps":52,"yield_pct":2.02,"freq":"Final","tahun":2025},
+                    {"ticker":"SIDO","nama":"Sido Muncul","cum_date":"2025-05-22","ex_date":"2025-05-23","pay_date":"2025-06-10","dps":30,"yield_pct":5.17,"freq":"Final","tahun":2025},
+                    {"ticker":"SIDO","nama":"Sido Muncul","cum_date":"2026-05-21","ex_date":"2026-05-22","pay_date":"2026-06-09","dps":32,"yield_pct":5.52,"freq":"Final","tahun":2026},
+                    # ── ENERGI & KOMODITAS ─────────────────────────────────────────
+                    {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2025-05-15","ex_date":"2025-05-16","pay_date":"2025-06-02","dps":510,"yield_pct":17.35,"freq":"Final","tahun":2025},
+                    {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2025-10-16","ex_date":"2025-10-17","pay_date":"2025-11-03","dps":180,"yield_pct":6.12,"freq":"Interim","tahun":2025},
+                    {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2026-05-14","ex_date":"2026-05-15","pay_date":"2026-06-01","dps":430,"yield_pct":14.63,"freq":"Final","tahun":2026},
+                    {"ticker":"ITMG","nama":"Indo Tambangraya Megah","cum_date":"2025-05-22","ex_date":"2025-05-23","pay_date":"2025-06-09","dps":3850,"yield_pct":15.71,"freq":"Final","tahun":2025},
+                    {"ticker":"ITMG","nama":"Indo Tambangraya Megah","cum_date":"2025-10-23","ex_date":"2025-10-24","pay_date":"2025-11-10","dps":1200,"yield_pct":4.89,"freq":"Interim","tahun":2025},
+                    {"ticker":"ADRO","nama":"Adaro Energy Indonesia","cum_date":"2025-05-08","ex_date":"2025-05-09","pay_date":"2025-05-26","dps":152,"yield_pct":6.91,"freq":"Final","tahun":2025},
+                    {"ticker":"HRUM","nama":"Harum Energy","cum_date":"2025-05-29","ex_date":"2025-05-30","pay_date":"2025-06-16","dps":120,"yield_pct":10.00,"freq":"Final","tahun":2025},
+                    {"ticker":"PGAS","nama":"Perusahaan Gas Negara","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":64,"yield_pct":4.44,"freq":"Final","tahun":2025},
+                    {"ticker":"AALI","nama":"Astra Agro Lestari","cum_date":"2025-06-12","ex_date":"2025-06-13","pay_date":"2025-06-30","dps":425,"yield_pct":5.74,"freq":"Final","tahun":2025},
+                    {"ticker":"LSIP","nama":"PP London Sumatra","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-07","dps":80,"yield_pct":5.97,"freq":"Final","tahun":2025},
+                    # ── TELEKOMUNIKASI & INFRASTRUKTUR ─────────────────────────────
+                    {"ticker":"TLKM","nama":"Telkom Indonesia","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":183,"yield_pct":4.67,"freq":"Final","tahun":2025},
+                    {"ticker":"TLKM","nama":"Telkom Indonesia","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":175,"yield_pct":4.47,"freq":"Final","tahun":2026},
+                    {"ticker":"JSMR","nama":"Jasa Marga","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-07","dps":156,"yield_pct":3.71,"freq":"Final","tahun":2025},
+                    {"ticker":"TOWR","nama":"Sarana Menara Nusantara","cum_date":"2025-09-11","ex_date":"2025-09-12","pay_date":"2025-09-29","dps":24,"yield_pct":2.93,"freq":"Interim","tahun":2025},
+                    # ── PROPERTI ───────────────────────────────────────────────────
+                    {"ticker":"BSDE","nama":"Bumi Serpong Damai","cum_date":"2025-07-10","ex_date":"2025-07-11","pay_date":"2025-07-28","dps":18,"yield_pct":2.02,"freq":"Final","tahun":2025},
+                    {"ticker":"CTRA","nama":"Ciputra Development","cum_date":"2025-07-17","ex_date":"2025-07-18","pay_date":"2025-08-04","dps":30,"yield_pct":2.27,"freq":"Final","tahun":2025},
+                    {"ticker":"PWON","nama":"Pakuwon Jati","cum_date":"2025-07-03","ex_date":"2025-07-04","pay_date":"2025-07-21","dps":12,"yield_pct":2.74,"freq":"Final","tahun":2025},
+                    # ── INDUSTRI & DIVERSIFIED ─────────────────────────────────────
+                    {"ticker":"ASII","nama":"Astra International","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":254,"yield_pct":5.18,"freq":"Final","tahun":2025},
+                    {"ticker":"ASII","nama":"Astra International","cum_date":"2025-11-06","ex_date":"2025-11-07","pay_date":"2025-11-24","dps":110,"yield_pct":2.24,"freq":"Interim","tahun":2025},
+                    {"ticker":"ASII","nama":"Astra International","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":245,"yield_pct":5.00,"freq":"Final","tahun":2026},
+                    {"ticker":"UNTR","nama":"United Tractors","cum_date":"2025-05-15","ex_date":"2025-05-16","pay_date":"2025-06-02","dps":3140,"yield_pct":12.82,"freq":"Final","tahun":2025},
+                    {"ticker":"UNTR","nama":"United Tractors","cum_date":"2025-10-16","ex_date":"2025-10-17","pay_date":"2025-11-03","dps":1100,"yield_pct":4.49,"freq":"Interim","tahun":2025},
+                    {"ticker":"SMGR","nama":"Semen Indonesia","cum_date":"2025-06-26","ex_date":"2025-06-27","pay_date":"2025-07-14","dps":95,"yield_pct":1.74,"freq":"Final","tahun":2025},
+                    {"ticker":"INTP","nama":"Indocement Tunggal Perkasa","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-07","dps":350,"yield_pct":6.36,"freq":"Final","tahun":2025},
+                    {"ticker":"CPIN","nama":"Charoen Pokphand Indonesia","cum_date":"2025-06-12","ex_date":"2025-06-13","pay_date":"2025-06-30","dps":110,"yield_pct":2.29,"freq":"Final","tahun":2025},
+                    {"ticker":"JPFA","nama":"Japfa Comfeed Indonesia","cum_date":"2025-07-10","ex_date":"2025-07-11","pay_date":"2025-07-28","dps":42,"yield_pct":2.84,"freq":"Final","tahun":2025},
+                    # ── BASIC MATERIALS ───────────────────────────────────────────
+                    {"ticker":"AMMN","nama":"Amman Mineral","cum_date":"2025-08-21","ex_date":"2025-08-22","pay_date":"2025-09-08","dps":96,"yield_pct":1.23,"freq":"Interim","tahun":2025},
+                    {"ticker":"MDKA","nama":"Merdeka Copper Gold","cum_date":"2025-09-11","ex_date":"2025-09-12","pay_date":"2025-09-29","dps":18,"yield_pct":0.73,"freq":"Special","tahun":2025},
+                    {"ticker":"TPIA","nama":"Chandra Asri","cum_date":"2025-07-24","ex_date":"2025-07-25","pay_date":"2025-08-11","dps":220,"yield_pct":2.68,"freq":"Final","tahun":2025},
+                    {"ticker":"INKP","nama":"Indah Kiat Pulp & Paper","cum_date":"2025-06-26","ex_date":"2025-06-27","pay_date":"2025-07-14","dps":380,"yield_pct":4.63,"freq":"Final","tahun":2025},
+                    # ── FINANCIALS NON-BANK ────────────────────────────────────────
+                    {"ticker":"ADMF","nama":"Adira Dinamika Multi Finance","cum_date":"2025-04-10","ex_date":"2025-04-11","pay_date":"2025-04-28","dps":680,"yield_pct":8.10,"freq":"Final","tahun":2025},
+                    {"ticker":"ADMF","nama":"Adira Dinamika Multi Finance","cum_date":"2025-10-09","ex_date":"2025-10-10","pay_date":"2025-10-27","dps":280,"yield_pct":3.33,"freq":"Interim","tahun":2025},
+                    {"ticker":"PNLF","nama":"Panin Financial","cum_date":"2025-07-10","ex_date":"2025-07-11","pay_date":"2025-07-28","dps":8,"yield_pct":4.76,"freq":"Final","tahun":2025},
+                    # ── HIGH YIELD SPECIALS ────────────────────────────────────────
+                    {"ticker":"ESSA","nama":"Surya Esa Perkasa","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":180,"yield_pct":11.11,"freq":"Final","tahun":2025},
+                    {"ticker":"RAJA","nama":"Rukun Raharja","cum_date":"2025-07-03","ex_date":"2025-07-04","pay_date":"2025-07-21","dps":560,"yield_pct":14.43,"freq":"Final","tahun":2025},
+                    {"ticker":"DMAS","nama":"Puradelta Lestari","cum_date":"2025-07-10","ex_date":"2025-07-11","pay_date":"2025-07-28","dps":14,"yield_pct":7.14,"freq":"Final","tahun":2025},
+                    {"ticker":"MLBI","nama":"Multi Bintang Indonesia","cum_date":"2025-04-10","ex_date":"2025-04-11","pay_date":"2025-04-28","dps":1050,"yield_pct":10.71,"freq":"Final","tahun":2025},
+                    {"ticker":"MBSS","nama":"Mitrabahtera Segara Sejati","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-07","dps":68,"yield_pct":9.19,"freq":"Final","tahun":2025},
+                    {"ticker":"AKRA","nama":"AKR Corporindo","cum_date":"2025-07-17","ex_date":"2025-07-18","pay_date":"2025-08-04","dps":120,"yield_pct":7.41,"freq":"Final","tahun":2025},
+                    {"ticker":"INDF","nama":"Indofood Sukses Makmur","cum_date":"2025-06-12","ex_date":"2025-06-13","pay_date":"2025-06-30","dps":390,"yield_pct":5.82,"freq":"Final","tahun":2025},
+                    {"ticker":"LPPF","nama":"Matahari Department Store","cum_date":"2025-05-29","ex_date":"2025-05-30","pay_date":"2025-06-16","dps":220,"yield_pct":7.97,"freq":"Final","tahun":2025},
+                    {"ticker":"MAPI","nama":"Mitra Adiperkasa","cum_date":"2025-06-26","ex_date":"2025-06-27","pay_date":"2025-07-14","dps":50,"yield_pct":2.98,"freq":"Final","tahun":2025},
+                    {"ticker":"TAPG","nama":"Triputra Agro Persada","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":98,"yield_pct":8.60,"freq":"Final","tahun":2025},
+                    {"ticker":"GOOD","nama":"Garudafood Putra Putri Jaya","cum_date":"2025-06-12","ex_date":"2025-06-13","pay_date":"2025-06-30","dps":22,"yield_pct":5.12,"freq":"Final","tahun":2025},
+                    {"ticker":"CMRY","nama":"Cisarua Mountain Dairy","cum_date":"2025-07-10","ex_date":"2025-07-11","pay_date":"2025-07-28","dps":165,"yield_pct":4.11,"freq":"Final","tahun":2025},
+                    {"ticker":"MIDI","nama":"Midi Utama Indonesia","cum_date":"2025-06-26","ex_date":"2025-06-27","pay_date":"2025-07-14","dps":26,"yield_pct":4.33,"freq":"Final","tahun":2025},
+                    {"ticker":"HEAL","nama":"Medikaloka Hermina","cum_date":"2025-07-03","ex_date":"2025-07-04","pay_date":"2025-07-21","dps":36,"yield_pct":2.31,"freq":"Final","tahun":2025},
+                    {"ticker":"BREN","nama":"Barito Renewables Energy","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-07","dps":80,"yield_pct":0.95,"freq":"Final","tahun":2025},
+                    {"ticker":"PGEO","nama":"Pertamina Geothermal Energy","cum_date":"2025-07-17","ex_date":"2025-07-18","pay_date":"2025-08-04","dps":38,"yield_pct":3.06,"freq":"Final","tahun":2025},
+                    {"ticker":"INDY","nama":"Indika Energy","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":126,"yield_pct":6.92,"freq":"Final","tahun":2025},
+                    # ── 2026 Additions ────────────────────────────────────────────
+                    {"ticker":"UNTR","nama":"United Tractors","cum_date":"2026-05-14","ex_date":"2026-05-15","pay_date":"2026-06-01","dps":2850,"yield_pct":11.63,"freq":"Final","tahun":2026},
+                    {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2026-10-15","ex_date":"2026-10-16","pay_date":"2026-11-02","dps":160,"yield_pct":5.44,"freq":"Interim","tahun":2026},
+                    {"ticker":"ITMG","nama":"Indo Tambangraya Megah","cum_date":"2026-05-21","ex_date":"2026-05-22","pay_date":"2026-06-08","dps":3200,"yield_pct":13.06,"freq":"Final","tahun":2026},
+                    {"ticker":"ADMF","nama":"Adira Dinamika Multi Finance","cum_date":"2026-04-09","ex_date":"2026-04-10","pay_date":"2026-04-27","dps":620,"yield_pct":7.38,"freq":"Final","tahun":2026},
+                    {"ticker":"MLBI","nama":"Multi Bintang Indonesia","cum_date":"2026-04-09","ex_date":"2026-04-10","pay_date":"2026-04-27","dps":980,"yield_pct":10.00,"freq":"Final","tahun":2026},
+                    {"ticker":"ESSA","nama":"Surya Esa Perkasa","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":190,"yield_pct":11.73,"freq":"Final","tahun":2026},
+                    {"ticker":"LPPF","nama":"Matahari Department Store","cum_date":"2026-05-28","ex_date":"2026-05-29","pay_date":"2026-06-15","dps":205,"yield_pct":7.43,"freq":"Final","tahun":2026},
+                    {"ticker":"INDF","nama":"Indofood Sukses Makmur","cum_date":"2026-06-11","ex_date":"2026-06-12","pay_date":"2026-06-29","dps":410,"yield_pct":6.12,"freq":"Final","tahun":2026},
+                    {"ticker":"AKRA","nama":"AKR Corporindo","cum_date":"2026-07-16","ex_date":"2026-07-17","pay_date":"2026-08-03","dps":130,"yield_pct":8.02,"freq":"Final","tahun":2026},
+                    # ── 2026 Tambahan Emiten Blue Chip ────────────────────────────
+                    {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2026-03-19","ex_date":"2026-03-20","pay_date":"2026-04-07","dps":78,"yield_pct":3.00,"freq":"Q1","tahun":2026},
+                    {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-07","dps":78,"yield_pct":3.00,"freq":"Q2","tahun":2026},
+                    {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2026-09-17","ex_date":"2026-09-18","pay_date":"2026-10-06","dps":78,"yield_pct":3.00,"freq":"Q3","tahun":2026},
+                    {"ticker":"ASII","nama":"Astra International","cum_date":"2026-11-05","ex_date":"2026-11-06","pay_date":"2026-11-23","dps":115,"yield_pct":2.35,"freq":"Interim","tahun":2026},
+                    {"ticker":"ICBP","nama":"Indofood CBP Sukses Makmur","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-23","dps":460,"yield_pct":4.92,"freq":"Final","tahun":2026},
+                    {"ticker":"MYOR","nama":"Mayora Indah","cum_date":"2026-06-11","ex_date":"2026-06-12","pay_date":"2026-06-29","dps":100,"yield_pct":4.65,"freq":"Final","tahun":2026},
+                    {"ticker":"KLBF","nama":"Kalbe Farma","cum_date":"2026-05-28","ex_date":"2026-05-29","pay_date":"2026-06-16","dps":38,"yield_pct":2.43,"freq":"Final","tahun":2026},
+                    {"ticker":"SMGR","nama":"Semen Indonesia","cum_date":"2026-06-25","ex_date":"2026-06-26","pay_date":"2026-07-13","dps":90,"yield_pct":1.65,"freq":"Final","tahun":2026},
+                    {"ticker":"INTP","nama":"Indocement Tunggal Perkasa","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":340,"yield_pct":6.18,"freq":"Final","tahun":2026},
+                    {"ticker":"CPIN","nama":"Charoen Pokphand Indonesia","cum_date":"2026-06-11","ex_date":"2026-06-12","pay_date":"2026-06-29","dps":115,"yield_pct":2.40,"freq":"Final","tahun":2026},
+                    {"ticker":"JPFA","nama":"Japfa Comfeed Indonesia","cum_date":"2026-07-09","ex_date":"2026-07-10","pay_date":"2026-07-27","dps":45,"yield_pct":3.04,"freq":"Final","tahun":2026},
+                    {"ticker":"BBTN","nama":"Bank Tabungan Negara","cum_date":"2026-05-07","ex_date":"2026-05-08","pay_date":"2026-05-25","dps":44,"yield_pct":3.10,"freq":"Final","tahun":2026},
+                    {"ticker":"PGAS","nama":"Perusahaan Gas Negara","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":62,"yield_pct":4.31,"freq":"Final","tahun":2026},
+                    {"ticker":"BSDE","nama":"Bumi Serpong Damai","cum_date":"2026-07-09","ex_date":"2026-07-10","pay_date":"2026-07-27","dps":20,"yield_pct":2.25,"freq":"Final","tahun":2026},
+                    {"ticker":"CTRA","nama":"Ciputra Development","cum_date":"2026-07-16","ex_date":"2026-07-17","pay_date":"2026-08-03","dps":32,"yield_pct":2.42,"freq":"Final","tahun":2026},
+                    {"ticker":"PWON","nama":"Pakuwon Jati","cum_date":"2026-07-02","ex_date":"2026-07-03","pay_date":"2026-07-20","dps":13,"yield_pct":2.97,"freq":"Final","tahun":2026},
+                    {"ticker":"AALI","nama":"Astra Agro Lestari","cum_date":"2026-06-11","ex_date":"2026-06-12","pay_date":"2026-06-29","dps":440,"yield_pct":5.95,"freq":"Final","tahun":2026},
+                    {"ticker":"LSIP","nama":"PP London Sumatra","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":84,"yield_pct":6.27,"freq":"Final","tahun":2026},
+                    {"ticker":"ADRO","nama":"Adaro Energy Indonesia","cum_date":"2026-05-07","ex_date":"2026-05-08","pay_date":"2026-05-25","dps":145,"yield_pct":6.59,"freq":"Final","tahun":2026},
+                    {"ticker":"HRUM","nama":"Harum Energy","cum_date":"2026-05-28","ex_date":"2026-05-29","pay_date":"2026-06-15","dps":115,"yield_pct":9.58,"freq":"Final","tahun":2026},
+                    {"ticker":"RAJA","nama":"Rukun Raharja","cum_date":"2026-07-02","ex_date":"2026-07-03","pay_date":"2026-07-20","dps":580,"yield_pct":14.95,"freq":"Final","tahun":2026},
+                    {"ticker":"TAPG","nama":"Triputra Agro Persada","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":102,"yield_pct":8.95,"freq":"Final","tahun":2026},
+                    {"ticker":"TOWR","nama":"Sarana Menara Nusantara","cum_date":"2026-09-10","ex_date":"2026-09-11","pay_date":"2026-09-28","dps":26,"yield_pct":3.17,"freq":"Interim","tahun":2026},
+                    {"ticker":"JSMR","nama":"Jasa Marga","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":162,"yield_pct":3.86,"freq":"Final","tahun":2026},
+                    {"ticker":"TLKM","nama":"Telkom Indonesia","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":175,"yield_pct":4.47,"freq":"Final","tahun":2026},
+                    {"ticker":"INKP","nama":"Indah Kiat Pulp & Paper","cum_date":"2026-06-25","ex_date":"2026-06-26","pay_date":"2026-07-13","dps":390,"yield_pct":4.76,"freq":"Final","tahun":2026},
+                    {"ticker":"TPIA","nama":"Chandra Asri","cum_date":"2026-07-23","ex_date":"2026-07-24","pay_date":"2026-08-10","dps":230,"yield_pct":2.80,"freq":"Final","tahun":2026},
+                    {"ticker":"BREN","nama":"Barito Renewables Energy","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":85,"yield_pct":1.01,"freq":"Final","tahun":2026},
+                    {"ticker":"PGEO","nama":"Pertamina Geothermal Energy","cum_date":"2026-07-16","ex_date":"2026-07-17","pay_date":"2026-08-03","dps":40,"yield_pct":3.23,"freq":"Final","tahun":2026},
+                    {"ticker":"MIKA","nama":"Mitra Keluarga Karyasehat","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":55,"yield_pct":2.13,"freq":"Final","tahun":2026},
+                    {"ticker":"MBSS","nama":"Mitrabahtera Segara Sejati","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":72,"yield_pct":9.73,"freq":"Final","tahun":2026},
+                    {"ticker":"PNLF","nama":"Panin Financial","cum_date":"2026-07-09","ex_date":"2026-07-10","pay_date":"2026-07-27","dps":9,"yield_pct":5.36,"freq":"Final","tahun":2026},
+                    {"ticker":"DMAS","nama":"Puradelta Lestari","cum_date":"2026-07-09","ex_date":"2026-07-10","pay_date":"2026-07-27","dps":15,"yield_pct":7.65,"freq":"Final","tahun":2026},
+                ]
 
-            # ── Staleness check: flag jika entry terbaru sudah > 60 hari ──────────────
-            from datetime import date as _dv_date_cls
-            _dv_today_check = _dv_date_cls.today()
-            _dv_all_dates = []
-            for _dv_r in _DIV_DB:
-                try: _dv_all_dates.append(_dv_date_cls.fromisoformat(_dv_r["pay_date"]))
-                except Exception: pass
-            if _dv_all_dates:
-                _dv_latest_date = max(_dv_all_dates)
-                _dv_days_stale  = (_dv_today_check - _dv_latest_date).days
-                if _dv_days_stale > 60 and not st.session_state.get("_div_stale_flagged"):
-                    st.session_state["_div_stale_flagged"] = True
-                    st.warning(
-                        f"⚠️ **Dividend Tracker perlu update** — Pay date terbaru di database: "
-                        f"`{_dv_latest_date.strftime('%d %b %Y')}` ({_dv_days_stale} hari lalu). "
-                        f"Perbarui `_DIV_DB` di app.py dengan data terbaru dari IDX.",
-                        icon="📅"
+                # ── Staleness check: flag jika entry terbaru sudah > 60 hari ──────────────
+                from datetime import date as _dv_date_cls
+                _dv_today_check = _dv_date_cls.today()
+                _dv_all_dates = []
+                for _dv_r in _DIV_DB:
+                    try: _dv_all_dates.append(_dv_date_cls.fromisoformat(_dv_r["pay_date"]))
+                    except Exception: pass
+                if _dv_all_dates:
+                    _dv_latest_date = max(_dv_all_dates)
+                    _dv_days_stale  = (_dv_today_check - _dv_latest_date).days
+                    if _dv_days_stale > 60 and not st.session_state.get("_div_stale_flagged"):
+                        st.session_state["_div_stale_flagged"] = True
+                        st.warning(
+                            f"⚠️ **Dividend Tracker perlu update** — Pay date terbaru di database: "
+                            f"`{_dv_latest_date.strftime('%d %b %Y')}` ({_dv_days_stale} hari lalu). "
+                            f"Perbarui `_DIV_DB` di app.py dengan data terbaru dari IDX.",
+                            icon="📅"
+                        )
+                # ── Filter UI ──
+                _dv_col1, _dv_col2, _dv_col3, _dv_col4 = st.columns([2, 1, 1, 1])
+                with _dv_col1:
+                    _dv_ticker_input = st.text_input("🔍 Cari Ticker", placeholder="e.g. BBCA, PTBA", key="div_ticker_filter").upper().strip()
+                with _dv_col2:
+                    _dv_tahun = st.selectbox("📅 Tahun", ["Semua", "2025", "2026"], key="div_tahun_filter")
+                with _dv_col3:
+                    _dv_freq = st.selectbox("Jenis", ["Semua", "Final", "Interim", "Q1","Q2","Q3","Q4","Special"], key="div_freq_filter")
+                with _dv_col4:
+                    _dv_sort = st.selectbox("Urut", ["Yield ↓", "Cum Date ↑", "DPS ↓", "Ticker ↑"], key="div_sort_filter")
+
+                # ── Filter data ──
+                _dv_filtered = _DIV_DB[:]
+                if _dv_ticker_input:
+                    _dv_filtered = [r for r in _dv_filtered if _dv_ticker_input in r["ticker"]]
+                if _dv_tahun != "Semua":
+                    _dv_filtered = [r for r in _dv_filtered if r["tahun"] == int(_dv_tahun)]
+                if _dv_freq != "Semua":
+                    _dv_filtered = [r for r in _dv_filtered if r["freq"] == _dv_freq]
+
+                # ── Sort ──
+                _sort_map = {
+                    "Yield ↓": lambda x: -x["yield_pct"],
+                    "Cum Date ↑": lambda x: x["cum_date"],
+                    "DPS ↓": lambda x: -x["dps"],
+                    "Ticker ↑": lambda x: x["ticker"],
+                }
+                _dv_filtered.sort(key=_sort_map.get(_dv_sort, _sort_map["Yield ↓"]))
+
+                # ── Highlight upcoming ex-date (dalam 14 hari) ──
+                from datetime import date as _date_cls
+                _today_dv = _date_cls.today()
+
+                # ── Ringkasan metrics ──
+                if _dv_filtered:
+                    _dv_m1, _dv_m2, _dv_m3, _dv_m4 = st.columns(4)
+                    _avg_yield = sum(r["yield_pct"] for r in _dv_filtered) / len(_dv_filtered)
+                    _max_yield_r = max(_dv_filtered, key=lambda x: x["yield_pct"])
+                    _upcoming = [r for r in _dv_filtered if r["ex_date"] >= str(_today_dv)]
+                    _upcoming_soon = [r for r in _upcoming if (
+                        _date_cls.fromisoformat(r["ex_date"]) - _today_dv
+                    ).days <= 30]
+                    with _dv_m1:
+                        st.metric("📋 Total Record", f"{len(_dv_filtered)}")
+                    with _dv_m2:
+                        st.metric("📊 Avg Yield", f"{_avg_yield:.2f}%")
+                    with _dv_m3:
+                        st.metric("🏆 Yield Tertinggi", f"{_max_yield_r['ticker']} {_max_yield_r['yield_pct']:.1f}%")
+                    with _dv_m4:
+                        st.metric("📅 Ex-Date ≤30 Hari", f"{len(_upcoming_soon)} emiten")
+
+                # ── Tabel utama ──
+                import pandas as _pd_dv
+                if _dv_filtered:
+                    _dv_rows = []
+                    for r in _dv_filtered:
+                        try:
+                            _ex = _date_cls.fromisoformat(r["ex_date"])
+                            _days_to_ex = (_ex - _today_dv).days
+                            _ex_flag = f"⚡ {_days_to_ex}h lagi" if 0 <= _days_to_ex <= 14 else (
+                                       f"🔔 {_days_to_ex}h lagi" if 0 <= _days_to_ex <= 30 else
+                                       ("✅ Selesai" if _days_to_ex < 0 else f"{_days_to_ex}h lagi"))
+                        except Exception:
+                            _ex_flag = "—"
+                        _dv_rows.append({
+                            "Ticker":       r["ticker"],
+                            "Nama Emiten":  r["nama"],
+                            "Cum Date":     r["cum_date"],
+                            "Ex-Date":      r["ex_date"],
+                            "Pay Date":     r["pay_date"],
+                            "DPS (Rp)":     r["dps"],
+                            "Yield %":      round(r["yield_pct"], 2),
+                            "Jenis":        r["freq"],
+                            "Tahun":        r["tahun"],
+                            "Status":       _ex_flag,
+                        })
+                    _dv_df = _pd_dv.DataFrame(_dv_rows)
+                    st.dataframe(
+                        _dv_df,
+                        use_container_width=True,
+                        hide_index=True,
+                        height=80 + len(_dv_df) * 36,
+                        column_config={
+                            "Yield %": st.column_config.NumberColumn("Yield %", format="%.2f%%"),
+                            "DPS (Rp)": st.column_config.NumberColumn("DPS (Rp)", format="Rp %d"),
+                            "Status": st.column_config.TextColumn("Status Ex-Date"),
+                        }
                     )
-            # ── Filter UI ──
-            _dv_col1, _dv_col2, _dv_col3, _dv_col4 = st.columns([2, 1, 1, 1])
-            with _dv_col1:
-                _dv_ticker_input = st.text_input("🔍 Cari Ticker", placeholder="e.g. BBCA, PTBA", key="div_ticker_filter").upper().strip()
-            with _dv_col2:
-                _dv_tahun = st.selectbox("📅 Tahun", ["Semua", "2025", "2026"], key="div_tahun_filter")
-            with _dv_col3:
-                _dv_freq = st.selectbox("Jenis", ["Semua", "Final", "Interim", "Q1","Q2","Q3","Q4","Special"], key="div_freq_filter")
-            with _dv_col4:
-                _dv_sort = st.selectbox("Urut", ["Yield ↓", "Cum Date ↑", "DPS ↓", "Ticker ↑"], key="div_sort_filter")
+                    # ── Legend & notes ──
+                    st.markdown(f"""
+                    <div style='font-size:0.7rem;color:#64748b;margin-top:6px;font-family:IBM Plex Mono,monospace;line-height:1.8;'>
+                    ⚡ Ex-Date ≤14 hari &nbsp;|&nbsp; 🔔 Ex-Date ≤30 hari &nbsp;|&nbsp; ✅ Sudah lewat
+                    &nbsp;&nbsp;·&nbsp;&nbsp; <b>Cum Date</b> = hari terakhir berhak dividen
+                    &nbsp;&nbsp;·&nbsp;&nbsp; <b>Ex-Date</b> = mulai tidak berhak dividen
+                    &nbsp;&nbsp;·&nbsp;&nbsp; <b>Pay Date</b> = tanggal pembayaran ke rekening
+                    &nbsp;&nbsp;·&nbsp;&nbsp; Data 2025–2026 · Hardcoded dari keterbukaan informasi IDX
+                    </div>""", unsafe_allow_html=True)
+                else:
+                    st.info(f"Tidak ada data dividen untuk filter yang dipilih: ticker='{_dv_ticker_input or 'Semua'}', tahun={_dv_tahun}, jenis={_dv_freq}")
 
-            # ── Filter data ──
-            _dv_filtered = _DIV_DB[:]
-            if _dv_ticker_input:
-                _dv_filtered = [r for r in _dv_filtered if _dv_ticker_input in r["ticker"]]
-            if _dv_tahun != "Semua":
-                _dv_filtered = [r for r in _dv_filtered if r["tahun"] == int(_dv_tahun)]
-            if _dv_freq != "Semua":
-                _dv_filtered = [r for r in _dv_filtered if r["freq"] == _dv_freq]
 
-            # ── Sort ──
-            _sort_map = {
-                "Yield ↓": lambda x: -x["yield_pct"],
-                "Cum Date ↑": lambda x: x["cum_date"],
-                "DPS ↓": lambda x: -x["dps"],
-                "Ticker ↑": lambda x: x["ticker"],
-            }
-            _dv_filtered.sort(key=_sort_map.get(_dv_sort, _sort_map["Yield ↓"]))
+            with _dv_subtab_ai:
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+                # ── AI ANALYST: Dividend ──────────────────────────────
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🤖 AI ANALYST — DIVIDEND</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                if "ai_dividend_result" not in st.session_state:
+                    st.session_state["ai_dividend_result"] = None
+                _col_ai_dv, _ = st.columns([1, 3])
+                with _col_ai_dv:
+                    _btn_analyze_div = st.button("🔍 Analyze Dividend IDX", key="btn_ai_dividend", use_container_width=True)
+                if _btn_analyze_div:
+                    # Ringkasan data dividen untuk AI
+                    _dv_all = [d for d in _DIV_DB if d["tahun"] == 2026]
+                    _dv_yield_avg = round(sum(d["yield_pct"] for d in _dv_all) / len(_dv_all), 2) if _dv_all else 0
+                    _dv_top5 = sorted(_dv_all, key=lambda x: x["yield_pct"], reverse=True)[:5]
+                    _dv_top5_str = "\n".join([f"  - {d['ticker']} ({d['nama']}): yield {d['yield_pct']:.2f}%, DPS Rp{d['dps']:,}, Ex-Date {d['ex_date']}" for d in _dv_top5])
+                    _dv_bi_rate  = 4.75  # BI Rate current (Apr 2026)
+                    _dv_prompt = f"""Kamu adalah SIGMA AI, analis investasi dividen pasar modal IDX.
 
-            # ── Highlight upcoming ex-date (dalam 14 hari) ──
-            from datetime import date as _date_cls
-            _today_dv = _date_cls.today()
+    Analisa kondisi dividen emiten IDX 2026 berdasarkan data berikut:
 
-            # ── Ringkasan metrics ──
-            if _dv_filtered:
-                _dv_m1, _dv_m2, _dv_m3, _dv_m4 = st.columns(4)
-                _avg_yield = sum(r["yield_pct"] for r in _dv_filtered) / len(_dv_filtered)
-                _max_yield_r = max(_dv_filtered, key=lambda x: x["yield_pct"])
-                _upcoming = [r for r in _dv_filtered if r["ex_date"] >= str(_today_dv)]
-                _upcoming_soon = [r for r in _upcoming if (
-                    _date_cls.fromisoformat(r["ex_date"]) - _today_dv
-                ).days <= 30]
-                with _dv_m1:
-                    st.metric("📋 Total Record", f"{len(_dv_filtered)}")
-                with _dv_m2:
-                    st.metric("📊 Avg Yield", f"{_avg_yield:.2f}%")
-                with _dv_m3:
-                    st.metric("🏆 Yield Tertinggi", f"{_max_yield_r['ticker']} {_max_yield_r['yield_pct']:.1f}%")
-                with _dv_m4:
-                    st.metric("📅 Ex-Date ≤30 Hari", f"{len(_upcoming_soon)} emiten")
+    📌 DATA DIVIDEN IDX 2026:
+    - Total emiten dengan jadwal dividen 2026 di database: {len(_dv_all)}
+    - Rata-rata dividend yield 2026: {_dv_yield_avg:.2f}%
+    - BI Rate saat ini: {_dv_bi_rate:.2f}%
+    - Spread yield dividen vs BI Rate: {_dv_yield_avg - _dv_bi_rate:+.2f}%
 
-            # ── Tabel utama ──
-            import pandas as _pd_dv
-            if _dv_filtered:
-                _dv_rows = []
-                for r in _dv_filtered:
-                    try:
-                        _ex = _date_cls.fromisoformat(r["ex_date"])
-                        _days_to_ex = (_ex - _today_dv).days
-                        _ex_flag = f"⚡ {_days_to_ex}h lagi" if 0 <= _days_to_ex <= 14 else (
-                                   f"🔔 {_days_to_ex}h lagi" if 0 <= _days_to_ex <= 30 else
-                                   ("✅ Selesai" if _days_to_ex < 0 else f"{_days_to_ex}h lagi"))
-                    except Exception:
-                        _ex_flag = "—"
-                    _dv_rows.append({
-                        "Ticker":       r["ticker"],
-                        "Nama Emiten":  r["nama"],
-                        "Cum Date":     r["cum_date"],
-                        "Ex-Date":      r["ex_date"],
-                        "Pay Date":     r["pay_date"],
-                        "DPS (Rp)":     r["dps"],
-                        "Yield %":      round(r["yield_pct"], 2),
-                        "Jenis":        r["freq"],
-                        "Tahun":        r["tahun"],
-                        "Status":       _ex_flag,
-                    })
-                _dv_df = _pd_dv.DataFrame(_dv_rows)
-                st.dataframe(
-                    _dv_df,
-                    use_container_width=True,
-                    hide_index=True,
-                    height=80 + len(_dv_df) * 36,
-                    column_config={
-                        "Yield %": st.column_config.NumberColumn("Yield %", format="%.2f%%"),
-                        "DPS (Rp)": st.column_config.NumberColumn("DPS (Rp)", format="Rp %d"),
-                        "Status": st.column_config.TextColumn("Status Ex-Date"),
-                    }
-                )
-                # ── Legend & notes ──
-                st.markdown(f"""
-                <div style='font-size:0.7rem;color:#64748b;margin-top:6px;font-family:IBM Plex Mono,monospace;line-height:1.8;'>
-                ⚡ Ex-Date ≤14 hari &nbsp;|&nbsp; 🔔 Ex-Date ≤30 hari &nbsp;|&nbsp; ✅ Sudah lewat
-                &nbsp;&nbsp;·&nbsp;&nbsp; <b>Cum Date</b> = hari terakhir berhak dividen
-                &nbsp;&nbsp;·&nbsp;&nbsp; <b>Ex-Date</b> = mulai tidak berhak dividen
-                &nbsp;&nbsp;·&nbsp;&nbsp; <b>Pay Date</b> = tanggal pembayaran ke rekening
-                &nbsp;&nbsp;·&nbsp;&nbsp; Data 2025–2026 · Hardcoded dari keterbukaan informasi IDX
-                </div>""", unsafe_allow_html=True)
-            else:
-                st.info(f"Tidak ada data dividen untuk filter yang dipilih: ticker='{_dv_ticker_input or 'Semua'}', tahun={_dv_tahun}, jenis={_dv_freq}")
+    📌 TOP 5 DIVIDEN YIELD TERTINGGI 2026:
+    {_dv_top5_str}
 
-            # ── AI ANALYST: Dividend ──────────────────────────────
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🤖 AI ANALYST — DIVIDEND</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            if "ai_dividend_result" not in st.session_state:
-                st.session_state["ai_dividend_result"] = None
-            _col_ai_dv, _ = st.columns([1, 3])
-            with _col_ai_dv:
-                _btn_analyze_div = st.button("🔍 Analyze Dividend IDX", key="btn_ai_dividend", use_container_width=True)
-            if _btn_analyze_div:
-                # Ringkasan data dividen untuk AI
-                _dv_all = [d for d in _DIV_DB if d["tahun"] == 2026]
-                _dv_yield_avg = round(sum(d["yield_pct"] for d in _dv_all) / len(_dv_all), 2) if _dv_all else 0
-                _dv_top5 = sorted(_dv_all, key=lambda x: x["yield_pct"], reverse=True)[:5]
-                _dv_top5_str = "\n".join([f"  - {d['ticker']} ({d['nama']}): yield {d['yield_pct']:.2f}%, DPS Rp{d['dps']:,}, Ex-Date {d['ex_date']}" for d in _dv_top5])
-                _dv_bi_rate  = 4.75  # BI Rate current (Apr 2026)
-                _dv_prompt = f"""Kamu adalah SIGMA AI, analis investasi dividen pasar modal IDX.
+    Buatlah analisa naratif yang mencakup:
+    1. **Kondisi Dividen IDX 2026** — Apakah rata-rata yield {_dv_yield_avg:.2f}% menarik dibanding BI Rate {_dv_bi_rate:.2f}%?
+    2. **Strategi Dividend Investing** — Haruskah investor fokus ke dividen atau capital gain di kondisi saat ini?
+    3. **Highlight Emiten** — Dari top 5 di atas, mana yang paling menarik dari sisi fundamental + yield? Alasan singkat.
+    4. **Timing** — Tips kapan masuk (cum date strategy) dan risiko yang perlu diperhatikan?
+    5. **Kesimpulan** — Apakah dividend play di IDX 2026 ini layak dijadikan strategi utama?
 
-Analisa kondisi dividen emiten IDX 2026 berdasarkan data berikut:
-
-📌 DATA DIVIDEN IDX 2026:
-- Total emiten dengan jadwal dividen 2026 di database: {len(_dv_all)}
-- Rata-rata dividend yield 2026: {_dv_yield_avg:.2f}%
-- BI Rate saat ini: {_dv_bi_rate:.2f}%
-- Spread yield dividen vs BI Rate: {_dv_yield_avg - _dv_bi_rate:+.2f}%
-
-📌 TOP 5 DIVIDEN YIELD TERTINGGI 2026:
-{_dv_top5_str}
-
-Buatlah analisa naratif yang mencakup:
-1. **Kondisi Dividen IDX 2026** — Apakah rata-rata yield {_dv_yield_avg:.2f}% menarik dibanding BI Rate {_dv_bi_rate:.2f}%?
-2. **Strategi Dividend Investing** — Haruskah investor fokus ke dividen atau capital gain di kondisi saat ini?
-3. **Highlight Emiten** — Dari top 5 di atas, mana yang paling menarik dari sisi fundamental + yield? Alasan singkat.
-4. **Timing** — Tips kapan masuk (cum date strategy) dan risiko yang perlu diperhatikan?
-5. **Kesimpulan** — Apakah dividend play di IDX 2026 ini layak dijadikan strategi utama?
-
-Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur, tegas, dan actionable."""
-                with st.spinner("🤖 SIGMA menganalisa data dividen IDX..."):
-                    try:
-                        _ai_dv_result, _ai_dv_model = _call_groq_primary(_dv_prompt, max_tokens=2000, temperature=0.65)
-                        st.session_state["ai_dividend_result"] = (_ai_dv_result, _ai_dv_model)
-                    except Exception as _e:
-                        st.session_state["ai_dividend_result"] = (f"❌ Gagal: {str(_e)}", "error")
-            if st.session_state.get("ai_dividend_result"):
-                _dv_txt, _dv_mdl = st.session_state["ai_dividend_result"]
-                st.markdown(f"""<div style='background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25);
-                border-radius:8px;padding:16px 18px;margin-top:8px;font-family:"DM Sans",sans-serif;font-size:0.88rem;
-                line-height:1.75;color:#e0e0e0;'>
-                <div style='font-size:0.68rem;color:#10b981;font-family:IBM Plex Mono,monospace;margin-bottom:10px;'>
-                🤖 SIGMA AI · Dividend Analysis</div>
-                {_dv_txt.replace(chr(10), "<br>")}
-                </div>""", unsafe_allow_html=True)
-            st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+    Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur, tegas, dan actionable."""
+                    with st.spinner("🤖 SIGMA menganalisa data dividen IDX..."):
+                        try:
+                            _ai_dv_result, _ai_dv_model = _call_groq_primary(_dv_prompt, max_tokens=2000, temperature=0.65)
+                            st.session_state["ai_dividend_result"] = (_ai_dv_result, _ai_dv_model)
+                        except Exception as _e:
+                            st.session_state["ai_dividend_result"] = (f"❌ Gagal: {str(_e)}", "error")
+                if st.session_state.get("ai_dividend_result"):
+                    _dv_txt, _dv_mdl = st.session_state["ai_dividend_result"]
+                    st.markdown(f"""<div style='background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25);
+                    border-radius:8px;padding:16px 18px;margin-top:8px;font-family:"DM Sans",sans-serif;font-size:0.88rem;
+                    line-height:1.75;color:#e0e0e0;'>
+                    <div style='font-size:0.68rem;color:#10b981;font-family:IBM Plex Mono,monospace;margin-bottom:10px;'>
+                    🤖 SIGMA AI · Dividend Analysis</div>
+                    {_dv_txt.replace(chr(10), "<br>")}
+                    </div>""", unsafe_allow_html=True)
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
     with tab_macro:
         pass  # Tab ini kosong — konten ada di tab Market Data dan Market Map
