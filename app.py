@@ -5787,6 +5787,11 @@ Jika menganalisa dokumen IPO (Menu 7), SIGMA WAJIB menghitung dan menyimpulkan h
    ⚠️ ATURAN KONVERSI LOT VS LEMBAR (KRITIS - JANGAN SALAH):
    -> Di Indonesia: 1 LOT = 100 LEMBAR saham.
    -> PDF prospektus SELALU menulis jumlah dalam LEMBAR (contoh: 1.800.000.000 lembar).
+   -> WAJIB konversi ke LOT: Total Lot = Total Lembar ÷ 100
+   -> 3 KONDISI RISIKO:
+      * KONDISI A (< 12 Juta Lot): Risk1 = 30%, Risk2 = 50%
+      * KONDISI B (12–30 Juta Lot): Risk1 = 10%, Risk2 = 30%  
+      * KONDISI C (> 30 Juta Lot): Risk1 = 10%, Risk2 = 20%
    -> SIGMA WAJIB mengkonversi ke LOT terlebih dahulu sebelum menghitung apapun.
    -> RUMUS KONVERSI: Total Lot = Total Lembar ÷ 100
    -> CONTOH: 1.800.000.000 lembar ÷ 100 = 18.000.000 Lot = 18 Juta Lot
@@ -7375,11 +7380,7 @@ def _sigma_run_global_scheduler():
             _mb_content = st.session_state.get("mb_daily_content", "")
             _already_today_dr = _today_s in _mb_ts if _mb_ts else False
 
-            if not _already_today_dr and _mb_content:
-                # Ada konten tapi dari kemarin — mark sudah coba hari ini nanti
-                pass
-
-            if not _already_today_dr:
+            if not _already_today_dr or not _mb_content:
                 st.session_state[_dr_auto_key] = True  # lock dulu
                 try:
                     import feedparser as _fp_sch
@@ -10108,14 +10109,23 @@ Berikut adalah bedah Prospektus IPO untuk **{emiten}**:
 - **Skala Acuan:** ≤2x = Sangat Menarik | 2–4x = Menarik/Wajar | >4–7x = Waspada/Mahal | >7x = Hati-Hati Tinggi
 - **Kesimpulan:** [Jelaskan implikasi rasio ini - seberapa jauh harga penawaran dari nilai nominal, dan apa artinya bagi investor ritel. Sebutkan di harga mana yang lebih aman untuk masuk.]
 
-**2. MANAJEMEN RISIKO LOT (DISTRIBUSI)**
-- **Total Saham Ditawarkan:** [Jumlah] lembar ÷ 100 = **[Jumlah Lot] Lot** *(konversi wajib: 1 Lot = 100 Lembar)*
-- **Kondisi yang Berlaku:** [Kondisi A - karena < 20 Juta Lot] ATAU [Kondisi B - karena ≥ 20 Juta Lot]
-- **Risk 1 (Mulai Waspada):** [30% jika Kondisi A / 10% jika Kondisi B] × [Total Lot] = **[Hasil] Lot**
-  *Artinya: Jika volume transaksi harian mendekati angka ini, mulai pantau ketat - potensi distribusi bandar dimulai.*
-- **Risk 2 (Take Profit/Bahaya):** [50% jika Kondisi A / 30% jika Kondisi B] × [Total Lot] = **[Hasil] Lot**
-  *Artinya: Jika volume mencapai angka ini, ARA rawan dibongkar. Segera amankan profit - jangan serakah.*
-- **Insight:** [1-2 kalimat tentang implikasi ukuran float ini terhadap likuiditas, kemudahan bandar gerakkan harga, dan strategi yang direkomendasikan.]
+**2. MANAJEMEN RISIKO LOT (DISTRIBUSI) — PROFIL RISIKO MONEY MANAGEMENT**
+- **Total Saham Ditawarkan:** [Jumlah] lembar ÷ 100 = **[Jumlah Lot] Lot** *(WAJIB: 1 Lot = 100 Lembar)*
+- **Kondisi yang Berlaku (pilih SATU berdasarkan total lot):**
+  - KONDISI A: Total Lot **< 12 Juta Lot** → Float kecil, volatilitas tinggi, bandar mudah gerakkan harga
+  - KONDISI B: Total Lot **12–30 Juta Lot** → Float sedang, likuiditas cukup, medium-volatility
+  - KONDISI C: Total Lot **> 30 Juta Lot** → Float besar, supply banyak, harga cenderung berat naik
+- **Risk 1 (Mulai Waspada / Jual Sebagian atau Wait & See):**
+  - Kondisi A: [Total Lot] × 30% = **[Hasil] Lot** (= [Hasil×100] Lembar)
+  - Kondisi B: [Total Lot] × 10% = **[Hasil] Lot** (= [Hasil×100] Lembar)
+  - Kondisi C: [Total Lot] × 10% = **[Hasil] Lot** (= [Hasil×100] Lembar)
+  *Jika volume kumulatif mencapai angka ini → distribusi bandar kemungkinan mulai, perketat trailing stop.*
+- **Risk 2 (Jual Segera — ARA rawan dibongkar):**
+  - Kondisi A: [Total Lot] × 50% = **[Hasil] Lot** (= [Hasil×100] Lembar)
+  - Kondisi B: [Total Lot] × 30% = **[Hasil] Lot** (= [Hasil×100] Lembar)
+  - Kondisi C: [Total Lot] × 20% = **[Hasil] Lot** (= [Hasil×100] Lembar)
+  *Jika volume kumulatif mencapai angka ini → JUAL SEGERA, amankan profit, jangan serakah.*
+- **Insight:** [1-2 kalimat tentang implikasi ukuran float, likuiditas, dan strategi yang tepat berdasarkan kondisi yang berlaku.]
 
 **3. JUMLAH UNDERWRITER (PENJAMIN EMISI)**
 - **Penjamin Pelaksana Emisi Efek:** [Sebutkan nama lengkap semua underwriter]
@@ -14422,7 +14432,7 @@ table{{margin-bottom:0!important;}}
                         },
                         method="POST"
                     )
-                    with urllib.request.urlopen(_req, timeout=90) as _r:
+                    with urllib.request.urlopen(_req, timeout=55) as _r:
                         _data = _j.loads(_r.read())
                     # Gabungkan semua text block dari response
                     _full_text = ""
@@ -14495,7 +14505,7 @@ BERITA RSS 7 HARI TERAKHIR (konteks narasi & analisis minggu ini):
 Domestik: {_rss_dom_str}
 Global: {_rss_glob_str}
 
-FORMAT OUTPUT - Bahasa Indonesia, padat & strategis. Maks 800 kata total.
+FORMAT OUTPUT - Bahasa Indonesia, padat & strategis. Maks 600 kata total. RINGKAS, DENSE, ACTIONABLE.
 
 ##  REKAP IHSG MINGGU INI (7 Hari Terakhir)
 Gunakan harga IHSG dari DATA REAL-TIME sebagai level penutupan terkini. Analisis tren 5 hari berdasarkan konteks berita RSS minggu ini (sektor outperformer/underperformer, foreign flow). (2-3 paragraf)
@@ -14527,7 +14537,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
 
                 if _anthropic_key:
                     try:
-                        mb_res = _call_anthropic_with_search(mb_prompt, max_tok=5000 if mode_key == "weekly" else 4000)
+                        mb_res = _call_anthropic_with_search(mb_prompt, max_tok=3500 if mode_key == "weekly" else 3000)
                         if mb_res:
                             _source_used = "Anthropic+WebSearch"
                     except Exception as _ae:
@@ -14535,7 +14545,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
 
                 if not mb_res:
                     try:
-                        _max_tok = 3000 if mode_key == "daily" else 5000
+                        _max_tok = 3000 if mode_key == "daily" else 3500
                         mb_res, _ = _call_groq_primary(mb_prompt, max_tokens=_max_tok)
                         _source_used = "Groq"
                     except Exception as e:
@@ -16104,6 +16114,85 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
                     if _fs_pass or _fs_watch:
                         _render_fs_table_bsjp(_fs_pass, _fs_watch, _fs_accent)
+
+                        # ── TOMBOL ANALISA AI DARI HASIL SCREENER ──────────────────
+                        st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
+                        st.markdown(
+                            "<div class='trm-section'><div class='trm-section-line'></div>"
+                            "<span class='trm-section-label'>🤖 ANALISA AI DARI HASIL SCREENER</span>"
+                            "<div class='trm-section-line'></div></div>",
+                            unsafe_allow_html=True
+                        )
+                        _btn_ai_screener = st.button(
+                            "🤖 ANALISA AI DARI HASIL SCREENER",
+                            key="btn_fs_analisa_ai",
+                            use_container_width=True,
+                            type="primary",
+                        )
+                        if _btn_ai_screener:
+                            with st.spinner("🤖 SIGMA AI menganalisa hasil screener..."):
+                                # Bangun ringkasan hasil screener untuk prompt
+                                _pass_summary = []
+                                for _tk, _d in (_fs_pass or [])[:20]:
+                                    _pass_summary.append(
+                                        f"{_tk}: ROE={_d.get('roe',0):.1f}%, DER={_d.get('der',0):.2f}x, "
+                                        f"NPM={_d.get('npm',0):.1f}%, PBV={_d.get('pbv',0):.2f}x, "
+                                        f"Score={_d.get('score',0)}/6"
+                                    )
+                                _watch_summary = []
+                                for _tk, _d in (_fs_watch or [])[:10]:
+                                    _watch_summary.append(
+                                        f"{_tk}: ROE={_d.get('roe',0):.1f}%, Score={_d.get('score',0)}/6"
+                                    )
+                                _ai_screen_prompt = f"""Kamu adalah SIGMA AI — analis fundamental senior (framework: Buffett, Graham, Damodaran, Lynch).
+
+HASIL FUNDAMENTAL SCREENER IDX:
+Sektor: {_fs_sektor} | Sort: {_fs_sk} | Timestamp: {_fs_ts}
+
+PASS (Buffett Score ≥4/6):
+{chr(10).join(_pass_summary) if _pass_summary else "Tidak ada"}
+
+WATCHLIST (Score 2-3/6):
+{chr(10).join(_watch_summary) if _watch_summary else "Tidak ada"}
+
+TUGASMU (jawab dalam Bahasa Indonesia, padat & actionable, maks 600 kata, Markdown):
+
+## 🏆 TOP PICKS — Saham Terbaik dari Hasil Screener
+Pilih 3-5 saham terkuat dari PASS list. Jelaskan kenapa unggul (ROE tinggi, DER rendah, dll).
+
+## ⚠️ WATCHLIST — Saham dengan Potensi tapi Perlu Monitor
+Pilih 2-3 dari watchlist yang menarik. Apa yang perlu diperbaiki agar masuk PASS?
+
+## 📊 ANALISA SEKTORAL
+Tren sektor {_fs_sektor}: mengapa saham-saham ini muncul? Katalis makro?
+
+## 💡 STRATEGI ENTRY
+Rekomendasi pendekatan entry: accumulate bertahap / tunggu pullback / dll. Berikan konteks valuasi (PBV/PER) per saham top.
+
+## 🚨 RISIKO UTAMA
+2-3 risiko fundamental yang perlu diwaspadai dari hasil screener ini.
+
+Padat, berbasis data screener di atas. JANGAN mengarang angka di luar data yang diberikan."""
+
+                                _ai_screen_result = _call_ai_reco(_ai_screen_prompt)
+                                if _ai_screen_result:
+                                    st.session_state["fs_ai_result"] = _ai_screen_result
+
+                        # Tampilkan hasil jika ada
+                        if st.session_state.get("fs_ai_result"):
+                            _fs_accent2 = "#26a69a"
+                            st.markdown(
+                                f"""<div style='background:rgba(38,166,154,0.06);border:1px solid rgba(38,166,154,0.25);
+                                border-left:3px solid {_fs_accent2};border-radius:0 8px 8px 0;padding:16px 18px;margin-top:12px;
+                                font-size:0.875rem;line-height:1.8;'>
+                                <div style='font-size:0.68rem;color:#26a69a;font-family:IBM Plex Mono,monospace;margin-bottom:10px;'>
+                                🤖 SIGMA AI · Fundamental Screener Analysis · {_fs_ts}</div>
+                                </div>""",
+                                unsafe_allow_html=True
+                            )
+                            st.markdown(st.session_state["fs_ai_result"])
+                        # ── END TOMBOL ANALISA AI ───────────────────────────────────
+
                     if not _fs_pass and not _fs_watch:
                         st.markdown(f"<div class='trm-card' style='text-align:center;padding:24px;'><p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};'>Tidak ada saham yang lolos filter di sektor ini.</p></div>", unsafe_allow_html=True)
 
@@ -20893,6 +20982,19 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             if "ipo_tab_emiten_last" not in st.session_state:
                 st.session_state["ipo_tab_emiten_last"] = ""
 
+            # Track file upload status in session_state untuk hindari disabled bug
+            if _ipo_pdf_file is not None:
+                st.session_state["ipo_tab_has_file"] = True
+                st.session_state["ipo_tab_file_name"] = _ipo_pdf_file.name
+            _ipo_has_file = _ipo_pdf_file is not None or st.session_state.get("ipo_tab_has_file", False)
+            _ipo_ready = _ipo_has_file and bool(_ipo_emiten.strip())
+
+            # Tampilkan status file jika ada dari state
+            if _ipo_has_file and _ipo_pdf_file is None:
+                _fn_prev = st.session_state.get("ipo_tab_file_name", "")
+                if _fn_prev:
+                    st.info(f"📄 File tersimpan: **{_fn_prev}** — Klik ANALISA untuk mulai bedah prospektus.")
+
             # ── Tombol analisa ─────────────────────────────────────────────
             _ipo_col_btn, _ipo_col_clear = st.columns([3, 1])
             with _ipo_col_btn:
@@ -20901,7 +21003,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     key="ipo_tab_run_btn",
                     use_container_width=True,
                     type="primary",
-                    disabled=not (_ipo_pdf_file and _ipo_emiten.strip())
+                    disabled=not _ipo_ready
                 )
             with _ipo_col_clear:
                 if st.button("🗑️ Clear", key="ipo_tab_clear_btn", use_container_width=True):
@@ -20998,6 +21100,142 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 # Output analisa dalam container scrollable
                 with st.container(border=True):
                     st.markdown(_ipo_result["result"])
+
+                # ── RISK PROFILE / MONEY MANAGEMENT CALCULATOR ─────────────────────
+                st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+                st.markdown(
+                    "<div class='trm-section'><div class='trm-section-line'></div>"
+                    "<span class='trm-section-label'>⚠️ PROFIL RISIKO & MONEY MANAGEMENT IPO</span>"
+                    "<div class='trm-section-line'></div></div>",
+                    unsafe_allow_html=True
+                )
+                st.markdown(
+                    f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
+                    f"color:{text_sub};margin-bottom:12px;'>"
+                    "Masukkan jumlah saham yang ditawarkan (dalam LOT) untuk menghitung "
+                    "threshold volume risiko. <b>1 Lot = 100 Lembar.</b> "
+                    "Jika PDF menyebutkan jumlah dalam LEMBAR, bagi dengan 100 terlebih dahulu.</p>",
+                    unsafe_allow_html=True
+                )
+
+                _risk_col1, _risk_col2 = st.columns([2, 1])
+                with _risk_col1:
+                    _ipo_lot_input = st.number_input(
+                        "Total Saham Ditawarkan (dalam LOT)",
+                        min_value=0,
+                        max_value=500_000_000,
+                        value=st.session_state.get("ipo_lot_val", 0),
+                        step=100_000,
+                        format="%d",
+                        key="ipo_risk_lot_input",
+                        help="Contoh: Jika PDF tulis 1.800.000.000 lembar → masukkan 18.000.000 lot"
+                    )
+                    st.session_state["ipo_lot_val"] = _ipo_lot_input
+                with _risk_col2:
+                    st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+                    _ipo_calc = st.button("⚙️ HITUNG RISIKO", key="btn_ipo_risk_calc", use_container_width=True)
+
+                if _ipo_lot_input > 0:
+                    # Tentukan kondisi dan threshold
+                    _lot = int(_ipo_lot_input)
+                    if _lot < 12_000_000:
+                        _kondisi = "KONDISI A — Saham Ditawarkan < 12 Juta Lot"
+                        _kondisi_desc = "Float kecil → pergerakan harga lebih agresif, bandar lebih mudah kontrol harga. High-volatility."
+                        _r1_pct = 0.30
+                        _r2_pct = 0.50
+                        _r1_label = "30%"
+                        _r2_label = "50%"
+                        _kondisi_color = "#E24B4A"
+                        _kondisi_icon = "🔴"
+                    elif _lot <= 30_000_000:
+                        _kondisi = "KONDISI B — Saham Ditawarkan 12–30 Juta Lot"
+                        _kondisi_desc = "Float sedang → likuiditas cukup, pergerakan lebih terkontrol. Medium-volatility."
+                        _r1_pct = 0.10
+                        _r2_pct = 0.30
+                        _r1_label = "10%"
+                        _r2_label = "30%"
+                        _kondisi_color = "#F0A500"
+                        _kondisi_icon = "🟡"
+                    else:
+                        _kondisi = "KONDISI C — Saham Ditawarkan > 30 Juta Lot"
+                        _kondisi_desc = "Float besar → banyak supply, harga cenderung lebih berat naik. Low-volatility / distribution risk."
+                        _r1_pct = 0.10
+                        _r2_pct = 0.20
+                        _r1_label = "10%"
+                        _r2_label = "20%"
+                        _kondisi_color = "#26a69a"
+                        _kondisi_icon = "🟢"
+
+                    _r1_lot = int(_lot * _r1_pct)
+                    _r2_lot = int(_lot * _r2_pct)
+                    _r1_lembar = _r1_lot * 100
+                    _r2_lembar = _r2_lot * 100
+
+                    # Render risk card
+                    st.markdown(f"""
+<div style='background:rgba(8,12,22,0.95);border:1px solid {_kondisi_color};border-left:4px solid {_kondisi_color};
+border-radius:10px;padding:18px 22px;margin-top:12px;font-family:IBM Plex Mono,monospace;'>
+
+  <div style='font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:{_kondisi_color};margin-bottom:6px;'>
+  {_kondisi_icon} {_kondisi}</div>
+  <div style='font-size:0.78rem;color:rgba(255,255,255,0.6);margin-bottom:16px;'>{_kondisi_desc}</div>
+
+  <div style='display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;'>
+    <div style='background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);
+    border-radius:8px;padding:10px 16px;flex:1;min-width:180px;'>
+      <div style='font-size:0.68rem;color:rgba(255,255,255,0.45);margin-bottom:4px;letter-spacing:0.08em;'>TOTAL DITAWARKAN</div>
+      <div style='font-size:1.1rem;font-weight:700;color:#fff;'>{_lot:,} Lot</div>
+      <div style='font-size:0.72rem;color:rgba(255,255,255,0.4);'>= {_lot*100:,} Lembar</div>
+    </div>
+  </div>
+
+  <div style='display:flex;gap:10px;flex-wrap:wrap;'>
+
+    <div style='background:rgba(240,165,0,0.08);border:1px solid rgba(240,165,0,0.35);
+    border-radius:8px;padding:14px 18px;flex:1;min-width:220px;'>
+      <div style='font-size:0.68rem;color:#F0A500;margin-bottom:6px;letter-spacing:0.1em;font-weight:700;'>
+      ⚠️ STATUS RISIKO 1 — MULAI WASPADA</div>
+      <div style='font-size:0.72rem;color:rgba(255,255,255,0.5);margin-bottom:4px;'>
+      {_lot:,} Lot × {_r1_label} = </div>
+      <div style='font-size:1.35rem;font-weight:700;color:#F0A500;margin-bottom:4px;'>{_r1_lot:,} Lot</div>
+      <div style='font-size:0.72rem;color:rgba(255,255,255,0.4);margin-bottom:8px;'>= {_r1_lembar:,} Lembar saham</div>
+      <div style='font-size:0.75rem;color:rgba(255,255,255,0.7);line-height:1.5;'>
+      📌 Jika volume transaksi harian telah mencapai <b>{_r1_lot:,} Lot</b>, 
+      <b>JUAL SEBAGIAN atau WAIT &amp; SEE</b>. Distribusi bandar kemungkinan mulai. 
+      Perketat trailing stop.</div>
+    </div>
+
+    <div style='background:rgba(226,75,74,0.08);border:1px solid rgba(226,75,74,0.35);
+    border-radius:8px;padding:14px 18px;flex:1;min-width:220px;'>
+      <div style='font-size:0.68rem;color:#E24B4A;margin-bottom:6px;letter-spacing:0.1em;font-weight:700;'>
+      🚨 STATUS RISIKO 2 — SEGERA JUAL</div>
+      <div style='font-size:0.72rem;color:rgba(255,255,255,0.5);margin-bottom:4px;'>
+      {_lot:,} Lot × {_r2_label} = </div>
+      <div style='font-size:1.35rem;font-weight:700;color:#E24B4A;margin-bottom:4px;'>{_r2_lot:,} Lot</div>
+      <div style='font-size:0.72rem;color:rgba(255,255,255,0.4);margin-bottom:8px;'>= {_r2_lembar:,} Lembar saham</div>
+      <div style='font-size:0.75rem;color:rgba(255,255,255,0.7);line-height:1.5;'>
+      🚨 Jika volume kumulatif telah mencapai <b>{_r2_lot:,} Lot</b>, 
+      <b>JUAL SEGERA</b>. ARA berpotensi dibongkar. 
+      Jangan serakah — amankan profit sekarang.</div>
+    </div>
+
+  </div>
+
+  <div style='margin-top:14px;padding:10px 14px;background:rgba(255,255,255,0.03);
+  border-radius:6px;border:1px solid rgba(255,255,255,0.08);'>
+    <div style='font-size:0.68rem;color:rgba(255,255,255,0.4);letter-spacing:0.08em;margin-bottom:4px;'>
+    📌 CARA MEMBACA</div>
+    <div style='font-size:0.75rem;color:rgba(255,255,255,0.65);line-height:1.6;'>
+    Volume yang dimaksud adalah <b>kumulatif total volume transaksi</b> (bukan hanya volume 1 hari) 
+    sejak saham mulai listing/diperdagangkan. Pantau via RTI, Stockbit, atau IDX. 
+    Angka ini adalah perkiraan kapan distribusi bandar mulai terlihat berdasarkan ukuran float.
+    <br>⚠️ <b>DYOR</b> — Perhitungan ini adalah panduan money management, bukan jaminan hasil. 
+    Selalu pertimbangkan kondisi pasar dan fundamental emiten.
+    </div>
+  </div>
+
+</div>""", unsafe_allow_html=True)
+                # ── END RISK PROFILE ─────────────────────────────────────────────────
 
                 # Tombol download hasil
                 st.download_button(
