@@ -9459,14 +9459,14 @@ def show_login():
     header[data-testid="stHeader"] {{ display: none !important; }} #MainMenu {{ display: none !important; }}
     .stTabs, [data-testid="stVerticalBlock"] {{ background: transparent !important; }}
     [data-testid="stTextInput"] input {{ background: rgba(255,255,255,0.06) !important; border: 1px solid rgba(255,255,255,0.12) !important; border-radius: 12px !important; color: #fff !important; padding: 12px 16px !important; font-size: 0.95rem !important; backdrop-filter: blur(10px) !important; transition: border 0.2s !important; }}
-    [data-testid="stTextInput"] input:focus {{ border: 1px solid #a78bfa !important; box-shadow: 0 0 0 2px rgba(167,139,250,0.15) !important; outline: none !important; }}
+    [data-testid="stTextInput"] input:focus {{ border: 1px solid rgba(201,162,39,0.70) !important; box-shadow: 0 0 0 2px rgba(201,162,39,0.12) !important; outline: none !important; }}
     [data-testid="stTextInput"] input::placeholder {{ color: rgba(255,255,255,0.35) !important; }}
     [data-testid="stTextInput"] label {{ color: rgba(255,255,255,0.6) !important; font-size: 0.82rem !important; }}
-    [data-testid="stMainBlockContainer"] .stButton > button {{ background: linear-gradient(135deg, #7c3aed, #2563eb) !important; color: #fff !important; font-weight: 700 !important; border: none !important; border-radius: 12px !important; padding: 12px !important; font-size: 0.95rem !important; letter-spacing: 0.5px !important; transition: opacity 0.2s, transform 0.1s !important; box-shadow: 0 4px 20px rgba(124,58,237,0.35) !important; }}
+    [data-testid="stMainBlockContainer"] .stButton > button {{ background: linear-gradient(135deg, #c9a227, #a07a14) !important; color: #0A0C12 !important; font-weight: 700 !important; border: none !important; border-radius: 12px !important; padding: 12px !important; font-size: 0.95rem !important; letter-spacing: 0.5px !important; transition: opacity 0.2s, transform 0.1s !important; box-shadow: 0 4px 20px rgba(124,58,237,0.35) !important; }}
     [data-testid="stMainBlockContainer"] .stButton > button:hover {{ opacity: 0.92 !important; transform: translateY(-1px) !important; }}
     [data-testid="stTabs"] [role="tablist"] {{ background: rgba(255,255,255,0.05) !important; border-radius: 12px !important; padding: 4px !important; border: 1px solid rgba(255,255,255,0.08) !important; gap: 2px !important; }}
     [data-testid="stTabs"] button[role="tab"] {{ border-radius: 9px !important; color: rgba(255,255,255,0.5) !important; font-size: 0.85rem !important; padding: 7px 12px !important; border: none !important; background: transparent !important; }}
-    [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{ background: linear-gradient(135deg,rgba(124,58,237,0.22),rgba(59,130,246,0.18)) !important; color: #a78bfa !important; font-weight: 700 !important; border-bottom: 2px solid #a78bfa !important; }}
+    [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{ background: linear-gradient(135deg,rgba(201,162,39,0.22),rgba(160,122,20,0.18)) !important; color: #c9a227 !important; font-weight: 700 !important; border-bottom: 2px solid #c9a227 !important; }}
     [data-testid="stTabs"] [role="tabpanel"] {{ background: rgba(255,255,255,0.03) !important; border-radius: 16px !important; border: 1px solid rgba(255,255,255,0.08) !important; padding: 20px 16px !important; margin-top: 8px !important; backdrop-filter: blur(10px) !important; }}
     [data-testid="stAlert"] {{ border-radius: 10px !important; }}
     </style>
@@ -9504,8 +9504,8 @@ def show_login():
 """, height=0)
     st.markdown('''
         <div style="text-align:center;margin:0 0 10px;">
-            <div style="font-size:2.8rem;font-weight:900;letter-spacing:5px;color:#ffffff;font-family:sans-serif;line-height:1.2;">SIGMA <span style="color:#a78bfa;">Σ</span></div>
-            <div class="sigma-tagline" style="font-size:0.72rem;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-top:4px;font-family:sans-serif;">Strategic Intelligence & Global Market Analysis</div>
+            <div style="font-size:1.1rem;font-weight:900;letter-spacing:5px;color:#ffffff;font-family:sans-serif;line-height:1.2;">SIGMA <span style="color:#c9a227;">Σ</span></div>
+            <div class="sigma-tagline" style="font-size:0.62rem;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-top:4px;font-family:sans-serif;">Strategic Intelligence & Global Market Analysis</div>
         </div>
         <style>@media(min-width: 769px) { .sigma-tagline { display: none !important; } }</style>
     ''', unsafe_allow_html=True)
@@ -11936,7 +11936,7 @@ if current_view == "dashboard":
             "PTBA": {"name":"Bukit Asam Tbk.","cap":160,"owner":"Government","sector":"Energy","msci":True,"price":2940,"chg":0.34,"vol":"19.4 M"},
             "SMGR": {"name":"Semen Indonesia Tbk.","cap":120,"owner":"Government","sector":"Industrials","msci":True,"price":5450,"chg":-0.91,"vol":"10.2 M"},
             "PGAS": {"name":"Perusahaan Gas Negara Tbk.","cap":188,"owner":"Government","sector":"Energy","msci":True,"price":1440,"chg":0.70,"vol":"31.8 M"},
-            "ANTM": {"name":"Aneka Tambang Tbk.","cap":155,"owner":"Government","sector":"Basic Materials","msci":True,"price":1620,"chg":1.57,"vol":"25.0 M"},
+            "ANTM": {"name":"Aneka Tambang Tbk.","cap":155,"owner":"Government","sector":"Basic Materials","msci":False,"price":1620,"chg":1.57,"vol":"25.0 M"},
             "WIKA": {"name":"Wijaya Karya Tbk.","cap":82,"owner":"Government","sector":"Industrials","msci":False,"price":1020,"chg":-1.92,"vol":"20.1 M"},
             "WSKT": {"name":"Waskita Karya Tbk.","cap":68,"owner":"Government","sector":"Industrials","msci":False,"price":164,"chg":-2.40,"vol":"38.5 M"},
             "PTPP": {"name":"PP Persero Tbk.","cap":75,"owner":"Government","sector":"Industrials","msci":False,"price":620,"chg":-1.27,"vol":"14.2 M"},
@@ -11991,7 +11991,7 @@ if current_view == "dashboard":
             "LPKR": {"name":"Lippo Karawaci Tbk.","cap":220,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":False,"price":134,"chg":-0.74,"vol":"62.8 M"},
             "KIJA": {"name":"Kawasan Industri Jababeka","cap":78,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":False,"price":246,"chg":0.82,"vol":"22.4 M"},
             "APLN": {"name":"Agung Podomoro Land Tbk.","cap":55,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":False,"price":144,"chg":-0.69,"vol":"18.6 M"},
-            "TPIA": {"name":"Chandra Asri Tbk.","cap":414,"owner":"Chandra Group","sector":"Basic Materials","msci":True,"price":8200,"chg":1.24,"vol":"8.7 M"},
+            "TPIA": {"name":"Chandra Asri Tbk.","cap":414,"owner":"Chandra Group","sector":"Basic Materials","msci":False,"price":8200,"chg":1.24,"vol":"8.7 M"},
             "BRPT": {"name":"Barito Pacific Tbk.","cap":280,"owner":"Chandra Group","sector":"Basic Materials","msci":True,"price":1240,"chg":2.05,"vol":"31.4 M"},
             "AGRO": {"name":"Bank Raya Indonesia Tbk.","cap":95,"owner":"Chandra Group","sector":"Financials","msci":False,"price":368,"chg":-0.81,"vol":"9.7 M"},
             "CBPE": {"name":"Chandra Barito Energi Tbk.","cap":178,"owner":"Chandra Group","sector":"Energy","msci":False,"price":2100,"chg":1.43,"vol":"6.1 M"},
@@ -12028,7 +12028,7 @@ if current_view == "dashboard":
             "FMII": {"name":"First Media Tbk.","cap":42,"owner":"Lippo Group","sector":"Consumer Cyclical","msci":False,"price":168,"chg":-0.59,"vol":"12.4 M"},
             "TBIG": {"name":"Tower Bersama Infrastr.","cap":165,"owner":"Lippo Group","sector":"Infrastructure","msci":True,"price":2100,"chg":-0.48,"vol":"8.8 M"},
             "BCAP": {"name":"MNC Kapital Indonesia Tbk.","cap":52,"owner":"Lippo Group","sector":"Financials","msci":False,"price":312,"chg":0.32,"vol":"7.2 M"},
-            "AMMN": {"name":"Amman Mineral Internasional","cap":294,"owner":"Others","sector":"Basic Materials","msci":True,"price":7800,"chg":2.11,"vol":"5.1 M"},
+            "AMMN": {"name":"Amman Mineral Internasional","cap":294,"owner":"Others","sector":"Basic Materials","msci":False,"price":7800,"chg":2.11,"vol":"5.1 M"},
             "GOTO": {"name":"GoTo Gojek Tokopedia Tbk.","cap":180,"owner":"Others","sector":"Technology","msci":True,"price":62,"chg":-3.12,"vol":"312.0 M"},
             "KLBF": {"name":"Kalbe Farma Tbk.","cap":245,"owner":"Others","sector":"Healthcare","msci":True,"price":1565,"chg":-0.32,"vol":"24.1 M"},
             "ADRO": {"name":"Adaro Energy Indonesia Tbk.","cap":282,"owner":"Others","sector":"Energy","msci":True,"price":2200,"chg":1.38,"vol":"14.6 M"},
@@ -12051,7 +12051,7 @@ if current_view == "dashboard":
             "MIDI": {"name":"Midi Utama Indonesia Tbk.","cap":88,"owner":"Others","sector":"Consumer Non-Cyclical","msci":False,"price":600,"chg":0.84,"vol":"4.4 M"},
             "CMRY": {"name":"Cisarua Mountain Dairy Tbk.","cap":115,"owner":"Others","sector":"Consumer Non-Cyclical","msci":False,"price":4020,"chg":1.01,"vol":"2.8 M"},
             "ARTO": {"name":"Bank Jago Tbk.","cap":175,"owner":"Others","sector":"Financials","msci":False,"price":2540,"chg":-1.55,"vol":"7.6 M"},
-            "BREN": {"name":"Barito Renewables Energy Tbk.","cap":420,"owner":"Others","sector":"Energy","msci":True,"price":8400,"chg":3.24,"vol":"4.2 M"},
+            "BREN": {"name":"Barito Renewables Energy Tbk.","cap":420,"owner":"Others","sector":"Energy","msci":False,"price":8400,"chg":3.24,"vol":"4.2 M"},
             "TAPG": {"name":"Triputra Agro Persada Tbk.","cap":95,"owner":"Others","sector":"Consumer Non-Cyclical","msci":False,"price":1140,"chg":0.88,"vol":"5.8 M"},
             "NICL": {"name":"Nickel Industries Ltd.","cap":142,"owner":"Others","sector":"Basic Materials","msci":False,"price":362,"chg":1.66,"vol":"9.4 M"},
             "CBDK": {"name":"Cahaya Bintang Medan Tbk.","cap":68,"owner":"Others","sector":"Properties & Real Estate","msci":False,"price":2640,"chg":2.34,"vol":"3.6 M"},
@@ -20078,31 +20078,31 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
                  <b style='color:#8b5cf6;'>Efektif sejak:</b> 29 Mei 2026 (MSCI Semi-Annual Review Mei 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
                 <b style='color:#8b5cf6;'>Review berikutnya:</b> Pengumuman ~13 Agu 2026, efektif 28 Agu 2026&nbsp;&nbsp;|&nbsp;&nbsp;
-                <span style='color:{text_sub};'>Jadwal: 2&times; setahun (Feb &amp; Agu). Review interim Mei &amp; Nov. <b>Standard:</b> 27 saham · <b>Small Cap:</b> 14 saham. Sumber: <b>msci.com</b></span>
+                <span style='color:{text_sub};'>Jadwal: 2&times; setahun (Feb &amp; Agu). Review interim Mei &amp; Nov. <b>Standard:</b> 24 saham · <b>Small Cap:</b> 12 saham. Sumber: <b>msci.com</b></span>
                 </div>""", unsafe_allow_html=True)
 
                 import pandas as pd
                 msci_standard = {
-                    "Ticker": ["AMMN","ASII","BBCA","BBNI","BBRI","BMRI","BREN","BRPT","CPIN","GOTO",
-                                "ICBP","INDF","INKP","INTP","ISAT","KLBF","MDKA","TPIA","TLKM","TOWR","UNTR","UNVR","PGEO","BBTN","PGAS","ANTM","PTBA"],
-                    "Nama":   ["Amman Mineral","Astra International","Bank Central Asia","Bank Negara Indonesia","Bank Rakyat Indonesia","Bank Mandiri","Barito Renewables","Barito Pacific","Charoen Pokphand","GoTo Gojek Tokopedia",
-                                "Indofood CBP","Indofood SM","Indah Kiat Pulp","Indocement","Indosat","Kalbe Farma","Merdeka Copper Gold","Chandra Asri","Telkom Indonesia","Sarana Menara Nusantara","United Tractors","Unilever Indonesia","Pertamina Geothermal","Bank Tabungan Negara","Perusahaan Gas Negara","Aneka Tambang","Bukit Asam"],
-                    "Sektor": ["Materials","Industrials","Finance","Finance","Finance","Finance","Energy","Materials","Consumer","Technology",
-                                "Consumer","Consumer","Materials","Materials","Infrastructures","Healthcare","Materials","Materials","Infrastructures","Infrastructures","Industrials","Consumer","Energy","Finance","Energy","Materials","Energy"],
-                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing"],
+                    "Ticker": ["AMRT","ASII","BBCA","BBNI","BBRI","BMRI","BRPT","CPIN","GOTO",
+                                "ICBP","INDF","INKP","INTP","ISAT","KLBF","MDKA","TLKM","TOWR","UNTR","UNVR","PGEO","BBTN","PGAS","PTBA"],
+                    "Nama":   ["Sumber Alfaria Trijaya","Astra International","Bank Central Asia","Bank Negara Indonesia","Bank Rakyat Indonesia","Bank Mandiri","Barito Pacific","Charoen Pokphand","GoTo Gojek Tokopedia",
+                                "Indofood CBP","Indofood SM","Indah Kiat Pulp","Indocement","Indosat","Kalbe Farma","Merdeka Copper Gold","Telkom Indonesia","Sarana Menara Nusantara","United Tractors","Unilever Indonesia","Pertamina Geothermal","Bank Tabungan Negara","Perusahaan Gas Negara","Bukit Asam"],
+                    "Sektor": ["Consumer","Industrials","Finance","Finance","Finance","Finance","Materials","Consumer","Technology",
+                                "Consumer","Consumer","Materials","Materials","Infrastructures","Healthcare","Materials","Infrastructures","Infrastructures","Industrials","Consumer","Energy","Finance","Energy","Energy"],
+                    "Status": ["NEW ENTRY","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
+                                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing"],
                 }
                 msci_smallcap = {
-                    "Ticker": ["ADRO","BRMS","BSDE","CTRA","MBMA","MYOR","PTRO","RAJA","BRIS","AADI","CUAN","ESSA","HRTA","WIFI"],
-                    "Nama":   ["Adaro Energy","Bumi Resources Minerals","Bumi Serpong Damai","Ciputra Development","Merdeka Battery Materials","Mayora Indah","Petrosea","Rukun Raharja","Bank Syariah Indonesia","Adaro Andalan Indonesia","Petrindo Jaya Kreasi","ESSA Industries","Hartadinata Abadi","Solusi Net Integrasi"],
-                    "Sektor": ["Energy","Materials","Properties","Properties","Materials","Consumer","Infrastructures","Energy","Finance","Finance","Materials","Materials","Consumer","Technology"],
-                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","NEW ENTRY","NEW ENTRY","NEW ENTRY","NEW ENTRY","NEW ENTRY"],
+                    "Ticker": ["ADRO","AADI","BRMS","CTRA","CUAN","ESSA","HRTA","MBMA","MYOR","RAJA","BRIS","WIFI"],
+                    "Nama":   ["Adaro Energy","Adaro Andalan Indonesia","Bumi Resources Minerals","Ciputra Development","Petrindo Jaya Kreasi","ESSA Industries","Hartadinata Abadi","Merdeka Battery Materials","Mayora Indah","Rukun Raharja","Bank Syariah Indonesia","Solusi Net Integrasi"],
+                    "Sektor": ["Energy","Finance","Materials","Properties","Materials","Materials","Consumer","Materials","Consumer","Energy","Finance","Technology"],
+                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing"],
                 }
                 msci_excluded = {
-                    "Ticker": ["ACES","CLEO","SMGR","JSMR","UNVR"],
-                    "Nama":   ["Ace Hardware Indonesia","Sariguna Primatirta","Semen Indonesia","Jasa Marga","Unilever Indonesia"],
-                    "Sektor": ["Retail","Consumer","Industrials","Infrastructure","Consumer"],
-                    "Status": ["OUT","OUT","OUT","OUT","WATCH — Risiko Delisted"],
+                    "Ticker": ["AMMN","ANTM","AALI","BREN","BSDE","DSNG","MIDI","MIKA","MNCN","PTRO","SIDO","SSMS","TAPG","TKIM","TPIA"],
+                    "Nama":   ["Amman Mineral","Aneka Tambang","Astra Agro Lestari","Barito Renewables","Bumi Serpong Damai","Dharma Satya Nusantara","Midi Utama Indonesia","Mitra Keluarga","MNC Digital Entertainment","Petrosea","Industri Jamu Sido Muncul","Sawit Sumbermas Sarana","Triputra Agro Persada","Pabrik Kertas Tjiwi Kimia","Chandra Asri Pacific"],
+                    "Sektor": ["Materials","Materials","Consumer","Energy","Properties","Consumer","Consumer","Healthcare","Technology","Energy","Healthcare","Consumer","Consumer","Materials","Materials"],
+                    "Status": ["OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT"],
                 }
                 df_msci_std  = pd.DataFrame(msci_standard)
                 df_msci_sm   = pd.DataFrame(msci_smallcap)
