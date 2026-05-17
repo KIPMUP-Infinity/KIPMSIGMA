@@ -20946,9 +20946,20 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             # ════════════════════════════════════════════════════════════════
             # TAB ANALISA IPO — Upload PDF Prospektus → SIGMA Bedah Otomatis
             # ════════════════════════════════════════════════════════════════
+
+            # ── Kategori Header ─────────────────────────────────────────────
+            st.markdown(
+                f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;"
+                f"font-weight:700;letter-spacing:0.14em;text-transform:uppercase;"
+                f"color:{text_sub};margin-bottom:6px;margin-top:4px;'>"
+                "ANALISA IPO</div>",
+                unsafe_allow_html=True
+            )
+
+            # ── 1. BEDAH PROSPEKTUS ─────────────────────────────────────────
             st.markdown(
                 "<div class='trm-section'><div class='trm-section-line'></div>"
-                "<span class='trm-section-label'>📋 ANALISA IPO — BEDAH PROSPEKTUS</span>"
+                "<span class='trm-section-label'>1. 📋 ANALISA IPO — BEDAH PROSPEKTUS</span>"
                 "<div class='trm-section-line'></div></div>",
                 unsafe_allow_html=True
             )
@@ -21170,13 +21181,11 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     </div>
                 </div>""", unsafe_allow_html=True)
 
-            # ════════════════════════════════════════════════════════════════
-            # ⚠️ PROFIL RISIKO & MONEY MANAGEMENT IPO — Selalu Tampil
-            # ════════════════════════════════════════════════════════════════
+            # ── 2. PROFIL RISIKO & MONEY MANAGEMENT ────────────────────────
             st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
             st.markdown(
                 "<div class='trm-section'><div class='trm-section-line'></div>"
-                "<span class='trm-section-label'>⚠️ PROFIL RISIKO & MONEY MANAGEMENT IPO</span>"
+                "<span class='trm-section-label'>2. ⚠️ PROFIL RISIKO & MONEY MANAGEMENT IPO</span>"
                 "<div class='trm-section-line'></div></div>",
                 unsafe_allow_html=True
             )
