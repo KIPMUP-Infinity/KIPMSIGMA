@@ -9505,7 +9505,7 @@ def show_login():
     st.markdown('''
         <div style="text-align:center;margin:0 0 10px;">
             <div style="font-size:1.1rem;font-weight:900;letter-spacing:5px;color:#ffffff;font-family:sans-serif;line-height:1.2;">SIGMA <span style="color:#c9a227;">Σ</span></div>
-            <div class="sigma-tagline" style="font-size:0.62rem;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-top:4px;font-family:sans-serif;">Strategic Intelligence & Global Market Analysis</div>
+            <div class="sigma-tagline" style="font-size:0.72rem;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-top:4px;font-family:sans-serif;">Strategic Intelligence & Global Market Analysis</div>
         </div>
         <style>@media(min-width: 769px) { .sigma-tagline { display: none !important; } }</style>
     ''', unsafe_allow_html=True)
@@ -11953,7 +11953,7 @@ if current_view == "dashboard":
             "UNTR": {"name":"United Tractors Tbk.","cap":320,"owner":"Astra Group","sector":"Industrials","msci":True,"price":24500,"chg":1.02,"vol":"5.6 M"},
             "CPIN": {"name":"Charoen Pokphand Indonesia","cap":195,"owner":"Astra Group","sector":"Consumer Non-Cyclical","msci":True,"price":4800,"chg":-0.62,"vol":"7.1 M"},
             "AUTO": {"name":"Astra Otoparts Tbk.","cap":145,"owner":"Astra Group","sector":"Consumer Cyclical","msci":False,"price":2550,"chg":0.79,"vol":"6.8 M"},
-            "AALI": {"name":"Astra Agro Lestari Tbk.","cap":220,"owner":"Astra Group","sector":"Consumer Non-Cyclical","msci":True,"price":7400,"chg":-0.27,"vol":"3.9 M"},
+            "AALI": {"name":"Astra Agro Lestari Tbk.","cap":220,"owner":"Astra Group","sector":"Consumer Non-Cyclical","msci":False,"price":7400,"chg":-0.27,"vol":"3.9 M"},
             "ACST": {"name":"Astra Infra Solutions Tbk.","cap":85,"owner":"Astra Group","sector":"Industrials","msci":False,"price":1280,"chg":0.47,"vol":"8.1 M"},
             "IMAS": {"name":"Indomobil Sukses Intl.","cap":115,"owner":"Astra Group","sector":"Consumer Cyclical","msci":False,"price":1320,"chg":0.76,"vol":"11.2 M"},
             "GJTL": {"name":"Gajah Tunggal Tbk.","cap":78,"owner":"Astra Group","sector":"Consumer Cyclical","msci":False,"price":820,"chg":-1.08,"vol":"14.6 M"},
@@ -20078,31 +20078,30 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
                  <b style='color:#8b5cf6;'>Efektif sejak:</b> 29 Mei 2026 (MSCI Semi-Annual Review Mei 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
                 <b style='color:#8b5cf6;'>Review berikutnya:</b> Pengumuman ~13 Agu 2026, efektif 28 Agu 2026&nbsp;&nbsp;|&nbsp;&nbsp;
-                <span style='color:{text_sub};'>Jadwal: 2&times; setahun (Feb &amp; Agu). Review interim Mei &amp; Nov. <b>Standard:</b> 24 saham · <b>Small Cap:</b> 12 saham. Sumber: <b>msci.com</b></span>
+                <span style='color:{text_sub};'>Jadwal: 2&times; setahun (Feb &amp; Agu). Review interim Mei &amp; Nov. <b>Standard:</b> 11 saham · <b>Small Cap:</b> 34 saham. Sumber: <b>msci.com</b></span>
                 </div>""", unsafe_allow_html=True)
 
                 import pandas as pd
+                # ── MSCI Indonesia — Efektif 1 Juni 2026 (Semi-Annual Review Mei 2026) ──
+                # Standard: 11 saham (6 deletion: AMMN,BREN,TPIA,DSSA,CUAN,AMRT→turun Small Cap)
+                # Small Cap: AMRT masuk, 13 deletion (AALI,ANTM,APIC,BANK,BSDE,DSNG,MIDI,MIKA,MSIN,SIDO,SSMS,TAPG,TKIM)
                 msci_standard = {
-                    "Ticker": ["AMRT","ASII","BBCA","BBNI","BBRI","BMRI","BRPT","CPIN","GOTO",
-                                "ICBP","INDF","INKP","INTP","ISAT","KLBF","MDKA","TLKM","TOWR","UNTR","UNVR","PGEO","BBTN","PGAS","PTBA"],
-                    "Nama":   ["Sumber Alfaria Trijaya","Astra International","Bank Central Asia","Bank Negara Indonesia","Bank Rakyat Indonesia","Bank Mandiri","Barito Pacific","Charoen Pokphand","GoTo Gojek Tokopedia",
-                                "Indofood CBP","Indofood SM","Indah Kiat Pulp","Indocement","Indosat","Kalbe Farma","Merdeka Copper Gold","Telkom Indonesia","Sarana Menara Nusantara","United Tractors","Unilever Indonesia","Pertamina Geothermal","Bank Tabungan Negara","Perusahaan Gas Negara","Bukit Asam"],
-                    "Sektor": ["Consumer","Industrials","Finance","Finance","Finance","Finance","Materials","Consumer","Technology",
-                                "Consumer","Consumer","Materials","Materials","Infrastructures","Healthcare","Materials","Infrastructures","Infrastructures","Industrials","Consumer","Energy","Finance","Energy","Energy"],
-                    "Status": ["NEW ENTRY","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing"],
+                    "Ticker": ["ASII","BBCA","BBNI","BBRI","BMRI","BRMS","BRPT","CPIN","GOTO","TLKM","UNTR"],
+                    "Nama":   ["Astra International","Bank Central Asia","Bank Negara Indonesia","Bank Rakyat Indonesia","Bank Mandiri","Bumi Resources Minerals","Barito Pacific","Charoen Pokphand","GoTo Gojek Tokopedia","Telkom Indonesia","United Tractors"],
+                    "Sektor": ["Industrials","Finance","Finance","Finance","Finance","Materials","Materials","Consumer","Technology","Infrastructures","Industrials"],
+                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing"],
                 }
                 msci_smallcap = {
-                    "Ticker": ["ADRO","AADI","BRMS","CTRA","CUAN","ESSA","HRTA","MBMA","MYOR","RAJA","BRIS","WIFI"],
-                    "Nama":   ["Adaro Energy","Adaro Andalan Indonesia","Bumi Resources Minerals","Ciputra Development","Petrindo Jaya Kreasi","ESSA Industries","Hartadinata Abadi","Merdeka Battery Materials","Mayora Indah","Rukun Raharja","Bank Syariah Indonesia","Solusi Net Integrasi"],
-                    "Sektor": ["Energy","Finance","Materials","Properties","Materials","Materials","Consumer","Materials","Consumer","Energy","Finance","Technology"],
-                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing"],
+                    "Ticker": ["AADI","ADRO","AKRA","AMRT","ARTO","BFIN","BNGA","BRMS","BUMI","CMRY","CTRA","ENRG","EXCL","GGRM","HEAL","HRUM","INCO","INKP","INTP","ITMG","JSMR","KLBF","MBMA","MDKA","MEDC","MTEL","MYOR","PGAS","PTBA","PTRO","RAJA","SILO","SMGR","TOWR"],
+                    "Nama":   ["Adaro Andalan Indonesia","Adaro Energy","AKR Corporindo","Sumber Alfaria Trijaya","Bank Jago","BFI Finance","Bank CIMB Niaga","Bumi Resources Minerals","Bumi Resources","Cisarua Mountain Dairy","Ciputra Development","Energi Mega Persada","XL Axiata","Gudang Garam","Medikaloka Hermina","Harum Energy","Vale Indonesia","Indah Kiat Pulp","Indocement","Indo Tambangraya Megah","Jasa Marga","Kalbe Farma","Merdeka Battery Materials","Merdeka Copper Gold","Medco Energi","Dayamitra Telekomunikasi","Mayora Indah","Perusahaan Gas Negara","Bukit Asam","Petrosea","Rukun Raharja","Siloam Hospitals","Semen Indonesia","Sarana Menara Nusantara"],
+                    "Sektor": ["Finance","Energy","Energy","Consumer","Finance","Finance","Finance","Materials","Energy","Consumer","Properties","Energy","Infrastructures","Consumer","Healthcare","Energy","Materials","Materials","Materials","Energy","Infrastructures","Healthcare","Materials","Materials","Energy","Infrastructures","Consumer","Energy","Energy","Energy","Energy","Healthcare","Industrials","Infrastructures"],
+                    "Status": ["Existing","Existing","Existing","NEW ENTRY","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing"],
                 }
                 msci_excluded = {
-                    "Ticker": ["AMMN","ANTM","AALI","BREN","BSDE","DSNG","MIDI","MIKA","MNCN","PTRO","SIDO","SSMS","TAPG","TKIM","TPIA"],
-                    "Nama":   ["Amman Mineral","Aneka Tambang","Astra Agro Lestari","Barito Renewables","Bumi Serpong Damai","Dharma Satya Nusantara","Midi Utama Indonesia","Mitra Keluarga","MNC Digital Entertainment","Petrosea","Industri Jamu Sido Muncul","Sawit Sumbermas Sarana","Triputra Agro Persada","Pabrik Kertas Tjiwi Kimia","Chandra Asri Pacific"],
-                    "Sektor": ["Materials","Materials","Consumer","Energy","Properties","Consumer","Consumer","Healthcare","Technology","Energy","Healthcare","Consumer","Consumer","Materials","Materials"],
-                    "Status": ["OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT"],
+                    "Ticker": ["AALI","AMMN","ANTM","APIC","BANK","BREN","BSDE","CUAN","DSNG","DSSA","MIDI","MIKA","MSIN","SIDO","SSMS","TAPG","TKIM","TPIA"],
+                    "Nama":   ["Astra Agro Lestari","Amman Mineral","Aneka Tambang","Pacific Strategic Financial","Bank Aladin Syariah","Barito Renewables","Bumi Serpong Damai","Petrindo Jaya Kreasi","Dharma Satya Nusantara","Dian Swastatika Sentosa","Midi Utama Indonesia","Mitra Keluarga","MNC Digital Entertainment","Industri Jamu Sido Muncul","Sawit Sumbermas Sarana","Triputra Agro Persada","Pabrik Kertas Tjiwi Kimia","Chandra Asri Pacific"],
+                    "Sektor": ["Consumer","Materials","Materials","Finance","Finance","Energy","Properties","Materials","Consumer","Energy","Consumer","Healthcare","Technology","Healthcare","Consumer","Consumer","Materials","Materials"],
+                    "Status": ["OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT","OUT"],
                 }
                 df_msci_std  = pd.DataFrame(msci_standard)
                 df_msci_sm   = pd.DataFrame(msci_smallcap)
