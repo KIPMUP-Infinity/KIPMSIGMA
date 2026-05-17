@@ -20078,13 +20078,13 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
                  <b style='color:#8b5cf6;'>Efektif sejak:</b> 29 Mei 2026 (MSCI Semi-Annual Review Mei 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
                 <b style='color:#8b5cf6;'>Review berikutnya:</b> Pengumuman ~13 Agu 2026, efektif 28 Agu 2026&nbsp;&nbsp;|&nbsp;&nbsp;
-                <span style='color:{text_sub};'>Jadwal: 2&times; setahun (Feb &amp; Agu). Review interim Mei &amp; Nov. <b>Standard:</b> 11 saham · <b>Small Cap:</b> 34 saham. Sumber: <b>msci.com</b></span>
+                <span style='color:{text_sub};'>Jadwal: 2&times; setahun (Feb &amp; Agu). Review interim Mei &amp; Nov. <b>Standard:</b> 11 saham · <b>Small Cap:</b> 33 saham. Sumber: <b>msci.com</b></span>
                 </div>""", unsafe_allow_html=True)
 
                 import pandas as pd
                 # ── MSCI Indonesia — Efektif 1 Juni 2026 (Semi-Annual Review Mei 2026) ──
-                # Standard: 11 saham (6 deletion: AMMN,BREN,TPIA,DSSA,CUAN,AMRT→turun Small Cap)
-                # Small Cap: AMRT masuk, 13 deletion (AALI,ANTM,APIC,BANK,BSDE,DSNG,MIDI,MIKA,MSIN,SIDO,SSMS,TAPG,TKIM)
+                # Standard: 11 saham bertahan; Deletions: AMMN,BREN,TPIA,DSSA,CUAN,AMRT→turun Small Cap
+                # Small Cap: AMRT masuk; Deletions: AALI,ANTM,APIC,BANK,BSDE,DSNG,MIDI,MIKA,MSIN,SIDO,SSMS,TAPG,TKIM
                 msci_standard = {
                     "Ticker": ["ASII","BBCA","BBNI","BBRI","BMRI","BRMS","BRPT","CPIN","GOTO","TLKM","UNTR"],
                     "Nama":   ["Astra International","Bank Central Asia","Bank Negara Indonesia","Bank Rakyat Indonesia","Bank Mandiri","Bumi Resources Minerals","Barito Pacific","Charoen Pokphand","GoTo Gojek Tokopedia","Telkom Indonesia","United Tractors"],
@@ -20092,10 +20092,10 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing"],
                 }
                 msci_smallcap = {
-                    "Ticker": ["AADI","ADRO","AKRA","AMRT","ARTO","BFIN","BNGA","BRMS","BUMI","CMRY","CTRA","ENRG","EXCL","GGRM","HEAL","HRUM","INCO","INKP","INTP","ITMG","JSMR","KLBF","MBMA","MDKA","MEDC","MTEL","MYOR","PGAS","PTBA","PTRO","RAJA","SILO","SMGR","TOWR"],
-                    "Nama":   ["Adaro Andalan Indonesia","Adaro Energy","AKR Corporindo","Sumber Alfaria Trijaya","Bank Jago","BFI Finance","Bank CIMB Niaga","Bumi Resources Minerals","Bumi Resources","Cisarua Mountain Dairy","Ciputra Development","Energi Mega Persada","XL Axiata","Gudang Garam","Medikaloka Hermina","Harum Energy","Vale Indonesia","Indah Kiat Pulp","Indocement","Indo Tambangraya Megah","Jasa Marga","Kalbe Farma","Merdeka Battery Materials","Merdeka Copper Gold","Medco Energi","Dayamitra Telekomunikasi","Mayora Indah","Perusahaan Gas Negara","Bukit Asam","Petrosea","Rukun Raharja","Siloam Hospitals","Semen Indonesia","Sarana Menara Nusantara"],
-                    "Sektor": ["Finance","Energy","Energy","Consumer","Finance","Finance","Finance","Materials","Energy","Consumer","Properties","Energy","Infrastructures","Consumer","Healthcare","Energy","Materials","Materials","Materials","Energy","Infrastructures","Healthcare","Materials","Materials","Energy","Infrastructures","Consumer","Energy","Energy","Energy","Energy","Healthcare","Industrials","Infrastructures"],
-                    "Status": ["Existing","Existing","Existing","NEW ENTRY","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing"],
+                    "Ticker": ["AADI","ADRO","AKRA","AMRT","ARTO","BFIN","BNGA","BUMI","CMRY","CTRA","ENRG","EXCL","GGRM","HEAL","HRUM","INCO","INKP","INTP","ITMG","JSMR","KLBF","MBMA","MDKA","MEDC","MTEL","MYOR","PGAS","PTBA","PTRO","RAJA","SILO","SMGR","TOWR"],
+                    "Nama":   ["Adaro Andalan Indonesia","Adaro Energy","AKR Corporindo","Sumber Alfaria Trijaya","Bank Jago","BFI Finance","Bank CIMB Niaga","Bumi Resources","Cisarua Mountain Dairy","Ciputra Development","Energi Mega Persada","XL Axiata","Gudang Garam","Medikaloka Hermina","Harum Energy","Vale Indonesia","Indah Kiat Pulp","Indocement","Indo Tambangraya Megah","Jasa Marga","Kalbe Farma","Merdeka Battery Materials","Merdeka Copper Gold","Medco Energi","Dayamitra Telekomunikasi","Mayora Indah","Perusahaan Gas Negara","Bukit Asam","Petrosea","Rukun Raharja","Siloam Hospitals","Semen Indonesia","Sarana Menara Nusantara"],
+                    "Sektor": ["Finance","Energy","Energy","Consumer","Finance","Finance","Finance","Energy","Consumer","Properties","Energy","Infrastructures","Consumer","Healthcare","Energy","Materials","Materials","Materials","Energy","Infrastructures","Healthcare","Materials","Materials","Energy","Infrastructures","Consumer","Energy","Energy","Energy","Energy","Healthcare","Industrials","Infrastructures"],
+                    "Status": ["Existing","Existing","Existing","NEW ENTRY","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing"],
                 }
                 msci_excluded = {
                     "Ticker": ["AALI","AMMN","ANTM","APIC","BANK","BREN","BSDE","CUAN","DSNG","DSSA","MIDI","MIKA","MSIN","SIDO","SSMS","TAPG","TKIM","TPIA"],
@@ -20203,33 +20203,19 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 </div>""", unsafe_allow_html=True)
 
                 import pandas as pd
+                # ── LQ45 — Efektif Feb 2026 (Periode Feb–Jul 2026) ──
+                # Additions: MBMA,MTEL,PGEO,PTMP | Deletions: INDY,SCMA,TBIG,TPIA
                 lq45_active_data = {
-                    "Ticker": ["ACES","ADRO","AKRA","AMMN","AMRT","ANTM","ARTO","ASII","BBCA","BBNI",
-                                "BBRI","BBTN","BFIN","BMRI","BREN","BRIS","BRPT","BUKA","CPIN","CTRA","ESSA",
-                                "EXCL","GOTO","HRUM","ICBP","INCO","INDF","INKP","INTP","ISAT","ITMG",
-                                "KLBF","MAPI","MBMA","MDKA","MEDC","MTEL","PGAS","PGEO","PTBA","PTPP",
-                                "SIDO","SMGR","TLKM","TOWR","UNTR"],
-                    "Nama":   ["Ace Hardware","Adaro Energy","AKR Corporindo","Amman Mineral","Alfamart","Aneka Tambang","Bank Jago","Astra International","Bank Central Asia","Bank Negara Indonesia",
-                                "Bank Rakyat Indonesia","Bank Tabungan Negara","BFI Finance","Bank Mandiri","Barito Renewables","Bank Syariah Indonesia","Barito Pacific","Bukalapak","Charoen Pokphand","Ciputra Dev","ESSA Industries",
-                                "XL Axiata","GoTo Gojek Tokopedia","Harum Energy","Indofood CBP","Vale Indonesia","Indofood SM","Indah Kiat Pulp","Indocement","Indosat","Indo Tambangraya",
-                                "Kalbe Farma","Mitra Adiperkasa","Merdeka Battery","Merdeka Copper Gold","Medco Energi","Mitratel","Perusahaan Gas Negara","Pertamina Geothermal","Bukit Asam","PP Persero",
-                                "Sido Muncul","Semen Indonesia","Telkom Indonesia","Sarana Menara Nusantara","United Tractors"],
-                    "Sektor": ["Cyclical","Energy","Energy","Materials","Consumer","Materials","Finance","Industrials","Finance","Finance",
-                                "Finance","Finance","Finance","Finance","Energy","Finance","Materials","Technology","Consumer","Properties","Materials",
-                                "Infrastructures","Technology","Energy","Consumer","Materials","Consumer","Materials","Materials","Infrastructures","Energy",
-                                "Healthcare","Cyclical","Materials","Materials","Energy","Infrastructures","Energy","Energy","Energy","Infrastructures",
-                                "Healthcare","Materials","Infrastructures","Infrastructures","Industrials"],
-                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                                "Existing","Existing","Existing","Existing","NEW ENTRY","Existing","Existing","Existing","Existing","Existing","Existing",
-                                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","NEW ENTRY","Existing","Existing",
-                                "Existing","Existing","Existing","Existing","Existing"],
+                    "Ticker": ['ACES', 'ADRO', 'AKRA', 'AMMN', 'AMRT', 'ANTM', 'ARTO', 'ASII', 'BBCA', 'BBNI', 'BBRI', 'BBTN', 'BMRI', 'BRIS', 'BRPT', 'BUKA', 'CPIN', 'EMTK', 'ENRG', 'ESSA', 'EXCL', 'GGRM', 'GOTO', 'HRUM', 'ICBP', 'INCO', 'INDF', 'INKP', 'INTP', 'ITMG', 'JSMR', 'KLBF', 'MAPI', 'MBMA', 'MDKA', 'MEDC', 'MTEL', 'PGAS', 'PGEO', 'PTBA', 'PTMP', 'SIDO', 'SMGR', 'SRTG', 'TLKM', 'TOWR', 'UNTR', 'UNVR'],
+                    "Nama":   ['Ace Hardware', 'Adaro Energy', 'AKR Corporindo', 'Amman Mineral', 'Alfamart', 'Aneka Tambang', 'Bank Jago', 'Astra International', 'Bank Central Asia', 'Bank Negara Indonesia', 'Bank Rakyat Indonesia', 'Bank Tabungan Negara', 'Bank Mandiri', 'Bank Syariah Indonesia', 'Barito Pacific', 'Bukalapak', 'Charoen Pokphand', 'Elang Mahkota Teknologi', 'Energi Mega Persada', 'ESSA Industries', 'XL Axiata', 'Gudang Garam', 'GoTo Gojek Tokopedia', 'Harum Energy', 'Indofood CBP', 'Vale Indonesia', 'Indofood SM', 'Indah Kiat Pulp', 'Indocement', 'Indo Tambangraya Megah', 'Jasa Marga', 'Kalbe Farma', 'Mitra Adiperkasa', 'Merdeka Battery Materials', 'Merdeka Copper Gold', 'Medco Energi', 'Dayamitra Telekomunikasi', 'Perusahaan Gas Negara', 'Pertamina Geothermal', 'Bukit Asam', 'Aneka Gas Industri', 'Industri Jamu Sido Muncul', 'Semen Indonesia', 'Saratoga Investama', 'Telkom Indonesia', 'Sarana Menara Nusantara', 'United Tractors', 'Unilever Indonesia'],
+                    "Sektor": ['Consumer', 'Energy', 'Energy', 'Materials', 'Consumer', 'Materials', 'Finance', 'Industrials', 'Finance', 'Finance', 'Finance', 'Finance', 'Finance', 'Finance', 'Materials', 'Technology', 'Consumer', 'Technology', 'Energy', 'Materials', 'Infrastructures', 'Consumer', 'Technology', 'Energy', 'Consumer', 'Materials', 'Consumer', 'Materials', 'Materials', 'Energy', 'Infrastructures', 'Healthcare', 'Consumer', 'Materials', 'Materials', 'Energy', 'Infrastructures', 'Energy', 'Energy', 'Energy', 'Industrials', 'Healthcare', 'Industrials', 'Finance', 'Infrastructures', 'Infrastructures', 'Industrials', 'Consumer'],
+                    "Status": ['NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'NEW ENTRY', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing'],
                 }
                 lq45_out_data = {
-                    "Ticker": ["EMTK","SCMA","SRTG"],
-                    "Nama":   ["Elang Mahkota Teknologi","Surya Citra Media","Saratoga Investama"],
-                    "Sektor": ["Technology","Consumer","Financials"],
-                    "Status": ["OUT","OUT","OUT"],
+                    "Ticker": ['INDY', 'SCMA', 'TBIG', 'TPIA'],
+                    "Nama":   ['Indika Energy', 'Surya Citra Media', 'Tower Bersama Infrastructure', 'Chandra Asri Pacific'],
+                    "Sektor": ['Energy', 'Consumer', 'Infrastructures', 'Materials'],
+                    "Status": ["OUT","OUT","OUT","OUT"],
                 }
                 df_lq45_active = pd.DataFrame(lq45_active_data)
                 df_lq45_out    = pd.DataFrame(lq45_out_data)
@@ -20263,25 +20249,19 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 </div>""", unsafe_allow_html=True)
 
                 import pandas as pd
+                # ── IDX30 — Efektif Feb 2026 (Periode Feb–Jul 2026) ──
+                # Additions: ACES,ICBP,INKP,PGEO | Deletions: ARTO,EMTK,ESSA,HRUM
                 idx30_active_data = {
-                    "Ticker": ["ADRO","AKRA","AMMN","AMRT","ANTM","ARTO","ASII","BBCA","BBNI","BBRI",
-                                "BBTN","BMRI","BREN","BRIS","BRPT","CPIN","ESSA","EXCL","GOTO","ICBP","INCO",
-                                "INDF","ISAT","ITMG","KLBF","MBMA","MDKA","MEDC","PGAS","PTBA","TLKM"],
-                    "Nama":   ["Adaro Energy","AKR Corporindo","Amman Mineral","Alfamart","Aneka Tambang","Bank Jago","Astra International","Bank Central Asia","Bank Negara Indonesia","Bank Rakyat Indonesia",
-                                "Bank Tabungan Negara","Bank Mandiri","Barito Renewables","Bank Syariah Indonesia","Barito Pacific","Charoen Pokphand","ESSA Industries","XL Axiata","GoTo Gojek Tokopedia","Indofood CBP","Vale Indonesia",
-                                "Indofood SM","Indosat","Indo Tambangraya","Kalbe Farma","Merdeka Battery","Merdeka Copper Gold","Medco Energi","Perusahaan Gas Negara","Bukit Asam","Telkom Indonesia"],
-                    "Sektor": ["Energy","Energy","Materials","Consumer","Materials","Finance","Industrials","Finance","Finance","Finance",
-                                "Finance","Finance","Energy","Finance","Materials","Consumer","Materials","Infra","Technology","Consumer","Materials",
-                                "Consumer","Infra","Energy","Healthcare","Materials","Materials","Energy","Energy","Energy","Infra"],
-                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                                "Existing","Existing","NEW ENTRY","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing"],
+                    "Ticker": ['ACES', 'ADRO', 'AKRA', 'AMRT', 'ANTM', 'ASII', 'BBCA', 'BBNI', 'BBRI', 'BMRI', 'BRPT', 'BUKA', 'CPIN', 'EXCL', 'GOTO', 'ICBP', 'INCO', 'INDF', 'INKP', 'INTP', 'ITMG', 'KLBF', 'MDKA', 'MEDC', 'PGAS', 'PGEO', 'PTBA', 'TLKM', 'UNTR', 'UNVR'],
+                    "Nama":   ['Ace Hardware', 'Adaro Energy', 'AKR Corporindo', 'Alfamart', 'Aneka Tambang', 'Astra International', 'Bank Central Asia', 'Bank Negara Indonesia', 'Bank Rakyat Indonesia', 'Bank Mandiri', 'Barito Pacific', 'Bukalapak', 'Charoen Pokphand', 'XL Axiata', 'GoTo Gojek Tokopedia', 'Indofood CBP', 'Vale Indonesia', 'Indofood SM', 'Indah Kiat Pulp', 'Indocement', 'Indo Tambangraya Megah', 'Kalbe Farma', 'Merdeka Copper Gold', 'Medco Energi', 'Perusahaan Gas Negara', 'Pertamina Geothermal', 'Bukit Asam', 'Telkom Indonesia', 'United Tractors', 'Unilever Indonesia'],
+                    "Sektor": ['Consumer', 'Energy', 'Energy', 'Consumer', 'Materials', 'Industrials', 'Finance', 'Finance', 'Finance', 'Finance', 'Materials', 'Technology', 'Consumer', 'Infrastructures', 'Technology', 'Consumer', 'Materials', 'Consumer', 'Materials', 'Materials', 'Energy', 'Healthcare', 'Materials', 'Energy', 'Energy', 'Energy', 'Energy', 'Infrastructures', 'Industrials', 'Consumer'],
+                    "Status": ['NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing'],
                 }
                 idx30_out_data = {
-                    "Ticker": ["EMTK","SCMA"],
-                    "Nama":   ["Elang Mahkota Teknologi","Surya Citra Media"],
-                    "Sektor": ["Technology","Consumer"],
-                    "Status": ["OUT","OUT"],
+                    "Ticker": ['ARTO', 'EMTK', 'ESSA', 'HRUM'],
+                    "Nama":   ['Bank Jago', 'Elang Mahkota Teknologi', 'ESSA Industries', 'Harum Energy'],
+                    "Sektor": ['Finance', 'Technology', 'Materials', 'Energy'],
+                    "Status": ["OUT","OUT","OUT","OUT"],
                 }
                 df_idx30_active = pd.DataFrame(idx30_active_data)
                 df_idx30_out    = pd.DataFrame(idx30_out_data)
@@ -20315,45 +20295,20 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 </div>""", unsafe_allow_html=True)
 
                 import pandas as pd
+                # ── IDX80 — Efektif 4 Mei 2026 (Evaluasi April 2026) ──
+                # Additions: AUTO,CMRY,GJTL,MAPA,MBMA,NCKL,PGEO,PTMP,SMIL,SPTO,TPMA
+                # Deletions: AVIA,BBYB,BMTR,DOID,HMSP,JKON,OMED,PNBN,RMKE,TINS,WIKA
                 idx80_active_data = {
-                    "Ticker": ["AADI","ACES","AKRA","AMMN","AMRT","ANTM","ARTO","ASII","BBCA","BBNI",
-                                "BBRI","BBTN","BFIN","BIKA","BJBR","BKSL","BMRI","BREN","BRIS","BRMS",
-                                "BRPT","BUKA","CBAN","CBDK","CPIN","CTRA","CUAN","DEWA","DSNG","EMTK",
-                                "ESSA","EXCL","GGRM","GOTO","HEAL","HRUM","HRTA","ICBP","INCO","INDF",
-                                "INKP","INTP","ISAT","ITMG","JPFA","KLBF","MAPI","MBMA","MDKA","MEDC",
-                                "MIDI","MIKA","MKNT","MTEL","NCKL","PGAS","PGEO","PTBA","PTPP","RALS",
-                                "SIDO","SMGR","SMRA","TAPG","TBIG","TKIM","TLKM","TMAS","TOWR","TPIA",
-                                "UNTR","UNVR","VKTR","WIFI","WSKT","ADRO","BUMI","INDY","SRTG"],
-                    "Nama":   ["Adaro Andalan Indonesia","Ace Hardware","AKR Corporindo","Amman Mineral","Alfamart","Aneka Tambang","Bank Jago","Astra International","Bank Central Asia","Bank Negara Indonesia",
-                                "Bank Rakyat Indonesia","Bank Tabungan Negara","BFI Finance","Bika Solusi Perdana","Bank BJB","Sentul City","Bank Mandiri","Barito Renewables","Bank Syariah Indonesia","Bumi Resources Minerals",
-                                "Barito Pacific","Bukalapak","Century Bancorp","Cahaya Bintang Medan","Charoen Pokphand","Ciputra Dev","Petrindo Jaya Kreasi","Darma Henwa","Dharma Satya Nusantara","Elang Mahkota",
-                                "ESSA Industries","XL Axiata","Gudang Garam","GoTo Gojek Tokopedia","Medikaloka Hermina","Harum Energy","Hartadinata Abadi","Indofood CBP","Vale Indonesia","Indofood SM",
-                                "Indah Kiat Pulp","Indocement","Indosat","Indo Tambangraya","Japfa Comfeed","Kalbe Farma","Mitra Adiperkasa","Merdeka Battery","Merdeka Copper Gold","Medco Energi",
-                                "Midi Utama","Mitra Keluarga","Mitra Komunikasi Nusantara","Mitratel","Trimegah Bangun Persada","Perusahaan Gas Negara","Pertamina Geothermal","Bukit Asam","PP Persero","Ramayana Lestari",
-                                "Sido Muncul","Semen Indonesia","Summarecon Agung","Triputra Agro Persada","Tower Bersama","Tjiwi Kimia","Telkom Indonesia","Temas","Sarana Menara Nusantara","Chandra Asri",
-                                "United Tractors","Unilever Indonesia","VKTR Teknologi","Solusi Net Integrasi","Waskita Karya","Adaro Energy","Bumi Resources","Indika Energy","Saratoga Investama"],
-                    "Sektor": ["Finance","Consumer","Energy","Materials","Consumer","Materials","Finance","Industrials","Finance","Finance",
-                                "Finance","Finance","Finance","Property","Finance","Property","Finance","Energy","Finance","Materials",
-                                "Materials","Technology","Finance","Property","Consumer","Property","Materials","Energy","Agri","Technology",
-                                "Materials","Infra","Consumer","Technology","Healthcare","Energy","Finance","Consumer","Materials","Consumer",
-                                "Materials","Materials","Infra","Energy","Consumer","Healthcare","Consumer","Materials","Materials","Energy",
-                                "Consumer","Healthcare","Infra","Infra","Materials","Energy","Energy","Energy","Infra","Consumer",
-                                "Healthcare","Materials","Property","Agri","Infra","Materials","Infra","Infra","Infra","Materials",
-                                "Industrials","Consumer","Technology","Technology","Infra","Energy","Energy","Energy","Finance"],
-                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                                "Existing","Existing","Existing","Existing","Existing","NEW ENTRY","Existing","Existing","Existing","Existing",
-                                "Existing","Existing","Existing","NEW ENTRY","Existing","Existing","Existing","NEW ENTRY","Existing","Existing",
-                                "Existing","Existing","NEW ENTRY","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","NEW ENTRY",
-                                "Existing","Existing","Existing","NEW ENTRY","Existing","Existing","Existing","Existing","Existing"],
+                    "Ticker": ['ACES', 'ADRO', 'AGRO', 'AKRA', 'AMMN', 'AMRT', 'ANTM', 'ARTO', 'ASII', 'AUTO', 'BBCA', 'BBNI', 'BBRI', 'BBTN', 'BFIN', 'BMRI', 'BRIS', 'BRPT', 'BSDE', 'BUKA', 'CENX', 'CMRY', 'CPIN', 'CTRA', 'DSNG', 'ELSA', 'EMTK', 'ENRG', 'ERAA', 'ESSA', 'EXCL', 'GGRM', 'GJTL', 'GOTO', 'HEAL', 'HRUM', 'ICBP', 'INCO', 'INDF', 'INDY', 'INKP', 'INTP', 'ITMG', 'JPFA', 'JSMR', 'KLBF', 'MAHA', 'MAPA', 'MAPI', 'MBMA', 'MDKA', 'MEDC', 'MTEL', 'MYOR', 'NCKL', 'PGAS', 'PGEO', 'PTBA', 'PTMP', 'PTPP', 'SCMA', 'SIDO', 'SILO', 'SMGR', 'SMIL', 'SPTO', 'SRTG', 'SSIA', 'TBIG', 'TKIM', 'TLKM', 'TOWR', 'TPIA', 'TPMA', 'UNTR', 'UNVR', 'WIKA', 'WSKT', 'WTON', 'WIM'],
+                    "Nama":   ['Ace Hardware', 'Adaro Energy', 'Bank Raya Indonesia', 'AKR Corporindo', 'Amman Mineral', 'Alfamart', 'Aneka Tambang', 'Bank Jago', 'Astra International', 'Astra Otoparts', 'Bank Central Asia', 'Bank Negara Indonesia', 'Bank Rakyat Indonesia', 'Bank Tabungan Negara', 'BFI Finance', 'Bank Mandiri', 'Bank Syariah Indonesia', 'Barito Pacific', 'Bumi Serpong Damai', 'Bukalapak', 'Century Casinos', 'Cisarua Mountain Dairy', 'Charoen Pokphand', 'Ciputra Development', 'Dharma Satya Nusantara', 'Elnusa', 'Elang Mahkota Teknologi', 'Energi Mega Persada', 'Erajaya Swasembada', 'ESSA Industries', 'XL Axiata', 'Gudang Garam', 'Gajah Tunggal', 'GoTo Gojek Tokopedia', 'Medikaloka Hermina', 'Harum Energy', 'Indofood CBP', 'Vale Indonesia', 'Indofood SM', 'Indika Energy', 'Indah Kiat Pulp', 'Indocement', 'Indo Tambangraya Megah', 'Japfa Comfeed', 'Jasa Marga', 'Kalbe Farma', 'Maharaksa Biru Energi', 'Map Aktif Adiperkasa', 'Mitra Adiperkasa', 'Merdeka Battery Materials', 'Merdeka Copper Gold', 'Medco Energi', 'Dayamitra Telekomunikasi', 'Mayora Indah', 'Trimegah Bangun Persada', 'Perusahaan Gas Negara', 'Pertamina Geothermal', 'Bukit Asam', 'Aneka Gas Industri', 'PP Persero', 'Surya Citra Media', 'Industri Jamu Sido Muncul', 'Siloam Hospitals', 'Semen Indonesia', 'Sumber Mas Indah Plywood', 'Surya Pertiwi', 'Saratoga Investama', 'Surya Semesta Internusa', 'Tower Bersama Infrastructure', 'Pabrik Kertas Tjiwi Kimia', 'Telkom Indonesia', 'Sarana Menara Nusantara', 'Chandra Asri Pacific', 'Trans Power Marine', 'United Tractors', 'Unilever Indonesia', 'Wijaya Karya', 'Waskita Karya', 'Wijaya Karya Beton', 'Wahana Interfood Nusantara'],
+                    "Sektor": ['Consumer', 'Energy', 'Finance', 'Energy', 'Materials', 'Consumer', 'Materials', 'Finance', 'Industrials', 'Industrials', 'Finance', 'Finance', 'Finance', 'Finance', 'Finance', 'Finance', 'Finance', 'Materials', 'Properties', 'Technology', 'Finance', 'Consumer', 'Consumer', 'Properties', 'Consumer', 'Energy', 'Technology', 'Energy', 'Consumer', 'Materials', 'Infrastructures', 'Consumer', 'Consumer', 'Technology', 'Healthcare', 'Energy', 'Consumer', 'Materials', 'Consumer', 'Energy', 'Materials', 'Materials', 'Energy', 'Consumer', 'Infrastructures', 'Healthcare', 'Energy', 'Consumer', 'Consumer', 'Materials', 'Materials', 'Energy', 'Infrastructures', 'Consumer', 'Materials', 'Energy', 'Energy', 'Energy', 'Industrials', 'Industrials', 'Consumer', 'Healthcare', 'Healthcare', 'Industrials', 'Materials', 'Consumer', 'Finance', 'Properties', 'Infrastructures', 'Materials', 'Infrastructures', 'Infrastructures', 'Materials', 'Infrastructures', 'Industrials', 'Consumer', 'Industrials', 'Industrials', 'Industrials', 'Consumer'],
+                    "Status": ['Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'NEW ENTRY', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'NEW ENTRY', 'NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing'],
                 }
                 idx80_out_data = {
-                    "Ticker": ["BTPS","DSSA","MTEL","NCKL","BREN","RAJA","SMGR"],
-                    "Nama":   ["Bank BTPN Syariah","Dian Swastatika Sentosa","Mitratel (periode lalu)","Trimegah Bangun Persada","Barito Renewables (periode lalu)","Rukun Raharja (periode lalu)","Semen Indonesia"],
-                    "Sektor": ["Finance","Energy","Infra","Materials","Energy","Energy","Industrials"],
-                    "Status": ["OUT","OUT","OUT","OUT","OUT","OUT","OUT"],
+                    "Ticker": ['AVIA', 'BBYB', 'BMTR', 'DOID', 'HMSP', 'JKON', 'OMED', 'PNBN', 'RMKE', 'TINS', 'WIKA'],
+                    "Nama":   ['Avia Avian', 'Bank Neo Commerce', 'Global Mediacom', 'Delta Dunia Makmur', 'HM Sampoerna', 'Jaya Konstruksi', 'Omni Hospitals', 'Bank Pan Indonesia', 'Rimau Multi Putra Pratama', 'Timah', 'Wijaya Karya'],
+                    "Sektor": ['Consumer', 'Finance', 'Consumer', 'Energy', 'Consumer', 'Industrials', 'Healthcare', 'Finance', 'Energy', 'Materials', 'Industrials'],
+                    "Status": ['OUT', 'OUT', 'OUT', 'OUT', 'OUT', 'OUT', 'OUT', 'OUT', 'OUT', 'OUT', 'OUT'],
                 }
                 df_idx80_active = pd.DataFrame(idx80_active_data)
                 df_idx80_out    = pd.DataFrame(idx80_out_data)
@@ -20387,40 +20342,23 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 </div>""", unsafe_allow_html=True)
 
                 import pandas as pd
+                # ── KOMPAS100 — Efektif Feb 2026 (Periode Feb–Jul 2026) ──
+                # Additions: AMMN,AUTO,BREN,CUAN,GOTO,MAPA,MBMA,NCKL,PGEO,PTMP,SMIL
+                # Deletions: AVIA,BBYB,BMTR,DOID,HMSP,JKON,OMED,RMKE,TINS,WIKA,WSKT
                 kompas100_data = {
-                    "Ticker": ["AADI","ACES","ADRO","AKRA","AMMN","AMRT","ANTM","ARTO","ASII","BBCA",
-                                "BBNI","BBRI","BBTN","BFIN","BJBR","BKSL","BMRI","BREN","BRIS","BRMS",
-                                "BRPT","BUKA","CBDK","CLEO","CPIN","CTRA","CUAN","DEWA","DSNG","DSSA",
-                                "EMTK","ESSA","EXCL","GGRM","GOTO","HEAL","HMSP","HRUM","HRTA","ICBP",
-                                "INCO","INDF","INKP","INTP","ISAT","ITMG","JPFA","KLBF","LSIP","MAPI",
-                                "MBMA","MDKA","MEDC","MIDI","MIKA","MTEL","NCKL","PGAS","PGEO","PTBA",
-                                "PTPP","RAJA","RALS","SIDO","SIMP","SMGR","SMRA","SRTG","TBIG","TKIM",
-                                "TLKM","TMAS","TOWR","TPIA","UNTR","UNVR","VKTR","WIFI","WIKA","WSKT",
-                                "BUMI","TAPG","PNBN","ELSA","BNGA","DNET","AVIA","MCAS","PWON","DMAS",
-                                "SMCB","INDY","AALI","BULL","BBHI","NIKL","CBAN","HRTA","BFIN","ADHI"],
-                    "Nama":   ["Adaro Andalan","Ace Hardware","Adaro Energy","AKR Corporindo","Amman Mineral","Alfamart","Aneka Tambang","Bank Jago","Astra International","Bank Central Asia",
-                                "Bank Negara Indonesia","Bank Rakyat Indonesia","Bank Tabungan Negara","BFI Finance","Bank BJB","Sentul City","Bank Mandiri","Barito Renewables","Bank Syariah Indonesia","Bumi Resources Minerals",
-                                "Barito Pacific","Bukalapak","Cahaya Bintang Medan","Sariguna Primatirta","Charoen Pokphand","Ciputra Dev","Petrindo Jaya Kreasi","Darma Henwa","Dharma Satya Nusantara","Dian Swastatika",
-                                "Elang Mahkota","ESSA Industries","XL Axiata","Gudang Garam","GoTo Gojek Tokopedia","Medikaloka Hermina","HM Sampoerna","Harum Energy","Hartadinata Abadi","Indofood CBP",
-                                "Vale Indonesia","Indofood SM","Indah Kiat Pulp","Indocement","Indosat","Indo Tambangraya","Japfa Comfeed","Kalbe Farma","London Sumatra","Mitra Adiperkasa",
-                                "Merdeka Battery","Merdeka Copper Gold","Medco Energi","Midi Utama","Mitra Keluarga","Mitratel","Trimegah Bangun Persada","Perusahaan Gas Negara","Pertamina Geothermal","Bukit Asam",
-                                "PP Persero","Rukun Raharja","Ramayana Lestari","Sido Muncul","Salim Ivomas Pratama","Semen Indonesia","Summarecon Agung","Saratoga Investama","Tower Bersama","Tjiwi Kimia",
-                                "Telkom Indonesia","Temas","Sarana Menara Nusantara","Chandra Asri","United Tractors","Unilever Indonesia","VKTR Teknologi","Solusi Net Integrasi","Wijaya Karya","Waskita Karya",
-                                "Bumi Resources","Triputra Agro Persada","Bank Pan Indonesia","Elnusa","Bank CIMB Niaga","Indoritel Makmur","Avia Avian","Metrocom Global","Pakuwon Jati","Puradelta Lestari",
-                                "Solusi Bangun Indonesia","Indika Energy","Astra Agro Lestari","Buana Lintas Lautan","Allo Bank","Harita Nickel","Century Bancorp","Hartadinata Abadi","BFI Finance","Adhi Karya"],
-                    "Sektor": ["Finance","Consumer","Energy","Energy","Materials","Consumer","Materials","Finance","Industrials","Finance",
-                                "Finance","Finance","Finance","Finance","Finance","Property","Finance","Energy","Finance","Materials",
-                                "Materials","Technology","Property","Consumer","Consumer","Property","Materials","Energy","Agri","Energy",
-                                "Technology","Materials","Infra","Consumer","Technology","Healthcare","Consumer","Energy","Finance","Consumer",
-                                "Materials","Consumer","Materials","Materials","Infra","Energy","Consumer","Healthcare","Agri","Consumer",
-                                "Materials","Materials","Energy","Consumer","Healthcare","Infra","Materials","Energy","Energy","Energy",
-                                "Infra","Energy","Consumer","Healthcare","Agri","Materials","Property","Finance","Infra","Materials",
-                                "Infra","Infra","Infra","Materials","Industrials","Consumer","Technology","Technology","Infra","Infra",
-                                "Energy","Agri","Finance","Energy","Finance","Consumer","Consumer","Infra","Property","Property",
-                                "Materials","Energy","Agri","Infra","Finance","Materials","Finance","Finance","Finance","Infra"],
-                    "Status": ["Existing"]*100,
+                    "Ticker": ['ACES', 'ADRO', 'AGRO', 'AKRA', 'AMMN', 'AMRT', 'ANTM', 'ARTO', 'ASII', 'ASRI', 'AUTO', 'BBCA', 'BBNI', 'BBRI', 'BBTN', 'BFIN', 'BMRI', 'BREN', 'BRIS', 'BRPT', 'BSDE', 'BUKA', 'CENX', 'CMRY', 'CPIN', 'CTRA', 'CUAN', 'DSNG', 'ELSA', 'EMTK', 'ENRG', 'ERAA', 'ESSA', 'EXCL', 'GGRM', 'GJTL', 'GOTO', 'HEAL', 'HRUM', 'ICBP', 'INCO', 'INDF', 'INDY', 'INKP', 'INTP', 'ITMG', 'JPFA', 'JSMR', 'KLBF', 'MAHA', 'MAPA', 'MAPI', 'MBMA', 'MDKA', 'MEDC', 'MTEL', 'MYOR', 'NCKL', 'NELY', 'PGAS', 'PGEO', 'PTBA', 'PTMP', 'PTPP', 'PWON', 'RALS', 'SCMA', 'SIDO', 'SILO', 'SIMP', 'SMGR', 'SMIL', 'SMRA', 'SPTO', 'SRTG', 'SSIA', 'SSMS', 'STAA', 'TAPG', 'TBIG', 'TKIM', 'TLKM', 'TMAS', 'TOWR', 'TPIA', 'TPMA', 'TUGU', 'UNTR', 'UNVR', 'WIM', 'WTON'],
+                    "Nama":   ['Ace Hardware', 'Adaro Energy', 'Bank Raya Indonesia', 'AKR Corporindo', 'Amman Mineral', 'Alfamart', 'Aneka Tambang', 'Bank Jago', 'Astra International', 'Alam Sutera Realty', 'Astra Otoparts', 'Bank Central Asia', 'Bank Negara Indonesia', 'Bank Rakyat Indonesia', 'Bank Tabungan Negara', 'BFI Finance', 'Bank Mandiri', 'Barito Renewables', 'Bank Syariah Indonesia', 'Barito Pacific', 'Bumi Serpong Damai', 'Bukalapak', 'Century Casinos', 'Cisarua Mountain Dairy', 'Charoen Pokphand', 'Ciputra Development', 'Petrindo Jaya Kreasi', 'Dharma Satya Nusantara', 'Elnusa', 'Elang Mahkota Teknologi', 'Energi Mega Persada', 'Erajaya Swasembada', 'ESSA Industries', 'XL Axiata', 'Gudang Garam', 'Gajah Tunggal', 'GoTo Gojek Tokopedia', 'Medikaloka Hermina', 'Harum Energy', 'Indofood CBP', 'Vale Indonesia', 'Indofood SM', 'Indika Energy', 'Indah Kiat Pulp', 'Indocement', 'Indo Tambangraya Megah', 'Japfa Comfeed', 'Jasa Marga', 'Kalbe Farma', 'Maharaksa Biru Energi', 'Map Aktif Adiperkasa', 'Mitra Adiperkasa', 'Merdeka Battery Materials', 'Merdeka Copper Gold', 'Medco Energi', 'Dayamitra Telekomunikasi', 'Mayora Indah', 'Trimegah Bangun Persada', 'Nelly Sekuritas Indonesia', 'Perusahaan Gas Negara', 'Pertamina Geothermal', 'Bukit Asam', 'Aneka Gas Industri', 'PP Persero', 'Pakuwon Jati', 'Ramayana Lestari', 'Surya Citra Media', 'Industri Jamu Sido Muncul', 'Siloam Hospitals', 'Salim Ivomas Pratama', 'Semen Indonesia', 'Sumber Mas Indah Plywood', 'Summarecon Agung', 'Surya Pertiwi', 'Saratoga Investama', 'Surya Semesta Internusa', 'Sawit Sumbermas Sarana', 'Saratoga Agricultural Asia', 'Triputra Agro Persada', 'Tower Bersama Infrastructure', 'Pabrik Kertas Tjiwi Kimia', 'Telkom Indonesia', 'Temas', 'Sarana Menara Nusantara', 'Chandra Asri Pacific', 'Trans Power Marine', 'Asuransi Tugu Pratama', 'United Tractors', 'Unilever Indonesia', 'Wahana Interfood Nusantara', 'Wijaya Karya Beton'],
+                    "Sektor": ['Consumer', 'Energy', 'Finance', 'Energy', 'Materials', 'Consumer', 'Materials', 'Finance', 'Industrials', 'Properties', 'Industrials', 'Finance', 'Finance', 'Finance', 'Finance', 'Finance', 'Finance', 'Energy', 'Finance', 'Materials', 'Properties', 'Technology', 'Finance', 'Consumer', 'Consumer', 'Properties', 'Materials', 'Consumer', 'Energy', 'Technology', 'Energy', 'Consumer', 'Materials', 'Infrastructures', 'Consumer', 'Consumer', 'Technology', 'Healthcare', 'Energy', 'Consumer', 'Materials', 'Consumer', 'Energy', 'Materials', 'Materials', 'Energy', 'Consumer', 'Infrastructures', 'Healthcare', 'Energy', 'Consumer', 'Consumer', 'Materials', 'Materials', 'Energy', 'Infrastructures', 'Consumer', 'Materials', 'Finance', 'Energy', 'Energy', 'Energy', 'Industrials', 'Industrials', 'Properties', 'Consumer', 'Consumer', 'Healthcare', 'Healthcare', 'Consumer', 'Industrials', 'Materials', 'Properties', 'Consumer', 'Finance', 'Properties', 'Consumer', 'Consumer', 'Consumer', 'Infrastructures', 'Materials', 'Infrastructures', 'Infrastructures', 'Infrastructures', 'Materials', 'Infrastructures', 'Finance', 'Industrials', 'Consumer', 'Consumer', 'Industrials'],
+                    "Status": ['Existing', 'Existing', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'NEW ENTRY', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing', 'Existing'],
+                }
+                kompas100_out_data = {
+                    "Ticker": ['AVIA', 'BBYB', 'BMTR', 'DOID', 'HMSP', 'JKON', 'OMED', 'RMKE', 'TINS', 'WIKA', 'WSKT'],
+                    "Nama":   ['Avia Avian', 'Bank Neo Commerce', 'Global Mediacom', 'Delta Dunia Makmur', 'HM Sampoerna', 'Jaya Konstruksi', 'Omni Hospitals', 'Rimau Multi Putra Pratama', 'Timah', 'Wijaya Karya', 'Waskita Karya'],
+                    "Sektor": ['Consumer', 'Finance', 'Consumer', 'Energy', 'Consumer', 'Industrials', 'Healthcare', 'Energy', 'Materials', 'Industrials', 'Industrials'],
+                    "Status": ['OUT', 'OUT', 'OUT', 'OUT', 'OUT', 'OUT', 'OUT', 'OUT', 'OUT', 'OUT', 'OUT'],
                 }
                 df_k100 = pd.DataFrame(kompas100_data)
+                df_k100_out = pd.DataFrame(kompas100_out_data)
 
                 # filter
                 _k100_sektors = ["Semua Sektor"] + sorted(df_k100["Sektor"].unique().tolist())
@@ -20429,6 +20367,9 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 
                 st.markdown(f"<p style='font-size:0.8rem;color:#ef4444;margin-bottom:8px;'>{len(_df_k100_show)} saham ditampilkan</p>", unsafe_allow_html=True)
                 st.dataframe(_df_k100_show, use_container_width=True, hide_index=True, on_select="ignore", height=38+len(_df_k100_show)*36)
+
+                st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:18px 0 8px;font-weight:700;'>02 · KELUAR DARI KOMPAS100</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_k100_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=38+len(df_k100_out)*36)
 
                 st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
                 <div class='trm-card-title'>ℹ️ TENTANG KOMPAS100</div>
