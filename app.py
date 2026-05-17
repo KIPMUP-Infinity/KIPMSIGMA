@@ -16134,17 +16134,138 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 </div>""", unsafe_allow_html=True)
 
         with _fs_tab_ai:
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🤖 AI ANALYST & TANYA SIGMA AI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🤖 ANALISA AI DARI HASIL SCREENER DAN TANYA SIGMA AI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+            # ── SECTION 1: ANALISA AI DARI HASIL SCREENER ──────────────────────
             st.markdown(
-                "<div style='background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.25);"
-                "border-left:3px solid #a78bfa;border-radius:0 8px 8px 0;padding:16px 20px;font-family:IBM Plex Mono,monospace;"
-                "font-size:0.78rem;color:rgba(255,255,255,0.7);'>"
-                "🤖 Fitur <b>Analisa AI dari Hasil Screener</b> dan <b>Tanya SIGMA AI</b> telah dipindahkan ke tab<br>"
-                "<b style='color:#a78bfa;'>🤖 AI ANALYST & TANYA SIGMA AI</b> di bagian <b>⚡ Alpha Screener</b> (menu navigasi atas).<br><br>"
-                "<span style='color:rgba(255,255,255,0.45);font-size:0.72rem;'>Jalankan screener di tab 📊 FUNDAMENTAL SCREENER ini, lalu buka Alpha Screener → 🤖 AI ANALYST untuk analisa AI mendalam.</span>"
-                "</div>",
+                "<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
+                "color:rgba(255,255,255,0.4);margin-bottom:10px;letter-spacing:0.05em;'>"
+                "🤖 ANALISA AI DARI HASIL SCREENER — Jalankan screener di tab sebelah, "
+                "lalu klik tombol di bawah untuk analisa AI mendalam.</p>",
                 unsafe_allow_html=True
             )
+
+            # Ambil data screener dari session state
+            _ai_pass_data  = st.session_state.get("fs_pass_data", [])
+            _ai_watch_data = st.session_state.get("fs_watch_data", [])
+            _ai_sektor     = st.session_state.get("fs_sektor_last", st.session_state.get("fs_sektor", "Semua Sektor"))
+            _ai_sk         = st.session_state.get("fs_sk_last", st.session_state.get("fs_sort_key", "-"))
+            _ai_ts         = st.session_state.get("fs_ts_last", st.session_state.get("fs_ts", ""))
+
+            if not _ai_pass_data and not _ai_watch_data:
+                _ai_raw = st.session_state.get("fs_results", {})
+                if _ai_raw:
+                    _ai_pass_data  = [(tk, d) for tk, d in _ai_raw.items() if d.get("score", 0) >= 4]
+                    _ai_watch_data = [(tk, d) for tk, d in _ai_raw.items() if d.get("score", 0) in (2, 3)]
+
+            _has_screener_data = bool(_ai_pass_data or _ai_watch_data)
+
+            if _has_screener_data:
+                _n_pass_ai  = len(_ai_pass_data)
+                _n_watch_ai = len(_ai_watch_data)
+                st.markdown(
+                    f"<div style='background:rgba(38,166,154,0.06);border:1px solid rgba(38,166,154,0.2);"
+                    f"border-radius:8px;padding:10px 16px;margin-bottom:10px;font-family:IBM Plex Mono,monospace;"
+                    f"font-size:0.72rem;color:rgba(255,255,255,0.6);'>"
+                    f"✅ Data screener tersedia: <b style='color:#26a69a;'>{_n_pass_ai} saham LOLOS</b> · "
+                    f"<b style='color:#a78bfa;'>{_n_watch_ai} WATCHLIST</b> · "
+                    f"Sektor: {_ai_sektor} · {_ai_ts}</div>",
+                    unsafe_allow_html=True
+                )
+            else:
+                st.warning("⚠️ Belum ada data screener. Jalankan screener di tab **📊 FUNDAMENTAL SCREENER** terlebih dahulu, lalu kembali ke sini.")
+
+            _btn_ai_screener = st.button(
+                "🤖 ANALISA AI DARI HASIL SCREENER",
+                key="btn_fs_analisa_ai",
+                use_container_width=True,
+                type="primary",
+                disabled=not _has_screener_data
+            )
+
+            if _btn_ai_screener and _has_screener_data:
+                with st.spinner("🤖 SIGMA AI menganalisa hasil screener..."):
+                    _pass_summary = []
+                    for _tk, _d in (_ai_pass_data or [])[:20]:
+                        _pass_summary.append(
+                            f"{_tk}: ROE={_d.get('roe',0):.1f}%, DER={_d.get('der',0):.2f}x, "
+                            f"NPM={_d.get('npm',0):.1f}%, PBV={_d.get('pbv',0):.2f}x, "
+                            f"Score={_d.get('score',0)}/6"
+                        )
+                    _watch_summary = []
+                    for _tk, _d in (_ai_watch_data or [])[:10]:
+                        _watch_summary.append(
+                            f"{_tk}: ROE={_d.get('roe',0):.1f}%, Score={_d.get('score',0)}/6"
+                        )
+                    _ai_screen_prompt = (
+                        "Kamu adalah SIGMA AI \u2014 analis fundamental senior (framework: Buffett, Graham, Damodaran, Lynch).\n\n"
+                        f"HASIL FUNDAMENTAL SCREENER IDX:\nSektor: {_ai_sektor} | Sort: {_ai_sk} | Timestamp: {_ai_ts}\n\n"
+                        "PASS (Buffett Score \u22654/6):\n"
+                        + ("\n".join(_pass_summary) if _pass_summary else "Tidak ada") + "\n\n"
+                        "WATCHLIST (Score 2-3/6):\n"
+                        + ("\n".join(_watch_summary) if _watch_summary else "Tidak ada") + "\n\n"
+                        "TUGASMU (jawab dalam Bahasa Indonesia, padat & actionable, maks 600 kata, Markdown):\n\n"
+                        "## \U0001f3c6 TOP PICKS \u2014 Saham Terbaik dari Hasil Screener\n"
+                        "Pilih 3-5 saham terkuat dari PASS list. Jelaskan kenapa unggul (ROE tinggi, DER rendah, dll).\n\n"
+                        "## \u26a0\ufe0f WATCHLIST \u2014 Saham dengan Potensi tapi Perlu Monitor\n"
+                        "Pilih 2-3 dari watchlist yang menarik. Apa yang perlu diperbaiki agar masuk PASS?\n\n"
+                        "## \U0001f4ca ANALISA SEKTORAL\n"
+                        f"Tren sektor {_ai_sektor}: mengapa saham-saham ini muncul? Katalis makro?\n\n"
+                        "## \U0001f4a1 STRATEGI ENTRY\n"
+                        "Rekomendasi pendekatan entry: accumulate bertahap / tunggu pullback / dll. Konteks valuasi (PBV/PER) per saham top.\n\n"
+                        "## \U0001f6a8 RISIKO UTAMA\n"
+                        "2-3 risiko fundamental yang perlu diwaspadai dari hasil screener ini.\n\n"
+                        "Padat, berbasis data screener di atas. JANGAN mengarang angka di luar data yang diberikan."
+                    )
+                    _ai_screen_result = _call_ai_reco(_ai_screen_prompt)
+                    if _ai_screen_result:
+                        st.session_state["fs_ai_result"] = _ai_screen_result
+
+            if st.session_state.get("fs_ai_result"):
+                st.markdown(
+                    "<div style='background:rgba(38,166,154,0.06);border:1px solid rgba(38,166,154,0.25);"
+                    "border-left:3px solid #26a69a;border-radius:0 8px 8px 0;padding:10px 16px;margin-top:4px;"
+                    "font-size:0.68rem;color:#26a69a;font-family:IBM Plex Mono,monospace;'>"
+                    "🤖 SIGMA AI · Fundamental Screener Analysis</div>",
+                    unsafe_allow_html=True
+                )
+                st.markdown(st.session_state["fs_ai_result"])
+            elif not _btn_ai_screener and _has_screener_data:
+                st.caption("💡 Klik tombol di atas untuk memulai analisa AI dari hasil screener.")
+
+            st.markdown("<hr style='border-color:rgba(255,255,255,0.06);margin:22px 0 16px;'>", unsafe_allow_html=True)
+
+            # ── SECTION 2: TANYA SIGMA AI ──────────────────────────────────────
+            st.markdown(
+                "<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
+                "color:rgba(255,255,255,0.4);margin-bottom:8px;letter-spacing:0.05em;'>"
+                "💬 TANYA SIGMA AI — Analisa mendalam saham apapun dari hasil screener</p>",
+                unsafe_allow_html=True
+            )
+            _fs_ai_q2 = st.text_input(
+                "", 
+                placeholder="Contoh: analisa fundamental BBCA | bandingkan TLKM vs BBRI | bagaimana valuasi ASII? | apakah BMRI layak akumulasi?",
+                key="fs_ai_tab_q",
+                label_visibility="collapsed"
+            )
+            _fsa2_btn = st.button("🔍 Tanya SIGMA AI", key="btn_fs_ai_tab", use_container_width=False)
+            if _fsa2_btn and _fs_ai_q2.strip():
+                with st.spinner("SIGMA AI menganalisa..."):
+                    _fsa2_prompt = (
+                        "Kamu adalah SIGMA AI, analis fundamental multi-disiplin (Damodaran, Graham, Lynch, Schilit). "
+                        "Pertanyaan: " + _fs_ai_q2 + ". Jawab dalam bahasa Indonesia, padat dan actionable."
+                    )
+                    _fsa2_result = _call_ai_reco(_fsa2_prompt)
+                    st.session_state["fs_ai_tab_ans"] = _fsa2_result
+            if st.session_state.get("fs_ai_tab_ans"):
+                st.markdown(
+                    "<div style='background:rgba(38,166,154,0.06);border:1px solid rgba(38,166,154,0.25);"
+                    "border-left:3px solid #26a69a;border-radius:0 8px 8px 0;padding:10px 16px;margin-top:4px;"
+                    "font-size:0.68rem;color:#26a69a;font-family:IBM Plex Mono,monospace;'>"
+                    "💬 SIGMA AI · Jawaban Pertanyaan</div>",
+                    unsafe_allow_html=True
+                )
+                st.markdown(st.session_state["fs_ai_tab_ans"])
     st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True) 
 
 # ─────────────────────────────────────────────
@@ -20811,7 +20932,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily Plan &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
 
-        alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_brosum, alpha_tab_ipo, alpha_tab_trackrecord, alpha_tab_ai_analyst = st.tabs([
+        alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_brosum, alpha_tab_ipo, alpha_tab_trackrecord = st.tabs([
             "  ⚡ ALPHA STOCK INSIGHT  ",
             "  📅 DAILY PLAN  ",
             "  📆 WEEKLY PLAN  ",
@@ -20819,7 +20940,6 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             "  🏦 BROKER SUMMARY  ",
             "  📋 ANALISA IPO  ",
             "  🏆 TRACK RECORD  ",
-            "  🤖 AI ANALYST & TANYA SIGMA AI  ",
         ])
 
         with alpha_tab_ipo:
@@ -21515,143 +21635,6 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 " — Data lengkap semua plan tersimpan</div>",
                 unsafe_allow_html=True)
             render_history_table("reko", limit=50)
-
-        with alpha_tab_ai_analyst:
-            # ════════════════════════════════════════════════════════════════
-            # TAB AI ANALYST & TANYA SIGMA AI — Analisa dari Fundamental Screener
-            # ════════════════════════════════════════════════════════════════
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🤖 ANALISA AI DARI HASIL SCREENER DAN TANYA SIGMA AI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown(
-                "<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
-                "color:rgba(255,255,255,0.4);margin-bottom:10px;letter-spacing:0.05em;'>"
-                "🤖 ANALISA AI DARI HASIL SCREENER — Jalankan screener di tab "
-                "<b>Market Data → 📊 Fundamental Screener</b>, "
-                "lalu klik tombol di bawah untuk analisa AI mendalam.</p>",
-                unsafe_allow_html=True
-            )
-
-            # Ambil data screener dari session state
-            _ai_pass_data  = st.session_state.get("fs_pass_data", [])
-            _ai_watch_data = st.session_state.get("fs_watch_data", [])
-            _ai_sektor     = st.session_state.get("fs_sektor_last", st.session_state.get("fs_sektor", "Semua Sektor"))
-            _ai_sk         = st.session_state.get("fs_sk_last", st.session_state.get("fs_sort_key", "-"))
-            _ai_ts         = st.session_state.get("fs_ts_last", st.session_state.get("fs_ts", ""))
-
-            if not _ai_pass_data and not _ai_watch_data:
-                _ai_raw = st.session_state.get("fs_results", {})
-                if _ai_raw:
-                    _ai_pass_data  = [(tk, d) for tk, d in _ai_raw.items() if d.get("score", 0) >= 4]
-                    _ai_watch_data = [(tk, d) for tk, d in _ai_raw.items() if d.get("score", 0) in (2, 3)]
-
-            _has_screener_data_alpha = bool(_ai_pass_data or _ai_watch_data)
-
-            if _has_screener_data_alpha:
-                _n_pass_ai  = len(_ai_pass_data)
-                _n_watch_ai = len(_ai_watch_data)
-                st.markdown(
-                    f"<div style='background:rgba(38,166,154,0.06);border:1px solid rgba(38,166,154,0.2);"
-                    f"border-radius:8px;padding:10px 16px;margin-bottom:10px;font-family:IBM Plex Mono,monospace;"
-                    f"font-size:0.72rem;color:rgba(255,255,255,0.6);'>"
-                    f"✅ Data screener tersedia: <b style='color:#26a69a;'>{_n_pass_ai} saham LOLOS</b> · "
-                    f"<b style='color:#a78bfa;'>{_n_watch_ai} WATCHLIST</b> · "
-                    f"Sektor: {_ai_sektor} · {_ai_ts}</div>",
-                    unsafe_allow_html=True
-                )
-            else:
-                st.warning("⚠️ Belum ada data screener. Buka **Market Data → Fundamental Screener** → pilih sektor → klik **SCREEN**, lalu kembali ke sini.")
-
-            _btn_ai_screener_alpha = st.button(
-                "🤖 ANALISA AI DARI HASIL SCREENER",
-                key="btn_alpha_ai_screener",
-                use_container_width=True,
-                type="primary",
-                disabled=not _has_screener_data_alpha
-            )
-
-            if _btn_ai_screener_alpha and _has_screener_data_alpha:
-                with st.spinner("🤖 SIGMA AI menganalisa hasil screener..."):
-                    _pass_summary = []
-                    for _tk, _d in (_ai_pass_data or [])[:20]:
-                        _pass_summary.append(
-                            f"{_tk}: ROE={_d.get('roe',0):.1f}%, DER={_d.get('der',0):.2f}x, "
-                            f"NPM={_d.get('npm',0):.1f}%, PBV={_d.get('pbv',0):.2f}x, "
-                            f"Score={_d.get('score',0)}/6"
-                        )
-                    _watch_summary = []
-                    for _tk, _d in (_ai_watch_data or [])[:10]:
-                        _watch_summary.append(
-                            f"{_tk}: ROE={_d.get('roe',0):.1f}%, Score={_d.get('score',0)}/6"
-                        )
-                    _ai_screen_prompt_alpha = (
-                        "Kamu adalah SIGMA AI — analis fundamental senior (framework: Buffett, Graham, Damodaran, Lynch).\n\n"
-                        f"HASIL FUNDAMENTAL SCREENER IDX:\nSektor: {_ai_sektor} | Sort: {_ai_sk} | Timestamp: {_ai_ts}\n\n"
-                        "PASS (Buffett Score ≥4/6):\n"
-                        + ("\n".join(_pass_summary) if _pass_summary else "Tidak ada") + "\n\n"
-                        "WATCHLIST (Score 2-3/6):\n"
-                        + ("\n".join(_watch_summary) if _watch_summary else "Tidak ada") + "\n\n"
-                        "TUGASMU (jawab dalam Bahasa Indonesia, padat & actionable, maks 600 kata, Markdown):\n\n"
-                        "## 🏆 TOP PICKS — Saham Terbaik dari Hasil Screener\n"
-                        "Pilih 3-5 saham terkuat dari PASS list. Jelaskan kenapa unggul (ROE tinggi, DER rendah, dll).\n\n"
-                        "## ⚠️ WATCHLIST — Saham dengan Potensi tapi Perlu Monitor\n"
-                        "Pilih 2-3 dari watchlist yang menarik. Apa yang perlu diperbaiki agar masuk PASS?\n\n"
-                        "## 📊 ANALISA SEKTORAL\n"
-                        f"Tren sektor {_ai_sektor}: mengapa saham-saham ini muncul? Katalis makro?\n\n"
-                        "## 💡 STRATEGI ENTRY\n"
-                        "Rekomendasi pendekatan entry: accumulate bertahap / tunggu pullback / dll. Konteks valuasi (PBV/PER) per saham top.\n\n"
-                        "## 🚨 RISIKO UTAMA\n"
-                        "2-3 risiko fundamental yang perlu diwaspadai dari hasil screener ini.\n\n"
-                        "Padat, berbasis data screener di atas. JANGAN mengarang angka di luar data yang diberikan."
-                    )
-                    _ai_screen_result_alpha = _call_ai_reco(_ai_screen_prompt_alpha)
-                    if _ai_screen_result_alpha:
-                        st.session_state["alpha_ai_screener_result"] = _ai_screen_result_alpha
-
-            if st.session_state.get("alpha_ai_screener_result"):
-                st.markdown(
-                    "<div style='background:rgba(38,166,154,0.06);border:1px solid rgba(38,166,154,0.25);"
-                    "border-left:3px solid #26a69a;border-radius:0 8px 8px 0;padding:10px 16px;margin-top:4px;"
-                    "font-size:0.68rem;color:#26a69a;font-family:IBM Plex Mono,monospace;'>"
-                    "🤖 SIGMA AI · Fundamental Screener Analysis</div>",
-                    unsafe_allow_html=True
-                )
-                st.markdown(st.session_state["alpha_ai_screener_result"])
-            elif not _btn_ai_screener_alpha and _has_screener_data_alpha:
-                st.caption("💡 Klik tombol di atas untuk memulai analisa AI dari hasil screener.")
-
-            st.markdown("<hr style='border-color:rgba(255,255,255,0.06);margin:22px 0 16px;'>", unsafe_allow_html=True)
-
-            # ── SECTION 2: TANYA SIGMA AI ──────────────────────────────────────
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>💬 TANYA SIGMA AI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown(
-                "<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
-                "color:rgba(255,255,255,0.4);margin-bottom:8px;letter-spacing:0.05em;'>"
-                "💬 TANYA SIGMA AI — Analisa mendalam saham apapun dari hasil screener</p>",
-                unsafe_allow_html=True
-            )
-            _alpha_ai_q2 = st.text_input(
-                "", 
-                placeholder="Contoh: analisa fundamental BBCA | bandingkan TLKM vs BBRI | bagaimana valuasi ASII?",
-                key="alpha_ai_tab_q",
-                label_visibility="collapsed"
-            )
-            _alpha_fsa2_btn = st.button("🔍 Tanya SIGMA AI", key="btn_alpha_ai_tab", use_container_width=False)
-            if _alpha_fsa2_btn and _alpha_ai_q2.strip():
-                with st.spinner("SIGMA AI menganalisa..."):
-                    _alpha_fsa2_prompt = (
-                        "Kamu adalah SIGMA AI, analis fundamental multi-disiplin (Damodaran, Graham, Lynch, Schilit). "
-                        "Pertanyaan: " + _alpha_ai_q2 + ". Jawab dalam bahasa Indonesia, padat dan actionable."
-                    )
-                    _alpha_fsa2_result = _call_ai_reco(_alpha_fsa2_prompt)
-                    st.session_state["alpha_ai_tab_ans"] = _alpha_fsa2_result
-            if st.session_state.get("alpha_ai_tab_ans"):
-                st.markdown(
-                    "<div style='background:rgba(38,166,154,0.06);border:1px solid rgba(38,166,154,0.25);"
-                    "border-left:3px solid #26a69a;border-radius:0 8px 8px 0;padding:10px 16px;margin-top:4px;"
-                    "font-size:0.68rem;color:#26a69a;font-family:IBM Plex Mono,monospace;'>"
-                    "💬 SIGMA AI · Jawaban Pertanyaan</div>",
-                    unsafe_allow_html=True
-                )
-                st.markdown(st.session_state["alpha_ai_tab_ans"])
 
         with alpha_tab_insight:
 
