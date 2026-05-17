@@ -13407,634 +13407,646 @@ table{{margin-bottom:0!important;}}
         # TAB: BOND YIELD — Indonesia 10Y vs DXY vs USD/IDR
         # ════════════════════════════════════════════════════════════════
         with _md_subtab_yield:
-            st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏛️ INDONESIA BOND YIELD TRACKER — 10Y vs DXY vs USD/IDR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown("""<div style='background:#0a0e1a;border-top:1px solid rgba(139,92,246,0.3);border-bottom:1px solid rgba(139,92,246,0.3);border-left:3px solid #8b5cf6;padding:8px 0;font-size:0.82rem;color:rgba(255,255,255,0.75);overflow:hidden;white-space:nowrap;margin-bottom:10px;'>
-  <div style='display:inline-block;animation:sigma-scroll-yield 40s linear infinite;padding-left:100%;'>
-    <b style='color:#8b5cf6;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
-    Indonesia 10Y Bond Yield saat ini ~6.85%. Spread terhadap US 10Y (~4.47%) sekitar +238 bps. DXY melemah ke ~100.2 mendukung Rupiah di level 16.200-16.400.
-    Sentimen: Hot money masih bertahan di EM Asia. Risiko utama: data inflasi AS &amp; keputusan Fed di Jun 2026. Pantau yield spread sebagai sinyal arus modal.
-    &nbsp;&nbsp;&nbsp;<span style='color:rgba(139,92,246,0.5);'>◆</span>&nbsp;&nbsp;&nbsp;
-    <b style='color:#8b5cf6;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
-    Indonesia 10Y Bond Yield saat ini ~6.85%. Spread terhadap US 10Y (~4.47%) sekitar +238 bps. DXY melemah ke ~100.2 mendukung Rupiah di level 16.200-16.400.
-    Sentimen: Hot money masih bertahan di EM Asia. Risiko utama: data inflasi AS &amp; keputusan Fed di Jun 2026. Pantau yield spread sebagai sinyal arus modal.
-  </div>
-</div>
-<style>@keyframes sigma-scroll-yield{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}</style>""", unsafe_allow_html=True)
-            st.markdown(f"""<div style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};
-                background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
-                padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
-             <b style='color:#8b5cf6;'>Cakupan:</b> Indonesia Government Bond Yield 10Y (INDOGB10Y)&nbsp;&nbsp;|&nbsp;&nbsp;
-            <b style='color:#8b5cf6;'>Pembanding:</b> DXY (US Dollar Index) &amp; USD/IDR (Rupiah)&nbsp;&nbsp;|&nbsp;&nbsp;
-            <span style='color:{text_sub};'>Update: Mingguan (setiap Senin) · Sumber: <b>yfinance / Database SIGMA</b></span>
-            </div>""", unsafe_allow_html=True)
+            # ── NESTED SUB-TABS: Bond Yield ──────────────────────────────────
+            _by_tab_id, _by_tab_us, _by_tab_ai = st.tabs([
+                "  🏛️ INDONESIA BOND YIELD  ",
+                "  🏛️ US BOND YIELD  ",
+                "  🤖 AI ANALYST — BOND YIELD  ",
+            ])
 
-            # ── Hardcoded historical data: Indonesia 10Y Yield, DXY, USD/IDR ──
-            # Update setiap awal minggu / awal bulan
-            # Data: [tanggal, Indonesia10Y(%), DXY, USDIDR]
-            _yield_history = [
-                # ── 2024 Q2 ──
-                {"Bulan": "Apr 2024", "Indonesia 10Y (%)": 6.82, "DXY": 104.5, "USD/IDR": 15_875},
-                {"Bulan": "May 2024", "Indonesia 10Y (%)": 6.95, "DXY": 105.1, "USD/IDR": 16_100},
-                {"Bulan": "Jun 2024", "Indonesia 10Y (%)": 7.05, "DXY": 105.8, "USD/IDR": 16_350},
-                # ── 2024 Q3 ──
-                {"Bulan": "Jul 2024", "Indonesia 10Y (%)": 6.98, "DXY": 104.3, "USD/IDR": 16_200},
-                {"Bulan": "Aug 2024", "Indonesia 10Y (%)": 6.85, "DXY": 101.7, "USD/IDR": 15_980},
-                {"Bulan": "Sep 2024", "Indonesia 10Y (%)": 6.62, "DXY": 100.8, "USD/IDR": 15_450},
-                # ── 2024 Q4 ──
-                {"Bulan": "Oct 2024", "Indonesia 10Y (%)": 6.88, "DXY": 103.2, "USD/IDR": 15_700},
-                {"Bulan": "Nov 2024", "Indonesia 10Y (%)": 7.10, "DXY": 106.8, "USD/IDR": 15_900},
-                {"Bulan": "Dec 2024", "Indonesia 10Y (%)": 7.22, "DXY": 108.2, "USD/IDR": 16_100},
-                # ── 2025 Q1 ──
-                {"Bulan": "Jan 2025", "Indonesia 10Y (%)": 7.15, "DXY": 107.5, "USD/IDR": 16_320},
-                {"Bulan": "Feb 2025", "Indonesia 10Y (%)": 7.02, "DXY": 106.7, "USD/IDR": 16_250},
-                {"Bulan": "Mar 2025", "Indonesia 10Y (%)": 6.95, "DXY": 104.1, "USD/IDR": 16_400},
-                # ── 2025 Q2 ──
-                {"Bulan": "Apr 2025", "Indonesia 10Y (%)": 7.08, "DXY": 99.2,  "USD/IDR": 16_820},
-                {"Bulan": "May 2025", "Indonesia 10Y (%)": 6.98, "DXY": 100.4, "USD/IDR": 16_600},
-                {"Bulan": "Jun 2025", "Indonesia 10Y (%)": 6.85, "DXY": 101.1, "USD/IDR": 16_450},
-                # ── 2025 Q3 ──
-                {"Bulan": "Jul 2025", "Indonesia 10Y (%)": 6.72, "DXY": 99.8,  "USD/IDR": 16_180},
-                {"Bulan": "Aug 2025", "Indonesia 10Y (%)": 6.68, "DXY": 101.3, "USD/IDR": 16_250},
-                {"Bulan": "Sep 2025", "Indonesia 10Y (%)": 6.75, "DXY": 102.5, "USD/IDR": 16_380},
-                # ── 2025 Q4 ──
-                {"Bulan": "Oct 2025", "Indonesia 10Y (%)": 6.90, "DXY": 103.8, "USD/IDR": 16_520},
-                {"Bulan": "Nov 2025", "Indonesia 10Y (%)": 7.05, "DXY": 105.2, "USD/IDR": 16_650},
-                {"Bulan": "Dec 2025", "Indonesia 10Y (%)": 7.18, "DXY": 107.4, "USD/IDR": 16_780},
-                # ── 2026 Q1 ──
-                {"Bulan": "Jan 2026", "Indonesia 10Y (%)": 7.25, "DXY": 108.1, "USD/IDR": 16_890},
-                {"Bulan": "Feb 2026", "Indonesia 10Y (%)": 7.12, "DXY": 106.3, "USD/IDR": 16_720},
-                {"Bulan": "Mar 2026", "Indonesia 10Y (%)": 7.05, "DXY": 104.2, "USD/IDR": 16_550},
-                # ── 2026 Q2 ──
-                {"Bulan": "Apr 2026", "Indonesia 10Y (%)": 6.95, "DXY": 99.8,  "USD/IDR": 16_420},
-                {"Bulan": "May 2026", "Indonesia 10Y (%)": 6.88, "DXY": 99.2,  "USD/IDR": 16_350},
-            ]
-
-            import pandas as pd
-            df_yield = pd.DataFrame(_yield_history)
-
-            # ── KPI Cards Row ──
-            _y_latest   = _yield_history[-1]
-            _y_prev     = _yield_history[-2]
-            _y_12m_ago  = _yield_history[-13] if len(_yield_history) >= 13 else _yield_history[0]
-            _y_peak     = max(_yield_history, key=lambda x: x["Indonesia 10Y (%)"])
-            _y_trough   = min(_yield_history, key=lambda x: x["Indonesia 10Y (%)"])
-
-            _dy_mom   = _y_latest["Indonesia 10Y (%)"] - _y_prev["Indonesia 10Y (%)"]
-            _dy_yoy   = _y_latest["Indonesia 10Y (%)"] - _y_12m_ago["Indonesia 10Y (%)"]
-            _ddxy_mom = _y_latest["DXY"] - _y_prev["DXY"]
-            _didr_mom = _y_latest["USD/IDR"] - _y_prev["USD/IDR"]
-
-            def _yield_arrow(v): return ("▲ " if v > 0 else "▼ ") + f"{abs(v):.2f}"
-            def _yield_color(v, inverse=False):
-                pos = v > 0
-                if inverse: pos = not pos
-                return "#f23645" if pos else "#26a69a"
-
-            _yc1, _yc2, _yc3, _yc4 = st.columns(4)
-            with _yc1:
-                st.markdown(f"""<div class='trm-card'>
-                <div class='trm-card-title'>INDONESIA 10Y YIELD</div>
-                <div style='font-size:2rem;font-weight:700;color:#8b5cf6;'>{_y_latest["Indonesia 10Y (%)"]:.2f}%</div>
-                <div style='color:{_yield_color(_dy_mom, inverse=True)};font-size:0.82rem;margin-top:4px;'>
-                  {_yield_arrow(_dy_mom)}% vs bulan lalu
-                </div>
-                <div style='color:{text_sub};font-size:0.75rem;margin-top:2px;'>
-                  YoY: <span style='color:{_yield_color(_dy_yoy, inverse=True)};'>{_yield_arrow(_dy_yoy)}%</span>
-                </div></div>""", unsafe_allow_html=True)
-            with _yc2:
-                st.markdown(f"""<div class='trm-card'>
-                <div class='trm-card-title'>DXY (US DOLLAR INDEX)</div>
-                <div style='font-size:2rem;font-weight:700;color:#f5a623;'>{_y_latest["DXY"]:.1f}</div>
-                <div style='color:{_yield_color(_ddxy_mom, inverse=True)};font-size:0.82rem;margin-top:4px;'>
-                  {_yield_arrow(_ddxy_mom)} vs bulan lalu
-                </div>
-                <div style='color:{text_sub};font-size:0.75rem;margin-top:2px;'>DXY naik = tekanan Rupiah &amp; yield SBN</div>
+            with _by_tab_id:
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏛️ INDONESIA BOND YIELD TRACKER — 10Y vs DXY vs USD/IDR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                st.markdown("""<div style='background:#0a0e1a;border-top:1px solid rgba(139,92,246,0.3);border-bottom:1px solid rgba(139,92,246,0.3);border-left:3px solid #8b5cf6;padding:8px 0;font-size:0.82rem;color:rgba(255,255,255,0.75);overflow:hidden;white-space:nowrap;margin-bottom:10px;'>
+      <div style='display:inline-block;animation:sigma-scroll-yield 40s linear infinite;padding-left:100%;'>
+        <b style='color:#8b5cf6;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
+        Indonesia 10Y Bond Yield saat ini ~6.85%. Spread terhadap US 10Y (~4.47%) sekitar +238 bps. DXY melemah ke ~100.2 mendukung Rupiah di level 16.200-16.400.
+        Sentimen: Hot money masih bertahan di EM Asia. Risiko utama: data inflasi AS &amp; keputusan Fed di Jun 2026. Pantau yield spread sebagai sinyal arus modal.
+        &nbsp;&nbsp;&nbsp;<span style='color:rgba(139,92,246,0.5);'>◆</span>&nbsp;&nbsp;&nbsp;
+        <b style='color:#8b5cf6;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
+        Indonesia 10Y Bond Yield saat ini ~6.85%. Spread terhadap US 10Y (~4.47%) sekitar +238 bps. DXY melemah ke ~100.2 mendukung Rupiah di level 16.200-16.400.
+        Sentimen: Hot money masih bertahan di EM Asia. Risiko utama: data inflasi AS &amp; keputusan Fed di Jun 2026. Pantau yield spread sebagai sinyal arus modal.
+      </div>
+    </div>
+    <style>@keyframes sigma-scroll-yield{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}</style>""", unsafe_allow_html=True)
+                st.markdown(f"""<div style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};
+                    background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
+                    padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
+                 <b style='color:#8b5cf6;'>Cakupan:</b> Indonesia Government Bond Yield 10Y (INDOGB10Y)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <b style='color:#8b5cf6;'>Pembanding:</b> DXY (US Dollar Index) &amp; USD/IDR (Rupiah)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <span style='color:{text_sub};'>Update: Mingguan (setiap Senin) · Sumber: <b>yfinance / Database SIGMA</b></span>
                 </div>""", unsafe_allow_html=True)
-            with _yc3:
-                st.markdown(f"""<div class='trm-card'>
-                <div class='trm-card-title'>USD/IDR (RUPIAH)</div>
-                <div style='font-size:2rem;font-weight:700;color:#26a69a;'>Rp {_y_latest["USD/IDR"]:,}</div>
-                <div style='color:{_yield_color(_didr_mom, inverse=True)};font-size:0.82rem;margin-top:4px;'>
-                  {("▲ " if _didr_mom > 0 else "▼ ")}{abs(_didr_mom):,.0f} vs bulan lalu
-                </div>
-                <div style='color:{text_sub};font-size:0.75rem;margin-top:2px;'>IDR melemah = tekanan yield naik</div>
-                </div>""", unsafe_allow_html=True)
-            with _yc4:
-                _yield_range = _y_peak["Indonesia 10Y (%)"] - _y_trough["Indonesia 10Y (%)"]
-                _yield_pos_pct = (_y_latest["Indonesia 10Y (%)"] - _y_trough["Indonesia 10Y (%)"]) / _yield_range * 100 if _yield_range else 50
-                _yld_signal = "⚠️ TINGGI — Tekanan Valuasi" if _y_latest["Indonesia 10Y (%)"] >= 7.0 else ("✅ MODERAT — Kondusif" if _y_latest["Indonesia 10Y (%)"] < 6.8 else "🟡 NORMAL")
-                _yld_sig_color = "#f23645" if _y_latest["Indonesia 10Y (%)"] >= 7.0 else ("#26a69a" if _y_latest["Indonesia 10Y (%)"] < 6.8 else "#f5a623")
-                st.markdown(f"""<div class='trm-card'>
-                <div class='trm-card-title'>SINYAL YIELD</div>
-                <div style='font-size:1.1rem;font-weight:700;color:{_yld_sig_color};margin-top:4px;'>{_yld_signal}</div>
-                <div style='color:{text_sub};font-size:0.78rem;margin-top:6px;'>
-                  Posisi: <b>{_yield_pos_pct:.0f}th</b> percentile (12M)<br>
-                  Range: {_y_trough["Indonesia 10Y (%)"]:.2f}% — {_y_peak["Indonesia 10Y (%)"]:.2f}%
-                </div></div>""", unsafe_allow_html=True)
 
-            st.markdown("<br>", unsafe_allow_html=True)
+                # ── Hardcoded historical data: Indonesia 10Y Yield, DXY, USD/IDR ──
+                # Update setiap awal minggu / awal bulan
+                # Data: [tanggal, Indonesia10Y(%), DXY, USDIDR]
+                _yield_history = [
+                    # ── 2024 Q2 ──
+                    {"Bulan": "Apr 2024", "Indonesia 10Y (%)": 6.82, "DXY": 104.5, "USD/IDR": 15_875},
+                    {"Bulan": "May 2024", "Indonesia 10Y (%)": 6.95, "DXY": 105.1, "USD/IDR": 16_100},
+                    {"Bulan": "Jun 2024", "Indonesia 10Y (%)": 7.05, "DXY": 105.8, "USD/IDR": 16_350},
+                    # ── 2024 Q3 ──
+                    {"Bulan": "Jul 2024", "Indonesia 10Y (%)": 6.98, "DXY": 104.3, "USD/IDR": 16_200},
+                    {"Bulan": "Aug 2024", "Indonesia 10Y (%)": 6.85, "DXY": 101.7, "USD/IDR": 15_980},
+                    {"Bulan": "Sep 2024", "Indonesia 10Y (%)": 6.62, "DXY": 100.8, "USD/IDR": 15_450},
+                    # ── 2024 Q4 ──
+                    {"Bulan": "Oct 2024", "Indonesia 10Y (%)": 6.88, "DXY": 103.2, "USD/IDR": 15_700},
+                    {"Bulan": "Nov 2024", "Indonesia 10Y (%)": 7.10, "DXY": 106.8, "USD/IDR": 15_900},
+                    {"Bulan": "Dec 2024", "Indonesia 10Y (%)": 7.22, "DXY": 108.2, "USD/IDR": 16_100},
+                    # ── 2025 Q1 ──
+                    {"Bulan": "Jan 2025", "Indonesia 10Y (%)": 7.15, "DXY": 107.5, "USD/IDR": 16_320},
+                    {"Bulan": "Feb 2025", "Indonesia 10Y (%)": 7.02, "DXY": 106.7, "USD/IDR": 16_250},
+                    {"Bulan": "Mar 2025", "Indonesia 10Y (%)": 6.95, "DXY": 104.1, "USD/IDR": 16_400},
+                    # ── 2025 Q2 ──
+                    {"Bulan": "Apr 2025", "Indonesia 10Y (%)": 7.08, "DXY": 99.2,  "USD/IDR": 16_820},
+                    {"Bulan": "May 2025", "Indonesia 10Y (%)": 6.98, "DXY": 100.4, "USD/IDR": 16_600},
+                    {"Bulan": "Jun 2025", "Indonesia 10Y (%)": 6.85, "DXY": 101.1, "USD/IDR": 16_450},
+                    # ── 2025 Q3 ──
+                    {"Bulan": "Jul 2025", "Indonesia 10Y (%)": 6.72, "DXY": 99.8,  "USD/IDR": 16_180},
+                    {"Bulan": "Aug 2025", "Indonesia 10Y (%)": 6.68, "DXY": 101.3, "USD/IDR": 16_250},
+                    {"Bulan": "Sep 2025", "Indonesia 10Y (%)": 6.75, "DXY": 102.5, "USD/IDR": 16_380},
+                    # ── 2025 Q4 ──
+                    {"Bulan": "Oct 2025", "Indonesia 10Y (%)": 6.90, "DXY": 103.8, "USD/IDR": 16_520},
+                    {"Bulan": "Nov 2025", "Indonesia 10Y (%)": 7.05, "DXY": 105.2, "USD/IDR": 16_650},
+                    {"Bulan": "Dec 2025", "Indonesia 10Y (%)": 7.18, "DXY": 107.4, "USD/IDR": 16_780},
+                    # ── 2026 Q1 ──
+                    {"Bulan": "Jan 2026", "Indonesia 10Y (%)": 7.25, "DXY": 108.1, "USD/IDR": 16_890},
+                    {"Bulan": "Feb 2026", "Indonesia 10Y (%)": 7.12, "DXY": 106.3, "USD/IDR": 16_720},
+                    {"Bulan": "Mar 2026", "Indonesia 10Y (%)": 7.05, "DXY": 104.2, "USD/IDR": 16_550},
+                    # ── 2026 Q2 ──
+                    {"Bulan": "Apr 2026", "Indonesia 10Y (%)": 6.95, "DXY": 99.8,  "USD/IDR": 16_420},
+                    {"Bulan": "May 2026", "Indonesia 10Y (%)": 6.88, "DXY": 99.2,  "USD/IDR": 16_350},
+                ]
 
-            # ── Chart Selection ──
-            _ychart_col, _yrange_col = st.columns([3, 1])
-            with _ychart_col:
-                _y_overlay = st.multiselect(
-                    "Tampilkan overlay:",
-                    ["DXY", "USD/IDR"],
-                    default=["DXY", "USD/IDR"],
-                    key="yield_overlay_sel"
-                )
-            with _yrange_col:
-                _y_period = st.selectbox("Periode:", ["6 Bulan", "1 Tahun", "2 Tahun"], index=1, key="yield_period_sel")
+                import pandas as pd
+                df_yield = pd.DataFrame(_yield_history)
 
-            _y_nmonths = {"6 Bulan": 6, "1 Tahun": 12, "2 Tahun": 24}[_y_period]
-            df_yield_plot = df_yield.tail(_y_nmonths).reset_index(drop=True)
+                # ── KPI Cards Row ──
+                _y_latest   = _yield_history[-1]
+                _y_prev     = _yield_history[-2]
+                _y_12m_ago  = _yield_history[-13] if len(_yield_history) >= 13 else _yield_history[0]
+                _y_peak     = max(_yield_history, key=lambda x: x["Indonesia 10Y (%)"])
+                _y_trough   = min(_yield_history, key=lambda x: x["Indonesia 10Y (%)"])
 
-            # ── Build Plotly triple-axis chart ──
-            try:
-                import plotly.graph_objects as go
-                from plotly.subplots import make_subplots
+                _dy_mom   = _y_latest["Indonesia 10Y (%)"] - _y_prev["Indonesia 10Y (%)"]
+                _dy_yoy   = _y_latest["Indonesia 10Y (%)"] - _y_12m_ago["Indonesia 10Y (%)"]
+                _ddxy_mom = _y_latest["DXY"] - _y_prev["DXY"]
+                _didr_mom = _y_latest["USD/IDR"] - _y_prev["USD/IDR"]
 
-                _n_rows = 1 + (1 if "DXY" in _y_overlay else 0) + (1 if "USD/IDR" in _y_overlay else 0)
-                _row_h  = [0.55] + [0.225] * (_n_rows - 1) if _n_rows > 1 else [1.0]
-                _row_h  = [h / sum(_row_h) for h in _row_h]
+                def _yield_arrow(v): return ("▲ " if v > 0 else "▼ ") + f"{abs(v):.2f}"
+                def _yield_color(v, inverse=False):
+                    pos = v > 0
+                    if inverse: pos = not pos
+                    return "#f23645" if pos else "#26a69a"
 
-                _subplot_titles = ["Indonesia 10Y Gov Bond Yield (%)"]
-                if "DXY" in _y_overlay:     _subplot_titles.append("DXY — US Dollar Index")
-                if "USD/IDR" in _y_overlay: _subplot_titles.append("USD/IDR — Rupiah")
+                _yc1, _yc2, _yc3, _yc4 = st.columns(4)
+                with _yc1:
+                    st.markdown(f"""<div class='trm-card'>
+                    <div class='trm-card-title'>INDONESIA 10Y YIELD</div>
+                    <div style='font-size:2rem;font-weight:700;color:#8b5cf6;'>{_y_latest["Indonesia 10Y (%)"]:.2f}%</div>
+                    <div style='color:{_yield_color(_dy_mom, inverse=True)};font-size:0.82rem;margin-top:4px;'>
+                      {_yield_arrow(_dy_mom)}% vs bulan lalu
+                    </div>
+                    <div style='color:{text_sub};font-size:0.75rem;margin-top:2px;'>
+                      YoY: <span style='color:{_yield_color(_dy_yoy, inverse=True)};'>{_yield_arrow(_dy_yoy)}%</span>
+                    </div></div>""", unsafe_allow_html=True)
+                with _yc2:
+                    st.markdown(f"""<div class='trm-card'>
+                    <div class='trm-card-title'>DXY (US DOLLAR INDEX)</div>
+                    <div style='font-size:2rem;font-weight:700;color:#f5a623;'>{_y_latest["DXY"]:.1f}</div>
+                    <div style='color:{_yield_color(_ddxy_mom, inverse=True)};font-size:0.82rem;margin-top:4px;'>
+                      {_yield_arrow(_ddxy_mom)} vs bulan lalu
+                    </div>
+                    <div style='color:{text_sub};font-size:0.75rem;margin-top:2px;'>DXY naik = tekanan Rupiah &amp; yield SBN</div>
+                    </div>""", unsafe_allow_html=True)
+                with _yc3:
+                    st.markdown(f"""<div class='trm-card'>
+                    <div class='trm-card-title'>USD/IDR (RUPIAH)</div>
+                    <div style='font-size:2rem;font-weight:700;color:#26a69a;'>Rp {_y_latest["USD/IDR"]:,}</div>
+                    <div style='color:{_yield_color(_didr_mom, inverse=True)};font-size:0.82rem;margin-top:4px;'>
+                      {("▲ " if _didr_mom > 0 else "▼ ")}{abs(_didr_mom):,.0f} vs bulan lalu
+                    </div>
+                    <div style='color:{text_sub};font-size:0.75rem;margin-top:2px;'>IDR melemah = tekanan yield naik</div>
+                    </div>""", unsafe_allow_html=True)
+                with _yc4:
+                    _yield_range = _y_peak["Indonesia 10Y (%)"] - _y_trough["Indonesia 10Y (%)"]
+                    _yield_pos_pct = (_y_latest["Indonesia 10Y (%)"] - _y_trough["Indonesia 10Y (%)"]) / _yield_range * 100 if _yield_range else 50
+                    _yld_signal = "⚠️ TINGGI — Tekanan Valuasi" if _y_latest["Indonesia 10Y (%)"] >= 7.0 else ("✅ MODERAT — Kondusif" if _y_latest["Indonesia 10Y (%)"] < 6.8 else "🟡 NORMAL")
+                    _yld_sig_color = "#f23645" if _y_latest["Indonesia 10Y (%)"] >= 7.0 else ("#26a69a" if _y_latest["Indonesia 10Y (%)"] < 6.8 else "#f5a623")
+                    st.markdown(f"""<div class='trm-card'>
+                    <div class='trm-card-title'>SINYAL YIELD</div>
+                    <div style='font-size:1.1rem;font-weight:700;color:{_yld_sig_color};margin-top:4px;'>{_yld_signal}</div>
+                    <div style='color:{text_sub};font-size:0.78rem;margin-top:6px;'>
+                      Posisi: <b>{_yield_pos_pct:.0f}th</b> percentile (12M)<br>
+                      Range: {_y_trough["Indonesia 10Y (%)"]:.2f}% — {_y_peak["Indonesia 10Y (%)"]:.2f}%
+                    </div></div>""", unsafe_allow_html=True)
 
-                fig_yield = make_subplots(
-                    rows=_n_rows, cols=1,
-                    shared_xaxes=True,
-                    row_heights=_row_h,
-                    subplot_titles=_subplot_titles,
-                    vertical_spacing=0.06
-                )
+                st.markdown("<br>", unsafe_allow_html=True)
 
-                # ── Row 1: Indonesia 10Y Yield ──
-                _y_vals  = df_yield_plot["Indonesia 10Y (%)"].tolist()
-                _y_bulan = df_yield_plot["Bulan"].tolist()
-                _y_prev_vals = [None] + _y_vals[:-1]
-                _bar_colors = ["#26a69a" if (c is None or v <= c) else "#f23645" for v, c in zip(_y_vals, _y_prev_vals)]
+                # ── Chart Selection ──
+                _ychart_col, _yrange_col = st.columns([3, 1])
+                with _ychart_col:
+                    _y_overlay = st.multiselect(
+                        "Tampilkan overlay:",
+                        ["DXY", "USD/IDR"],
+                        default=["DXY", "USD/IDR"],
+                        key="yield_overlay_sel"
+                    )
+                with _yrange_col:
+                    _y_period = st.selectbox("Periode:", ["6 Bulan", "1 Tahun", "2 Tahun"], index=1, key="yield_period_sel")
 
-                fig_yield.add_trace(go.Bar(
-                    x=_y_bulan, y=_y_vals,
-                    name="ID 10Y Yield",
-                    marker_color=_bar_colors,
-                    opacity=0.8,
-                    hovertemplate="<b>%{x}</b><br>Yield: %{y:.2f}%<extra></extra>",
-                ), row=1, col=1)
+                _y_nmonths = {"6 Bulan": 6, "1 Tahun": 12, "2 Tahun": 24}[_y_period]
+                df_yield_plot = df_yield.tail(_y_nmonths).reset_index(drop=True)
 
-                fig_yield.add_trace(go.Scatter(
-                    x=_y_bulan, y=_y_vals,
-                    name="Yield Trend",
-                    mode="lines+markers",
-                    line=dict(color="#8b5cf6", width=2.5, dash="solid"),
-                    marker=dict(size=6, color="#8b5cf6", symbol="circle"),
-                    hovertemplate="<b>%{x}</b><br>Yield: %{y:.2f}%<extra></extra>",
-                ), row=1, col=1)
+                # ── Build Plotly triple-axis chart ──
+                try:
+                    import plotly.graph_objects as go
+                    from plotly.subplots import make_subplots
 
-                # Zona bahaya 7%
-                fig_yield.add_hline(y=7.0, line_dash="dash", line_color="#f23645", line_width=1.2,
-                    annotation_text="7.00% — Zona Tekanan", annotation_position="top right",
-                    annotation_font_color="#f23645", annotation_font_size=10, row=1, col=1)
+                    _n_rows = 1 + (1 if "DXY" in _y_overlay else 0) + (1 if "USD/IDR" in _y_overlay else 0)
+                    _row_h  = [0.55] + [0.225] * (_n_rows - 1) if _n_rows > 1 else [1.0]
+                    _row_h  = [h / sum(_row_h) for h in _row_h]
 
-                _cur_row = 2
-                # ── Row 2 (optional): DXY ──
-                if "DXY" in _y_overlay:
-                    _dxy_vals = df_yield_plot["DXY"].tolist()
+                    _subplot_titles = ["Indonesia 10Y Gov Bond Yield (%)"]
+                    if "DXY" in _y_overlay:     _subplot_titles.append("DXY — US Dollar Index")
+                    if "USD/IDR" in _y_overlay: _subplot_titles.append("USD/IDR — Rupiah")
+
+                    fig_yield = make_subplots(
+                        rows=_n_rows, cols=1,
+                        shared_xaxes=True,
+                        row_heights=_row_h,
+                        subplot_titles=_subplot_titles,
+                        vertical_spacing=0.06
+                    )
+
+                    # ── Row 1: Indonesia 10Y Yield ──
+                    _y_vals  = df_yield_plot["Indonesia 10Y (%)"].tolist()
+                    _y_bulan = df_yield_plot["Bulan"].tolist()
+                    _y_prev_vals = [None] + _y_vals[:-1]
+                    _bar_colors = ["#26a69a" if (c is None or v <= c) else "#f23645" for v, c in zip(_y_vals, _y_prev_vals)]
+
+                    fig_yield.add_trace(go.Bar(
+                        x=_y_bulan, y=_y_vals,
+                        name="ID 10Y Yield",
+                        marker_color=_bar_colors,
+                        opacity=0.8,
+                        hovertemplate="<b>%{x}</b><br>Yield: %{y:.2f}%<extra></extra>",
+                    ), row=1, col=1)
+
                     fig_yield.add_trace(go.Scatter(
-                        x=_y_bulan, y=_dxy_vals,
+                        x=_y_bulan, y=_y_vals,
+                        name="Yield Trend",
+                        mode="lines+markers",
+                        line=dict(color="#8b5cf6", width=2.5, dash="solid"),
+                        marker=dict(size=6, color="#8b5cf6", symbol="circle"),
+                        hovertemplate="<b>%{x}</b><br>Yield: %{y:.2f}%<extra></extra>",
+                    ), row=1, col=1)
+
+                    # Zona bahaya 7%
+                    fig_yield.add_hline(y=7.0, line_dash="dash", line_color="#f23645", line_width=1.2,
+                        annotation_text="7.00% — Zona Tekanan", annotation_position="top right",
+                        annotation_font_color="#f23645", annotation_font_size=10, row=1, col=1)
+
+                    _cur_row = 2
+                    # ── Row 2 (optional): DXY ──
+                    if "DXY" in _y_overlay:
+                        _dxy_vals = df_yield_plot["DXY"].tolist()
+                        fig_yield.add_trace(go.Scatter(
+                            x=_y_bulan, y=_dxy_vals,
+                            name="DXY",
+                            mode="lines+markers",
+                            line=dict(color="#f5a623", width=2),
+                            marker=dict(size=5, color="#f5a623"),
+                            fill="tozeroy", fillcolor="rgba(245,166,35,0.08)",
+                            hovertemplate="<b>%{x}</b><br>DXY: %{y:.1f}<extra></extra>",
+                        ), row=_cur_row, col=1)
+                        _cur_row += 1
+
+                    # ── Row 3 (optional): USD/IDR ──
+                    if "USD/IDR" in _y_overlay:
+                        _idr_vals = df_yield_plot["USD/IDR"].tolist()
+                        _idr_prev = [None] + _idr_vals[:-1]
+                        _idr_colors = ["#f23645" if (p is None or v >= p) else "#26a69a" for v, p in zip(_idr_vals, _idr_prev)]
+                        fig_yield.add_trace(go.Scatter(
+                            x=_y_bulan, y=_idr_vals,
+                            name="USD/IDR",
+                            mode="lines+markers",
+                            line=dict(color="#26a69a", width=2),
+                            marker=dict(size=5, color=_idr_colors, symbol="diamond"),
+                            fill="tozeroy", fillcolor="rgba(38,166,154,0.07)",
+                            hovertemplate="<b>%{x}</b><br>USD/IDR: Rp %{y:,.0f}<extra></extra>",
+                        ), row=_cur_row, col=1)
+
+                    fig_yield.update_layout(
+                        height=420 + 160 * (_n_rows - 1),
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        font=dict(family="IBM Plex Mono, DM Sans, sans-serif", color="#c9d1d9", size=11),
+                        legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="right", x=1,
+                                    bgcolor="rgba(0,0,0,0)", font=dict(size=10)),
+                        margin=dict(l=10, r=10, t=40, b=10),
+                        hovermode="x unified",
+                        showlegend=True,
+                    )
+                    for i in range(1, _n_rows + 1):
+                        fig_yield.update_xaxes(
+                            showgrid=True, gridcolor="rgba(139,92,246,0.1)",
+                            tickfont=dict(size=10), row=i, col=1
+                        )
+                        fig_yield.update_yaxes(
+                            showgrid=True, gridcolor="rgba(139,92,246,0.1)",
+                            tickfont=dict(size=10), row=i, col=1
+                        )
+                    for ann in fig_yield.layout.annotations:
+                        ann.font.size  = 11
+                        ann.font.color = "#c9d1d9"
+
+                    st.plotly_chart(fig_yield, use_container_width=True)
+
+                except Exception as _ye:
+                    st.warning(f"Chart tidak bisa dimuat: {_ye}")
+                    st.dataframe(df_yield_plot, use_container_width=True, hide_index=True)
+
+                # ── Interpretasi & Korelasi ──
+                _corr_dxy_yield = df_yield["DXY"].corr(df_yield["Indonesia 10Y (%)"]) if len(df_yield) > 3 else 0
+                _corr_idr_yield = df_yield["USD/IDR"].corr(df_yield["Indonesia 10Y (%)"]) if len(df_yield) > 3 else 0
+                _corr_dxy_lbl   = "POSITIF KUAT" if _corr_dxy_yield > 0.6 else ("POSITIF LEMAH" if _corr_dxy_yield > 0.2 else ("NEGATIF" if _corr_dxy_yield < -0.2 else "NETRAL"))
+                _corr_idr_lbl   = "POSITIF KUAT" if _corr_idr_yield > 0.6 else ("POSITIF LEMAH" if _corr_idr_yield > 0.2 else ("NEGATIF" if _corr_idr_yield < -0.2 else "NETRAL"))
+
+                _interp_yield = (
+                    "⚠️ ZONA BAHAYA — Yield di atas 7%. Valuasi saham tertekan, biaya hutang emiten naik, asing cenderung outflow dari IDX."
+                    if _y_latest["Indonesia 10Y (%)"] >= 7.0
+                    else ("✅ ZONA KONDUSIF — Yield di bawah 6.8%. Valuasi saham relatif atraktif, potensi inflow asing ke IDX."
+                          if _y_latest["Indonesia 10Y (%)"] < 6.8
+                          else "🟡 ZONA NORMAL — Yield 6.8%–7.0%. Pasar dalam keseimbangan, monitor pergerakan DXY dan Rupiah.")
+                )
+                _interp_color = "#f23645" if _y_latest["Indonesia 10Y (%)"] >= 7.0 else ("#26a69a" if _y_latest["Indonesia 10Y (%)"] < 6.8 else "#f5a623")
+
+                st.markdown(f"""<div class='trm-card' style='margin-top:4px;border-left:3px solid {_interp_color};'>
+                <div class='trm-card-title' style='color:{_interp_color};'>INTERPRETASI: {_interp_yield.split(" — ")[0] if " — " in _interp_yield else "ANALISIS"}</div>
+                <p style='color:{text_main};font-size:0.9rem;line-height:1.75;margin:0 0 8px;'>{_interp_yield}</p>
+                <div style='display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;'>
+                  <div style='font-size:0.78rem;color:{text_sub};'>
+                    📊 <b>Korelasi Yield–DXY:</b> <span style='color:#f5a623;font-weight:600;'>{_corr_dxy_yield:.2f} ({_corr_dxy_lbl})</span>
+                  </div>
+                  <div style='font-size:0.78rem;color:{text_sub};'>
+                    📊 <b>Korelasi Yield–IDR:</b> <span style='color:#26a69a;font-weight:600;'>{_corr_idr_yield:.2f} ({_corr_idr_lbl})</span>
+                  </div>
+                </div>
+                <p style='color:{text_sub};font-size:0.78rem;line-height:1.65;margin:10px 0 0;'>
+                <b style='color:#8b5cf6;'>⚡ Logika Makro:</b>
+                DXY naik → asing tarik dana dari EM → IDR melemah → Bank Indonesia naikkan suku bunga untuk defend Rupiah → yield SBN naik → valuasi saham tertekan (cost of capital naik).
+                Yield turun + DXY melemah = <b>kondisi ideal</b> untuk rally IHSG berbasis inflow asing.
+                </p>
+                </div>""", unsafe_allow_html=True)
+
+                # ── Tabel Historis ──
+                st.markdown("<br>", unsafe_allow_html=True)
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>DATA HISTORIS BULANAN</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+                df_yield_disp = df_yield.copy()[::-1].reset_index(drop=True)
+                df_yield_disp["Δ Yield MoM"] = df_yield["Indonesia 10Y (%)"].diff().shift(-1 if False else 0)[::-1].reset_index(drop=True).apply(lambda v: f"{'▲' if v > 0 else '▼'} {abs(v):.2f}%" if pd.notna(v) and v != 0 else "—")
+                df_yield_disp["Δ DXY MoM"]   = df_yield["DXY"].diff().shift(-1 if False else 0)[::-1].reset_index(drop=True).apply(lambda v: f"{'▲' if v > 0 else '▼'} {abs(v):.1f}" if pd.notna(v) and v != 0 else "—")
+                df_yield_disp["USD/IDR"] = df_yield_disp["USD/IDR"].apply(lambda v: f"Rp {v:,.0f}")
+                df_yield_disp = df_yield_disp[["Bulan","Indonesia 10Y (%)","Δ Yield MoM","DXY","Δ DXY MoM","USD/IDR"]]
+                df_yield_disp.rename(columns={"Indonesia 10Y (%)": "ID 10Y Yield (%)"}, inplace=True)
+
+                st.dataframe(df_yield_disp, use_container_width=True, hide_index=True,
+                             height=60 + len(df_yield_disp) * 36)
+
+                st.markdown(f"""<div style='font-size:0.72rem;color:{text_sub};margin-top:6px;font-family:IBM Plex Mono,monospace;'>
+                ⓘ Data update: <b>Mingguan (setiap Senin)</b> · Sumber: SIGMA Database / yfinance (^TNX proxy) · Last update: {_y_latest["Bulan"]}
+                </div>""", unsafe_allow_html=True)
+
+                # ════════════════════════════════════════════════════════════════
+                # US 10Y BOND YIELD TRACKER
+                # ════════════════════════════════════════════════════════════════
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+            with _by_tab_us:
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏛️ US BOND YIELD TRACKER — 10Y vs DXY vs USD/IDR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                st.markdown("""<div style='background:#0a0e1a;border-top:1px solid rgba(242,54,69,0.3);border-bottom:1px solid rgba(242,54,69,0.3);border-left:3px solid #f23645;padding:8px 0;font-size:0.82rem;color:rgba(255,255,255,0.75);overflow:hidden;white-space:nowrap;margin-bottom:10px;'>
+      <div style='display:inline-block;animation:sigma-scroll-us 42s linear infinite;padding-left:100%;'>
+        <b style='color:#f23645;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
+        US 10Y Treasury Yield ~4.47%. Yield mulai turun dari puncak 2024 seiring ekspektasi Fed cut di H2 2026. DXY ~100.2, level terendah sejak 2022.
+        Implikasi IDX: yield AS turun = capital inflow ke EM. Rupiah berpotensi menguat ke 15.800-16.000. Sektor Properti &amp; Perbankan diuntungkan.
+        &nbsp;&nbsp;&nbsp;<span style='color:rgba(242,54,69,0.5);'>◆</span>&nbsp;&nbsp;&nbsp;
+        <b style='color:#f23645;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
+        US 10Y Treasury Yield ~4.47%. Yield mulai turun dari puncak 2024 seiring ekspektasi Fed cut di H2 2026. DXY ~100.2, level terendah sejak 2022.
+        Implikasi IDX: yield AS turun = capital inflow ke EM. Rupiah berpotensi menguat ke 15.800-16.000. Sektor Properti &amp; Perbankan diuntungkan.
+      </div>
+    </div>
+    <style>@keyframes sigma-scroll-us{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}</style>""", unsafe_allow_html=True)
+                st.markdown(f"""<div style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};
+                    background:rgba(242,54,69,0.07);border-left:3px solid #f23645;
+                    padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
+                 <b style='color:#f23645;'>Cakupan:</b> US Treasury 10Y Yield (^TNX) — benchmark suku bunga global&nbsp;&nbsp;|&nbsp;&nbsp;
+                <b style='color:#f23645;'>Pembanding:</b> DXY (US Dollar Index) &amp; USD/IDR (dampak ke Rupiah &amp; IDX)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <span style='color:{text_sub};'>Update: Mingguan · Sumber: <b>SIGMA Database / US Treasury</b></span>
+                </div>""", unsafe_allow_html=True)
+
+                _us_yield_history = [
+                    # ── 2024 Q2 ──
+                    {"Bulan": "Apr 2024", "US 10Y (%)": 4.68, "DXY": 104.5, "USD/IDR": 15_875, "Spread ID-US (%)": 6.82 - 4.68},
+                    {"Bulan": "May 2024", "US 10Y (%)": 4.50, "DXY": 105.1, "USD/IDR": 16_100, "Spread ID-US (%)": 6.95 - 4.50},
+                    {"Bulan": "Jun 2024", "US 10Y (%)": 4.36, "DXY": 105.8, "USD/IDR": 16_350, "Spread ID-US (%)": 7.05 - 4.36},
+                    # ── 2024 Q3 ──
+                    {"Bulan": "Jul 2024", "US 10Y (%)": 4.09, "DXY": 104.3, "USD/IDR": 16_200, "Spread ID-US (%)": 6.98 - 4.09},
+                    {"Bulan": "Aug 2024", "US 10Y (%)": 3.91, "DXY": 101.7, "USD/IDR": 15_980, "Spread ID-US (%)": 6.85 - 3.91},
+                    {"Bulan": "Sep 2024", "US 10Y (%)": 3.78, "DXY": 100.8, "USD/IDR": 15_450, "Spread ID-US (%)": 6.62 - 3.78},
+                    # ── 2024 Q4 ──
+                    {"Bulan": "Oct 2024", "US 10Y (%)": 4.28, "DXY": 103.2, "USD/IDR": 15_700, "Spread ID-US (%)": 6.88 - 4.28},
+                    {"Bulan": "Nov 2024", "US 10Y (%)": 4.41, "DXY": 106.8, "USD/IDR": 15_900, "Spread ID-US (%)": 7.10 - 4.41},
+                    {"Bulan": "Dec 2024", "US 10Y (%)": 4.57, "DXY": 108.2, "USD/IDR": 16_100, "Spread ID-US (%)": 7.22 - 4.57},
+                    # ── 2025 Q1 ──
+                    {"Bulan": "Jan 2025", "US 10Y (%)": 4.62, "DXY": 107.5, "USD/IDR": 16_320, "Spread ID-US (%)": 7.15 - 4.62},
+                    {"Bulan": "Feb 2025", "US 10Y (%)": 4.42, "DXY": 106.7, "USD/IDR": 16_250, "Spread ID-US (%)": 7.02 - 4.42},
+                    {"Bulan": "Mar 2025", "US 10Y (%)": 4.21, "DXY": 104.1, "USD/IDR": 16_400, "Spread ID-US (%)": 6.95 - 4.21},
+                    # ── 2025 Q2 ──
+                    {"Bulan": "Apr 2025", "US 10Y (%)": 4.65, "DXY": 99.2,  "USD/IDR": 16_820, "Spread ID-US (%)": 7.08 - 4.65},
+                    {"Bulan": "May 2025", "US 10Y (%)": 4.46, "DXY": 100.4, "USD/IDR": 16_600, "Spread ID-US (%)": 6.98 - 4.46},
+                    {"Bulan": "Jun 2025", "US 10Y (%)": 4.35, "DXY": 101.1, "USD/IDR": 16_450, "Spread ID-US (%)": 6.85 - 4.35},
+                    # ── 2025 Q3 ──
+                    {"Bulan": "Jul 2025", "US 10Y (%)": 4.28, "DXY": 99.8,  "USD/IDR": 16_180, "Spread ID-US (%)": 6.72 - 4.28},
+                    {"Bulan": "Aug 2025", "US 10Y (%)": 4.22, "DXY": 101.3, "USD/IDR": 16_250, "Spread ID-US (%)": 6.68 - 4.22},
+                    {"Bulan": "Sep 2025", "US 10Y (%)": 4.31, "DXY": 102.5, "USD/IDR": 16_380, "Spread ID-US (%)": 6.75 - 4.31},
+                    # ── 2025 Q4 ──
+                    {"Bulan": "Oct 2025", "US 10Y (%)": 4.38, "DXY": 103.8, "USD/IDR": 16_520, "Spread ID-US (%)": 6.90 - 4.38},
+                    {"Bulan": "Nov 2025", "US 10Y (%)": 4.42, "DXY": 105.2, "USD/IDR": 16_650, "Spread ID-US (%)": 7.05 - 4.42},
+                    {"Bulan": "Dec 2025", "US 10Y (%)": 4.58, "DXY": 107.4, "USD/IDR": 16_780, "Spread ID-US (%)": 7.18 - 4.58},
+                    # ── 2026 Q1 ──
+                    {"Bulan": "Jan 2026", "US 10Y (%)": 4.78, "DXY": 108.1, "USD/IDR": 16_890, "Spread ID-US (%)": 7.25 - 4.78},
+                    {"Bulan": "Feb 2026", "US 10Y (%)": 4.52, "DXY": 106.3, "USD/IDR": 16_720, "Spread ID-US (%)": 7.12 - 4.52},
+                    {"Bulan": "Mar 2026", "US 10Y (%)": 4.38, "DXY": 104.2, "USD/IDR": 16_550, "Spread ID-US (%)": 7.05 - 4.38},
+                    # ── 2026 Q2 ──
+                    {"Bulan": "Apr 2026", "US 10Y (%)": 4.28, "DXY": 99.8,  "USD/IDR": 16_420, "Spread ID-US (%)": 6.95 - 4.28},
+                    {"Bulan": "May 2026", "US 10Y (%)": 4.35, "DXY": 99.2,  "USD/IDR": 16_350, "Spread ID-US (%)": 6.88 - 4.35},
+                ]
+
+                import pandas as pd
+                df_us_yield = pd.DataFrame(_us_yield_history)
+
+                _usy_latest  = _us_yield_history[-1]
+                _usy_prev    = _us_yield_history[-2]
+                _usy_12m_ago = _us_yield_history[-13] if len(_us_yield_history) >= 13 else _us_yield_history[0]
+                _usy_peak    = max(_us_yield_history, key=lambda x: x["US 10Y (%)"])
+                _usy_trough  = min(_us_yield_history, key=lambda x: x["US 10Y (%)"])
+
+                _udy_mom     = _usy_latest["US 10Y (%)"] - _usy_prev["US 10Y (%)"]
+                _udy_yoy     = _usy_latest["US 10Y (%)"] - _usy_12m_ago["US 10Y (%)"]
+                _udy_spread  = _usy_latest["Spread ID-US (%)"]
+                _udy_spread_prev = _usy_prev["Spread ID-US (%)"]
+                _udy_spread_chg  = _udy_spread - _udy_spread_prev
+
+                _usy_range  = _usy_peak["US 10Y (%)"] - _usy_trough["US 10Y (%)"]
+                _usy_pos_pct = (_usy_latest["US 10Y (%)"] - _usy_trough["US 10Y (%)"]) / _usy_range * 100 if _usy_range else 50
+                _usy_signal  = "⚠️ TINGGI — Tekanan Global" if _usy_latest["US 10Y (%)"] >= 4.5 else ("✅ MODERAT — Kondusif EM" if _usy_latest["US 10Y (%)"] < 4.0 else "🟡 NORMAL — Waspadai Fed")
+                _usy_sig_color = "#f23645" if _usy_latest["US 10Y (%)"] >= 4.5 else ("#26a69a" if _usy_latest["US 10Y (%)"] < 4.0 else "#f5a623")
+                _spread_color = "#26a69a" if _udy_spread >= 2.5 else ("#f5a623" if _udy_spread >= 2.0 else "#f23645")
+
+                _uc1, _uc2, _uc3, _uc4 = st.columns(4)
+                with _uc1:
+                    st.markdown(f"""<div class='trm-card'>
+                    <div class='trm-card-title'>US TREASURY 10Y YIELD</div>
+                    <div style='font-size:2rem;font-weight:700;color:#f23645;'>{_usy_latest["US 10Y (%)"]:.2f}%</div>
+                    <div style='color:{_yield_color(_udy_mom, inverse=True)};font-size:0.82rem;margin-top:4px;'>
+                      {_yield_arrow(_udy_mom)}% vs bulan lalu
+                    </div>
+                    <div style='color:{text_sub};font-size:0.75rem;margin-top:2px;'>
+                      YoY: <span style='color:{_yield_color(_udy_yoy, inverse=True)};'>{_yield_arrow(_udy_yoy)}%</span>
+                    </div></div>""", unsafe_allow_html=True)
+                with _uc2:
+                    st.markdown(f"""<div class='trm-card'>
+                    <div class='trm-card-title'>SPREAD ID vs US (10Y)</div>
+                    <div style='font-size:2rem;font-weight:700;color:{_spread_color};'>{_udy_spread:.2f}%</div>
+                    <div style='color:{_yield_color(_udy_spread_chg)};font-size:0.82rem;margin-top:4px;'>
+                      {_yield_arrow(_udy_spread_chg)}% vs bulan lalu
+                    </div>
+                    <div style='color:{text_sub};font-size:0.75rem;margin-top:2px;'>Spread &ge;2.5% = EM atraktif untuk asing</div>
+                    </div>""", unsafe_allow_html=True)
+                with _uc3:
+                    st.markdown(f"""<div class='trm-card'>
+                    <div class='trm-card-title'>DXY (US DOLLAR INDEX)</div>
+                    <div style='font-size:2rem;font-weight:700;color:#f5a623;'>{_usy_latest["DXY"]:.1f}</div>
+                    <div style='color:{_yield_color(_usy_latest["DXY"] - _usy_prev["DXY"], inverse=True)};font-size:0.82rem;margin-top:4px;'>
+                      {_yield_arrow(_usy_latest["DXY"] - _usy_prev["DXY"])} vs bulan lalu
+                    </div>
+                    <div style='color:{text_sub};font-size:0.75rem;margin-top:2px;'>DXY &lt; 100 = favorable untuk IDX</div>
+                    </div>""", unsafe_allow_html=True)
+                with _uc4:
+                    st.markdown(f"""<div class='trm-card'>
+                    <div class='trm-card-title'>SINYAL US YIELD</div>
+                    <div style='font-size:1.1rem;font-weight:700;color:{_usy_sig_color};margin-top:4px;'>{_usy_signal}</div>
+                    <div style='color:{text_sub};font-size:0.78rem;margin-top:6px;'>
+                      Posisi: <b>{_usy_pos_pct:.0f}th</b> percentile (12M)<br>
+                      Range: {_usy_trough["US 10Y (%)"]:.2f}% — {_usy_peak["US 10Y (%)"]:.2f}%
+                    </div></div>""", unsafe_allow_html=True)
+
+                st.markdown("<br>", unsafe_allow_html=True)
+
+                # ── Chart ──
+                _usy_period2 = st.selectbox("Periode:", ["6 Bulan", "1 Tahun", "2 Tahun"], index=1, key="us_yield_period_sel")
+                _usy_nmonths = {"6 Bulan": 6, "1 Tahun": 12, "2 Tahun": 24}[_usy_period2]
+                df_usy_plot  = df_us_yield.tail(_usy_nmonths).reset_index(drop=True)
+
+                try:
+                    import plotly.graph_objects as go
+                    from plotly.subplots import make_subplots
+
+                    fig_us = make_subplots(
+                        rows=3, cols=1,
+                        shared_xaxes=True,
+                        row_heights=[0.45, 0.25, 0.30],
+                        subplot_titles=["US Treasury 10Y Yield (%)", "Spread Indonesia–US 10Y (%)", "DXY & USD/IDR"],
+                        vertical_spacing=0.07
+                    )
+
+                    _usy_vals  = df_usy_plot["US 10Y (%)"].tolist()
+                    _usy_bulan = df_usy_plot["Bulan"].tolist()
+                    _usy_prev_vals = [None] + _usy_vals[:-1]
+                    _usy_bar_colors = ["#f23645" if (p is None or v >= p) else "#26a69a" for v, p in zip(_usy_vals, _usy_prev_vals)]
+
+                    fig_us.add_trace(go.Bar(
+                        x=_usy_bulan, y=_usy_vals,
+                        name="US 10Y Yield",
+                        marker_color=_usy_bar_colors,
+                        opacity=0.75,
+                        hovertemplate="<b>%{x}</b><br>US 10Y: %{y:.2f}%<extra></extra>",
+                    ), row=1, col=1)
+                    fig_us.add_trace(go.Scatter(
+                        x=_usy_bulan, y=_usy_vals,
+                        name="US 10Y Trend",
+                        mode="lines+markers",
+                        line=dict(color="#f23645", width=2.5),
+                        marker=dict(size=6, color="#f23645"),
+                        hovertemplate="<b>%{x}</b><br>US 10Y: %{y:.2f}%<extra></extra>",
+                    ), row=1, col=1)
+                    # 4.5% danger zone
+                    fig_us.add_hline(y=4.5, line_dash="dash", line_color="#f23645", line_width=1.2,
+                        annotation_text="4.50% — Zona Tekanan EM", annotation_position="top right",
+                        annotation_font_color="#f23645", annotation_font_size=10, row=1, col=1)
+                    fig_us.add_hline(y=4.0, line_dash="dot", line_color="#26a69a", line_width=1.0,
+                        annotation_text="4.00% — Kondusif EM", annotation_position="bottom right",
+                        annotation_font_color="#26a69a", annotation_font_size=10, row=1, col=1)
+
+                    # Row 2: Spread
+                    _spread_vals = df_usy_plot["Spread ID-US (%)"].apply(lambda x: round(x, 3)).tolist()
+                    _spread_colors = ["#26a69a" if v >= 2.5 else ("#f5a623" if v >= 2.0 else "#f23645") for v in _spread_vals]
+                    fig_us.add_trace(go.Bar(
+                        x=_usy_bulan, y=_spread_vals,
+                        name="Spread ID-US",
+                        marker_color=_spread_colors,
+                        opacity=0.85,
+                        hovertemplate="<b>%{x}</b><br>Spread: %{y:.2f}%<extra></extra>",
+                    ), row=2, col=1)
+                    fig_us.add_hline(y=2.5, line_dash="dash", line_color="#26a69a", line_width=1.0,
+                        annotation_text="2.5% — threshold inflow asing",
+                        annotation_font_color="#26a69a", annotation_font_size=9, row=2, col=1)
+
+                    # Row 3: DXY + USD/IDR secondary axis
+                    _dxy_vals2 = df_usy_plot["DXY"].tolist()
+                    _idr_vals2 = df_usy_plot["USD/IDR"].tolist()
+                    fig_us.add_trace(go.Scatter(
+                        x=_usy_bulan, y=_dxy_vals2,
                         name="DXY",
                         mode="lines+markers",
                         line=dict(color="#f5a623", width=2),
-                        marker=dict(size=5, color="#f5a623"),
-                        fill="tozeroy", fillcolor="rgba(245,166,35,0.08)",
+                        marker=dict(size=5),
+                        fill="tozeroy", fillcolor="rgba(245,166,35,0.07)",
                         hovertemplate="<b>%{x}</b><br>DXY: %{y:.1f}<extra></extra>",
-                    ), row=_cur_row, col=1)
-                    _cur_row += 1
+                        yaxis="y5",
+                    ), row=3, col=1)
 
-                # ── Row 3 (optional): USD/IDR ──
-                if "USD/IDR" in _y_overlay:
-                    _idr_vals = df_yield_plot["USD/IDR"].tolist()
-                    _idr_prev = [None] + _idr_vals[:-1]
-                    _idr_colors = ["#f23645" if (p is None or v >= p) else "#26a69a" for v, p in zip(_idr_vals, _idr_prev)]
-                    fig_yield.add_trace(go.Scatter(
-                        x=_y_bulan, y=_idr_vals,
-                        name="USD/IDR",
-                        mode="lines+markers",
-                        line=dict(color="#26a69a", width=2),
-                        marker=dict(size=5, color=_idr_colors, symbol="diamond"),
-                        fill="tozeroy", fillcolor="rgba(38,166,154,0.07)",
-                        hovertemplate="<b>%{x}</b><br>USD/IDR: Rp %{y:,.0f}<extra></extra>",
-                    ), row=_cur_row, col=1)
-
-                fig_yield.update_layout(
-                    height=420 + 160 * (_n_rows - 1),
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(family="IBM Plex Mono, DM Sans, sans-serif", color="#c9d1d9", size=11),
-                    legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="right", x=1,
-                                bgcolor="rgba(0,0,0,0)", font=dict(size=10)),
-                    margin=dict(l=10, r=10, t=40, b=10),
-                    hovermode="x unified",
-                    showlegend=True,
-                )
-                for i in range(1, _n_rows + 1):
-                    fig_yield.update_xaxes(
-                        showgrid=True, gridcolor="rgba(139,92,246,0.1)",
-                        tickfont=dict(size=10), row=i, col=1
+                    fig_us.update_layout(
+                        height=600,
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        font=dict(family="IBM Plex Mono, DM Sans, sans-serif", color="#c9d1d9", size=11),
+                        legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="right", x=1,
+                                    bgcolor="rgba(0,0,0,0)", font=dict(size=10)),
+                        margin=dict(l=10, r=10, t=40, b=10),
+                        hovermode="x unified",
                     )
-                    fig_yield.update_yaxes(
-                        showgrid=True, gridcolor="rgba(139,92,246,0.1)",
-                        tickfont=dict(size=10), row=i, col=1
-                    )
-                for ann in fig_yield.layout.annotations:
-                    ann.font.size  = 11
-                    ann.font.color = "#c9d1d9"
+                    for i in range(1, 4):
+                        fig_us.update_xaxes(showgrid=True, gridcolor="rgba(242,54,69,0.1)", tickfont=dict(size=10), row=i, col=1)
+                        fig_us.update_yaxes(showgrid=True, gridcolor="rgba(242,54,69,0.1)", tickfont=dict(size=10), row=i, col=1)
+                    for ann in fig_us.layout.annotations:
+                        ann.font.size  = 11
+                        ann.font.color = "#c9d1d9"
 
-                st.plotly_chart(fig_yield, use_container_width=True)
+                    st.plotly_chart(fig_us, use_container_width=True)
 
-            except Exception as _ye:
-                st.warning(f"Chart tidak bisa dimuat: {_ye}")
-                st.dataframe(df_yield_plot, use_container_width=True, hide_index=True)
+                except Exception as _ue:
+                    st.warning(f"Chart tidak bisa dimuat: {_ue}")
+                    st.dataframe(df_usy_plot, use_container_width=True, hide_index=True)
 
-            # ── Interpretasi & Korelasi ──
-            _corr_dxy_yield = df_yield["DXY"].corr(df_yield["Indonesia 10Y (%)"]) if len(df_yield) > 3 else 0
-            _corr_idr_yield = df_yield["USD/IDR"].corr(df_yield["Indonesia 10Y (%)"]) if len(df_yield) > 3 else 0
-            _corr_dxy_lbl   = "POSITIF KUAT" if _corr_dxy_yield > 0.6 else ("POSITIF LEMAH" if _corr_dxy_yield > 0.2 else ("NEGATIF" if _corr_dxy_yield < -0.2 else "NETRAL"))
-            _corr_idr_lbl   = "POSITIF KUAT" if _corr_idr_yield > 0.6 else ("POSITIF LEMAH" if _corr_idr_yield > 0.2 else ("NEGATIF" if _corr_idr_yield < -0.2 else "NETRAL"))
-
-            _interp_yield = (
-                "⚠️ ZONA BAHAYA — Yield di atas 7%. Valuasi saham tertekan, biaya hutang emiten naik, asing cenderung outflow dari IDX."
-                if _y_latest["Indonesia 10Y (%)"] >= 7.0
-                else ("✅ ZONA KONDUSIF — Yield di bawah 6.8%. Valuasi saham relatif atraktif, potensi inflow asing ke IDX."
-                      if _y_latest["Indonesia 10Y (%)"] < 6.8
-                      else "🟡 ZONA NORMAL — Yield 6.8%–7.0%. Pasar dalam keseimbangan, monitor pergerakan DXY dan Rupiah.")
-            )
-            _interp_color = "#f23645" if _y_latest["Indonesia 10Y (%)"] >= 7.0 else ("#26a69a" if _y_latest["Indonesia 10Y (%)"] < 6.8 else "#f5a623")
-
-            st.markdown(f"""<div class='trm-card' style='margin-top:4px;border-left:3px solid {_interp_color};'>
-            <div class='trm-card-title' style='color:{_interp_color};'>INTERPRETASI: {_interp_yield.split(" — ")[0] if " — " in _interp_yield else "ANALISIS"}</div>
-            <p style='color:{text_main};font-size:0.9rem;line-height:1.75;margin:0 0 8px;'>{_interp_yield}</p>
-            <div style='display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;'>
-              <div style='font-size:0.78rem;color:{text_sub};'>
-                📊 <b>Korelasi Yield–DXY:</b> <span style='color:#f5a623;font-weight:600;'>{_corr_dxy_yield:.2f} ({_corr_dxy_lbl})</span>
-              </div>
-              <div style='font-size:0.78rem;color:{text_sub};'>
-                📊 <b>Korelasi Yield–IDR:</b> <span style='color:#26a69a;font-weight:600;'>{_corr_idr_yield:.2f} ({_corr_idr_lbl})</span>
-              </div>
-            </div>
-            <p style='color:{text_sub};font-size:0.78rem;line-height:1.65;margin:10px 0 0;'>
-            <b style='color:#8b5cf6;'>⚡ Logika Makro:</b>
-            DXY naik → asing tarik dana dari EM → IDR melemah → Bank Indonesia naikkan suku bunga untuk defend Rupiah → yield SBN naik → valuasi saham tertekan (cost of capital naik).
-            Yield turun + DXY melemah = <b>kondisi ideal</b> untuk rally IHSG berbasis inflow asing.
-            </p>
-            </div>""", unsafe_allow_html=True)
-
-            # ── Tabel Historis ──
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>DATA HISTORIS BULANAN</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-
-            df_yield_disp = df_yield.copy()[::-1].reset_index(drop=True)
-            df_yield_disp["Δ Yield MoM"] = df_yield["Indonesia 10Y (%)"].diff().shift(-1 if False else 0)[::-1].reset_index(drop=True).apply(lambda v: f"{'▲' if v > 0 else '▼'} {abs(v):.2f}%" if pd.notna(v) and v != 0 else "—")
-            df_yield_disp["Δ DXY MoM"]   = df_yield["DXY"].diff().shift(-1 if False else 0)[::-1].reset_index(drop=True).apply(lambda v: f"{'▲' if v > 0 else '▼'} {abs(v):.1f}" if pd.notna(v) and v != 0 else "—")
-            df_yield_disp["USD/IDR"] = df_yield_disp["USD/IDR"].apply(lambda v: f"Rp {v:,.0f}")
-            df_yield_disp = df_yield_disp[["Bulan","Indonesia 10Y (%)","Δ Yield MoM","DXY","Δ DXY MoM","USD/IDR"]]
-            df_yield_disp.rename(columns={"Indonesia 10Y (%)": "ID 10Y Yield (%)"}, inplace=True)
-
-            st.dataframe(df_yield_disp, use_container_width=True, hide_index=True,
-                         height=60 + len(df_yield_disp) * 36)
-
-            st.markdown(f"""<div style='font-size:0.72rem;color:{text_sub};margin-top:6px;font-family:IBM Plex Mono,monospace;'>
-            ⓘ Data update: <b>Mingguan (setiap Senin)</b> · Sumber: SIGMA Database / yfinance (^TNX proxy) · Last update: {_y_latest["Bulan"]}
-            </div>""", unsafe_allow_html=True)
-
-            # ════════════════════════════════════════════════════════════════
-            # US 10Y BOND YIELD TRACKER
-            # ════════════════════════════════════════════════════════════════
-            st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏛️ US BOND YIELD TRACKER — 10Y vs DXY vs USD/IDR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown("""<div style='background:#0a0e1a;border-top:1px solid rgba(242,54,69,0.3);border-bottom:1px solid rgba(242,54,69,0.3);border-left:3px solid #f23645;padding:8px 0;font-size:0.82rem;color:rgba(255,255,255,0.75);overflow:hidden;white-space:nowrap;margin-bottom:10px;'>
-  <div style='display:inline-block;animation:sigma-scroll-us 42s linear infinite;padding-left:100%;'>
-    <b style='color:#f23645;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
-    US 10Y Treasury Yield ~4.47%. Yield mulai turun dari puncak 2024 seiring ekspektasi Fed cut di H2 2026. DXY ~100.2, level terendah sejak 2022.
-    Implikasi IDX: yield AS turun = capital inflow ke EM. Rupiah berpotensi menguat ke 15.800-16.000. Sektor Properti &amp; Perbankan diuntungkan.
-    &nbsp;&nbsp;&nbsp;<span style='color:rgba(242,54,69,0.5);'>◆</span>&nbsp;&nbsp;&nbsp;
-    <b style='color:#f23645;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
-    US 10Y Treasury Yield ~4.47%. Yield mulai turun dari puncak 2024 seiring ekspektasi Fed cut di H2 2026. DXY ~100.2, level terendah sejak 2022.
-    Implikasi IDX: yield AS turun = capital inflow ke EM. Rupiah berpotensi menguat ke 15.800-16.000. Sektor Properti &amp; Perbankan diuntungkan.
-  </div>
-</div>
-<style>@keyframes sigma-scroll-us{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}</style>""", unsafe_allow_html=True)
-            st.markdown(f"""<div style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};
-                background:rgba(242,54,69,0.07);border-left:3px solid #f23645;
-                padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
-             <b style='color:#f23645;'>Cakupan:</b> US Treasury 10Y Yield (^TNX) — benchmark suku bunga global&nbsp;&nbsp;|&nbsp;&nbsp;
-            <b style='color:#f23645;'>Pembanding:</b> DXY (US Dollar Index) &amp; USD/IDR (dampak ke Rupiah &amp; IDX)&nbsp;&nbsp;|&nbsp;&nbsp;
-            <span style='color:{text_sub};'>Update: Mingguan · Sumber: <b>SIGMA Database / US Treasury</b></span>
-            </div>""", unsafe_allow_html=True)
-
-            _us_yield_history = [
-                # ── 2024 Q2 ──
-                {"Bulan": "Apr 2024", "US 10Y (%)": 4.68, "DXY": 104.5, "USD/IDR": 15_875, "Spread ID-US (%)": 6.82 - 4.68},
-                {"Bulan": "May 2024", "US 10Y (%)": 4.50, "DXY": 105.1, "USD/IDR": 16_100, "Spread ID-US (%)": 6.95 - 4.50},
-                {"Bulan": "Jun 2024", "US 10Y (%)": 4.36, "DXY": 105.8, "USD/IDR": 16_350, "Spread ID-US (%)": 7.05 - 4.36},
-                # ── 2024 Q3 ──
-                {"Bulan": "Jul 2024", "US 10Y (%)": 4.09, "DXY": 104.3, "USD/IDR": 16_200, "Spread ID-US (%)": 6.98 - 4.09},
-                {"Bulan": "Aug 2024", "US 10Y (%)": 3.91, "DXY": 101.7, "USD/IDR": 15_980, "Spread ID-US (%)": 6.85 - 3.91},
-                {"Bulan": "Sep 2024", "US 10Y (%)": 3.78, "DXY": 100.8, "USD/IDR": 15_450, "Spread ID-US (%)": 6.62 - 3.78},
-                # ── 2024 Q4 ──
-                {"Bulan": "Oct 2024", "US 10Y (%)": 4.28, "DXY": 103.2, "USD/IDR": 15_700, "Spread ID-US (%)": 6.88 - 4.28},
-                {"Bulan": "Nov 2024", "US 10Y (%)": 4.41, "DXY": 106.8, "USD/IDR": 15_900, "Spread ID-US (%)": 7.10 - 4.41},
-                {"Bulan": "Dec 2024", "US 10Y (%)": 4.57, "DXY": 108.2, "USD/IDR": 16_100, "Spread ID-US (%)": 7.22 - 4.57},
-                # ── 2025 Q1 ──
-                {"Bulan": "Jan 2025", "US 10Y (%)": 4.62, "DXY": 107.5, "USD/IDR": 16_320, "Spread ID-US (%)": 7.15 - 4.62},
-                {"Bulan": "Feb 2025", "US 10Y (%)": 4.42, "DXY": 106.7, "USD/IDR": 16_250, "Spread ID-US (%)": 7.02 - 4.42},
-                {"Bulan": "Mar 2025", "US 10Y (%)": 4.21, "DXY": 104.1, "USD/IDR": 16_400, "Spread ID-US (%)": 6.95 - 4.21},
-                # ── 2025 Q2 ──
-                {"Bulan": "Apr 2025", "US 10Y (%)": 4.65, "DXY": 99.2,  "USD/IDR": 16_820, "Spread ID-US (%)": 7.08 - 4.65},
-                {"Bulan": "May 2025", "US 10Y (%)": 4.46, "DXY": 100.4, "USD/IDR": 16_600, "Spread ID-US (%)": 6.98 - 4.46},
-                {"Bulan": "Jun 2025", "US 10Y (%)": 4.35, "DXY": 101.1, "USD/IDR": 16_450, "Spread ID-US (%)": 6.85 - 4.35},
-                # ── 2025 Q3 ──
-                {"Bulan": "Jul 2025", "US 10Y (%)": 4.28, "DXY": 99.8,  "USD/IDR": 16_180, "Spread ID-US (%)": 6.72 - 4.28},
-                {"Bulan": "Aug 2025", "US 10Y (%)": 4.22, "DXY": 101.3, "USD/IDR": 16_250, "Spread ID-US (%)": 6.68 - 4.22},
-                {"Bulan": "Sep 2025", "US 10Y (%)": 4.31, "DXY": 102.5, "USD/IDR": 16_380, "Spread ID-US (%)": 6.75 - 4.31},
-                # ── 2025 Q4 ──
-                {"Bulan": "Oct 2025", "US 10Y (%)": 4.38, "DXY": 103.8, "USD/IDR": 16_520, "Spread ID-US (%)": 6.90 - 4.38},
-                {"Bulan": "Nov 2025", "US 10Y (%)": 4.42, "DXY": 105.2, "USD/IDR": 16_650, "Spread ID-US (%)": 7.05 - 4.42},
-                {"Bulan": "Dec 2025", "US 10Y (%)": 4.58, "DXY": 107.4, "USD/IDR": 16_780, "Spread ID-US (%)": 7.18 - 4.58},
-                # ── 2026 Q1 ──
-                {"Bulan": "Jan 2026", "US 10Y (%)": 4.78, "DXY": 108.1, "USD/IDR": 16_890, "Spread ID-US (%)": 7.25 - 4.78},
-                {"Bulan": "Feb 2026", "US 10Y (%)": 4.52, "DXY": 106.3, "USD/IDR": 16_720, "Spread ID-US (%)": 7.12 - 4.52},
-                {"Bulan": "Mar 2026", "US 10Y (%)": 4.38, "DXY": 104.2, "USD/IDR": 16_550, "Spread ID-US (%)": 7.05 - 4.38},
-                # ── 2026 Q2 ──
-                {"Bulan": "Apr 2026", "US 10Y (%)": 4.28, "DXY": 99.8,  "USD/IDR": 16_420, "Spread ID-US (%)": 6.95 - 4.28},
-                {"Bulan": "May 2026", "US 10Y (%)": 4.35, "DXY": 99.2,  "USD/IDR": 16_350, "Spread ID-US (%)": 6.88 - 4.35},
-            ]
-
-            import pandas as pd
-            df_us_yield = pd.DataFrame(_us_yield_history)
-
-            _usy_latest  = _us_yield_history[-1]
-            _usy_prev    = _us_yield_history[-2]
-            _usy_12m_ago = _us_yield_history[-13] if len(_us_yield_history) >= 13 else _us_yield_history[0]
-            _usy_peak    = max(_us_yield_history, key=lambda x: x["US 10Y (%)"])
-            _usy_trough  = min(_us_yield_history, key=lambda x: x["US 10Y (%)"])
-
-            _udy_mom     = _usy_latest["US 10Y (%)"] - _usy_prev["US 10Y (%)"]
-            _udy_yoy     = _usy_latest["US 10Y (%)"] - _usy_12m_ago["US 10Y (%)"]
-            _udy_spread  = _usy_latest["Spread ID-US (%)"]
-            _udy_spread_prev = _usy_prev["Spread ID-US (%)"]
-            _udy_spread_chg  = _udy_spread - _udy_spread_prev
-
-            _usy_range  = _usy_peak["US 10Y (%)"] - _usy_trough["US 10Y (%)"]
-            _usy_pos_pct = (_usy_latest["US 10Y (%)"] - _usy_trough["US 10Y (%)"]) / _usy_range * 100 if _usy_range else 50
-            _usy_signal  = "⚠️ TINGGI — Tekanan Global" if _usy_latest["US 10Y (%)"] >= 4.5 else ("✅ MODERAT — Kondusif EM" if _usy_latest["US 10Y (%)"] < 4.0 else "🟡 NORMAL — Waspadai Fed")
-            _usy_sig_color = "#f23645" if _usy_latest["US 10Y (%)"] >= 4.5 else ("#26a69a" if _usy_latest["US 10Y (%)"] < 4.0 else "#f5a623")
-            _spread_color = "#26a69a" if _udy_spread >= 2.5 else ("#f5a623" if _udy_spread >= 2.0 else "#f23645")
-
-            _uc1, _uc2, _uc3, _uc4 = st.columns(4)
-            with _uc1:
-                st.markdown(f"""<div class='trm-card'>
-                <div class='trm-card-title'>US TREASURY 10Y YIELD</div>
-                <div style='font-size:2rem;font-weight:700;color:#f23645;'>{_usy_latest["US 10Y (%)"]:.2f}%</div>
-                <div style='color:{_yield_color(_udy_mom, inverse=True)};font-size:0.82rem;margin-top:4px;'>
-                  {_yield_arrow(_udy_mom)}% vs bulan lalu
-                </div>
-                <div style='color:{text_sub};font-size:0.75rem;margin-top:2px;'>
-                  YoY: <span style='color:{_yield_color(_udy_yoy, inverse=True)};'>{_yield_arrow(_udy_yoy)}%</span>
-                </div></div>""", unsafe_allow_html=True)
-            with _uc2:
-                st.markdown(f"""<div class='trm-card'>
-                <div class='trm-card-title'>SPREAD ID vs US (10Y)</div>
-                <div style='font-size:2rem;font-weight:700;color:{_spread_color};'>{_udy_spread:.2f}%</div>
-                <div style='color:{_yield_color(_udy_spread_chg)};font-size:0.82rem;margin-top:4px;'>
-                  {_yield_arrow(_udy_spread_chg)}% vs bulan lalu
-                </div>
-                <div style='color:{text_sub};font-size:0.75rem;margin-top:2px;'>Spread &ge;2.5% = EM atraktif untuk asing</div>
-                </div>""", unsafe_allow_html=True)
-            with _uc3:
-                st.markdown(f"""<div class='trm-card'>
-                <div class='trm-card-title'>DXY (US DOLLAR INDEX)</div>
-                <div style='font-size:2rem;font-weight:700;color:#f5a623;'>{_usy_latest["DXY"]:.1f}</div>
-                <div style='color:{_yield_color(_usy_latest["DXY"] - _usy_prev["DXY"], inverse=True)};font-size:0.82rem;margin-top:4px;'>
-                  {_yield_arrow(_usy_latest["DXY"] - _usy_prev["DXY"])} vs bulan lalu
-                </div>
-                <div style='color:{text_sub};font-size:0.75rem;margin-top:2px;'>DXY &lt; 100 = favorable untuk IDX</div>
-                </div>""", unsafe_allow_html=True)
-            with _uc4:
-                st.markdown(f"""<div class='trm-card'>
-                <div class='trm-card-title'>SINYAL US YIELD</div>
-                <div style='font-size:1.1rem;font-weight:700;color:{_usy_sig_color};margin-top:4px;'>{_usy_signal}</div>
-                <div style='color:{text_sub};font-size:0.78rem;margin-top:6px;'>
-                  Posisi: <b>{_usy_pos_pct:.0f}th</b> percentile (12M)<br>
-                  Range: {_usy_trough["US 10Y (%)"]:.2f}% — {_usy_peak["US 10Y (%)"]:.2f}%
-                </div></div>""", unsafe_allow_html=True)
-
-            st.markdown("<br>", unsafe_allow_html=True)
-
-            # ── Chart ──
-            _usy_period2 = st.selectbox("Periode:", ["6 Bulan", "1 Tahun", "2 Tahun"], index=1, key="us_yield_period_sel")
-            _usy_nmonths = {"6 Bulan": 6, "1 Tahun": 12, "2 Tahun": 24}[_usy_period2]
-            df_usy_plot  = df_us_yield.tail(_usy_nmonths).reset_index(drop=True)
-
-            try:
-                import plotly.graph_objects as go
-                from plotly.subplots import make_subplots
-
-                fig_us = make_subplots(
-                    rows=3, cols=1,
-                    shared_xaxes=True,
-                    row_heights=[0.45, 0.25, 0.30],
-                    subplot_titles=["US Treasury 10Y Yield (%)", "Spread Indonesia–US 10Y (%)", "DXY & USD/IDR"],
-                    vertical_spacing=0.07
+                # ── Interpretasi US Yield ──
+                _us_interp = (
+                    "⚠️ ZONA BAHAYA GLOBAL — US 10Y di atas 4.5%. Dana asing keluar dari EM (Emerging Markets) ke US Treasury. "
+                    "Tekanan besar pada Rupiah, yield SBN Indonesia ikut naik, valuasi IDX tertekan."
+                    if _usy_latest["US 10Y (%)"] >= 4.5
+                    else ("✅ ZONA KONDUSIF — US 10Y di bawah 4.0%. Asing mencari yield lebih tinggi di EM seperti Indonesia. "
+                          "Potensi inflow besar ke IDX, Rupiah menguat, yield SBN Indonesia relatif atraktif."
+                          if _usy_latest["US 10Y (%)"] < 4.0
+                          else "🟡 ZONA NORMAL — US 10Y 4.0%–4.5%. Monitor Fed statement dan data inflasi US. "
+                               "Spread ID-US di atas 2.5% masih cukup atraktif untuk asing.")
                 )
+                _us_int_color = "#f23645" if _usy_latest["US 10Y (%)"] >= 4.5 else ("#26a69a" if _usy_latest["US 10Y (%)"] < 4.0 else "#f5a623")
 
-                _usy_vals  = df_usy_plot["US 10Y (%)"].tolist()
-                _usy_bulan = df_usy_plot["Bulan"].tolist()
-                _usy_prev_vals = [None] + _usy_vals[:-1]
-                _usy_bar_colors = ["#f23645" if (p is None or v >= p) else "#26a69a" for v, p in zip(_usy_vals, _usy_prev_vals)]
+                st.markdown(f"""<div class='trm-card' style='margin-top:4px;border-left:3px solid {_us_int_color};'>
+                <div class='trm-card-title' style='color:{_us_int_color};'>INTERPRETASI US YIELD — {_usy_latest["Bulan"]}</div>
+                <p style='color:{text_main};font-size:0.9rem;line-height:1.75;margin:0 0 8px;'>{_us_interp}</p>
+                <p style='color:{text_sub};font-size:0.78rem;line-height:1.65;margin:8px 0 0;'>
+                <b style='color:#f23645;'>⚡ Logika US Yield vs IDX:</b>
+                US 10Y naik = investor global prefer US Treasury (risk-free) → jual aset EM → IHSG tertekan, Rupiah melemah, BI harus naikkan suku bunga untuk defend spread.
+                <br>US 10Y turun = yield hunt ke EM → inflow ke IDX → IHSG bullish, Rupiah menguat.
+                <br><b style='color:{_spread_color};'>Spread saat ini {_udy_spread:.2f}%</b> — {"✅ Masih atraktif, asing belum lari." if _udy_spread >= 2.5 else "⚠️ Tipis, risiko outflow meningkat." if _udy_spread >= 2.0 else "🔴 Danger zone, inflow asing sangat terbatas."}
+                </p>
+                </div>""", unsafe_allow_html=True)
 
-                fig_us.add_trace(go.Bar(
-                    x=_usy_bulan, y=_usy_vals,
-                    name="US 10Y Yield",
-                    marker_color=_usy_bar_colors,
-                    opacity=0.75,
-                    hovertemplate="<b>%{x}</b><br>US 10Y: %{y:.2f}%<extra></extra>",
-                ), row=1, col=1)
-                fig_us.add_trace(go.Scatter(
-                    x=_usy_bulan, y=_usy_vals,
-                    name="US 10Y Trend",
-                    mode="lines+markers",
-                    line=dict(color="#f23645", width=2.5),
-                    marker=dict(size=6, color="#f23645"),
-                    hovertemplate="<b>%{x}</b><br>US 10Y: %{y:.2f}%<extra></extra>",
-                ), row=1, col=1)
-                # 4.5% danger zone
-                fig_us.add_hline(y=4.5, line_dash="dash", line_color="#f23645", line_width=1.2,
-                    annotation_text="4.50% — Zona Tekanan EM", annotation_position="top right",
-                    annotation_font_color="#f23645", annotation_font_size=10, row=1, col=1)
-                fig_us.add_hline(y=4.0, line_dash="dot", line_color="#26a69a", line_width=1.0,
-                    annotation_text="4.00% — Kondusif EM", annotation_position="bottom right",
-                    annotation_font_color="#26a69a", annotation_font_size=10, row=1, col=1)
+                # ── Tabel Historis US Yield ──
+                st.markdown("<br>", unsafe_allow_html=True)
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>DATA HISTORIS US 10Y YIELD</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
-                # Row 2: Spread
-                _spread_vals = df_usy_plot["Spread ID-US (%)"].apply(lambda x: round(x, 3)).tolist()
-                _spread_colors = ["#26a69a" if v >= 2.5 else ("#f5a623" if v >= 2.0 else "#f23645") for v in _spread_vals]
-                fig_us.add_trace(go.Bar(
-                    x=_usy_bulan, y=_spread_vals,
-                    name="Spread ID-US",
-                    marker_color=_spread_colors,
-                    opacity=0.85,
-                    hovertemplate="<b>%{x}</b><br>Spread: %{y:.2f}%<extra></extra>",
-                ), row=2, col=1)
-                fig_us.add_hline(y=2.5, line_dash="dash", line_color="#26a69a", line_width=1.0,
-                    annotation_text="2.5% — threshold inflow asing",
-                    annotation_font_color="#26a69a", annotation_font_size=9, row=2, col=1)
+                df_usy_disp = df_us_yield.copy()[::-1].reset_index(drop=True)
+                df_usy_disp["Δ US 10Y MoM"] = df_us_yield["US 10Y (%)"].diff().shift(-1 if False else 0)[::-1].reset_index(drop=True).apply(
+                    lambda v: f"{'▲' if v > 0 else '▼'} {abs(v):.2f}%" if pd.notna(v) and v != 0 else "—")
+                df_usy_disp["Spread (%)"]  = df_usy_disp["Spread ID-US (%)"].apply(lambda v: f"{v:.2f}%")
+                df_usy_disp["USD/IDR"]     = df_usy_disp["USD/IDR"].apply(lambda v: f"Rp {v:,.0f}")
+                df_usy_disp = df_usy_disp[["Bulan","US 10Y (%)","Δ US 10Y MoM","DXY","Spread (%)","USD/IDR"]]
+                df_usy_disp.rename(columns={"US 10Y (%)": "US 10Y Yield (%)"}, inplace=True)
+                st.dataframe(df_usy_disp, use_container_width=True, hide_index=True,
+                             height=60 + len(df_usy_disp) * 36)
 
-                # Row 3: DXY + USD/IDR secondary axis
-                _dxy_vals2 = df_usy_plot["DXY"].tolist()
-                _idr_vals2 = df_usy_plot["USD/IDR"].tolist()
-                fig_us.add_trace(go.Scatter(
-                    x=_usy_bulan, y=_dxy_vals2,
-                    name="DXY",
-                    mode="lines+markers",
-                    line=dict(color="#f5a623", width=2),
-                    marker=dict(size=5),
-                    fill="tozeroy", fillcolor="rgba(245,166,35,0.07)",
-                    hovertemplate="<b>%{x}</b><br>DXY: %{y:.1f}<extra></extra>",
-                    yaxis="y5",
-                ), row=3, col=1)
+                st.markdown(f"""<div style='font-size:0.72rem;color:{text_sub};margin-top:6px;font-family:IBM Plex Mono,monospace;'>
+                ⓘ Data update: <b>Mingguan (setiap Senin)</b> · Sumber: SIGMA Database / US Treasury (^TNX) · Last update: {_usy_latest["Bulan"]}
+                </div>""", unsafe_allow_html=True)
 
-                fig_us.update_layout(
-                    height=600,
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(family="IBM Plex Mono, DM Sans, sans-serif", color="#c9d1d9", size=11),
-                    legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="right", x=1,
-                                bgcolor="rgba(0,0,0,0)", font=dict(size=10)),
-                    margin=dict(l=10, r=10, t=40, b=10),
-                    hovermode="x unified",
-                )
-                for i in range(1, 4):
-                    fig_us.update_xaxes(showgrid=True, gridcolor="rgba(242,54,69,0.1)", tickfont=dict(size=10), row=i, col=1)
-                    fig_us.update_yaxes(showgrid=True, gridcolor="rgba(242,54,69,0.1)", tickfont=dict(size=10), row=i, col=1)
-                for ann in fig_us.layout.annotations:
-                    ann.font.size  = 11
-                    ann.font.color = "#c9d1d9"
 
-                st.plotly_chart(fig_us, use_container_width=True)
-
-            except Exception as _ue:
-                st.warning(f"Chart tidak bisa dimuat: {_ue}")
-                st.dataframe(df_usy_plot, use_container_width=True, hide_index=True)
-
-            # ── Interpretasi US Yield ──
-            _us_interp = (
-                "⚠️ ZONA BAHAYA GLOBAL — US 10Y di atas 4.5%. Dana asing keluar dari EM (Emerging Markets) ke US Treasury. "
-                "Tekanan besar pada Rupiah, yield SBN Indonesia ikut naik, valuasi IDX tertekan."
-                if _usy_latest["US 10Y (%)"] >= 4.5
-                else ("✅ ZONA KONDUSIF — US 10Y di bawah 4.0%. Asing mencari yield lebih tinggi di EM seperti Indonesia. "
-                      "Potensi inflow besar ke IDX, Rupiah menguat, yield SBN Indonesia relatif atraktif."
-                      if _usy_latest["US 10Y (%)"] < 4.0
-                      else "🟡 ZONA NORMAL — US 10Y 4.0%–4.5%. Monitor Fed statement dan data inflasi US. "
-                           "Spread ID-US di atas 2.5% masih cukup atraktif untuk asing.")
-            )
-            _us_int_color = "#f23645" if _usy_latest["US 10Y (%)"] >= 4.5 else ("#26a69a" if _usy_latest["US 10Y (%)"] < 4.0 else "#f5a623")
-
-            st.markdown(f"""<div class='trm-card' style='margin-top:4px;border-left:3px solid {_us_int_color};'>
-            <div class='trm-card-title' style='color:{_us_int_color};'>INTERPRETASI US YIELD — {_usy_latest["Bulan"]}</div>
-            <p style='color:{text_main};font-size:0.9rem;line-height:1.75;margin:0 0 8px;'>{_us_interp}</p>
-            <p style='color:{text_sub};font-size:0.78rem;line-height:1.65;margin:8px 0 0;'>
-            <b style='color:#f23645;'>⚡ Logika US Yield vs IDX:</b>
-            US 10Y naik = investor global prefer US Treasury (risk-free) → jual aset EM → IHSG tertekan, Rupiah melemah, BI harus naikkan suku bunga untuk defend spread.
-            <br>US 10Y turun = yield hunt ke EM → inflow ke IDX → IHSG bullish, Rupiah menguat.
-            <br><b style='color:{_spread_color};'>Spread saat ini {_udy_spread:.2f}%</b> — {"✅ Masih atraktif, asing belum lari." if _udy_spread >= 2.5 else "⚠️ Tipis, risiko outflow meningkat." if _udy_spread >= 2.0 else "🔴 Danger zone, inflow asing sangat terbatas."}
-            </p>
-            </div>""", unsafe_allow_html=True)
-
-            # ── Tabel Historis US Yield ──
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>DATA HISTORIS US 10Y YIELD</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-
-            df_usy_disp = df_us_yield.copy()[::-1].reset_index(drop=True)
-            df_usy_disp["Δ US 10Y MoM"] = df_us_yield["US 10Y (%)"].diff().shift(-1 if False else 0)[::-1].reset_index(drop=True).apply(
-                lambda v: f"{'▲' if v > 0 else '▼'} {abs(v):.2f}%" if pd.notna(v) and v != 0 else "—")
-            df_usy_disp["Spread (%)"]  = df_usy_disp["Spread ID-US (%)"].apply(lambda v: f"{v:.2f}%")
-            df_usy_disp["USD/IDR"]     = df_usy_disp["USD/IDR"].apply(lambda v: f"Rp {v:,.0f}")
-            df_usy_disp = df_usy_disp[["Bulan","US 10Y (%)","Δ US 10Y MoM","DXY","Spread (%)","USD/IDR"]]
-            df_usy_disp.rename(columns={"US 10Y (%)": "US 10Y Yield (%)"}, inplace=True)
-            st.dataframe(df_usy_disp, use_container_width=True, hide_index=True,
-                         height=60 + len(df_usy_disp) * 36)
-
-            st.markdown(f"""<div style='font-size:0.72rem;color:{text_sub};margin-top:6px;font-family:IBM Plex Mono,monospace;'>
-            ⓘ Data update: <b>Mingguan (setiap Senin)</b> · Sumber: SIGMA Database / US Treasury (^TNX) · Last update: {_usy_latest["Bulan"]}
-            </div>""", unsafe_allow_html=True)
-
-            # ── AI ANALYST: Bond Yield ──────────────────────────────
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🤖 AI ANALYST — BOND YIELD</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            if "ai_bond_yield_result" not in st.session_state:
-                st.session_state["ai_bond_yield_result"] = None
-            _col_ai_by, _ = st.columns([1, 3])
-            with _col_ai_by:
-                _btn_analyze_yield = st.button("🔍 Analyze Bond Yield", key="btn_ai_bond_yield", use_container_width=True)
-            if _btn_analyze_yield:
-                # Ambil data terkini dari df yang sudah ada
-                try:
-                    _by_latest_id = df_id_yield.iloc[-1] if len(df_id_yield) > 0 else None
-                    _by_prev_id   = df_id_yield.iloc[-2] if len(df_id_yield) > 1 else None
-                    _by_latest_us = df_us_yield.iloc[-1] if len(df_us_yield) > 0 else None
-                    _id10y_now  = float(_by_latest_id["Indonesia 10Y (%)"]) if _by_latest_id is not None else 6.82
-                    _id10y_prev = float(_by_prev_id["Indonesia 10Y (%)"]) if _by_prev_id is not None else _id10y_now
-                    _us10y_now  = float(_by_latest_us["US 10Y (%)"]) if _by_latest_us is not None else 4.38
-                    _dxy_now    = float(_by_latest_us["DXY"]) if _by_latest_us is not None else 99.5
-                    _idr_now    = float(_by_latest_us["USD/IDR"]) if _by_latest_us is not None else 16400
-                    _spread_now = round(_id10y_now - _us10y_now, 2)
-                    _id_chg_txt = f"{'naik' if _id10y_now > _id10y_prev else 'turun'} {abs(_id10y_now - _id10y_prev):.2f}% dari bulan lalu"
-                except Exception:
-                    _id10y_now, _us10y_now, _dxy_now, _idr_now, _spread_now = 6.82, 4.38, 99.5, 16400, 2.44
-                    _id_chg_txt = "data terbatas"
-                _by_prompt = f"""Kamu adalah SIGMA AI, analis fixed income dan pasar modal IDX.
-
-Analisa kondisi bond yield Indonesia dan implikasinya berdasarkan data berikut:
-
-📌 DATA BOND YIELD:
-- Indonesia Gov Bond 10Y: {_id10y_now:.2f}% ({_id_chg_txt})
-- US Treasury 10Y Yield: {_us10y_now:.2f}%
-- Spread ID-US: +{_spread_now:.2f}%
-- DXY (US Dollar Index): {_dxy_now:.1f}
-- USD/IDR: Rp {_idr_now:,.0f}
-
-📌 KONTEKS:
-- Spread >2.5% = zona atraktif untuk asing masuk ke SUN Indonesia
-- DXY tinggi = dollar kuat = tekanan Rupiah = asing cenderung keluar EM
-- Yield ID naik = harga obligasi turun = SUN jual off
-
-Buatlah analisa naratif yang mencakup:
-1. **Kondisi Bond Market ID** — Yield Indonesia saat ini berada di level apa? Tren naik/turun?
-2. **Spread Analysis** — Spread {_spread_now:.2f}% itu cukup untuk menarik asing? Komparasi historis?
-3. **Pengaruh DXY & Rupiah** — DXY {_dxy_now:.1f} dan Rupiah {_idr_now:,.0f} mengindikasikan apa untuk inflow/outflow obligasi?
-4. **Dampak ke Pasar Saham** — Bagaimana kondisi yield ini mempengaruhi IHSG? Sektor defensif vs growth?
-5. **Outlook** — Apakah yield akan turun (bullish obligasi) atau naik (bearish)? Apa triggernya?
-
-Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur dan tegas."""
-                with st.spinner("🤖 SIGMA menganalisa bond yield..."):
+            with _by_tab_ai:
+                # ── AI ANALYST: Bond Yield ──────────────────────────────
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🤖 AI ANALYST — BOND YIELD</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                if "ai_bond_yield_result" not in st.session_state:
+                    st.session_state["ai_bond_yield_result"] = None
+                _col_ai_by, _ = st.columns([1, 3])
+                with _col_ai_by:
+                    _btn_analyze_yield = st.button("🔍 Analyze Bond Yield", key="btn_ai_bond_yield", use_container_width=True)
+                if _btn_analyze_yield:
+                    # Ambil data terkini dari df yang sudah ada
                     try:
-                        _ai_by_result, _ai_by_model = _call_groq_primary(_by_prompt, max_tokens=2000, temperature=0.6)
-                        st.session_state["ai_bond_yield_result"] = (_ai_by_result, _ai_by_model)
-                    except Exception as _e:
-                        st.session_state["ai_bond_yield_result"] = (f"❌ Gagal: {str(_e)}", "error")
-            if st.session_state.get("ai_bond_yield_result"):
-                _by_txt, _by_mdl = st.session_state["ai_bond_yield_result"]
-                st.markdown(f"""<div style='background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.25);
-                border-radius:8px;padding:16px 18px;margin-top:8px;font-family:"DM Sans",sans-serif;font-size:0.88rem;
-                line-height:1.75;color:#e0e0e0;'>
-                <div style='font-size:0.68rem;color:#8b5cf6;font-family:IBM Plex Mono,monospace;margin-bottom:10px;'>
-                🤖 SIGMA AI · Bond Yield Analysis</div>
-                {_by_txt.replace(chr(10), "<br>")}
-                </div>""", unsafe_allow_html=True)
-            st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+                        _by_latest_id = df_id_yield.iloc[-1] if len(df_id_yield) > 0 else None
+                        _by_prev_id   = df_id_yield.iloc[-2] if len(df_id_yield) > 1 else None
+                        _by_latest_us = df_us_yield.iloc[-1] if len(df_us_yield) > 0 else None
+                        _id10y_now  = float(_by_latest_id["Indonesia 10Y (%)"]) if _by_latest_id is not None else 6.82
+                        _id10y_prev = float(_by_prev_id["Indonesia 10Y (%)"]) if _by_prev_id is not None else _id10y_now
+                        _us10y_now  = float(_by_latest_us["US 10Y (%)"]) if _by_latest_us is not None else 4.38
+                        _dxy_now    = float(_by_latest_us["DXY"]) if _by_latest_us is not None else 99.5
+                        _idr_now    = float(_by_latest_us["USD/IDR"]) if _by_latest_us is not None else 16400
+                        _spread_now = round(_id10y_now - _us10y_now, 2)
+                        _id_chg_txt = f"{'naik' if _id10y_now > _id10y_prev else 'turun'} {abs(_id10y_now - _id10y_prev):.2f}% dari bulan lalu"
+                    except Exception:
+                        _id10y_now, _us10y_now, _dxy_now, _idr_now, _spread_now = 6.82, 4.38, 99.5, 16400, 2.44
+                        _id_chg_txt = "data terbatas"
+                    _by_prompt = f"""Kamu adalah SIGMA AI, analis fixed income dan pasar modal IDX.
+
+    Analisa kondisi bond yield Indonesia dan implikasinya berdasarkan data berikut:
+
+    📌 DATA BOND YIELD:
+    - Indonesia Gov Bond 10Y: {_id10y_now:.2f}% ({_id_chg_txt})
+    - US Treasury 10Y Yield: {_us10y_now:.2f}%
+    - Spread ID-US: +{_spread_now:.2f}%
+    - DXY (US Dollar Index): {_dxy_now:.1f}
+    - USD/IDR: Rp {_idr_now:,.0f}
+
+    📌 KONTEKS:
+    - Spread >2.5% = zona atraktif untuk asing masuk ke SUN Indonesia
+    - DXY tinggi = dollar kuat = tekanan Rupiah = asing cenderung keluar EM
+    - Yield ID naik = harga obligasi turun = SUN jual off
+
+    Buatlah analisa naratif yang mencakup:
+    1. **Kondisi Bond Market ID** — Yield Indonesia saat ini berada di level apa? Tren naik/turun?
+    2. **Spread Analysis** — Spread {_spread_now:.2f}% itu cukup untuk menarik asing? Komparasi historis?
+    3. **Pengaruh DXY & Rupiah** — DXY {_dxy_now:.1f} dan Rupiah {_idr_now:,.0f} mengindikasikan apa untuk inflow/outflow obligasi?
+    4. **Dampak ke Pasar Saham** — Bagaimana kondisi yield ini mempengaruhi IHSG? Sektor defensif vs growth?
+    5. **Outlook** — Apakah yield akan turun (bullish obligasi) atau naik (bearish)? Apa triggernya?
+
+    Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur dan tegas."""
+                    with st.spinner("🤖 SIGMA menganalisa bond yield..."):
+                        try:
+                            _ai_by_result, _ai_by_model = _call_groq_primary(_by_prompt, max_tokens=2000, temperature=0.6)
+                            st.session_state["ai_bond_yield_result"] = (_ai_by_result, _ai_by_model)
+                        except Exception as _e:
+                            st.session_state["ai_bond_yield_result"] = (f"❌ Gagal: {str(_e)}", "error")
+                if st.session_state.get("ai_bond_yield_result"):
+                    _by_txt, _by_mdl = st.session_state["ai_bond_yield_result"]
+                    st.markdown(f"""<div style='background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.25);
+                    border-radius:8px;padding:16px 18px;margin-top:8px;font-family:"DM Sans",sans-serif;font-size:0.88rem;
+                    line-height:1.75;color:#e0e0e0;'>
+                    <div style='font-size:0.68rem;color:#8b5cf6;font-family:IBM Plex Mono,monospace;margin-bottom:10px;'>
+                    🤖 SIGMA AI · Bond Yield Analysis</div>
+                    {_by_txt.replace(chr(10), "<br>")}
+                    </div>""", unsafe_allow_html=True)
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         # ════════════════════════════════════════════════════════════════
         # TAB: DIVIDEND — Full Implementation (hardcoded 2025–2026)
@@ -15795,533 +15807,569 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
     # ── Market Data sub-tabs: Fundamental & Shareholder redirect ke Alpha Screener ──
     with _md_subtab_fundamental:
+        # ── NESTED SUB-TABS: Fundamental Screener ────────────────────────────
+        _fs_tab_screener, _fs_tab_ai = st.tabs([
+            "  📊 FUNDAMENTAL SCREENER  ",
+            "  🤖 AI ANALYST & TANYA SIGMA AI  ",
+        ])
 
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FUNDAMENTAL SCREENER - BUFFETT · GRAHAM · DAMODARAN · LYNCH</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown("""<div style='background:#0a0e1a;border-top:1px solid rgba(38,166,154,0.3);border-bottom:1px solid rgba(38,166,154,0.3);border-left:3px solid #26a69a;padding:8px 0;font-size:0.82rem;color:rgba(255,255,255,0.75);overflow:hidden;white-space:nowrap;margin-bottom:10px;'>
-  <div style='display:inline-block;animation:sigma-scroll-fs 44s linear infinite;padding-left:100%;'>
-    <b style='color:#26a69a;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
-    Gunakan Buffett Score &ge;4 sebagai filter utama: ROE &ge;15%, DER &le;1.0x, Net Margin &ge;10%, Current Ratio &ge;1.5x, PBV 0.5-3x, EPS positif.
-    Kombinasikan dengan Graham MoS &gt;30% untuk margin of safety. PEG &lt;1.0 = undervalue relatif growth (Lynch/Damodaran). Prioritas: kualitas dulu, harga kemudian.
-    &nbsp;&nbsp;&nbsp;<span style='color:rgba(38,166,154,0.5);'>◆</span>&nbsp;&nbsp;&nbsp;
-    <b style='color:#26a69a;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
-    Gunakan Buffett Score &ge;4 sebagai filter utama: ROE &ge;15%, DER &le;1.0x, Net Margin &ge;10%, Current Ratio &ge;1.5x, PBV 0.5-3x, EPS positif.
-    Kombinasikan dengan Graham MoS &gt;30% untuk margin of safety. PEG &lt;1.0 = undervalue relatif growth (Lynch/Damodaran). Prioritas: kualitas dulu, harga kemudian.
-  </div>
-</div>
-<style>@keyframes sigma-scroll-fs{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}</style>""", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin-bottom:16px;'>Screening saham IDX berbasis kualitas fundamental - ROE, DER, Net Margin, Current Ratio, PBV, EPS. Urutkan berdasarkan framework: Buffett Score, Graham MoS, PEG Ratio, EPS Growth, Dividend Yield. Data live via yfinance multi-layer.</p>", unsafe_allow_html=True)
+        with _fs_tab_screener:
 
-        _fs_accent = "#26a69a"
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FUNDAMENTAL SCREENER - BUFFETT · GRAHAM · DAMODARAN · LYNCH</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown("""<div style='background:#0a0e1a;border-top:1px solid rgba(38,166,154,0.3);border-bottom:1px solid rgba(38,166,154,0.3);border-left:3px solid #26a69a;padding:8px 0;font-size:0.82rem;color:rgba(255,255,255,0.75);overflow:hidden;white-space:nowrap;margin-bottom:10px;'>
+      <div style='display:inline-block;animation:sigma-scroll-fs 44s linear infinite;padding-left:100%;'>
+        <b style='color:#26a69a;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
+        Gunakan Buffett Score &ge;4 sebagai filter utama: ROE &ge;15%, DER &le;1.0x, Net Margin &ge;10%, Current Ratio &ge;1.5x, PBV 0.5-3x, EPS positif.
+        Kombinasikan dengan Graham MoS &gt;30% untuk margin of safety. PEG &lt;1.0 = undervalue relatif growth (Lynch/Damodaran). Prioritas: kualitas dulu, harga kemudian.
+        &nbsp;&nbsp;&nbsp;<span style='color:rgba(38,166,154,0.5);'>◆</span>&nbsp;&nbsp;&nbsp;
+        <b style='color:#26a69a;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
+        Gunakan Buffett Score &ge;4 sebagai filter utama: ROE &ge;15%, DER &le;1.0x, Net Margin &ge;10%, Current Ratio &ge;1.5x, PBV 0.5-3x, EPS positif.
+        Kombinasikan dengan Graham MoS &gt;30% untuk margin of safety. PEG &lt;1.0 = undervalue relatif growth (Lynch/Damodaran). Prioritas: kualitas dulu, harga kemudian.
+      </div>
+    </div>
+    <style>@keyframes sigma-scroll-fs{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}</style>""", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin-bottom:16px;'>Screening saham IDX berbasis kualitas fundamental - ROE, DER, Net Margin, Current Ratio, PBV, EPS. Urutkan berdasarkan framework: Buffett Score, Graham MoS, PEG Ratio, EPS Growth, Dividend Yield. Data live via yfinance multi-layer.</p>", unsafe_allow_html=True)
 
-        st.markdown(f"""
-        <div style='background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};line-height:1.9;'>
-        <span style='color:{_fs_accent};font-weight:700;letter-spacing:0.1em;'>6 KRITERIA BUFFETT + VALUE INVESTING (BASIS SCREENING)</span><br>
-        OK <b>ROE &ge; 15%</b> - Return on Equity kuat (Buffett: konsisten &ge;15% = moat sesungguhnya) &nbsp;|&nbsp;
-        OK <b>DER &le; 1.0x</b> - Utang terkendali, tidak over-leverage &nbsp;|&nbsp;
-        OK <b>Net Margin &ge; 10%</b> - Pricing power &amp; efisiensi operasional &nbsp;|&nbsp;
-        OK <b>Current Ratio &ge; 1.5x</b> - Likuiditas jangka pendek aman &nbsp;|&nbsp;
-        OK <b>PBV 0.5&ndash;3.0x</b> - Tidak terlalu mahal, tidak value trap &nbsp;|&nbsp;
-        OK <b>EPS positif</b> - Perusahaan benar-benar profitable<br><br>
-        <span style='color:#a78bfa;font-weight:700;letter-spacing:0.08em;'> OPSI URUTAN TAMBAHAN (GRAHAM &middot; DAMODARAN &middot; LYNCH)</span><br>
-         <b>Buffett Score</b> - Skor total 0&ndash;6 kriteria terpenuhi &nbsp;|&nbsp;
-         <b>Graham Number MoS</b> - &radic;(22.5 &times; EPS &times; Book Value) vs harga pasar: makin besar = makin undervalue &nbsp;|&nbsp;
-         <b>EPS Growth</b> - Pertumbuhan laba per saham (Lynch: Fast Grower jika EPS growth &gt;20%) &nbsp;|&nbsp;
-         <b>Dividend Yield</b> - Yield dividen tertinggi (Slow Grower / income stock) &nbsp;|&nbsp;
-         <b>PEG Ratio</b> - PER &divide; ROE: &lt;1.0 = undervalue relatif growth (Damodaran/Lynch rule of thumb)
-        </div>
-        """, unsafe_allow_html=True)
+            _fs_accent = "#26a69a"
 
-        _fs_universe = [
-            "BBCA","BBRI","BMRI","BBNI","BRIS","TLKM","ASII","UNVR","KLBF","ICBP",
-            "INDF","MYOR","SIDO","CPIN","JPFA","HMSP","GGRM","ANTM","PTBA","ADRO",
-            "ITMG","INCO","MDKA","NCKL","MEDC","PGAS","AALI","LSIP","SIMP","SMGR",
-            "INTP","BSDE","CTRA","SMRA","PWON","GOTO","EMTK","MAPI","ACES","HEAL",
-            "MIKA","SILO","KAEF","TSPC","DVLA","BFIN","ADMF","BIRD","TMAS","SMDR",
-            "TPIA","BRPT","AMMN","BRMS","MBMA","TBIG","TOWR","LINK","DMAS","BEST",
-            "PGEO","PTRO","CUAN","VKTR","RAJA","FILM","MIDI","RALS","AMRT","MCAS",
-            "BBTN","BNGA","PNBN","MEGA","BJBR","UNTR","ELSA","HRUM","GEMS","TBLA",
-        ]
-        _sektor_map = {
-            "Perbankan":       ["BBCA","BBRI","BMRI","BBNI","BRIS","BBTN","BNGA","PNBN","MEGA","BJBR"],
-            "Energi & Tambang":["PTBA","ADRO","ITMG","INCO","MDKA","NCKL","MEDC","PGAS","ANTM","AMMN","BRMS","MBMA","HRUM","GEMS","ELSA","RAJA"],
-            "Consumer Goods":  ["UNVR","KLBF","ICBP","INDF","MYOR","SIDO","CPIN","JPFA","HMSP","GGRM","MIDI","RALS","AMRT","MAPI","ACES"],
-            "Properti":        ["BSDE","CTRA","SMRA","PWON","DMAS","BEST"],
-            "Teknologi":       ["TLKM","GOTO","EMTK","TBIG","TOWR","LINK","MCAS"],
-            "Kesehatan":       ["HEAL","MIKA","SILO","KAEF","TSPC","DVLA"],
-            "Infrastruktur":   ["PGEO","PTRO","CUAN","VKTR","TMAS","SMDR","BIRD"],
-            "Agribisnis":      ["AALI","LSIP","SIMP","TBLA"],
-            "Industri":        ["ASII","SMGR","INTP","TPIA","BRPT","UNTR","BFIN","ADMF"],
-        }
+            st.markdown(f"""
+            <div style='background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};line-height:1.9;'>
+            <span style='color:{_fs_accent};font-weight:700;letter-spacing:0.1em;'>6 KRITERIA BUFFETT + VALUE INVESTING (BASIS SCREENING)</span><br>
+            OK <b>ROE &ge; 15%</b> - Return on Equity kuat (Buffett: konsisten &ge;15% = moat sesungguhnya) &nbsp;|&nbsp;
+            OK <b>DER &le; 1.0x</b> - Utang terkendali, tidak over-leverage &nbsp;|&nbsp;
+            OK <b>Net Margin &ge; 10%</b> - Pricing power &amp; efisiensi operasional &nbsp;|&nbsp;
+            OK <b>Current Ratio &ge; 1.5x</b> - Likuiditas jangka pendek aman &nbsp;|&nbsp;
+            OK <b>PBV 0.5&ndash;3.0x</b> - Tidak terlalu mahal, tidak value trap &nbsp;|&nbsp;
+            OK <b>EPS positif</b> - Perusahaan benar-benar profitable<br><br>
+            <span style='color:#a78bfa;font-weight:700;letter-spacing:0.08em;'> OPSI URUTAN TAMBAHAN (GRAHAM &middot; DAMODARAN &middot; LYNCH)</span><br>
+             <b>Buffett Score</b> - Skor total 0&ndash;6 kriteria terpenuhi &nbsp;|&nbsp;
+             <b>Graham Number MoS</b> - &radic;(22.5 &times; EPS &times; Book Value) vs harga pasar: makin besar = makin undervalue &nbsp;|&nbsp;
+             <b>EPS Growth</b> - Pertumbuhan laba per saham (Lynch: Fast Grower jika EPS growth &gt;20%) &nbsp;|&nbsp;
+             <b>Dividend Yield</b> - Yield dividen tertinggi (Slow Grower / income stock) &nbsp;|&nbsp;
+             <b>PEG Ratio</b> - PER &divide; ROE: &lt;1.0 = undervalue relatif growth (Damodaran/Lynch rule of thumb)
+            </div>
+            """, unsafe_allow_html=True)
 
-        _fsc1, _fsc2, _fsc3 = st.columns([2, 2, 1])
-        with _fsc1:
-            _fs_sektor_options = ["Semua Sektor"] + list(_sektor_map.keys())
-            _fs_sektor_default = st.session_state.get("fs_sektor", "Semua Sektor")
-            _fs_sektor_idx = _fs_sektor_options.index(_fs_sektor_default) if _fs_sektor_default in _fs_sektor_options else 0
-            _fs_sektor = st.selectbox("Filter Sektor:", _fs_sektor_options, index=_fs_sektor_idx, key="fs_sektor_widget")
-        with _fsc2:
-            _fs_sort_options = [
-                "ROE (Tertinggi)","PBV (Terendah)","Net Margin (Tertinggi)",
-                "DER (Terendah)","Current Ratio (Tertinggi)",
-                "Buffett Score (Tertinggi)","Graham Number (Margin of Safety)",
-                "EPS Growth (Tertinggi)","Dividend Yield (Tertinggi)",
-                "PEG Ratio (Terendah)"
+            _fs_universe = [
+                "BBCA","BBRI","BMRI","BBNI","BRIS","TLKM","ASII","UNVR","KLBF","ICBP",
+                "INDF","MYOR","SIDO","CPIN","JPFA","HMSP","GGRM","ANTM","PTBA","ADRO",
+                "ITMG","INCO","MDKA","NCKL","MEDC","PGAS","AALI","LSIP","SIMP","SMGR",
+                "INTP","BSDE","CTRA","SMRA","PWON","GOTO","EMTK","MAPI","ACES","HEAL",
+                "MIKA","SILO","KAEF","TSPC","DVLA","BFIN","ADMF","BIRD","TMAS","SMDR",
+                "TPIA","BRPT","AMMN","BRMS","MBMA","TBIG","TOWR","LINK","DMAS","BEST",
+                "PGEO","PTRO","CUAN","VKTR","RAJA","FILM","MIDI","RALS","AMRT","MCAS",
+                "BBTN","BNGA","PNBN","MEGA","BJBR","UNTR","ELSA","HRUM","GEMS","TBLA",
             ]
-            _fs_sort_default = st.session_state.get("fs_sort_key", "ROE (Tertinggi)")
-            _fs_sort_idx = _fs_sort_options.index(_fs_sort_default) if _fs_sort_default in _fs_sort_options else 0
-            _fs_sort = st.selectbox("Urutkan:", _fs_sort_options, index=_fs_sort_idx, key="fs_sort_widget")
-        with _fsc3:
-            st.markdown("<br>", unsafe_allow_html=True)
-            _fs_run = st.button("🔍 SCREEN", use_container_width=True, key="btn_fs_screen")
+            _sektor_map = {
+                "Perbankan":       ["BBCA","BBRI","BMRI","BBNI","BRIS","BBTN","BNGA","PNBN","MEGA","BJBR"],
+                "Energi & Tambang":["PTBA","ADRO","ITMG","INCO","MDKA","NCKL","MEDC","PGAS","ANTM","AMMN","BRMS","MBMA","HRUM","GEMS","ELSA","RAJA"],
+                "Consumer Goods":  ["UNVR","KLBF","ICBP","INDF","MYOR","SIDO","CPIN","JPFA","HMSP","GGRM","MIDI","RALS","AMRT","MAPI","ACES"],
+                "Properti":        ["BSDE","CTRA","SMRA","PWON","DMAS","BEST"],
+                "Teknologi":       ["TLKM","GOTO","EMTK","TBIG","TOWR","LINK","MCAS"],
+                "Kesehatan":       ["HEAL","MIKA","SILO","KAEF","TSPC","DVLA"],
+                "Infrastruktur":   ["PGEO","PTRO","CUAN","VKTR","TMAS","SMDR","BIRD"],
+                "Agribisnis":      ["AALI","LSIP","SIMP","TBLA"],
+                "Industri":        ["ASII","SMGR","INTP","TPIA","BRPT","UNTR","BFIN","ADMF"],
+            }
 
-        _fs_tickers = _sektor_map.get(_fs_sektor, _fs_universe) if _fs_sektor != "Semua Sektor" else _fs_universe
+            _fsc1, _fsc2, _fsc3 = st.columns([2, 2, 1])
+            with _fsc1:
+                _fs_sektor_options = ["Semua Sektor"] + list(_sektor_map.keys())
+                _fs_sektor_default = st.session_state.get("fs_sektor", "Semua Sektor")
+                _fs_sektor_idx = _fs_sektor_options.index(_fs_sektor_default) if _fs_sektor_default in _fs_sektor_options else 0
+                _fs_sektor = st.selectbox("Filter Sektor:", _fs_sektor_options, index=_fs_sektor_idx, key="fs_sektor_widget")
+            with _fsc2:
+                _fs_sort_options = [
+                    "ROE (Tertinggi)","PBV (Terendah)","Net Margin (Tertinggi)",
+                    "DER (Terendah)","Current Ratio (Tertinggi)",
+                    "Buffett Score (Tertinggi)","Graham Number (Margin of Safety)",
+                    "EPS Growth (Tertinggi)","Dividend Yield (Tertinggi)",
+                    "PEG Ratio (Terendah)"
+                ]
+                _fs_sort_default = st.session_state.get("fs_sort_key", "ROE (Tertinggi)")
+                _fs_sort_idx = _fs_sort_options.index(_fs_sort_default) if _fs_sort_default in _fs_sort_options else 0
+                _fs_sort = st.selectbox("Urutkan:", _fs_sort_options, index=_fs_sort_idx, key="fs_sort_widget")
+            with _fsc3:
+                st.markdown("<br>", unsafe_allow_html=True)
+                _fs_run = st.button("🔍 SCREEN", use_container_width=True, key="btn_fs_screen")
 
-        if _fs_run or st.session_state.get("fs_results"):
-            if _fs_run:
-                # ── Cek status API sebelum fetch ──
-                _fs_api_status = {}
-                try:
-                    _fh_test_keys = _get_all_finnhub_keys() or [st.secrets.get("FINNHUB_KEY","")]
-                    _fs_api_status["Finnhub"] = "✅" if any(k and len(k)>10 for k in _fh_test_keys) else "❌"
-                except: _fs_api_status["Finnhub"] = "❌"
-                try:
-                    _fmp_test_keys = _get_all_fmp_keys() or [st.secrets.get("FMP_KEY","")]
-                    _fs_api_status["FMP"] = "✅" if any(k and len(k)>10 for k in _fmp_test_keys) else "❌"
-                except: _fs_api_status["FMP"] = "❌"
-                try:
-                    _av_test_keys = _get_all_av_keys()
-                    _av_active = [k for k in (_av_test_keys or []) if k and len(k)>10]
-                    _fs_api_status["AlphaVantage"] = f"✅ ({len(_av_active)} key)" if _av_active else "❌ (no key)"
-                except Exception as _e_av:
-                    _fs_api_status["AlphaVantage"] = f"❌ ({type(_e_av).__name__})"
-                _fs_api_status["yfinance"] = "✅ (fallback utama)"
-                # Rebuild with key counts
-                try:
-                    _fh_active_ct = len([k for k in (_get_all_finnhub_keys() or []) if k and len(k)>10])
-                    _fmp_active_ct = len([k for k in (_get_all_fmp_keys() or []) if k and len(k)>10])
-                    _fs_api_status["Finnhub"] = f"{'✅' if _fh_active_ct else '❌'} ({_fh_active_ct} key)"
-                    _fs_api_status["FMP"] = f"{'✅' if _fmp_active_ct else '❌'} ({_fmp_active_ct} key)"
-                except Exception:
-                    pass
-                _api_stat_html = "  ·  ".join([f"<b>{src}</b> {stat_}" for src,stat_ in _fs_api_status.items()])
-                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:#888;margin-bottom:8px;'>📡 STATUS API: {_api_stat_html}</p>", unsafe_allow_html=True)
+            _fs_tickers = _sektor_map.get(_fs_sektor, _fs_universe) if _fs_sektor != "Semua Sektor" else _fs_universe
 
-                with st.spinner(f"Mengambil data fundamental {len(_fs_tickers)} saham IDX via yfinance..."):
-                    @st.cache_data(ttl=3600, show_spinner=False)
-                    def _fetch_fundamental_batch(tickers_tuple):
-                        import yfinance as _yf2, threading as _thr, time as _tsl
-                        results = {}
-                        lock = _thr.Lock()
-                        def _one(tk):
-                            inf = {}
-                            for _att in range(2):
+            if _fs_run or st.session_state.get("fs_results"):
+                if _fs_run:
+                    # ── Cek status API sebelum fetch ──
+                    _fs_api_status = {}
+                    try:
+                        _fh_test_keys = _get_all_finnhub_keys() or [st.secrets.get("FINNHUB_KEY","")]
+                        _fs_api_status["Finnhub"] = "✅" if any(k and len(k)>10 for k in _fh_test_keys) else "❌"
+                    except: _fs_api_status["Finnhub"] = "❌"
+                    try:
+                        _fmp_test_keys = _get_all_fmp_keys() or [st.secrets.get("FMP_KEY","")]
+                        _fs_api_status["FMP"] = "✅" if any(k and len(k)>10 for k in _fmp_test_keys) else "❌"
+                    except: _fs_api_status["FMP"] = "❌"
+                    try:
+                        _av_test_keys = _get_all_av_keys()
+                        _av_active = [k for k in (_av_test_keys or []) if k and len(k)>10]
+                        _fs_api_status["AlphaVantage"] = f"✅ ({len(_av_active)} key)" if _av_active else "❌ (no key)"
+                    except Exception as _e_av:
+                        _fs_api_status["AlphaVantage"] = f"❌ ({type(_e_av).__name__})"
+                    _fs_api_status["yfinance"] = "✅ (fallback utama)"
+                    # Rebuild with key counts
+                    try:
+                        _fh_active_ct = len([k for k in (_get_all_finnhub_keys() or []) if k and len(k)>10])
+                        _fmp_active_ct = len([k for k in (_get_all_fmp_keys() or []) if k and len(k)>10])
+                        _fs_api_status["Finnhub"] = f"{'✅' if _fh_active_ct else '❌'} ({_fh_active_ct} key)"
+                        _fs_api_status["FMP"] = f"{'✅' if _fmp_active_ct else '❌'} ({_fmp_active_ct} key)"
+                    except Exception:
+                        pass
+                    _api_stat_html = "  ·  ".join([f"<b>{src}</b> {stat_}" for src,stat_ in _fs_api_status.items()])
+                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:#888;margin-bottom:8px;'>📡 STATUS API: {_api_stat_html}</p>", unsafe_allow_html=True)
+
+                    with st.spinner(f"Mengambil data fundamental {len(_fs_tickers)} saham IDX via yfinance..."):
+                        @st.cache_data(ttl=3600, show_spinner=False)
+                        def _fetch_fundamental_batch(tickers_tuple):
+                            import yfinance as _yf2, threading as _thr, time as _tsl
+                            results = {}
+                            lock = _thr.Lock()
+                            def _one(tk):
+                                inf = {}
+                                for _att in range(2):
+                                    try:
+                                        inf = _yf2.Ticker(f"{tk}.JK").info or {}
+                                        if inf.get("regularMarketPrice") or inf.get("currentPrice"):
+                                            break
+                                    except Exception:
+                                        if _att == 0: _tsl.sleep(0.5)
                                 try:
-                                    inf = _yf2.Ticker(f"{tk}.JK").info or {}
-                                    if inf.get("regularMarketPrice") or inf.get("currentPrice"):
-                                        break
-                                except Exception:
-                                    if _att == 0: _tsl.sleep(0.5)
+                                    price = inf.get("currentPrice") or inf.get("regularMarketPrice") or 0
+                                    if not price: return
+                                    roe   = (inf.get("returnOnEquity") or 0) * 100
+                                    roa   = (inf.get("returnOnAssets") or 0) * 100
+                                    npm   = (inf.get("profitMargins") or 0) * 100
+                                    der   = inf.get("debtToEquity") or 0
+                                    cr    = inf.get("currentRatio") or 0
+                                    pbv   = inf.get("priceToBook") or 0
+                                    pe    = inf.get("trailingPE") or 0
+                                    eps   = inf.get("trailingEps") or 0
+                                    div   = (inf.get("dividendYield") or 0) * 100
+                                    mkcap = inf.get("marketCap") or 0
+                                    w52h  = inf.get("fiftyTwoWeekHigh") or 0
+                                    w52l  = inf.get("fiftyTwoWeekLow") or 0
+                                    rpos  = ((price-w52l)/(w52h-w52l)*100) if w52h > w52l else 0
+                                    eps_fwd = inf.get("forwardEps") or 0
+                                    eps_g   = ((eps_fwd-eps)/abs(eps)*100) if eps else 0
+                                    score = sum([roe>=15, der<=1.0 and der>0, npm>=10, cr>=1.5, 0.5<=pbv<=3.0 and pbv>0, eps>0])
+                                    with lock:
+                                        results[tk] = {
+                                            "name": (inf.get("shortName") or tk)[:22],
+                                            "price":price,"roe":roe,"roa":roa,"npm":npm,
+                                            "der":der,"cr":cr,"pbv":pbv,"pe":pe,"eps":eps,
+                                            "eps_g":eps_g,"div":div,"mkcap":mkcap,
+                                            "rpos":rpos,"score":score,
+                                        }
+                                except Exception: pass
+                            # Batch per 10 ticker untuk hindari rate limit
+                            _bsz = 10
+                            for _bi in range(0, len(tickers_tuple), _bsz):
+                                _batch = tickers_tuple[_bi:_bi+_bsz]
+                                ths = [_thr.Thread(target=_one, args=(tk,), daemon=True) for tk in _batch]
+                                for t in ths: t.start()
+                                for t in ths: t.join(timeout=20)
+                                _tsl.sleep(0.3)
+                            return results
+
+                        _fs_data = _fetch_fundamental_batch(tuple(_fs_tickers))
+                        if not _fs_data:
+                            st.warning("⚠️ Tidak ada data yang berhasil diambil. yfinance kemungkinan rate-limited. Coba lagi dalam beberapa menit.")
+                        _fs_ts_now = datetime.now().strftime("%d %b %Y, %H:%M WIB")
+                        st.session_state["fs_results"]  = _fs_data
+                        st.session_state["fs_ts"]       = _fs_ts_now
+                        st.session_state["fs_sort_key"] = _fs_sort
+                        st.session_state["fs_sektor"]   = _fs_sektor
+                        # Persist ke Sheets
+                        if st.session_state.get("user"):
                             try:
-                                price = inf.get("currentPrice") or inf.get("regularMarketPrice") or 0
-                                if not price: return
-                                roe   = (inf.get("returnOnEquity") or 0) * 100
-                                roa   = (inf.get("returnOnAssets") or 0) * 100
-                                npm   = (inf.get("profitMargins") or 0) * 100
-                                der   = inf.get("debtToEquity") or 0
-                                cr    = inf.get("currentRatio") or 0
-                                pbv   = inf.get("priceToBook") or 0
-                                pe    = inf.get("trailingPE") or 0
-                                eps   = inf.get("trailingEps") or 0
-                                div   = (inf.get("dividendYield") or 0) * 100
-                                mkcap = inf.get("marketCap") or 0
-                                w52h  = inf.get("fiftyTwoWeekHigh") or 0
-                                w52l  = inf.get("fiftyTwoWeekLow") or 0
-                                rpos  = ((price-w52l)/(w52h-w52l)*100) if w52h > w52l else 0
-                                eps_fwd = inf.get("forwardEps") or 0
-                                eps_g   = ((eps_fwd-eps)/abs(eps)*100) if eps else 0
-                                score = sum([roe>=15, der<=1.0 and der>0, npm>=10, cr>=1.5, 0.5<=pbv<=3.0 and pbv>0, eps>0])
-                                with lock:
-                                    results[tk] = {
-                                        "name": (inf.get("shortName") or tk)[:22],
-                                        "price":price,"roe":roe,"roa":roa,"npm":npm,
-                                        "der":der,"cr":cr,"pbv":pbv,"pe":pe,"eps":eps,
-                                        "eps_g":eps_g,"div":div,"mkcap":mkcap,
-                                        "rpos":rpos,"score":score,
-                                    }
+                                _ue_fs = st.session_state.user["email"]
+                                save_field(_ue_fs, "fs_results", _fs_data)
+                                save_field(_ue_fs, "fs_ts",      _fs_ts_now)
+                                save_field(_ue_fs, "fs_sektor",  _fs_sektor)
                             except Exception: pass
-                        # Batch per 10 ticker untuk hindari rate limit
-                        _bsz = 10
-                        for _bi in range(0, len(tickers_tuple), _bsz):
-                            _batch = tickers_tuple[_bi:_bi+_bsz]
-                            ths = [_thr.Thread(target=_one, args=(tk,), daemon=True) for tk in _batch]
-                            for t in ths: t.start()
-                            for t in ths: t.join(timeout=20)
-                            _tsl.sleep(0.3)
-                        return results
 
-                    _fs_data = _fetch_fundamental_batch(tuple(_fs_tickers))
-                    if not _fs_data:
-                        st.warning("⚠️ Tidak ada data yang berhasil diambil. yfinance kemungkinan rate-limited. Coba lagi dalam beberapa menit.")
-                    _fs_ts_now = datetime.now().strftime("%d %b %Y, %H:%M WIB")
-                    st.session_state["fs_results"]  = _fs_data
-                    st.session_state["fs_ts"]       = _fs_ts_now
-                    st.session_state["fs_sort_key"] = _fs_sort
-                    st.session_state["fs_sektor"]   = _fs_sektor
-                    # Persist ke Sheets
-                    if st.session_state.get("user"):
-                        try:
-                            _ue_fs = st.session_state.user["email"]
-                            save_field(_ue_fs, "fs_results", _fs_data)
-                            save_field(_ue_fs, "fs_ts",      _fs_ts_now)
-                            save_field(_ue_fs, "fs_sektor",  _fs_sektor)
-                        except Exception: pass
-
-            # Auto-load dari Sheets kalau session kosong
-            # _sigma_restored_from_db sudah handle ini via CRITICAL_KEYS
-            # Tapi kalau restored_from_db belum jalan (belum login penuh), coba manual
-            if not st.session_state.get("fs_results") and st.session_state.get("user") \
-                    and st.session_state.get("_sigma_restored_from_db"):
-                # Sudah di-restore tapi masih kosong = memang belum pernah screen
-                pass  # tidak perlu load lagi
-            elif not st.session_state.get("fs_results") and st.session_state.get("user"):
-                try:
-                    _fs_from_db = load_user(st.session_state.user["email"]) or {}
-                    if _fs_from_db.get("fs_results"):
-                        st.session_state["fs_results"] = _fs_from_db["fs_results"]
-                        st.session_state["fs_ts"]      = _fs_from_db.get("fs_ts", "")
-                        st.session_state["fs_sektor"]  = _fs_from_db.get("fs_sektor", "Semua Sektor")
-                except Exception: pass
-            # Staleness check: kalau data > 7 hari, tampilkan banner refresh
-            _fs_stale = False
-            _fs_ts_raw = st.session_state.get("fs_ts", "")
-            if _fs_ts_raw:
-                try:
-                    from datetime import datetime as _dfs
-                    _fs_dt = _dfs.strptime(_fs_ts_raw[:11].strip(), "%d %b %Y")
-                    _fs_stale = (datetime.now() - _fs_dt).days >= 7
-                except Exception: pass
-            _fs_data = st.session_state.get("fs_results", {})
-            _fs_ts   = st.session_state.get("fs_ts", "")
-            if _fs_stale and _fs_data:
-                st.warning(f"⚠️ Data Fundamental Screener sudah lebih dari 7 hari ({_fs_ts}). Klik SCREEN untuk refresh.")
-            _fs_sk   = st.session_state.get("fs_sort_key", "ROE (Tertinggi)")
-
-            if _fs_data:
-                def _graham_mos(x):
-                    """Graham Number = sqrt(22.5 * EPS * BV_per_share).
-                       Proxy: sqrt(22.5 * EPS * (Price/PBV)) jika BV tidak ada.
-                       Makin besar selisih Graham Number vs harga = MoS makin besar."""
-                    d = x[1]
+                # Auto-load dari Sheets kalau session kosong
+                # _sigma_restored_from_db sudah handle ini via CRITICAL_KEYS
+                # Tapi kalau restored_from_db belum jalan (belum login penuh), coba manual
+                if not st.session_state.get("fs_results") and st.session_state.get("user") \
+                        and st.session_state.get("_sigma_restored_from_db"):
+                    # Sudah di-restore tapi masih kosong = memang belum pernah screen
+                    pass  # tidak perlu load lagi
+                elif not st.session_state.get("fs_results") and st.session_state.get("user"):
                     try:
-                        eps = d.get("eps", 0) or 0
-                        pbv = d.get("pbv", 0) or 0
-                        price = d.get("price", 0) or 0
-                        if eps > 0 and pbv > 0 and price > 0:
-                            bv_proxy = price / pbv
-                            gn = (22.5 * eps * bv_proxy) ** 0.5
-                            return gn / price  # rasio: >1 = undervalue (Graham)
+                        _fs_from_db = load_user(st.session_state.user["email"]) or {}
+                        if _fs_from_db.get("fs_results"):
+                            st.session_state["fs_results"] = _fs_from_db["fs_results"]
+                            st.session_state["fs_ts"]      = _fs_from_db.get("fs_ts", "")
+                            st.session_state["fs_sektor"]  = _fs_from_db.get("fs_sektor", "Semua Sektor")
                     except Exception: pass
-                    return 0
-
-                def _peg_ratio(x):
-                    """PEG = PER / ROE (proxy growth). Makin kecil makin baik."""
-                    d = x[1]
+                # Staleness check: kalau data > 7 hari, tampilkan banner refresh
+                _fs_stale = False
+                _fs_ts_raw = st.session_state.get("fs_ts", "")
+                if _fs_ts_raw:
                     try:
-                        pe = d.get("pe", 0) or 0
-                        roe = d.get("roe", 0) or 0
-                        if pe > 0 and roe > 5:
-                            return -(pe / roe)  # negatif agar sort descending = terkecil dulu
+                        from datetime import datetime as _dfs
+                        _fs_dt = _dfs.strptime(_fs_ts_raw[:11].strip(), "%d %b %Y")
+                        _fs_stale = (datetime.now() - _fs_dt).days >= 7
                     except Exception: pass
-                    return -999
+                _fs_data = st.session_state.get("fs_results", {})
+                _fs_ts   = st.session_state.get("fs_ts", "")
+                if _fs_stale and _fs_data:
+                    st.warning(f"⚠️ Data Fundamental Screener sudah lebih dari 7 hari ({_fs_ts}). Klik SCREEN untuk refresh.")
+                _fs_sk   = st.session_state.get("fs_sort_key", "ROE (Tertinggi)")
 
-                def _eps_growth(x):
-                    d = x[1]
-                    try:
-                        return d.get("eps_g", 0) or 0
-                    except: return 0
-
-                _sfn = {
-                    "ROE (Tertinggi)":             lambda x: x[1].get("roe",0),
-                    "PBV (Terendah)":              lambda x: -(x[1].get("pbv",99) or 99),
-                    "Net Margin (Tertinggi)":      lambda x: x[1].get("npm",0),
-                    "DER (Terendah)":              lambda x: -(x[1].get("der",999) or 999),
-                    "Current Ratio (Tertinggi)":   lambda x: x[1].get("cr",0),
-                    "Buffett Score (Tertinggi)":   lambda x: x[1].get("score",0),
-                    "Graham Number (Margin of Safety)": _graham_mos,
-                    "EPS Growth (Tertinggi)":      _eps_growth,
-                    "Dividend Yield (Tertinggi)":  lambda x: x[1].get("div",0),
-                    "PEG Ratio (Terendah)":        _peg_ratio,
-                }.get(_fs_sk, lambda x: x[1].get("roe",0))
-
-                _fs_sorted = sorted(_fs_data.items(), key=_sfn, reverse=True)
-                _fs_pass   = [(tk,d) for tk,d in _fs_sorted if d.get("score",0) >= 4]
-                _fs_watch  = [(tk,d) for tk,d in _fs_sorted if d.get("score",0) in (2,3)]
-
-                # Summary metric cards
-                _sm1, _sm2, _sm3, _sm4 = st.columns(4)
-                _avg_roe = sum(d.get("roe",0) for _,d in _fs_data.items()) / max(len(_fs_data),1)
-                with _sm1: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.25rem;font-weight:700;color:{_fs_accent};'>{len(_fs_pass)}</div><div style='font-size:0.72rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>LOLOS BUFFETT ≥4/6</div></div>", unsafe_allow_html=True)
-                with _sm2: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.25rem;font-weight:700;color:#a78bfa;'>{len(_fs_watch)}</div><div style='font-size:0.72rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>WATCHLIST 2–3/6</div></div>", unsafe_allow_html=True)
-                with _sm3: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.25rem;font-weight:700;color:{text_main};'>{_avg_roe:.1f}%</div><div style='font-size:0.72rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>AVG ROE UNIVERSE</div></div>", unsafe_allow_html=True)
-                with _sm4: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.25rem;font-weight:700;color:{text_main};'>{len(_fs_data)}</div><div style='font-size:0.72rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>TOTAL DISCREEN</div></div>", unsafe_allow_html=True)
-
-                if _fs_ts:
-                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin:10px 0 4px;'>🕐 {_fs_ts} · Sumber: yfinance · Cache 1 jam</p>", unsafe_allow_html=True)
-
-                def _render_fs_table_bsjp(pass_rows, watch_rows, accent):
-                    """Render Fundamental Screener dalam format tabel BSJP - dua section + avoid."""
-                    if not pass_rows and not watch_rows: return
-                    import json as _fsjson
-
-                    def _build_row(tk, d, tier):
-                        mc = d.get("mkcap",0)
-                        cap_s = f"{mc/1e12:.1f}T" if mc >= 1e12 else (f"{mc/1e9:.0f}B" if mc >= 1e9 else "-")
-                        sc = d.get("score",0)
-                        # Hitung implied PEG sederhana
-                        peg = "-"
+                if _fs_data:
+                    def _graham_mos(x):
+                        """Graham Number = sqrt(22.5 * EPS * BV_per_share).
+                           Proxy: sqrt(22.5 * EPS * (Price/PBV)) jika BV tidak ada.
+                           Makin besar selisih Graham Number vs harga = MoS makin besar."""
+                        d = x[1]
                         try:
-                            if d.get("pe",0)>0 and d.get("roe",0)>5:
-                                _peg = d["pe"] / d["roe"]
-                                peg = f"{_peg:.2f}"
+                            eps = d.get("eps", 0) or 0
+                            pbv = d.get("pbv", 0) or 0
+                            price = d.get("price", 0) or 0
+                            if eps > 0 and pbv > 0 and price > 0:
+                                bv_proxy = price / pbv
+                                gn = (22.5 * eps * bv_proxy) ** 0.5
+                                return gn / price  # rasio: >1 = undervalue (Graham)
                         except Exception: pass
-                        return {
-                            "tk":tk,"name":d.get("name","-")[:22],"tier":tier,
-                            "price": f"Rp {d['price']:,.0f}" if d.get("price") else "-",
-                            "roe":  f"{d['roe']:.1f}%" if d.get("roe") else "-",
-                            "der":  f"{d['der']:.2f}x" if d.get("der") is not None else "-",
-                            "npm":  f"{d['npm']:.1f}%" if d.get("npm") else "-",
-                            "cr":   f"{d['cr']:.1f}x" if d.get("cr") else "-",
-                            "pbv":  f"{d['pbv']:.2f}x" if d.get("pbv") else "-",
-                            "pe":   f"{d['pe']:.1f}x" if d.get("pe") and d["pe"]>0 else "-",
-                            "div":  f"{d['div']:.1f}%" if d.get("div") else "-",
-                            "cap":  cap_s, "score": sc, "peg": peg,
-                            "rpos": f"{d['rpos']:.0f}%" if d.get("rpos") else "-",
-                            "roe_ok": d.get("roe",0)>=15,
-                            "der_ok": 0 < d.get("der",99)<=1.0,
-                            "npm_ok": d.get("npm",0)>=10,
-                            "cr_ok":  d.get("cr",0)>=1.5,
-                            "pbv_ok": 0.5<=d.get("pbv",0)<=3.0 and d.get("pbv",0)>0,
-                            "eps_ok": d.get("eps",0)>0,
-                        }
+                        return 0
 
-                    _pass_data  = [_build_row(tk,d,"PASS")  for tk,d in pass_rows[:30]]
-                    _watch_data = [_build_row(tk,d,"WATCH") for tk,d in watch_rows[:20]]
-                    _all_data   = _pass_data + _watch_data
+                    def _peg_ratio(x):
+                        """PEG = PER / ROE (proxy growth). Makin kecil makin baik."""
+                        d = x[1]
+                        try:
+                            pe = d.get("pe", 0) or 0
+                            roe = d.get("roe", 0) or 0
+                            if pe > 0 and roe > 5:
+                                return -(pe / roe)  # negatif agar sort descending = terkecil dulu
+                        except Exception: pass
+                        return -999
 
-                    _rj = _fsjson.dumps(_all_data, ensure_ascii=False)
-                    _uid = "fs_bsjp"
-                    _table_bg  = "rgba(8,12,22,0.95)" if is_dark else "#ffffff"
-                    _hdr_bg    = f"rgba(38,166,154,0.08)" if is_dark else "#f8fafc"
-                    _border_c  = "rgba(38,166,154,0.18)" if is_dark else "#e2e8f0"
-                    _n_pass    = len(_pass_data)
-                    _n_watch   = len(_watch_data)
-                    _total_h   = 56 + (_n_pass*42+100) + (_n_watch*42+100) + 40
+                    def _eps_growth(x):
+                        d = x[1]
+                        try:
+                            return d.get("eps_g", 0) or 0
+                        except: return 0
 
-                    _html = f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>
-*{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:0.875rem;}}
-.sec-lbl{{font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:{accent};font-weight:700;margin:0 0 7px;display:block;}}
-.card{{background:{_table_bg};border:1px solid {_border_c};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
-.scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{_border_c} transparent;}}
-.scroll::-webkit-scrollbar{{height:4px;}}
-.scroll::-webkit-scrollbar-thumb{{background:{_border_c};border-radius:10px;}}
-table{{width:100%;border-collapse:collapse;min-width:900px;}}
-thead th{{background:{_hdr_bg};color:{accent};padding:9px 11px;text-align:left;border-bottom:1px solid {_border_c};font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;font-weight:700;}}
-tbody td{{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;white-space:nowrap;color:{text_main};font-size:0.875rem;}}
-tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:nth-child(odd) td{{background:rgba(124,58,237,0.04);}}
-tbody tr:nth-child(even) td{{background:rgba(66,133,244,0.04);}}
-tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
-.tk{{font-weight:700;font-size:0.875rem;color:{accent};}}
-.nm{{font-size:0.8rem;color:{text_sub};max-width:120px;overflow:hidden;text-overflow:ellipsis;}}
-.ok{{color:#a78bfa;font-weight:600;}}
-.ng{{color:#f23645;}}
-.neu{{color:{text_sub};}}
-.bdg{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.72rem;font-weight:700;letter-spacing:0.05em;}}
-.bdg-pass{{background:rgba(124,58,237,0.18);color:#a78bfa;border:1px solid rgba(124,58,237,0.5);}}
-.bdg-watch{{background:rgba(66,133,244,0.14);color:#60a5fa;border:1px solid rgba(66,133,244,0.5);}}
-.dots span{{font-size:0.8rem;}}
-@media(max-width:640px){{thead th{{font-size:0.72rem;padding:6px 7px;}}tbody td{{font-size:0.8rem;padding:6px 7px;}}}}
-</style></head><body>
+                    _sfn = {
+                        "ROE (Tertinggi)":             lambda x: x[1].get("roe",0),
+                        "PBV (Terendah)":              lambda x: -(x[1].get("pbv",99) or 99),
+                        "Net Margin (Tertinggi)":      lambda x: x[1].get("npm",0),
+                        "DER (Terendah)":              lambda x: -(x[1].get("der",999) or 999),
+                        "Current Ratio (Tertinggi)":   lambda x: x[1].get("cr",0),
+                        "Buffett Score (Tertinggi)":   lambda x: x[1].get("score",0),
+                        "Graham Number (Margin of Safety)": _graham_mos,
+                        "EPS Growth (Tertinggi)":      _eps_growth,
+                        "Dividend Yield (Tertinggi)":  lambda x: x[1].get("div",0),
+                        "PEG Ratio (Terendah)":        _peg_ratio,
+                    }.get(_fs_sk, lambda x: x[1].get("roe",0))
 
-<span class="sec-lbl">OK LOLOS BUFFETT - {_n_pass} SAHAM (SKOR &ge;4/6)</span>
-<div class="card"><div class="scroll"><table>
-<thead><tr>
-  <th>TICKER</th><th>NAMA</th><th>HARGA</th>
-  <th title="ROE &ge;15%">ROE</th>
-  <th title="DER &le;1.0x">DER</th>
-  <th title="Net Margin &ge;10%">NET MARGIN</th>
-  <th title="Current Ratio &ge;1.5x">CURR RATIO</th>
-  <th title="PBV 0.5-3x">PBV</th>
-  <th title="PER">PER</th>
-  <th title="PEG = PER / ROE - wajar jika &lt;1">PEG</th>
-  <th title="Dividend Yield">DIV</th>
-  <th title="Market Cap">MKT CAP</th>
-  <th title="Posisi 52W">52W POS</th>
-  <th title="Skor Buffett">SKOR</th>
-</tr></thead>
-<tbody id="pass-tb"></tbody>
-</table></div></div>
+                    _fs_sorted = sorted(_fs_data.items(), key=_sfn, reverse=True)
+                    _fs_pass   = [(tk,d) for tk,d in _fs_sorted if d.get("score",0) >= 4]
+                    _fs_watch  = [(tk,d) for tk,d in _fs_sorted if d.get("score",0) in (2,3)]
 
-<span class="sec-lbl">(!) WATCHLIST - {_n_watch} SAHAM (SKOR 2&ndash;3/6)</span>
-<div class="card"><div class="scroll"><table>
-<thead><tr>
-  <th>TICKER</th><th>NAMA</th><th>HARGA</th>
-  <th>ROE</th><th>DER</th><th>NET MARGIN</th>
-  <th>CURR RATIO</th><th>PBV</th><th>PER</th><th>PEG</th>
-  <th>DIV</th><th>MKT CAP</th><th>52W POS</th><th>SKOR</th>
-</tr></thead>
-<tbody id="watch-tb"></tbody>
-</table></div></div>
+                    # Summary metric cards
+                    _sm1, _sm2, _sm3, _sm4 = st.columns(4)
+                    _avg_roe = sum(d.get("roe",0) for _,d in _fs_data.items()) / max(len(_fs_data),1)
+                    with _sm1: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.25rem;font-weight:700;color:{_fs_accent};'>{len(_fs_pass)}</div><div style='font-size:0.72rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>LOLOS BUFFETT ≥4/6</div></div>", unsafe_allow_html=True)
+                    with _sm2: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.25rem;font-weight:700;color:#a78bfa;'>{len(_fs_watch)}</div><div style='font-size:0.72rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>WATCHLIST 2–3/6</div></div>", unsafe_allow_html=True)
+                    with _sm3: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.25rem;font-weight:700;color:{text_main};'>{_avg_roe:.1f}%</div><div style='font-size:0.72rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>AVG ROE UNIVERSE</div></div>", unsafe_allow_html=True)
+                    with _sm4: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.25rem;font-weight:700;color:{text_main};'>{len(_fs_data)}</div><div style='font-size:0.72rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>TOTAL DISCREEN</div></div>", unsafe_allow_html=True)
 
-<script>
-(function(){{
-  var ALL={_rj};
-  var PASS=ALL.filter(function(r){{return r.tier==='PASS';}});
-  var WATCH=ALL.filter(function(r){{return r.tier==='WATCH';}});
+                    if _fs_ts:
+                        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin:10px 0 4px;'>🕐 {_fs_ts} · Sumber: yfinance · Cache 1 jam</p>", unsafe_allow_html=True)
 
-  function c(v,ok){{return '<span class="'+(ok?'ok':'ng')+'">'+v+'</span>';}}
-  function dots(s){{
-    var h='';
-    for(var i=0;i<6;i++)h+='<span style="color:'+(i<s?'{accent}':'rgba(200,200,200,0.18)')+'">&#9679;</span>';
-    return h+'<span style="font-size:0.72rem;color:{text_sub};margin-left:3px;">'+s+'/6</span>';
-  }}
-  function buildRows(arr,tbId){{
-    var h='';
-    arr.forEach(function(r){{
-      var tier=r.tier==='PASS'?'<span class="bdg bdg-pass">LOLOS</span>':'<span class="bdg bdg-watch">WATCH</span>';
-      h+='<tr>'+
-    '<td><span class="tk">'+r.tk+'</span></td>'+
-    '<td><span class="nm">'+r.name+'</span></td>'+
-    '<td style="font-weight:600;">'+r.price+'</td>'+
-    '<td>'+c(r.roe,r.roe_ok)+'</td>'+
-    '<td>'+c(r.der,r.der_ok)+'</td>'+
-    '<td>'+c(r.npm,r.npm_ok)+'</td>'+
-    '<td>'+c(r.cr,r.cr_ok)+'</td>'+
-    '<td>'+c(r.pbv,r.pbv_ok)+'</td>'+
-    '<td class="neu">'+r.pe+'</td>'+
-    '<td style="color:'+(r.peg!=='-'&&parseFloat(r.peg)<1?'#26a69a':'#a78bfa')+';">'+r.peg+'</td>'+
-    '<td style="color:#a78bfa;">'+r.div+'</td>'+
-    '<td class="neu">'+r.cap+'</td>'+
-    '<td class="neu">'+r.rpos+'</td>'+
-    '<td>'+dots(r.score)+'</td>'+
-    '</tr>';
-    }});
-    var el=document.getElementById(tbId);
-    if(el) el.innerHTML=h;
-  }}
-  buildRows(PASS,'pass-tb');
-  buildRows(WATCH,'watch-tb');
-}})();
-</script>
-</body></html>"""
-                    components.html(_html, height=min(_total_h, 1600), scrolling=True)
+                    def _render_fs_table_bsjp(pass_rows, watch_rows, accent):
+                        """Render Fundamental Screener dalam format tabel BSJP - dua section + avoid."""
+                        if not pass_rows and not watch_rows: return
+                        import json as _fsjson
 
-                if _fs_pass or _fs_watch:
-                    _render_fs_table_bsjp(_fs_pass, _fs_watch, _fs_accent)
-                if not _fs_pass and not _fs_watch:
-                    st.markdown(f"<div class='trm-card' style='text-align:center;padding:24px;'><p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};'>Tidak ada saham yang lolos filter di sektor ini.</p></div>", unsafe_allow_html=True)
+                        def _build_row(tk, d, tier):
+                            mc = d.get("mkcap",0)
+                            cap_s = f"{mc/1e12:.1f}T" if mc >= 1e12 else (f"{mc/1e9:.0f}B" if mc >= 1e9 else "-")
+                            sc = d.get("score",0)
+                            # Hitung implied PEG sederhana
+                            peg = "-"
+                            try:
+                                if d.get("pe",0)>0 and d.get("roe",0)>5:
+                                    _peg = d["pe"] / d["roe"]
+                                    peg = f"{_peg:.2f}"
+                            except Exception: pass
+                            return {
+                                "tk":tk,"name":d.get("name","-")[:22],"tier":tier,
+                                "price": f"Rp {d['price']:,.0f}" if d.get("price") else "-",
+                                "roe":  f"{d['roe']:.1f}%" if d.get("roe") else "-",
+                                "der":  f"{d['der']:.2f}x" if d.get("der") is not None else "-",
+                                "npm":  f"{d['npm']:.1f}%" if d.get("npm") else "-",
+                                "cr":   f"{d['cr']:.1f}x" if d.get("cr") else "-",
+                                "pbv":  f"{d['pbv']:.2f}x" if d.get("pbv") else "-",
+                                "pe":   f"{d['pe']:.1f}x" if d.get("pe") and d["pe"]>0 else "-",
+                                "div":  f"{d['div']:.1f}%" if d.get("div") else "-",
+                                "cap":  cap_s, "score": sc, "peg": peg,
+                                "rpos": f"{d['rpos']:.0f}%" if d.get("rpos") else "-",
+                                "roe_ok": d.get("roe",0)>=15,
+                                "der_ok": 0 < d.get("der",99)<=1.0,
+                                "npm_ok": d.get("npm",0)>=10,
+                                "cr_ok":  d.get("cr",0)>=1.5,
+                                "pbv_ok": 0.5<=d.get("pbv",0)<=3.0 and d.get("pbv",0)>0,
+                                "eps_ok": d.get("eps",0)>0,
+                            }
 
-                # AI Insight
-                if _fs_pass:
-                    if st.button("🤖 ANALISA AI DARI HASIL SCREENER", use_container_width=True, key="btn_fs_ai"):
-                        with st.spinner("SIGMA AI menganalisa hasil screener - multi-disiplin Damodaran/Graham/Lynch/Schilit..."):
-                            _top5 = _fs_pass[:5]
-                            _fsl  = [f"{tk}: ROE={d['roe']:.1f}%|DER={d['der']:.2f}x|NetMargin={d['npm']:.1f}%|PBV={d['pbv']:.2f}x|PER={d['pe']:.1f}x|CurrentRatio={d['cr']:.2f}x|EPS={d['eps']:.0f}|Div={d['div']:.1f}%|Score={d['score']}/6" for tk,d in _top5]
-                            _fp   = f"""Kamu adalah SIGMA AI - analis ekuitas institusional yang menguasai teori valuasi dari Aswath Damodaran, filosofi investasi Benjamin Graham & Peter Lynch, serta teknik akuntansi forensik Howard Schilit.
+                        _pass_data  = [_build_row(tk,d,"PASS")  for tk,d in pass_rows[:30]]
+                        _watch_data = [_build_row(tk,d,"WATCH") for tk,d in watch_rows[:20]]
+                        _all_data   = _pass_data + _watch_data
 
-5 saham teratas hasil Fundamental Screener SIGMA (Buffett criteria - IDX):
-{chr(10).join(_fsl)}
+                        _rj = _fsjson.dumps(_all_data, ensure_ascii=False)
+                        _uid = "fs_bsjp"
+                        _table_bg  = "rgba(8,12,22,0.95)" if is_dark else "#ffffff"
+                        _hdr_bg    = f"rgba(38,166,154,0.08)" if is_dark else "#f8fafc"
+                        _border_c  = "rgba(38,166,154,0.18)" if is_dark else "#e2e8f0"
+                        _n_pass    = len(_pass_data)
+                        _n_watch   = len(_watch_data)
+                        _total_h   = 56 + (_n_pass*42+100) + (_n_watch*42+100) + 40
 
-Kriteria screening: ROE&ge;15% | DER&le;1.0x | NetMargin&ge;10% | CurrentRatio&ge;1.5x | PBV 0.5&ndash;3x | EPS positif
+                        _html = f"""<!DOCTYPE html><html><head>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <style>
+    *{{box-sizing:border-box;margin:0;padding:0;}}
+    body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:0.875rem;}}
+    .sec-lbl{{font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:{accent};font-weight:700;margin:0 0 7px;display:block;}}
+    .card{{background:{_table_bg};border:1px solid {_border_c};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
+    .scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{_border_c} transparent;}}
+    .scroll::-webkit-scrollbar{{height:4px;}}
+    .scroll::-webkit-scrollbar-thumb{{background:{_border_c};border-radius:10px;}}
+    table{{width:100%;border-collapse:collapse;min-width:900px;}}
+    thead th{{background:{_hdr_bg};color:{accent};padding:9px 11px;text-align:left;border-bottom:1px solid {_border_c};font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;font-weight:700;}}
+    tbody td{{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;white-space:nowrap;color:{text_main};font-size:0.875rem;}}
+    tbody tr:last-child td{{border-bottom:none;}}
+    tbody tr:nth-child(odd) td{{background:rgba(124,58,237,0.04);}}
+    tbody tr:nth-child(even) td{{background:rgba(66,133,244,0.04);}}
+    tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
+    .tk{{font-weight:700;font-size:0.875rem;color:{accent};}}
+    .nm{{font-size:0.8rem;color:{text_sub};max-width:120px;overflow:hidden;text-overflow:ellipsis;}}
+    .ok{{color:#a78bfa;font-weight:600;}}
+    .ng{{color:#f23645;}}
+    .neu{{color:{text_sub};}}
+    .bdg{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.72rem;font-weight:700;letter-spacing:0.05em;}}
+    .bdg-pass{{background:rgba(124,58,237,0.18);color:#a78bfa;border:1px solid rgba(124,58,237,0.5);}}
+    .bdg-watch{{background:rgba(66,133,244,0.14);color:#60a5fa;border:1px solid rgba(66,133,244,0.5);}}
+    .dots span{{font-size:0.8rem;}}
+    @media(max-width:640px){{thead th{{font-size:0.72rem;padding:6px 7px;}}tbody td{{font-size:0.8rem;padding:6px 7px;}}}}
+    </style></head><body>
 
-Lakukan analisa MULTI-DISIPLIN berikut:
+    <span class="sec-lbl">OK LOLOS BUFFETT - {_n_pass} SAHAM (SKOR &ge;4/6)</span>
+    <div class="card"><div class="scroll"><table>
+    <thead><tr>
+      <th>TICKER</th><th>NAMA</th><th>HARGA</th>
+      <th title="ROE &ge;15%">ROE</th>
+      <th title="DER &le;1.0x">DER</th>
+      <th title="Net Margin &ge;10%">NET MARGIN</th>
+      <th title="Current Ratio &ge;1.5x">CURR RATIO</th>
+      <th title="PBV 0.5-3x">PBV</th>
+      <th title="PER">PER</th>
+      <th title="PEG = PER / ROE - wajar jika &lt;1">PEG</th>
+      <th title="Dividend Yield">DIV</th>
+      <th title="Market Cap">MKT CAP</th>
+      <th title="Posisi 52W">52W POS</th>
+      <th title="Skor Buffett">SKOR</th>
+    </tr></thead>
+    <tbody id="pass-tb"></tbody>
+    </table></div></div>
 
-1. VALUASI KUANTITATIF & EKSPEKTASI (Damodaran & Mauboussin):
-  -Tentukan apakah PER/PBV saat ini mencerminkan ekspektasi growth yang realistis
-  -Reverse DCF: pada harga pasar saat ini, berapa growth rate yang dipriced-in? Masuk akal?
-  -Saham mana yang paling menarik secara Risk/Reward?
+    <span class="sec-lbl">(!) WATCHLIST - {_n_watch} SAHAM (SKOR 2&ndash;3/6)</span>
+    <div class="card"><div class="scroll"><table>
+    <thead><tr>
+      <th>TICKER</th><th>NAMA</th><th>HARGA</th>
+      <th>ROE</th><th>DER</th><th>NET MARGIN</th>
+      <th>CURR RATIO</th><th>PBV</th><th>PER</th><th>PEG</th>
+      <th>DIV</th><th>MKT CAP</th><th>52W POS</th><th>SKOR</th>
+    </tr></thead>
+    <tbody id="watch-tb"></tbody>
+    </table></div></div>
 
-2. KUALITAS LABA & UJI FORENSIK (Schilit):
-  -Bandingkan tren laba bersih vs estimasi arus kas operasi
-  -Ada tanda-tanda penumpukan piutang atau anomali akuntansi?
-  -Red flag atau green flag yang perlu diperhatikan?
+    <script>
+    (function(){{
+      var ALL={_rj};
+      var PASS=ALL.filter(function(r){{return r.tier==='PASS';}});
+      var WATCH=ALL.filter(function(r){{return r.tier==='WATCH';}});
 
-3. KATEGORISASI PROFIL (Lynch):
-  -Klasifikasikan setiap saham: Fast Grower / Stalwart / Slow Grower / Cyclical / Asset Play / Turnaround
-  -Berdasarkan kategori itu, metrik operasional apa yang paling krusial dipantau?
+      function c(v,ok){{return '<span class="'+(ok?'ok':'ng')+'">'+v+'</span>';}}
+      function dots(s){{
+        var h='';
+        for(var i=0;i<6;i++)h+='<span style="color:'+(i<s?'{accent}':'rgba(200,200,200,0.18)')+'">&#9679;</span>';
+        return h+'<span style="font-size:0.72rem;color:{text_sub};margin-left:3px;">'+s+'/6</span>';
+      }}
+      function buildRows(arr,tbId){{
+        var h='';
+        arr.forEach(function(r){{
+          var tier=r.tier==='PASS'?'<span class="bdg bdg-pass">LOLOS</span>':'<span class="bdg bdg-watch">WATCH</span>';
+          h+='<tr>'+
+        '<td><span class="tk">'+r.tk+'</span></td>'+
+        '<td><span class="nm">'+r.name+'</span></td>'+
+        '<td style="font-weight:600;">'+r.price+'</td>'+
+        '<td>'+c(r.roe,r.roe_ok)+'</td>'+
+        '<td>'+c(r.der,r.der_ok)+'</td>'+
+        '<td>'+c(r.npm,r.npm_ok)+'</td>'+
+        '<td>'+c(r.cr,r.cr_ok)+'</td>'+
+        '<td>'+c(r.pbv,r.pbv_ok)+'</td>'+
+        '<td class="neu">'+r.pe+'</td>'+
+        '<td style="color:'+(r.peg!=='-'&&parseFloat(r.peg)<1?'#26a69a':'#a78bfa')+';">'+r.peg+'</td>'+
+        '<td style="color:#a78bfa;">'+r.div+'</td>'+
+        '<td class="neu">'+r.cap+'</td>'+
+        '<td class="neu">'+r.rpos+'</td>'+
+        '<td>'+dots(r.score)+'</td>'+
+        '</tr>';
+        }});
+        var el=document.getElementById(tbId);
+        if(el) el.innerHTML=h;
+      }}
+      buildRows(PASS,'pass-tb');
+      buildRows(WATCH,'watch-tb');
+    }})();
+    </script>
+    </body></html>"""
+                        components.html(_html, height=min(_total_h, 1600), scrolling=True)
 
-4. MARGIN OF SAFETY (Graham):
-  -Estimasi nilai intrinsik sederhana (berbasis EPS/PBV historis atau earnings power)
-  -Berapa % Margin of Safety yang tersedia saat ini?
-  -Apakah neraca cukup kuat (DER rendah, CR tinggi) untuk bertahan di tekanan makro?
+                    if _fs_pass or _fs_watch:
+                        _render_fs_table_bsjp(_fs_pass, _fs_watch, _fs_accent)
+                    if not _fs_pass and not _fs_watch:
+                        st.markdown(f"<div class='trm-card' style='text-align:center;padding:24px;'><p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};'>Tidak ada saham yang lolos filter di sektor ini.</p></div>", unsafe_allow_html=True)
 
-5. SINTESIS & SIGMA VIEW:
-  -Beri skor Risk/Reward untuk masing-masing saham
-  -Rekomendasi 1-2 saham TERBAIK untuk akumulasi 3-6 bulan ke depan
-  -Saham mana yang paling menawarkan asimetri menguntungkan bagi investor IDX?
+                    # AI Insight
+                    if _fs_pass:
+                        if st.button("🤖 ANALISA AI DARI HASIL SCREENER", use_container_width=True, key="btn_fs_ai"):
+                            with st.spinner("SIGMA AI menganalisa hasil screener - multi-disiplin Damodaran/Graham/Lynch/Schilit..."):
+                                _top5 = _fs_pass[:5]
+                                _fsl  = [f"{tk}: ROE={d['roe']:.1f}%|DER={d['der']:.2f}x|NetMargin={d['npm']:.1f}%|PBV={d['pbv']:.2f}x|PER={d['pe']:.1f}x|CurrentRatio={d['cr']:.2f}x|EPS={d['eps']:.0f}|Div={d['div']:.1f}%|Score={d['score']}/6" for tk,d in _top5]
+                                _fp   = f"""Kamu adalah SIGMA AI - analis ekuitas institusional yang menguasai teori valuasi dari Aswath Damodaran, filosofi investasi Benjamin Graham & Peter Lynch, serta teknik akuntansi forensik Howard Schilit.
 
-Format: Bahasa Indonesia. Markdown rapi. Padat, jujur, actionable. Jangan ulang data mentah."""
-                            _fs_ai = _call_ai_reco(_fp)
-                            st.session_state["fs_ai_result"] = _fs_ai
+    5 saham teratas hasil Fundamental Screener SIGMA (Buffett criteria - IDX):
+    {chr(10).join(_fsl)}
 
-                if st.session_state.get("fs_ai_result"):
-                    st.markdown(f"""<div style="background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:16px 18px;margin-top:12px;font-size:0.875rem;color:{text_main};line-height:1.8;white-space:pre-wrap;word-break:break-word;">{st.session_state['fs_ai_result']}</div>""", unsafe_allow_html=True)
+    Kriteria screening: ROE&ge;15% | DER&le;1.0x | NetMargin&ge;10% | CurrentRatio&ge;1.5x | PBV 0.5&ndash;3x | EPS positif
 
-                # ── Chat tanya fundamental ─────────────────────────────────
-                st.markdown(f"<hr style='border-color:rgba(255,255,255,0.06);margin:18px 0 14px;'>", unsafe_allow_html=True)
-                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin-bottom:8px;letter-spacing:0.05em;'>💬 TANYA FUNDAMENTAL - Analisa mendalam saham apapun dari hasil screener</p>", unsafe_allow_html=True)
-                _fs_chat_q = st.text_input(
-                    "",
-                    placeholder="Contoh: analisa fundamental BBCA | bandingkan TLKM vs BBRI | bagaimana valuasi ASII? | apakah BMRI layak akumulasi?",
-                    key="fs_chat_q",
-                    label_visibility="collapsed"
-                )
-                _fsc_btn = st.button("🔍 Tanya SIGMA AI", key="btn_fs_chat", use_container_width=False)
-                if _fsc_btn and _fs_chat_q.strip():
-                    with st.spinner("SIGMA AI menganalisa fundamental..."):
-                        _all_tickers = ", ".join([tk for tk,_ in (_fs_pass + _fs_watch)[:10]])
-                        _top5_ctx = [f"{tk}: ROE={d['roe']:.1f}%|DER={d['der']:.2f}x|NPM={d['npm']:.1f}%|PBV={d['pbv']:.2f}x|PER={d['pe']:.1f}x|CR={d['cr']:.1f}x|Harga=Rp{d['price']:,.0f}|Score={d['score']}/6" for tk,d in (_fs_pass + _fs_watch)[:8]]
-                        _fs_chat_prompt = f"""Kamu adalah SIGMA AI - analis fundamental multi-disiplin berbasis kerangka:
-- Damodaran (DCF / Reverse DCF / WACC)
-- Benjamin Graham (Margin of Safety, neraca kuat)
-- Peter Lynch (6 kategori saham, metrik kunci per kategori)
-- Howard Schilit (deteksi Financial Shenanigans / kualitas laba)
+    Lakukan analisa MULTI-DISIPLIN berikut:
 
-Konteks screener saat ini:
-Universe yang discreen: {_all_tickers}
-Top hasil screener (data live): 
-{chr(10).join(_top5_ctx)}
+    1. VALUASI KUANTITATIF & EKSPEKTASI (Damodaran & Mauboussin):
+      -Tentukan apakah PER/PBV saat ini mencerminkan ekspektasi growth yang realistis
+      -Reverse DCF: pada harga pasar saat ini, berapa growth rate yang dipriced-in? Masuk akal?
+      -Saham mana yang paling menarik secara Risk/Reward?
 
-Pertanyaan user: {_fs_chat_q.strip()}
+    2. KUALITAS LABA & UJI FORENSIK (Schilit):
+      -Bandingkan tren laba bersih vs estimasi arus kas operasi
+      -Ada tanda-tanda penumpukan piutang atau anomali akuntansi?
+      -Red flag atau green flag yang perlu diperhatikan?
 
-INSTRUKSI:
-- Jika user tanya saham spesifik yang ada di list &rarr; analisa mendalam dengan semua 4 framework di atas
-- Jika user minta perbandingan &rarr; bandingkan head-to-head secara kuantitatif dan kualitatif  
-- Jika user tanya valuasi &rarr; lakukan Reverse DCF: growth rate apa yang saat ini dipriced-in oleh pasar?
-- Jika user tanya apakah layak beli &rarr; berikan Margin of Safety estimate + Risk/Reward ratio
-- Selalu jujur - jika ada risiko atau kondisi tidak menarik, katakan dengan tegas
-- Akhiri dengan rekomendasi konkret: Accumulate / Wait / Avoid + alasan spesifik
+    3. KATEGORISASI PROFIL (Lynch):
+      -Klasifikasikan setiap saham: Fast Grower / Stalwart / Slow Grower / Cyclical / Asset Play / Turnaround
+      -Berdasarkan kategori itu, metrik operasional apa yang paling krusial dipantau?
 
-Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir."""
-                        _fs_chat_ans = _call_ai_reco(_fs_chat_prompt)
-                        st.session_state["fs_chat_ans"] = _fs_chat_ans
+    4. MARGIN OF SAFETY (Graham):
+      -Estimasi nilai intrinsik sederhana (berbasis EPS/PBV historis atau earnings power)
+      -Berapa % Margin of Safety yang tersedia saat ini?
+      -Apakah neraca cukup kuat (DER rendah, CR tinggi) untuk bertahan di tekanan makro?
 
-                if st.session_state.get("fs_chat_ans"):
-                    st.markdown(f"""<div style="background:{met_bg};border:1px solid rgba(38,166,154,0.2);border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:14px 18px;margin-top:8px;font-size:0.875rem;color:{text_main};line-height:1.82;white-space:pre-wrap;word-break:break-word;">{st.session_state['fs_chat_ans']}</div>""", unsafe_allow_html=True)
-                    if st.button("🗑 Hapus Jawaban", key="btn_fs_chat_clear"):
-                        st.session_state["fs_chat_ans"] = ""
-                        st.rerun()
+    5. SINTESIS & SIGMA VIEW:
+      -Beri skor Risk/Reward untuk masing-masing saham
+      -Rekomendasi 1-2 saham TERBAIK untuk akumulasi 3-6 bulan ke depan
+      -Saham mana yang paling menawarkan asimetri menguntungkan bagi investor IDX?
 
-        else:
-            st.markdown(f"""<div class="trm-card" style="text-align:center;padding:40px 20px;">
-                <div style="font-size:2.5rem;opacity:0.3;margin-bottom:14px;"></div>
-                <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
-                    Pilih sektor &amp; urutan, lalu klik <span style='color:{_fs_accent};'>SCREEN</span><br>
-                    <span style="opacity:0.5;font-size:0.72rem;">Screening {len(_fs_universe)} saham IDX &middot; 6 Kriteria Warren Buffett &middot; Data Live</span></p>
-            </div>""", unsafe_allow_html=True)
+    Format: Bahasa Indonesia. Markdown rapi. Padat, jujur, actionable. Jangan ulang data mentah."""
+                                _fs_ai = _call_ai_reco(_fp)
+                                st.session_state["fs_ai_result"] = _fs_ai
+
+                    if st.session_state.get("fs_ai_result"):
+                        st.markdown(f"""<div style="background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:16px 18px;margin-top:12px;font-size:0.875rem;color:{text_main};line-height:1.8;white-space:pre-wrap;word-break:break-word;">{st.session_state['fs_ai_result']}</div>""", unsafe_allow_html=True)
+
+                    # ── Chat tanya fundamental ─────────────────────────────────
+                    st.markdown(f"<hr style='border-color:rgba(255,255,255,0.06);margin:18px 0 14px;'>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin-bottom:8px;letter-spacing:0.05em;'>💬 TANYA FUNDAMENTAL - Analisa mendalam saham apapun dari hasil screener</p>", unsafe_allow_html=True)
+                    _fs_chat_q = st.text_input(
+                        "",
+                        placeholder="Contoh: analisa fundamental BBCA | bandingkan TLKM vs BBRI | bagaimana valuasi ASII? | apakah BMRI layak akumulasi?",
+                        key="fs_chat_q",
+                        label_visibility="collapsed"
+                    )
+                    _fsc_btn = st.button("🔍 Tanya SIGMA AI", key="btn_fs_chat", use_container_width=False)
+                    if _fsc_btn and _fs_chat_q.strip():
+                        with st.spinner("SIGMA AI menganalisa fundamental..."):
+                            _all_tickers = ", ".join([tk for tk,_ in (_fs_pass + _fs_watch)[:10]])
+                            _top5_ctx = [f"{tk}: ROE={d['roe']:.1f}%|DER={d['der']:.2f}x|NPM={d['npm']:.1f}%|PBV={d['pbv']:.2f}x|PER={d['pe']:.1f}x|CR={d['cr']:.1f}x|Harga=Rp{d['price']:,.0f}|Score={d['score']}/6" for tk,d in (_fs_pass + _fs_watch)[:8]]
+                            _fs_chat_prompt = f"""Kamu adalah SIGMA AI - analis fundamental multi-disiplin berbasis kerangka:
+    - Damodaran (DCF / Reverse DCF / WACC)
+    - Benjamin Graham (Margin of Safety, neraca kuat)
+    - Peter Lynch (6 kategori saham, metrik kunci per kategori)
+    - Howard Schilit (deteksi Financial Shenanigans / kualitas laba)
+
+    Konteks screener saat ini:
+    Universe yang discreen: {_all_tickers}
+    Top hasil screener (data live): 
+    {chr(10).join(_top5_ctx)}
+
+    Pertanyaan user: {_fs_chat_q.strip()}
+
+    INSTRUKSI:
+    - Jika user tanya saham spesifik yang ada di list &rarr; analisa mendalam dengan semua 4 framework di atas
+    - Jika user minta perbandingan &rarr; bandingkan head-to-head secara kuantitatif dan kualitatif  
+    - Jika user tanya valuasi &rarr; lakukan Reverse DCF: growth rate apa yang saat ini dipriced-in oleh pasar?
+    - Jika user tanya apakah layak beli &rarr; berikan Margin of Safety estimate + Risk/Reward ratio
+    - Selalu jujur - jika ada risiko atau kondisi tidak menarik, katakan dengan tegas
+    - Akhiri dengan rekomendasi konkret: Accumulate / Wait / Avoid + alasan spesifik
+
+    Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir."""
+                            _fs_chat_ans = _call_ai_reco(_fs_chat_prompt)
+                            st.session_state["fs_chat_ans"] = _fs_chat_ans
+
+                    if st.session_state.get("fs_chat_ans"):
+                        st.markdown(f"""<div style="background:{met_bg};border:1px solid rgba(38,166,154,0.2);border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:14px 18px;margin-top:8px;font-size:0.875rem;color:{text_main};line-height:1.82;white-space:pre-wrap;word-break:break-word;">{st.session_state['fs_chat_ans']}</div>""", unsafe_allow_html=True)
+                        if st.button("🗑 Hapus Jawaban", key="btn_fs_chat_clear"):
+                            st.session_state["fs_chat_ans"] = ""
+                            st.rerun()
+
+            else:
+                st.markdown(f"""<div class="trm-card" style="text-align:center;padding:40px 20px;">
+                    <div style="font-size:2.5rem;opacity:0.3;margin-bottom:14px;"></div>
+                    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
+                        Pilih sektor &amp; urutan, lalu klik <span style='color:{_fs_accent};'>SCREEN</span><br>
+                        <span style="opacity:0.5;font-size:0.72rem;">Screening {len(_fs_universe)} saham IDX &middot; 6 Kriteria Warren Buffett &middot; Data Live</span></p>
+                </div>""", unsafe_allow_html=True)
+
+        with _fs_tab_ai:
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🤖 ANALISA AI DARI HASIL SCREENER DAN TANYA SIGMA AI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            # Tampilkan hasil AI screener dari session state
+            if st.session_state.get('fs_ai_result'):
+                _fs_accent2 = '#26a69a'
+                st.markdown(f"""<div style='background:rgba(38,166,154,0.06);border:1px solid rgba(38,166,154,0.25);
+                border-left:3px solid {_fs_accent2};border-radius:0 8px 8px 0;padding:16px 18px;margin-bottom:16px;
+                font-size:0.875rem;line-height:1.8;white-space:pre-wrap;word-break:break-word;'>
+                <div style='font-size:0.68rem;color:#26a69a;font-family:IBM Plex Mono,monospace;margin-bottom:10px;'>
+                🤖 SIGMA AI · Fundamental Screener Analysis</div>
+                {st.session_state['fs_ai_result']}</div>""", unsafe_allow_html=True)
+            else:
+                st.info("💡 Jalankan screener dulu di tab **FUNDAMENTAL SCREENER**, lalu klik **🤖 ANALISA AI DARI HASIL SCREENER** untuk melihat hasil analisa AI di sini.")
+            st.markdown("<hr style='border-color:rgba(255,255,255,0.06);margin:18px 0 14px;'>", unsafe_allow_html=True)
+            st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:rgba(255,255,255,0.4);margin-bottom:8px;letter-spacing:0.05em;'>💬 TANYA SIGMA AI — Analisa mendalam saham apapun</p>", unsafe_allow_html=True)
+            _fs_ai_q2 = st.text_input('', placeholder='Contoh: analisa fundamental BBCA | bandingkan TLKM vs BBRI | bagaimana valuasi ASII?', key='fs_ai_tab_q', label_visibility='collapsed')
+            _fsa2_btn = st.button('🔍 Tanya SIGMA AI', key='btn_fs_ai_tab', use_container_width=False)
+            if _fsa2_btn and _fs_ai_q2.strip():
+                with st.spinner('SIGMA AI menganalisa...'):
+                    _fsa2_prompt = f'Kamu adalah SIGMA AI, analis fundamental multi-disiplin (Damodaran, Graham, Lynch, Schilit). Pertanyaan: {_fs_ai_q2}. Jawab dalam bahasa Indonesia, padat dan actionable.'
+                    _fsa2_result = _call_ai_reco(_fsa2_prompt)
+                    st.session_state['fs_ai_tab_ans'] = _fsa2_result
+            if st.session_state.get('fs_ai_tab_ans'):
+                _fs_accent3 = '#26a69a'
+                st.markdown(f"""<div style='background:rgba(38,166,154,0.06);border:1px solid rgba(38,166,154,0.25);
+                border-left:3px solid {_fs_accent3};border-radius:0 8px 8px 0;padding:16px 18px;margin-top:8px;
+                font-size:0.875rem;line-height:1.8;white-space:pre-wrap;word-break:break-word;'>
+                {st.session_state['fs_ai_tab_ans']}</div>""", unsafe_allow_html=True)
 
     st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True) 
 
@@ -17799,797 +17847,809 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
 
     # FED RATE MONITOR + BI RATE → masuk Rate Monitor sub-tab di Market Data
     with _md_subtab_ratemon:
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+        # ── NESTED SUB-TABS: Rate Monitor ────────────────────────────────────
+        _rm_tab_fed, _rm_tab_bi, _rm_tab_ai = st.tabs([
+            "  📡 FED RATE MONITOR TOOL  ",
+            "  🏦 BI RATE MONITOR  ",
+            "  🤖 AI ANALYST — RATE MONITOR  ",
+        ])
 
-        # ─────────────────────────────────────────────────────────
-        # FED RATE MONITOR TOOL
-        # ─────────────────────────────────────────────────────────
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FED RATE MONITOR TOOL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        with _rm_tab_fed:
+            st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-        # ── Current Rate Info Card ──────────────────────────────
-        st.markdown(f"""
-        <div style='display:flex;flex-wrap:wrap;gap:12px;margin-bottom:18px;'>
-          <div style='flex:1;min-width:180px;background:rgba(139,92,246,0.10);border:1px solid rgba(139,92,246,0.35);
-               border-radius:10px;padding:14px 18px;'>
-            <div style='font-size:0.68rem;color:#a78bfa;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px;'>
-              🏦 RATE SAAT INI (Fed Funds)
+            # ─────────────────────────────────────────────────────────
+            # FED RATE MONITOR TOOL
+            # ─────────────────────────────────────────────────────────
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FED RATE MONITOR TOOL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+            # ── Current Rate Info Card ──────────────────────────────
+            st.markdown(f"""
+            <div style='display:flex;flex-wrap:wrap;gap:12px;margin-bottom:18px;'>
+              <div style='flex:1;min-width:180px;background:rgba(139,92,246,0.10);border:1px solid rgba(139,92,246,0.35);
+                   border-radius:10px;padding:14px 18px;'>
+                <div style='font-size:0.68rem;color:#a78bfa;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px;'>
+                  🏦 RATE SAAT INI (Fed Funds)
+                </div>
+                <div style='font-size:1.6rem;font-weight:800;color:#c4b5fd;font-family:IBM Plex Mono,monospace;line-height:1;'>
+                  4.25–4.50%
+                </div>
+                <div style='font-size:0.72rem;color:#7c6fa0;margin-top:4px;'>Keputusan FOMC 7 Mei 2026 · HOLD</div>
+              </div>
+              <div style='flex:1;min-width:180px;background:rgba(242,54,69,0.08);border:1px solid rgba(242,54,69,0.30);
+                   border-radius:10px;padding:14px 18px;'>
+                <div style='font-size:0.68rem;color:#f87171;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px;'>
+                  📅 FOMC BERIKUTNYA
+                </div>
+                <div style='font-size:1.1rem;font-weight:800;color:#f23645;font-family:IBM Plex Mono,monospace;line-height:1.2;'>
+                  18 Jun 2026
+                </div>
+                <div style='font-size:0.72rem;color:#9b4a53;margin-top:4px;'>01:00 WIB · ~32 hari lagi</div>
+              </div>
+              <div style='flex:2;min-width:260px;background:rgba(66,133,244,0.07);border:1px solid rgba(66,133,244,0.25);
+                   border-radius:10px;padding:14px 18px;'>
+                <div style='font-size:0.68rem;color:#60a5fa;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px;'>
+                  📊 SIGMA INSIGHT — CME FEDWATCH
+                </div>
+                <div style='font-size:0.8rem;color:#94a3b8;line-height:1.65;'>
+                  Probabilitas perubahan suku bunga Fed berdasarkan <b style='color:#60a5fa;'>CME 30-Day Fed Fund Futures</b>.
+                  Pasar pricing ~80% HOLD di Jun 2026, dengan ekspektasi cut pertama mulai terlihat di FOMC Jul–Sep 2026.
+                  Implikasi IDX: rupiah relatif stabil, hot money bertahan di EM.
+                </div>
+              </div>
             </div>
-            <div style='font-size:1.6rem;font-weight:800;color:#c4b5fd;font-family:IBM Plex Mono,monospace;line-height:1;'>
-              4.25–4.50%
-            </div>
-            <div style='font-size:0.72rem;color:#7c6fa0;margin-top:4px;'>Keputusan FOMC 7 Mei 2026 · HOLD</div>
-          </div>
-          <div style='flex:1;min-width:180px;background:rgba(242,54,69,0.08);border:1px solid rgba(242,54,69,0.30);
-               border-radius:10px;padding:14px 18px;'>
-            <div style='font-size:0.68rem;color:#f87171;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px;'>
-              📅 FOMC BERIKUTNYA
-            </div>
-            <div style='font-size:1.1rem;font-weight:800;color:#f23645;font-family:IBM Plex Mono,monospace;line-height:1.2;'>
-              18 Jun 2026
-            </div>
-            <div style='font-size:0.72rem;color:#9b4a53;margin-top:4px;'>01:00 WIB · ~32 hari lagi</div>
-          </div>
-          <div style='flex:2;min-width:260px;background:rgba(66,133,244,0.07);border:1px solid rgba(66,133,244,0.25);
-               border-radius:10px;padding:14px 18px;'>
-            <div style='font-size:0.68rem;color:#60a5fa;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px;'>
-              📊 SIGMA INSIGHT — CME FEDWATCH
-            </div>
-            <div style='font-size:0.8rem;color:#94a3b8;line-height:1.65;'>
-              Probabilitas perubahan suku bunga Fed berdasarkan <b style='color:#60a5fa;'>CME 30-Day Fed Fund Futures</b>.
-              Pasar pricing ~80% HOLD di Jun 2026, dengan ekspektasi cut pertama mulai terlihat di FOMC Jul–Sep 2026.
-              Implikasi IDX: rupiah relatif stabil, hot money bertahan di EM.
-            </div>
-          </div>
+            """, unsafe_allow_html=True)
+
+            # ── Data FOMC meetings — 3 BERIKUTNYA (update Mei 2026) ──────────────────────────────────
+            _fed_meetings = [
+                {
+                    "date": "18 Jun 2026",
+                    "date_wib": "18 Jun 2026 · 01:00 WIB",
+                    "meeting_time": "18 Jun 2026 · 01:00 WIB",
+                    "future_price": "96.420",
+                    "countdown_weeks": 0, "countdown_days": 32, "countdown_hours": 0, "countdown_mins": 0,
+                    "scenarios": [
+                        {"range": "4.00-4.25", "prob":  8.2, "prev_day":  7.4, "prev_week":  6.1, "dir": "cut"},
+                        {"range": "4.25-4.50", "prob": 88.5, "prev_day": 89.8, "prev_week": 91.3, "dir": "hold"},
+                        {"range": "4.50-4.75", "prob":  3.3, "prev_day":  2.8, "prev_week":  2.6, "dir": "hike"},
+                    ]
+                },
+                {
+                    "date": "30 Jul 2026",
+                    "date_wib": "30 Jul 2026 · 01:00 WIB",
+                    "meeting_time": "30 Jul 2026 · 01:00 WIB",
+                    "future_price": "96.560",
+                    "countdown_weeks": 0, "countdown_days": 74, "countdown_hours": 0, "countdown_mins": 0,
+                    "scenarios": [
+                        {"range": "3.75-4.00", "prob":  3.1, "prev_day":  2.8, "prev_week": None, "dir": "cut"},
+                        {"range": "4.00-4.25", "prob": 19.4, "prev_day": 17.6, "prev_week": None, "dir": "cut"},
+                        {"range": "4.25-4.50", "prob": 72.2, "prev_day": 73.9, "prev_week": None, "dir": "hold"},
+                        {"range": "4.50-4.75", "prob":  5.3, "prev_day":  5.7, "prev_week": None, "dir": "hike"},
+                    ]
+                },
+                {
+                    "date": "17 Sep 2026",
+                    "date_wib": "17 Sep 2026 · 01:00 WIB",
+                    "meeting_time": "17 Sep 2026 · 01:00 WIB",
+                    "future_price": "96.690",
+                    "countdown_weeks": 0, "countdown_days": 123, "countdown_hours": 0, "countdown_mins": 0,
+                    "scenarios": [
+                        {"range": "3.75-4.00", "prob":  7.8, "prev_day":  6.9, "prev_week": None, "dir": "cut"},
+                        {"range": "4.00-4.25", "prob": 31.2, "prev_day": 29.5, "prev_week": None, "dir": "cut"},
+                        {"range": "4.25-4.50", "prob": 55.4, "prev_day": 57.1, "prev_week": None, "dir": "hold"},
+                        {"range": "4.50-4.75", "prob":  5.6, "prev_day":  6.5, "prev_week": None, "dir": "hike"},
+                    ]
+                },
+            ]
+
+            # ── Serialize data ke JSON untuk dipakai di JS ──────────
+            import json as _json
+            _fed_json = _json.dumps(_fed_meetings)
+            _is_dark_js = "true" if is_dark else "false"
+            _updated_str = datetime.now().strftime("%b %d, %Y %I:%M%p") + " WIB"
+
+            # ── Render via components.html - BYPASS Streamlit markdown sanitizer ──
+            components.html(f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+      body {{ background: transparent; font-family: 'IBM Plex Mono', monospace; }}
+
+      .frm-wrap {{ width: 100%; padding: 0 0 24px 0; }}
+
+      /* Countdown banner */
+      .frm-countdown {{
+        background: rgba(242,54,69,0.08);
+        border: 1px solid rgba(242,54,69,0.22);
+        border-radius: 10px;
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 18px;
+      }}
+      .frm-cd-label {{
+        font-size: 0.72rem;
+        color: #a0aec0;
+        letter-spacing: 0.08em;
+        font-weight: 600;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+      }}
+      .frm-cd-title {{
+        font-size: 0.875rem;
+        color: #f23645;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+      }}
+      .frm-cd-boxes {{
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }}
+      .frm-cd-box {{
+        text-align: center;
+        min-width: 48px;
+      }}
+      .frm-cd-num {{
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #e8eaf0;
+        line-height: 1;
+      }}
+      .frm-cd-unit {{
+        font-size: 0.72rem;
+        color: #6b7a99;
+        letter-spacing: 0.06em;
+        margin-top: 3px;
+        text-transform: uppercase;
+      }}
+      .frm-cd-sep {{
+        font-size: 1.5rem;
+        color: #4285F4;
+        font-weight: 700;
+        padding-bottom: 8px;
+      }}
+
+      /* -- SINGLE VERTICAL TABLE (menggantikan grid 3 kartu) -- */
+      .frm-vtbl-wrap {{
+        background: {'rgba(8,12,22,0.9)' if is_dark else '#f8faff'};
+        border: 1px solid {'rgba(3,40,238,0.18)' if is_dark else '#e2e8f0'};
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 16px;
+        width: 100%;
+      }}
+      /* Section header row (tanggal FOMC) */
+      .frm-meeting-hdr {{
+        background: rgba(3,40,238,0.07);
+        border-bottom: 1px solid {'rgba(3,40,238,0.18)' if is_dark else '#e2e8f0'};
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 6px;
+      }}
+      .frm-meeting-hdr + .frm-meeting-hdr {{
+        border-top: 2px solid {'rgba(3,40,238,0.25)' if is_dark else '#c7d4f0'};
+      }}
+      .frm-meeting-date {{
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: #6e9bff;
+        letter-spacing: 0.06em;
+      }}
+      .frm-meeting-meta {{
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        flex-wrap: wrap;
+      }}
+      .frm-meeting-future {{
+        font-size: 0.72rem;
+        color: {'#6b7a99' if is_dark else '#64748b'};
+      }}
+      .frm-meeting-time {{
+        font-size: 0.72rem;
+        color: #089981;
+      }}
+
+      /* Bars section */
+      .frm-bars {{ padding: 12px 16px 6px; }}
+      .frm-bar-row {{ margin-bottom: 10px; }}
+      .frm-bar-top {{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+      }}
+      .frm-bar-label {{ font-size: 0.875rem; color: {'#e8eaf0' if is_dark else '#1a202c'}; font-weight: 400; }}
+      .frm-bar-pct {{ font-size: 0.875rem; font-weight: 700; }}
+      .frm-bar-track {{
+        height: 6px;
+        border-radius: 4px;
+        background: {'rgba(255,255,255,0.06)' if is_dark else 'rgba(0,0,0,0.06)'};
+        overflow: hidden;
+      }}
+      .frm-bar-fill {{
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.4s ease;
+      }}
+
+      /* Probability detail rows (inline tabel) */
+      .frm-detail-row {{
+        display: flex;
+        align-items: center;
+        padding: 5px 16px;
+        border-top: 1px solid {'rgba(255,255,255,0.04)' if is_dark else 'rgba(0,0,0,0.04)'};
+        gap: 10px;
+        flex-wrap: wrap;
+      }}
+      .frm-detail-rate {{
+        font-size: 0.875rem;
+        color: {'#9ca3af' if is_dark else '#64748b'};
+        min-width: 100px;
+      }}
+      .frm-detail-now {{
+        font-size: 0.875rem;
+        font-weight: 700;
+        min-width: 60px;
+      }}
+      .frm-detail-prev {{
+        font-size: 0.875rem;
+        color: {'#6b7a99' if is_dark else '#9ca3af'};
+        min-width: 55px;
+        text-align: right;
+      }}
+      .frm-detail-prevwk {{
+        font-size: 0.875rem;
+        color: {'#6b7a99' if is_dark else '#9ca3af'};
+        min-width: 55px;
+        text-align: right;
+      }}
+      .frm-detail-footer {{
+        padding: 4px 16px 8px;
+        font-size: 0.72rem;
+        color: {'rgba(107,122,153,0.6)' if is_dark else '#9ca3af'};
+        text-align: right;
+        border-top: 1px solid {'rgba(255,255,255,0.04)' if is_dark else 'rgba(0,0,0,0.04)'};
+      }}
+      .frm-dir-badge {{
+        display: inline-block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 3px;
+        letter-spacing: 0.05em;
+        margin-left: 4px;
+        vertical-align: middle;
+      }}
+      .frm-col-hdr {{
+        display: flex;
+        align-items: center;
+        padding: 5px 16px 4px;
+        gap: 10px;
+        border-top: 1px solid {'rgba(3,40,238,0.10)' if is_dark else '#dce8ff'};
+        background: {'rgba(255,255,255,0.02)' if is_dark else 'rgba(0,0,0,0.02)'};
+      }}
+      .frm-col-hdr span {{
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.07em;
+        color: {'#6b7a99' if is_dark else '#64748b'};
+        text-transform: uppercase;
+      }}
+      .frm-col-hdr .ch-rate {{ min-width: 100px; }}
+      .frm-col-hdr .ch-now  {{ min-width: 60px; }}
+      .frm-col-hdr .ch-yday {{ min-width: 55px; text-align: right; }}
+      .frm-col-hdr .ch-week {{ min-width: 55px; text-align: right; }}
+
+      /* Insight box — scrolling ticker */
+      .frm-insight {{
+        background: #0a0e1a;
+        border-top: 1px solid rgba(66,133,244,0.30);
+        border-bottom: 1px solid rgba(66,133,244,0.30);
+        border-left: 3px solid #4285F4;
+        padding: 8px 0;
+        font-size: 0.82rem;
+        color: rgba(255,255,255,0.75);
+        overflow: hidden;
+        white-space: nowrap;
+        position: relative;
+        margin-top: 14px;
+        border-radius: 0;
+      }}
+      .frm-insight-inner {{
+        display: inline-block;
+        animation: frm-scroll 38s linear infinite;
+        padding-left: 100%;
+      }}
+      @keyframes frm-scroll {{
+        0%   {{ transform: translateX(0); }}
+        100% {{ transform: translateX(-100%); }}
+      }}
+      .frm-insight-label {{
+        color: #4285F4;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        margin-right: 10px;
+        font-family: 'IBM Plex Mono', 'Courier New', monospace;
+      }}
+      .frm-insight-sep {{
+        color: rgba(66,133,244,0.45);
+        margin: 0 22px;
+      }}
+
+      /* Mobile: kompak &mdash; single table layout sudah vertikal by default */
+      @media (max-width: 768px) {{
+        .frm-countdown {{ padding: 12px 14px; flex-direction: column; gap: 8px; }}
+        .frm-cd-num {{ font-size: 1.25rem; }}
+        .frm-cd-box {{ min-width: 38px; }}
+        .frm-cd-boxes {{ justify-content: flex-start; flex-wrap: wrap; }}
+        .frm-meeting-meta {{ gap: 8px; }}
+        .frm-bars {{ padding: 10px 12px 4px; }}
+        .frm-bar-label {{ font-size: 0.875rem; }}
+        .frm-bar-pct {{ font-size: 0.875rem; }}
+        .frm-detail-row {{ padding: 5px 12px; gap: 6px; }}
+        .frm-detail-rate {{ min-width: 90px; font-size: 0.875rem; }}
+        .frm-detail-now {{ min-width: 50px; font-size: 0.875rem; }}
+        .frm-detail-prev {{ min-width: 44px; font-size: 0.875rem; }}
+        .frm-detail-prevwk {{ min-width: 44px; font-size: 0.875rem; }}
+        .frm-col-hdr {{ padding: 4px 12px 3px; gap: 6px; }}
+        .frm-col-hdr .ch-rate {{ min-width: 90px; }}
+        .frm-col-hdr .ch-now  {{ min-width: 50px; }}
+        .frm-col-hdr .ch-yday {{ min-width: 44px; }}
+        .frm-col-hdr .ch-week {{ min-width: 44px; }}
+        .frm-dir-badge {{ font-size: 0.65rem; padding: 1px 4px; margin-left: 2px; }}
+        .frm-insight {{ font-size: 0.78rem; padding: 7px 0; }}
+        .frm-insight-inner {{ animation-duration: 28s; }}
+        .frm-meeting-hdr {{ padding: 8px 12px; }}
+        .frm-detail-footer {{ padding: 3px 12px 6px; }}
+      }}
+    </style>
+    </head>
+    <body>
+    <div class="frm-wrap">
+
+      <!-- Countdown Banner (first meeting) -->
+      <div class="frm-countdown">
+        <div>
+          <div class="frm-cd-label">FED INTEREST RATE DECISION</div>
+          <div class="frm-cd-title">18 Jun 2026 &nbsp;&middot;&nbsp; 01:00 WIB</div>
         </div>
-        """, unsafe_allow_html=True)
+        <div class="frm-cd-boxes" id="frm-cd"></div>
+      </div>
 
-        # ── Data FOMC meetings — 3 BERIKUTNYA (update Mei 2026) ──────────────────────────────────
-        _fed_meetings = [
-            {
-                "date": "18 Jun 2026",
-                "date_wib": "18 Jun 2026 · 01:00 WIB",
-                "meeting_time": "18 Jun 2026 · 01:00 WIB",
-                "future_price": "96.420",
-                "countdown_weeks": 0, "countdown_days": 32, "countdown_hours": 0, "countdown_mins": 0,
-                "scenarios": [
-                    {"range": "4.00-4.25", "prob":  8.2, "prev_day":  7.4, "prev_week":  6.1, "dir": "cut"},
-                    {"range": "4.25-4.50", "prob": 88.5, "prev_day": 89.8, "prev_week": 91.3, "dir": "hold"},
-                    {"range": "4.50-4.75", "prob":  3.3, "prev_day":  2.8, "prev_week":  2.6, "dir": "hike"},
-                ]
-            },
-            {
-                "date": "30 Jul 2026",
-                "date_wib": "30 Jul 2026 · 01:00 WIB",
-                "meeting_time": "30 Jul 2026 · 01:00 WIB",
-                "future_price": "96.560",
-                "countdown_weeks": 0, "countdown_days": 74, "countdown_hours": 0, "countdown_mins": 0,
-                "scenarios": [
-                    {"range": "3.75-4.00", "prob":  3.1, "prev_day":  2.8, "prev_week": None, "dir": "cut"},
-                    {"range": "4.00-4.25", "prob": 19.4, "prev_day": 17.6, "prev_week": None, "dir": "cut"},
-                    {"range": "4.25-4.50", "prob": 72.2, "prev_day": 73.9, "prev_week": None, "dir": "hold"},
-                    {"range": "4.50-4.75", "prob":  5.3, "prev_day":  5.7, "prev_week": None, "dir": "hike"},
-                ]
-            },
-            {
-                "date": "17 Sep 2026",
-                "date_wib": "17 Sep 2026 · 01:00 WIB",
-                "meeting_time": "17 Sep 2026 · 01:00 WIB",
-                "future_price": "96.690",
-                "countdown_weeks": 0, "countdown_days": 123, "countdown_hours": 0, "countdown_mins": 0,
-                "scenarios": [
-                    {"range": "3.75-4.00", "prob":  7.8, "prev_day":  6.9, "prev_week": None, "dir": "cut"},
-                    {"range": "4.00-4.25", "prob": 31.2, "prev_day": 29.5, "prev_week": None, "dir": "cut"},
-                    {"range": "4.25-4.50", "prob": 55.4, "prev_day": 57.1, "prev_week": None, "dir": "hold"},
-                    {"range": "4.50-4.75", "prob":  5.6, "prev_day":  6.5, "prev_week": None, "dir": "hike"},
-                ]
-            },
-        ]
+      <!-- Cards Grid -->
+      <div class="frm-vtbl-wrap" id="frm-vtbl"></div>
 
-        # ── Serialize data ke JSON untuk dipakai di JS ──────────
-        import json as _json
-        _fed_json = _json.dumps(_fed_meetings)
-        _is_dark_js = "true" if is_dark else "false"
-        _updated_str = datetime.now().strftime("%b %d, %Y %I:%M%p") + " WIB"
+      <!-- Insight — scrolling ticker -->
+      <div class="frm-insight">
+        <div class="frm-insight-inner">
+          <span class="frm-insight-label">SIGMA INSIGHT —</span>
+          FOMC 7 Mei 2026: Fed <b>HOLD</b> di 4.25–4.50% sesuai ekspektasi pasar.
+          Probabilitas ~88.5% HOLD berlanjut di FOMC Juni 2026. Ekspektasi cut pertama mulai muncul di Jul–Sep 2026 (~19–31% probabilitas).
+          Implikasi IDX: <span style="color:#089981;font-weight:600;">Rupiah stabil</span>,
+          hot money tetap di EM, sentimen netral untuk perbankan &amp; properti. Pantau data CPI AS &amp; NFP sebagai trigger perubahan ekspektasi.
+          <span class="frm-insight-sep">◆</span>
+          <span class="frm-insight-label">SIGMA INSIGHT —</span>
+          FOMC 7 Mei 2026: Fed <b>HOLD</b> di 4.25–4.50% sesuai ekspektasi pasar.
+          Probabilitas ~88.5% HOLD berlanjut di FOMC Juni 2026. Ekspektasi cut pertama mulai muncul di Jul–Sep 2026 (~19–31% probabilitas).
+          Implikasi IDX: <span style="color:#089981;font-weight:600;">Rupiah stabil</span>,
+          hot money tetap di EM, sentimen netral untuk perbankan &amp; properti. Pantau data CPI AS &amp; NFP sebagai trigger perubahan ekspektasi.
+        </div>
+      </div>
 
-        # ── Render via components.html - BYPASS Streamlit markdown sanitizer ──
-        components.html(f"""
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{ background: transparent; font-family: 'IBM Plex Mono', monospace; }}
-
-  .frm-wrap {{ width: 100%; padding: 0 0 24px 0; }}
-
-  /* Countdown banner */
-  .frm-countdown {{
-    background: rgba(242,54,69,0.08);
-    border: 1px solid rgba(242,54,69,0.22);
-    border-radius: 10px;
-    padding: 14px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 18px;
-  }}
-  .frm-cd-label {{
-    font-size: 0.72rem;
-    color: #a0aec0;
-    letter-spacing: 0.08em;
-    font-weight: 600;
-    margin-bottom: 6px;
-    text-transform: uppercase;
-  }}
-  .frm-cd-title {{
-    font-size: 0.875rem;
-    color: #f23645;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-  }}
-  .frm-cd-boxes {{
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }}
-  .frm-cd-box {{
-    text-align: center;
-    min-width: 48px;
-  }}
-  .frm-cd-num {{
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #e8eaf0;
-    line-height: 1;
-  }}
-  .frm-cd-unit {{
-    font-size: 0.72rem;
-    color: #6b7a99;
-    letter-spacing: 0.06em;
-    margin-top: 3px;
-    text-transform: uppercase;
-  }}
-  .frm-cd-sep {{
-    font-size: 1.5rem;
-    color: #4285F4;
-    font-weight: 700;
-    padding-bottom: 8px;
-  }}
-
-  /* -- SINGLE VERTICAL TABLE (menggantikan grid 3 kartu) -- */
-  .frm-vtbl-wrap {{
-    background: {'rgba(8,12,22,0.9)' if is_dark else '#f8faff'};
-    border: 1px solid {'rgba(3,40,238,0.18)' if is_dark else '#e2e8f0'};
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 16px;
-    width: 100%;
-  }}
-  /* Section header row (tanggal FOMC) */
-  .frm-meeting-hdr {{
-    background: rgba(3,40,238,0.07);
-    border-bottom: 1px solid {'rgba(3,40,238,0.18)' if is_dark else '#e2e8f0'};
-    padding: 10px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 6px;
-  }}
-  .frm-meeting-hdr + .frm-meeting-hdr {{
-    border-top: 2px solid {'rgba(3,40,238,0.25)' if is_dark else '#c7d4f0'};
-  }}
-  .frm-meeting-date {{
-    font-size: 0.875rem;
-    font-weight: 700;
-    color: #6e9bff;
-    letter-spacing: 0.06em;
-  }}
-  .frm-meeting-meta {{
-    display: flex;
-    gap: 14px;
-    align-items: center;
-    flex-wrap: wrap;
-  }}
-  .frm-meeting-future {{
-    font-size: 0.72rem;
-    color: {'#6b7a99' if is_dark else '#64748b'};
-  }}
-  .frm-meeting-time {{
-    font-size: 0.72rem;
-    color: #089981;
-  }}
-
-  /* Bars section */
-  .frm-bars {{ padding: 12px 16px 6px; }}
-  .frm-bar-row {{ margin-bottom: 10px; }}
-  .frm-bar-top {{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 4px;
-  }}
-  .frm-bar-label {{ font-size: 0.875rem; color: {'#e8eaf0' if is_dark else '#1a202c'}; font-weight: 400; }}
-  .frm-bar-pct {{ font-size: 0.875rem; font-weight: 700; }}
-  .frm-bar-track {{
-    height: 6px;
-    border-radius: 4px;
-    background: {'rgba(255,255,255,0.06)' if is_dark else 'rgba(0,0,0,0.06)'};
-    overflow: hidden;
-  }}
-  .frm-bar-fill {{
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.4s ease;
-  }}
-
-  /* Probability detail rows (inline tabel) */
-  .frm-detail-row {{
-    display: flex;
-    align-items: center;
-    padding: 5px 16px;
-    border-top: 1px solid {'rgba(255,255,255,0.04)' if is_dark else 'rgba(0,0,0,0.04)'};
-    gap: 10px;
-    flex-wrap: wrap;
-  }}
-  .frm-detail-rate {{
-    font-size: 0.875rem;
-    color: {'#9ca3af' if is_dark else '#64748b'};
-    min-width: 100px;
-  }}
-  .frm-detail-now {{
-    font-size: 0.875rem;
-    font-weight: 700;
-    min-width: 60px;
-  }}
-  .frm-detail-prev {{
-    font-size: 0.875rem;
-    color: {'#6b7a99' if is_dark else '#9ca3af'};
-    min-width: 55px;
-    text-align: right;
-  }}
-  .frm-detail-prevwk {{
-    font-size: 0.875rem;
-    color: {'#6b7a99' if is_dark else '#9ca3af'};
-    min-width: 55px;
-    text-align: right;
-  }}
-  .frm-detail-footer {{
-    padding: 4px 16px 8px;
-    font-size: 0.72rem;
-    color: {'rgba(107,122,153,0.6)' if is_dark else '#9ca3af'};
-    text-align: right;
-    border-top: 1px solid {'rgba(255,255,255,0.04)' if is_dark else 'rgba(0,0,0,0.04)'};
-  }}
-  .frm-dir-badge {{
-    display: inline-block;
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 3px;
-    letter-spacing: 0.05em;
-    margin-left: 4px;
-    vertical-align: middle;
-  }}
-  .frm-col-hdr {{
-    display: flex;
-    align-items: center;
-    padding: 5px 16px 4px;
-    gap: 10px;
-    border-top: 1px solid {'rgba(3,40,238,0.10)' if is_dark else '#dce8ff'};
-    background: {'rgba(255,255,255,0.02)' if is_dark else 'rgba(0,0,0,0.02)'};
-  }}
-  .frm-col-hdr span {{
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.07em;
-    color: {'#6b7a99' if is_dark else '#64748b'};
-    text-transform: uppercase;
-  }}
-  .frm-col-hdr .ch-rate {{ min-width: 100px; }}
-  .frm-col-hdr .ch-now  {{ min-width: 60px; }}
-  .frm-col-hdr .ch-yday {{ min-width: 55px; text-align: right; }}
-  .frm-col-hdr .ch-week {{ min-width: 55px; text-align: right; }}
-
-  /* Insight box — scrolling ticker */
-  .frm-insight {{
-    background: #0a0e1a;
-    border-top: 1px solid rgba(66,133,244,0.30);
-    border-bottom: 1px solid rgba(66,133,244,0.30);
-    border-left: 3px solid #4285F4;
-    padding: 8px 0;
-    font-size: 0.82rem;
-    color: rgba(255,255,255,0.75);
-    overflow: hidden;
-    white-space: nowrap;
-    position: relative;
-    margin-top: 14px;
-    border-radius: 0;
-  }}
-  .frm-insight-inner {{
-    display: inline-block;
-    animation: frm-scroll 38s linear infinite;
-    padding-left: 100%;
-  }}
-  @keyframes frm-scroll {{
-    0%   {{ transform: translateX(0); }}
-    100% {{ transform: translateX(-100%); }}
-  }}
-  .frm-insight-label {{
-    color: #4285F4;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    margin-right: 10px;
-    font-family: 'IBM Plex Mono', 'Courier New', monospace;
-  }}
-  .frm-insight-sep {{
-    color: rgba(66,133,244,0.45);
-    margin: 0 22px;
-  }}
-
-  /* Mobile: kompak &mdash; single table layout sudah vertikal by default */
-  @media (max-width: 768px) {{
-    .frm-countdown {{ padding: 12px 14px; flex-direction: column; gap: 8px; }}
-    .frm-cd-num {{ font-size: 1.25rem; }}
-    .frm-cd-box {{ min-width: 38px; }}
-    .frm-cd-boxes {{ justify-content: flex-start; flex-wrap: wrap; }}
-    .frm-meeting-meta {{ gap: 8px; }}
-    .frm-bars {{ padding: 10px 12px 4px; }}
-    .frm-bar-label {{ font-size: 0.875rem; }}
-    .frm-bar-pct {{ font-size: 0.875rem; }}
-    .frm-detail-row {{ padding: 5px 12px; gap: 6px; }}
-    .frm-detail-rate {{ min-width: 90px; font-size: 0.875rem; }}
-    .frm-detail-now {{ min-width: 50px; font-size: 0.875rem; }}
-    .frm-detail-prev {{ min-width: 44px; font-size: 0.875rem; }}
-    .frm-detail-prevwk {{ min-width: 44px; font-size: 0.875rem; }}
-    .frm-col-hdr {{ padding: 4px 12px 3px; gap: 6px; }}
-    .frm-col-hdr .ch-rate {{ min-width: 90px; }}
-    .frm-col-hdr .ch-now  {{ min-width: 50px; }}
-    .frm-col-hdr .ch-yday {{ min-width: 44px; }}
-    .frm-col-hdr .ch-week {{ min-width: 44px; }}
-    .frm-dir-badge {{ font-size: 0.65rem; padding: 1px 4px; margin-left: 2px; }}
-    .frm-insight {{ font-size: 0.78rem; padding: 7px 0; }}
-    .frm-insight-inner {{ animation-duration: 28s; }}
-    .frm-meeting-hdr {{ padding: 8px 12px; }}
-    .frm-detail-footer {{ padding: 3px 12px 6px; }}
-  }}
-</style>
-</head>
-<body>
-<div class="frm-wrap">
-
-  <!-- Countdown Banner (first meeting) -->
-  <div class="frm-countdown">
-    <div>
-      <div class="frm-cd-label">FED INTEREST RATE DECISION</div>
-      <div class="frm-cd-title">18 Jun 2026 &nbsp;&middot;&nbsp; 01:00 WIB</div>
     </div>
-    <div class="frm-cd-boxes" id="frm-cd"></div>
-  </div>
 
-  <!-- Cards Grid -->
-  <div class="frm-vtbl-wrap" id="frm-vtbl"></div>
+    <script>
+    var DATA = {_fed_json};
+    var UPDATED = "{_updated_str}";
 
-  <!-- Insight — scrolling ticker -->
-  <div class="frm-insight">
-    <div class="frm-insight-inner">
-      <span class="frm-insight-label">SIGMA INSIGHT —</span>
-      FOMC 7 Mei 2026: Fed <b>HOLD</b> di 4.25–4.50% sesuai ekspektasi pasar.
-      Probabilitas ~88.5% HOLD berlanjut di FOMC Juni 2026. Ekspektasi cut pertama mulai muncul di Jul–Sep 2026 (~19–31% probabilitas).
-      Implikasi IDX: <span style="color:#089981;font-weight:600;">Rupiah stabil</span>,
-      hot money tetap di EM, sentimen netral untuk perbankan &amp; properti. Pantau data CPI AS &amp; NFP sebagai trigger perubahan ekspektasi.
-      <span class="frm-insight-sep">◆</span>
-      <span class="frm-insight-label">SIGMA INSIGHT —</span>
-      FOMC 7 Mei 2026: Fed <b>HOLD</b> di 4.25–4.50% sesuai ekspektasi pasar.
-      Probabilitas ~88.5% HOLD berlanjut di FOMC Juni 2026. Ekspektasi cut pertama mulai muncul di Jul–Sep 2026 (~19–31% probabilitas).
-      Implikasi IDX: <span style="color:#089981;font-weight:600;">Rupiah stabil</span>,
-      hot money tetap di EM, sentimen netral untuk perbankan &amp; properti. Pantau data CPI AS &amp; NFP sebagai trigger perubahan ekspektasi.
-    </div>
-  </div>
+    var DIR_COLOR = {{ "cut":"#089981", "hold":"#4285F4", "hike":"#f23645" }};
+    var DIR_LABEL = {{ "cut":"CUT", "hold":"HOLD", "hike":"HIKE" }};
+    var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15)", "hike":"rgba(242,54,69,0.15)" }};
 
-</div>
+    // -- LIVE COUNTDOWN - target: Apr 30 2026 01:00 WIB = Apr 29 2026 18:00 UTC --
+    (function() {{
+      // Jun 17 2026 18:00 UTC = Jun 18 2026 01:00 WIB (UTC+7)
+      var TARGET_UTC_MS = Date.UTC(2026, 5, 17, 18, 0, 0);
 
-<script>
-var DATA = {_fed_json};
-var UPDATED = "{_updated_str}";
+      function tick() {{
+        var diff = TARGET_UTC_MS-Date.now();
+        var cd = document.getElementById('frm-cd');
+        if (!cd) return;
+        if (diff <= 0) {{
+          cd.innerHTML = '<div class="frm-cd-box"><div class="frm-cd-num" style="font-size:1.1rem;color:#089981;">BERLANGSUNG</div></div>';
+          return;
+        }}
+        var totalSec = Math.floor(diff / 1000);
+        var mins     = Math.floor(totalSec / 60) % 60;
+        var hours    = Math.floor(totalSec / 3600) % 24;
+        var days     = Math.floor(totalSec / 86400) % 7;
+        var weeks    = Math.floor(totalSec / 604800);
+        var parts = [[weeks,"WEEKS"],[days,"DAYS"],[hours,"HOURS"],[mins,"MINS"]];
+        var html = '';
+        parts.forEach(function(p, i) {{
+          if (i > 0) html += '<div class="frm-cd-sep">:</div>';
+          html += '<div class="frm-cd-box"><div class="frm-cd-num">' + p[0] + '</div><div class="frm-cd-unit">' + p[1] + '</div></div>';
+        }});
+        cd.innerHTML = html;
+      }}
+      tick();
+      setInterval(tick, 1000);
+    }})();
 
-var DIR_COLOR = {{ "cut":"#089981", "hold":"#4285F4", "hike":"#f23645" }};
-var DIR_LABEL = {{ "cut":"CUT", "hold":"HOLD", "hike":"HIKE" }};
-var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15)", "hike":"rgba(242,54,69,0.15)" }};
+    // -- Build single vertical table --
+    (function() {{
+      var wrap = document.getElementById('frm-vtbl');
+      var html = '';
 
-// -- LIVE COUNTDOWN - target: Apr 30 2026 01:00 WIB = Apr 29 2026 18:00 UTC --
-(function() {{
-  // Jun 17 2026 18:00 UTC = Jun 18 2026 01:00 WIB (UTC+7)
-  var TARGET_UTC_MS = Date.UTC(2026, 5, 17, 18, 0, 0);
+      DATA.forEach(function(mtg, idx) {{
+        // Section header &mdash; tanggal FOMC
+        var borderTop = idx > 0 ? 'border-top:2px solid rgba(3,40,238,0.22);' : '';
+        html += '<div class="frm-meeting-hdr" style="' + borderTop + '">';
+        html += '<span class="frm-meeting-date">' + (mtg.date_wib || mtg.date) + '</span>';
+        html += '<div class="frm-meeting-meta">';
+        html += '<span class="frm-meeting-future">Future: ' + mtg.future_price + '</span>';
+        html += '<span class="frm-meeting-time">Meeting: ' + mtg.meeting_time + '</span>';
+        html += '</div></div>';
 
-  function tick() {{
-    var diff = TARGET_UTC_MS-Date.now();
-    var cd = document.getElementById('frm-cd');
-    if (!cd) return;
-    if (diff <= 0) {{
-      cd.innerHTML = '<div class="frm-cd-box"><div class="frm-cd-num" style="font-size:1.1rem;color:#089981;">BERLANGSUNG</div></div>';
-      return;
-    }}
-    var totalSec = Math.floor(diff / 1000);
-    var mins     = Math.floor(totalSec / 60) % 60;
-    var hours    = Math.floor(totalSec / 3600) % 24;
-    var days     = Math.floor(totalSec / 86400) % 7;
-    var weeks    = Math.floor(totalSec / 604800);
-    var parts = [[weeks,"WEEKS"],[days,"DAYS"],[hours,"HOURS"],[mins,"MINS"]];
-    var html = '';
-    parts.forEach(function(p, i) {{
-      if (i > 0) html += '<div class="frm-cd-sep">:</div>';
-      html += '<div class="frm-cd-box"><div class="frm-cd-num">' + p[0] + '</div><div class="frm-cd-unit">' + p[1] + '</div></div>';
-    }});
-    cd.innerHTML = html;
-  }}
-  tick();
-  setInterval(tick, 1000);
-}})();
+        // Probability bars
+        html += '<div class="frm-bars">';
+        mtg.scenarios.forEach(function(sc) {{
+          var c = DIR_COLOR[sc.dir] || '#b2b5be';
+          var w = Math.max(sc.prob, 1.5);
+          html += '<div class="frm-bar-row">';
+          html += '<div class="frm-bar-top">';
+          html += '<span class="frm-bar-label">'+sc.range+'</span>';
+          html += '<span class="frm-bar-pct" style="color:'+c+'">'+sc.prob.toFixed(1)+'%</span>';
+          html += '</div>';
+          html += '<div class="frm-bar-track"><div class="frm-bar-fill" style="width:'+w+'%;background:'+c+';opacity:0.85;"></div></div>';
+          html += '</div>';
+        }});
+        html += '</div>';
 
-// -- Build single vertical table --
-(function() {{
-  var wrap = document.getElementById('frm-vtbl');
-  var html = '';
+        // Column header
+        html += '<div class="frm-col-hdr">';
+        html += '<span class="ch-rate">TARGET RATE</span>';
+        html += '<span class="ch-now">NOW %</span>';
+        html += '<span class="ch-yday">YDAY %</span>';
+        html += '<span class="ch-week">WEEK %</span>';
+        html += '</div>';
 
-  DATA.forEach(function(mtg, idx) {{
-    // Section header &mdash; tanggal FOMC
-    var borderTop = idx > 0 ? 'border-top:2px solid rgba(3,40,238,0.22);' : '';
-    html += '<div class="frm-meeting-hdr" style="' + borderTop + '">';
-    html += '<span class="frm-meeting-date">' + (mtg.date_wib || mtg.date) + '</span>';
-    html += '<div class="frm-meeting-meta">';
-    html += '<span class="frm-meeting-future">Future: ' + mtg.future_price + '</span>';
-    html += '<span class="frm-meeting-time">Meeting: ' + mtg.meeting_time + '</span>';
-    html += '</div></div>';
+        // Detail rows
+        mtg.scenarios.forEach(function(sc) {{
+          var c  = DIR_COLOR[sc.dir] || '#b2b5be';
+          var bc = DIR_BADGE_BG[sc.dir] || 'transparent';
+          var pd = (sc.prev_day  !== null && sc.prev_day  !== undefined) ? sc.prev_day.toFixed(1)  + '%' : '-';
+          var pw = (sc.prev_week !== null && sc.prev_week !== undefined) ? sc.prev_week.toFixed(1) + '%' : '-';
+          var badge = '<span class="frm-dir-badge" style="color:'+c+';background:'+bc+'">'+DIR_LABEL[sc.dir]+'</span>';
+          html += '<div class="frm-detail-row">';
+          html += '<span class="frm-detail-rate">'+sc.range+badge+'</span>';
+          html += '<span class="frm-detail-now" style="color:'+c+'">'+sc.prob.toFixed(1)+'%</span>';
+          html += '<span class="frm-detail-prev">'+pd+'</span>';
+          html += '<span class="frm-detail-prevwk">'+pw+'</span>';
+          html += '</div>';
+        }});
 
-    // Probability bars
-    html += '<div class="frm-bars">';
-    mtg.scenarios.forEach(function(sc) {{
-      var c = DIR_COLOR[sc.dir] || '#b2b5be';
-      var w = Math.max(sc.prob, 1.5);
-      html += '<div class="frm-bar-row">';
-      html += '<div class="frm-bar-top">';
-      html += '<span class="frm-bar-label">'+sc.range+'</span>';
-      html += '<span class="frm-bar-pct" style="color:'+c+'">'+sc.prob.toFixed(1)+'%</span>';
-      html += '</div>';
-      html += '<div class="frm-bar-track"><div class="frm-bar-fill" style="width:'+w+'%;background:'+c+';opacity:0.85;"></div></div>';
-      html += '</div>';
-    }});
-    html += '</div>';
+        // Footer row
+        html += '<div class="frm-detail-footer">Updated: '+UPDATED+' &middot; Source: CME FedWatch</div>';
+      }});
 
-    // Column header
-    html += '<div class="frm-col-hdr">';
-    html += '<span class="ch-rate">TARGET RATE</span>';
-    html += '<span class="ch-now">NOW %</span>';
-    html += '<span class="ch-yday">YDAY %</span>';
-    html += '<span class="ch-week">WEEK %</span>';
-    html += '</div>';
+      wrap.innerHTML = html;
 
-    // Detail rows
-    mtg.scenarios.forEach(function(sc) {{
-      var c  = DIR_COLOR[sc.dir] || '#b2b5be';
-      var bc = DIR_BADGE_BG[sc.dir] || 'transparent';
-      var pd = (sc.prev_day  !== null && sc.prev_day  !== undefined) ? sc.prev_day.toFixed(1)  + '%' : '-';
-      var pw = (sc.prev_week !== null && sc.prev_week !== undefined) ? sc.prev_week.toFixed(1) + '%' : '-';
-      var badge = '<span class="frm-dir-badge" style="color:'+c+';background:'+bc+'">'+DIR_LABEL[sc.dir]+'</span>';
-      html += '<div class="frm-detail-row">';
-      html += '<span class="frm-detail-rate">'+sc.range+badge+'</span>';
-      html += '<span class="frm-detail-now" style="color:'+c+'">'+sc.prob.toFixed(1)+'%</span>';
-      html += '<span class="frm-detail-prev">'+pd+'</span>';
-      html += '<span class="frm-detail-prevwk">'+pw+'</span>';
-      html += '</div>';
-    }});
+      // -- Auto-resize: ukur tinggi aktual konten, bukan pakai angka hardcoded --
+      function sendHeight() {{
+        // Reset overflow agar scrollHeight akurat
+        document.body.style.overflow = 'visible';
+        var fw = document.querySelector('.frm-wrap');
+        if (fw) fw.style.overflow = 'visible';
+        // BUG1 FIX: tambah extra padding bottom agar baris terakhir 30 Jul tidak terpotong
+        var h = Math.max(
+          document.documentElement.scrollHeight,
+          document.body.scrollHeight,
+          fw ? fw.scrollHeight : 0
+        );
+        window.parent.postMessage({{type:'streamlit:setFrameHeight', height: h + 40}}, '*');
+      }}
+      sendHeight();
+      setTimeout(sendHeight, 100);
+      setTimeout(sendHeight, 400);
+      setTimeout(sendHeight, 900);
+      setTimeout(sendHeight, 1800);
+      window.addEventListener('resize', function() {{ setTimeout(sendHeight, 150); }});
+    }})();
+    </script>
+    </body>
+    </html>
+            """, height=1200, scrolling=False)
 
-    // Footer row
-    html += '<div class="frm-detail-footer">Updated: '+UPDATED+' &middot; Source: CME FedWatch</div>';
-  }});
+            st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-  wrap.innerHTML = html;
 
-  // -- Auto-resize: ukur tinggi aktual konten, bukan pakai angka hardcoded --
-  function sendHeight() {{
-    // Reset overflow agar scrollHeight akurat
-    document.body.style.overflow = 'visible';
-    var fw = document.querySelector('.frm-wrap');
-    if (fw) fw.style.overflow = 'visible';
-    // BUG1 FIX: tambah extra padding bottom agar baris terakhir 30 Jul tidak terpotong
-    var h = Math.max(
-      document.documentElement.scrollHeight,
-      document.body.scrollHeight,
-      fw ? fw.scrollHeight : 0
-    );
-    window.parent.postMessage({{type:'streamlit:setFrameHeight', height: h + 40}}, '*');
-  }}
-  sendHeight();
-  setTimeout(sendHeight, 100);
-  setTimeout(sendHeight, 400);
-  setTimeout(sendHeight, 900);
-  setTimeout(sendHeight, 1800);
-  window.addEventListener('resize', function() {{ setTimeout(sendHeight, 150); }});
-}})();
-</script>
-</body>
-</html>
-        """, height=1200, scrolling=False)
+        with _rm_tab_bi:
+            # ── BI RATE MONITOR + GLOBAL RATES ────────────────────────
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏦 BI RATE MONITOR & GLOBAL INTEREST RATES</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+            # ── Hardcoded historical data (update berkala) ──
+            _bi_rate_history = [
+                {"date": "Jan 2024", "rate": 6.00}, {"date": "Feb 2024", "rate": 6.00},
+                {"date": "Mar 2024", "rate": 6.00}, {"date": "Apr 2024", "rate": 6.25},
+                {"date": "Mei 2024", "rate": 6.25}, {"date": "Jun 2024", "rate": 6.25},
+                {"date": "Jul 2024", "rate": 6.25}, {"date": "Ags 2024", "rate": 6.25},
+                {"date": "Sep 2024", "rate": 6.00}, {"date": "Okt 2024", "rate": 6.00},
+                {"date": "Nov 2024", "rate": 6.00}, {"date": "Des 2024", "rate": 6.00},
+                {"date": "Jan 2025", "rate": 5.75}, {"date": "Feb 2025", "rate": 5.75},
+                {"date": "Mar 2025", "rate": 5.75}, {"date": "Apr 2025", "rate": 5.75},
+                {"date": "Mei 2025", "rate": 5.50}, {"date": "Jun 2025", "rate": 5.50},
+                {"date": "Jul 2025", "rate": 5.25}, {"date": "Ags 2025", "rate": 5.25},
+                {"date": "Sep 2025", "rate": 5.25}, {"date": "Okt 2025", "rate": 5.00},
+                {"date": "Nov 2025", "rate": 5.00}, {"date": "Des 2025", "rate": 5.00},
+                {"date": "Jan 2026", "rate": 5.00}, {"date": "Feb 2026", "rate": 4.75},
+                {"date": "Mar 2026", "rate": 4.75}, {"date": "Apr 2026", "rate": 4.75},
+                {"date": "Mei 2026", "rate": 4.75},
+            ]
+            _rdg_schedule_2026 = [
+                {"date": "21–22 Jan 2026", "result": "Turun 25bps → 5.00%", "status": "done"},
+                {"date": "18–19 Feb 2026", "result": "Turun 25bps → 4.75%", "status": "done"},
+                {"date": "18–19 Mar 2026", "result": "Tetap 4.75%", "status": "done"},
+                {"date": "22–23 Apr 2026", "result": "Tetap 4.75%", "status": "done"},
+                {"date": "20–21 Mei 2026", "result": "Menunggu keputusan", "status": "upcoming"},
+                {"date": "17–18 Jun 2026", "result": "—", "status": "future"},
+                {"date": "15–16 Jul 2026", "result": "—", "status": "future"},
+                {"date": "19–20 Ags 2026", "result": "—", "status": "future"},
+                {"date": "16–17 Sep 2026", "result": "—", "status": "future"},
+                {"date": "21–22 Okt 2026", "result": "—", "status": "future"},
+                {"date": "17–18 Nov 2026", "result": "—", "status": "future"},
+                {"date": "16–17 Des 2026", "result": "—", "status": "future"},
+            ]
 
-        # ── BI RATE MONITOR + GLOBAL RATES ────────────────────────
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏦 BI RATE MONITOR & GLOBAL INTEREST RATES</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-
-        # ── Hardcoded historical data (update berkala) ──
-        _bi_rate_history = [
-            {"date": "Jan 2024", "rate": 6.00}, {"date": "Feb 2024", "rate": 6.00},
-            {"date": "Mar 2024", "rate": 6.00}, {"date": "Apr 2024", "rate": 6.25},
-            {"date": "Mei 2024", "rate": 6.25}, {"date": "Jun 2024", "rate": 6.25},
-            {"date": "Jul 2024", "rate": 6.25}, {"date": "Ags 2024", "rate": 6.25},
-            {"date": "Sep 2024", "rate": 6.00}, {"date": "Okt 2024", "rate": 6.00},
-            {"date": "Nov 2024", "rate": 6.00}, {"date": "Des 2024", "rate": 6.00},
-            {"date": "Jan 2025", "rate": 5.75}, {"date": "Feb 2025", "rate": 5.75},
-            {"date": "Mar 2025", "rate": 5.75}, {"date": "Apr 2025", "rate": 5.75},
-            {"date": "Mei 2025", "rate": 5.50}, {"date": "Jun 2025", "rate": 5.50},
-            {"date": "Jul 2025", "rate": 5.25}, {"date": "Ags 2025", "rate": 5.25},
-            {"date": "Sep 2025", "rate": 5.25}, {"date": "Okt 2025", "rate": 5.00},
-            {"date": "Nov 2025", "rate": 5.00}, {"date": "Des 2025", "rate": 5.00},
-            {"date": "Jan 2026", "rate": 5.00}, {"date": "Feb 2026", "rate": 4.75},
-            {"date": "Mar 2026", "rate": 4.75}, {"date": "Apr 2026", "rate": 4.75},
-            {"date": "Mei 2026", "rate": 4.75},
-        ]
-        _rdg_schedule_2026 = [
-            {"date": "21–22 Jan 2026", "result": "Turun 25bps → 5.00%", "status": "done"},
-            {"date": "18–19 Feb 2026", "result": "Turun 25bps → 4.75%", "status": "done"},
-            {"date": "18–19 Mar 2026", "result": "Tetap 4.75%", "status": "done"},
-            {"date": "22–23 Apr 2026", "result": "Tetap 4.75%", "status": "done"},
-            {"date": "20–21 Mei 2026", "result": "Menunggu keputusan", "status": "upcoming"},
-            {"date": "17–18 Jun 2026", "result": "—", "status": "future"},
-            {"date": "15–16 Jul 2026", "result": "—", "status": "future"},
-            {"date": "19–20 Ags 2026", "result": "—", "status": "future"},
-            {"date": "16–17 Sep 2026", "result": "—", "status": "future"},
-            {"date": "21–22 Okt 2026", "result": "—", "status": "future"},
-            {"date": "17–18 Nov 2026", "result": "—", "status": "future"},
-            {"date": "16–17 Des 2026", "result": "—", "status": "future"},
-        ]
-
-        # ── Fetch live rates via yfinance fallback ──
-        @st.cache_data(ttl=1800, show_spinner=False)
-        def _fetch_global_rates():
-            """Fetch SOFR, US 1Y Treasury sebagai proxy Fed Funds rate via yfinance."""
-            rates = {
-                "BI Rate": {"value": 4.75, "change": -0.25, "source": "hardcoded", "label": "Bank Indonesia"},
-                "Fed Funds": {"value": 4.50, "change": 0.00, "source": "hardcoded", "label": "US Federal Reserve"},
-                "SOFR": {"value": 4.31, "change": -0.02, "source": "hardcoded", "label": "Secured Overnight Financing Rate"},
-                "US 10Y": {"value": 4.38, "change": 0.05, "source": "hardcoded", "label": "US Treasury 10Y Yield"},
-                "ID 10Y": {"value": 6.82, "change": -0.08, "source": "hardcoded", "label": "Indonesia Gov Bond 10Y"},
-            }
-            try:
-                import yfinance as _yf_r
-                # US 10Y Treasury yield
-                _us10y = _yf_r.Ticker("^TNX").history(period="5d")
-                if len(_us10y) >= 2:
-                    _us10y_now = round(float(_us10y["Close"].iloc[-1]), 2)
-                    _us10y_prev = round(float(_us10y["Close"].iloc[-2]), 2)
-                    rates["US 10Y"] = {"value": _us10y_now, "change": round(_us10y_now - _us10y_prev, 2), "source": "yfinance", "label": "US Treasury 10Y Yield"}
-            except Exception:
-                pass
-            try:
-                import yfinance as _yf_r2
-                # Indonesia 10Y proxy via ETF/bond yield
-                _id10y = _yf_r2.Ticker("INDO10Y=X").history(period="5d")
-                if len(_id10y) >= 1:
-                    _id_v = round(float(_id10y["Close"].iloc[-1]), 2)
-                    rates["ID 10Y"] = {"value": _id_v, "change": 0.0, "source": "yfinance", "label": "Indonesia Gov Bond 10Y"}
-            except Exception:
-                pass
-            return rates
-
-        _global_rates = _fetch_global_rates()
-        _bi_current = _bi_rate_history[-1]["rate"]
-        _bi_prev = _bi_rate_history[-2]["rate"] if len(_bi_rate_history) > 1 else _bi_current
-        _bi_chg = _bi_current - _bi_prev
-
-        # ── Metric cards ──
-        _rc = st.columns(5)
-        _rate_items = [
-            ("BI Rate", f"{_bi_current:.2f}%", f"{'▲' if _bi_chg>0 else '▼' if _bi_chg<0 else '─'} {abs(_bi_chg)*100:.0f}bps", "#26a69a" if _bi_chg<=0 else "#ef5350"),
-            ("Fed Funds", f"4.25–4.50%", f"HOLD · 7 Mei 2026", "#8b5cf6"),
-            ("SOFR", f"{_global_rates['SOFR']['value']:.2f}%", f"Overnight · USD", "#f59e0b"),
-            ("US 10Y", f"{_global_rates['US 10Y']['value']:.2f}%", f"{'▲' if _global_rates['US 10Y']['change']>0 else '▼'} {abs(_global_rates['US 10Y']['change']):.2f}% · {'yfinance' if _global_rates['US 10Y']['source']=='yfinance' else 'hardcoded'}", "#3b82f6"),
-            ("ID 10Y", f"{_global_rates['ID 10Y']['value']:.2f}%", f"Spread vs US: +{round(_global_rates['ID 10Y']['value']-_global_rates['US 10Y']['value'],2):.2f}%", "#10b981"),
-        ]
-        for _col_r, (_lbl, _val, _delta, _color) in zip(_rc, _rate_items):
-            with _col_r:
-                st.markdown(f"""
-                <div style='background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);
-                border-radius:8px;padding:12px 10px;text-align:center;margin-bottom:8px;'>
-                <div style='font-size:0.7rem;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;'>{_lbl}</div>
-                <div style='font-size:1.4rem;font-weight:700;color:{_color};font-family:IBM Plex Mono,monospace;'>{_val}</div>
-                <div style='font-size:0.68rem;color:#64748b;margin-top:3px;'>{_delta}</div>
-                </div>""", unsafe_allow_html=True)
-
-        # ── BI Rate History Chart — pakai components.html agar script CDN bisa load ──
-        _bi_labels_js = str([r["date"] for r in _bi_rate_history]).replace("'", '"')
-        _bi_vals_js   = str([r["rate"] for r in _bi_rate_history])
-        _bi_chart_html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-          <style>
-            * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-            html, body {{ width: 100%; height: 100%; background: transparent; }}
-            .chart-wrap {{
-              background: rgba(255,255,255,0.03);
-              border: 1px solid rgba(255,255,255,0.09);
-              border-radius: 8px;
-              padding: 14px 16px 10px;
-              width: 100%;
-              height: 230px;
-            }}
-            .chart-title {{
-              font-family: 'IBM Plex Mono', monospace;
-              font-size: 11px;
-              color: #888;
-              margin-bottom: 10px;
-              display: flex;
-              justify-content: space-between;
-              flex-wrap: wrap;
-              gap: 4px;
-            }}
-            .chart-title span {{ color: #26a69a; font-weight: 600; }}
-            canvas {{ display: block; width: 100% !important; }}
-          </style>
-        </head>
-        <body>
-          <div class="chart-wrap">
-            <div class="chart-title">
-              📊 BI RATE HISTORIS (Jan 2024 – Mei 2026)
-              <span>Current: {_bi_current:.2f}%</span>
-            </div>
-            <canvas id="bi_rate_chart" style="height:190px !important;"></canvas>
-          </div>
-          <script>
-          (function() {{
-            var ctx = document.getElementById('bi_rate_chart').getContext('2d');
-            var labelsAll = {_bi_labels_js};
-            var valsAll   = {_bi_vals_js};
-            var labels = labelsAll;
-            var vals   = valsAll;
-            var ptColors = vals.map(function(v,i) {{
-              if (i === 0) return '#26a69a';
-              return v > vals[i-1] ? '#ef5350' : '#26a69a';
-            }});
-            new Chart(ctx, {{
-              type: 'line',
-              data: {{
-                labels: labels,
-                datasets: [{{
-                  label: 'BI Rate (%)',
-                  data: vals,
-                  borderColor: '#26a69a',
-                  backgroundColor: 'rgba(38,166,154,0.12)',
-                  tension: 0.3,
-                  fill: true,
-                  pointRadius: 4,
-                  pointHoverRadius: 7,
-                  borderWidth: 2.5,
-                  pointBackgroundColor: ptColors,
-                  pointBorderColor: ptColors,
-                }}]
-              }},
-              options: {{
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: false,
-                plugins: {{
-                  legend: {{ display: false }},
-                  tooltip: {{
-                    backgroundColor: '#1a1a2e',
-                    titleColor: '#888',
-                    bodyColor: '#26a69a',
-                    callbacks: {{ label: function(c) {{ return ' ' + c.parsed.y.toFixed(2) + '%'; }} }}
-                  }}
-                }},
-                interaction: {{ mode: 'index', intersect: false }},
-                scales: {{
-                  x: {{
-                    ticks: {{
-                      color: '#888',
-                      font: {{ size: 9 }},
-                      maxRotation: 45,
-                      minRotation: 0,
-                      autoSkip: true,
-                      maxTicksLimit: 18
-                    }},
-                    grid: {{ color: 'rgba(255,255,255,0.04)' }}
-                  }},
-                  y: {{
-                    ticks: {{ color: '#888', font: {{ size: 9 }}, callback: function(v) {{ return v.toFixed(2)+'%'; }} }},
-                    grid: {{ color: 'rgba(255,255,255,0.05)' }},
-                    min: 4.0, max: 6.8,
-                  }}
-                }}
-              }}
-            }});
-          }})();
-          </script>
-        </body>
-        </html>
-        """
-        components.html(_bi_chart_html, height=255, scrolling=False)
-
-        # ── RDG BI Schedule 2026 ──
-        st.markdown(f"<div style='font-size:0.75rem;color:#888;margin:12px 0 6px;font-family:IBM Plex Mono,monospace;'>📅 JADWAL RDG BI 2026</div>", unsafe_allow_html=True)
-        _rdg_cols = st.columns(3)
-        for _ri, _rdg in enumerate(_rdg_schedule_2026):
-            with _rdg_cols[_ri % 3]:
-                _rdg_color = "#26a69a" if _rdg["status"] == "done" else ("#f59e0b" if _rdg["status"] == "upcoming" else "#374151")
-                _rdg_icon  = "✅" if _rdg["status"] == "done" else ("🔔" if _rdg["status"] == "upcoming" else "📋")
-                st.markdown(f"""
-                <div style='background:rgba(255,255,255,0.02);border:1px solid {_rdg_color}33;
-                border-radius:6px;padding:8px 10px;margin-bottom:6px;font-family:IBM Plex Mono,monospace;'>
-                <div style='font-size:0.68rem;color:{_rdg_color};margin-bottom:2px;'>{_rdg_icon} {_rdg["date"]}</div>
-                <div style='font-size:0.7rem;color:#ccc;'>{_rdg["result"]}</div>
-                </div>""", unsafe_allow_html=True)
-
-        _rates_src_note = "US 10Y via yfinance" if _global_rates["US 10Y"]["source"] == "yfinance" else "Semua rates: hardcoded (yfinance gagal)"
-        st.caption(f"📡 Sumber data: BI Rate = hardcoded dari keputusan resmi BI · {_rates_src_note} · Cache 30 menit")
-
-        # ── AI ANALYST: Rate Monitor ──────────────────────────────
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🤖 AI ANALYST — RATE MONITOR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        if "ai_rate_monitor_result" not in st.session_state:
-            st.session_state["ai_rate_monitor_result"] = None
-        _col_ai_rm, _ = st.columns([1, 3])
-        with _col_ai_rm:
-            _btn_analyze_rate = st.button("🔍 Analyze Rate Monitor", key="btn_ai_rate_monitor", use_container_width=True)
-        if _btn_analyze_rate:
-            _bi_trend = "turun" if _bi_chg < 0 else ("naik" if _bi_chg > 0 else "stabil")
-            _rm_prompt = f"""Kamu adalah SIGMA AI, analis makro ekonomi dan pasar modal IDX.
-
-Analisa kondisi suku bunga global dan implikasinya terhadap pasar modal Indonesia (IHSG) saat ini berdasarkan data berikut:
-
-📌 DATA LIVE:
-- BI Rate: {_bi_current:.2f}% (perubahan terakhir: {_bi_chg:+.2f}%, tren: {_bi_trend})
-- Fed Funds Rate: {_global_rates["Fed Funds"]["value"]:.2f}%
-- SOFR (Overnight USD): {_global_rates["SOFR"]["value"]:.2f}%
-- US Treasury 10Y Yield: {_global_rates["US 10Y"]["value"]:.2f}%
-- Indonesia Gov Bond 10Y: {_global_rates["ID 10Y"]["value"]:.2f}%
-- Spread ID-US 10Y: +{round(_global_rates["ID 10Y"]["value"] - _global_rates["US 10Y"]["value"], 2):.2f}%
-
-📌 KONTEKS BI RATE HISTORIS (24 bln terakhir):
-- Puncak tertinggi: 6.25% (Apr–Ags 2024)
-- Siklus pemotongan: Sep 2024 mulai turun bertahap
-- Current: {_bi_current:.2f}% (target BI 2026: ~4.50%)
-
-Buatlah analisa naratif yang mencakup:
-1. **Kondisi Saat Ini** — Apa yang sedang terjadi dengan suku bunga global & Indonesia?
-2. **Spread Analysis** — Spread ID-US {round(_global_rates["ID 10Y"]["value"] - _global_rates["US 10Y"]["value"], 2):.2f}% itu atraktif/tidak? Dampak ke asing masuk/keluar IDX?
-3. **Dampak ke IHSG** — Siklus pemotongan BI Rate ini bullish/bearish? Sektor mana yang paling diuntungkan?
-4. **Risiko** — Apa yang perlu diwaspadai investor IDX dari kondisi rate global saat ini?
-5. **Kesimpulan** — 1–2 kalimat tegas soal outlook suku bunga untuk pasar modal Indonesia.
-
-Format: narasi profesional, padat, 300–400 kata. Gunakan bahasa Indonesia. Jujur dan tegas."""
-            with st.spinner("🤖 SIGMA menganalisa kondisi rate monitor..."):
+            # ── Fetch live rates via yfinance fallback ──
+            @st.cache_data(ttl=1800, show_spinner=False)
+            def _fetch_global_rates():
+                """Fetch SOFR, US 1Y Treasury sebagai proxy Fed Funds rate via yfinance."""
+                rates = {
+                    "BI Rate": {"value": 4.75, "change": -0.25, "source": "hardcoded", "label": "Bank Indonesia"},
+                    "Fed Funds": {"value": 4.50, "change": 0.00, "source": "hardcoded", "label": "US Federal Reserve"},
+                    "SOFR": {"value": 4.31, "change": -0.02, "source": "hardcoded", "label": "Secured Overnight Financing Rate"},
+                    "US 10Y": {"value": 4.38, "change": 0.05, "source": "hardcoded", "label": "US Treasury 10Y Yield"},
+                    "ID 10Y": {"value": 6.82, "change": -0.08, "source": "hardcoded", "label": "Indonesia Gov Bond 10Y"},
+                }
                 try:
-                    _ai_rm_result, _ai_rm_model = _call_groq_primary(_rm_prompt, max_tokens=2000, temperature=0.6)
-                    st.session_state["ai_rate_monitor_result"] = (_ai_rm_result, _ai_rm_model)
-                except Exception as _e:
-                    st.session_state["ai_rate_monitor_result"] = (f"❌ Gagal: {str(_e)}", "error")
-        if st.session_state.get("ai_rate_monitor_result"):
-            _rm_txt, _rm_mdl = st.session_state["ai_rate_monitor_result"]
-            st.markdown(f"""<div style='background:rgba(38,166,154,0.06);border:1px solid rgba(38,166,154,0.25);
-            border-radius:8px;padding:16px 18px;margin-top:8px;font-family:"DM Sans",sans-serif;font-size:0.88rem;
-            line-height:1.75;color:#e0e0e0;'>
-            <div style='font-size:0.68rem;color:#26a69a;font-family:IBM Plex Mono,monospace;margin-bottom:10px;'>
-            🤖 SIGMA AI · Rate Monitor Analysis</div>
-            {_rm_txt.replace(chr(10), "<br>")}
-            </div>""", unsafe_allow_html=True)
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+                    import yfinance as _yf_r
+                    # US 10Y Treasury yield
+                    _us10y = _yf_r.Ticker("^TNX").history(period="5d")
+                    if len(_us10y) >= 2:
+                        _us10y_now = round(float(_us10y["Close"].iloc[-1]), 2)
+                        _us10y_prev = round(float(_us10y["Close"].iloc[-2]), 2)
+                        rates["US 10Y"] = {"value": _us10y_now, "change": round(_us10y_now - _us10y_prev, 2), "source": "yfinance", "label": "US Treasury 10Y Yield"}
+                except Exception:
+                    pass
+                try:
+                    import yfinance as _yf_r2
+                    # Indonesia 10Y proxy via ETF/bond yield
+                    _id10y = _yf_r2.Ticker("INDO10Y=X").history(period="5d")
+                    if len(_id10y) >= 1:
+                        _id_v = round(float(_id10y["Close"].iloc[-1]), 2)
+                        rates["ID 10Y"] = {"value": _id_v, "change": 0.0, "source": "yfinance", "label": "Indonesia Gov Bond 10Y"}
+                except Exception:
+                    pass
+                return rates
 
-        # ─────────────────────────────────────────────────────────
+            _global_rates = _fetch_global_rates()
+            _bi_current = _bi_rate_history[-1]["rate"]
+            _bi_prev = _bi_rate_history[-2]["rate"] if len(_bi_rate_history) > 1 else _bi_current
+            _bi_chg = _bi_current - _bi_prev
+
+            # ── Metric cards ──
+            _rc = st.columns(5)
+            _rate_items = [
+                ("BI Rate", f"{_bi_current:.2f}%", f"{'▲' if _bi_chg>0 else '▼' if _bi_chg<0 else '─'} {abs(_bi_chg)*100:.0f}bps", "#26a69a" if _bi_chg<=0 else "#ef5350"),
+                ("Fed Funds", f"4.25–4.50%", f"HOLD · 7 Mei 2026", "#8b5cf6"),
+                ("SOFR", f"{_global_rates['SOFR']['value']:.2f}%", f"Overnight · USD", "#f59e0b"),
+                ("US 10Y", f"{_global_rates['US 10Y']['value']:.2f}%", f"{'▲' if _global_rates['US 10Y']['change']>0 else '▼'} {abs(_global_rates['US 10Y']['change']):.2f}% · {'yfinance' if _global_rates['US 10Y']['source']=='yfinance' else 'hardcoded'}", "#3b82f6"),
+                ("ID 10Y", f"{_global_rates['ID 10Y']['value']:.2f}%", f"Spread vs US: +{round(_global_rates['ID 10Y']['value']-_global_rates['US 10Y']['value'],2):.2f}%", "#10b981"),
+            ]
+            for _col_r, (_lbl, _val, _delta, _color) in zip(_rc, _rate_items):
+                with _col_r:
+                    st.markdown(f"""
+                    <div style='background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);
+                    border-radius:8px;padding:12px 10px;text-align:center;margin-bottom:8px;'>
+                    <div style='font-size:0.7rem;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;'>{_lbl}</div>
+                    <div style='font-size:1.4rem;font-weight:700;color:{_color};font-family:IBM Plex Mono,monospace;'>{_val}</div>
+                    <div style='font-size:0.68rem;color:#64748b;margin-top:3px;'>{_delta}</div>
+                    </div>""", unsafe_allow_html=True)
+
+            # ── BI Rate History Chart — pakai components.html agar script CDN bisa load ──
+            _bi_labels_js = str([r["date"] for r in _bi_rate_history]).replace("'", '"')
+            _bi_vals_js   = str([r["rate"] for r in _bi_rate_history])
+            _bi_chart_html = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+              <style>
+                * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+                html, body {{ width: 100%; height: 100%; background: transparent; }}
+                .chart-wrap {{
+                  background: rgba(255,255,255,0.03);
+                  border: 1px solid rgba(255,255,255,0.09);
+                  border-radius: 8px;
+                  padding: 14px 16px 10px;
+                  width: 100%;
+                  height: 230px;
+                }}
+                .chart-title {{
+                  font-family: 'IBM Plex Mono', monospace;
+                  font-size: 11px;
+                  color: #888;
+                  margin-bottom: 10px;
+                  display: flex;
+                  justify-content: space-between;
+                  flex-wrap: wrap;
+                  gap: 4px;
+                }}
+                .chart-title span {{ color: #26a69a; font-weight: 600; }}
+                canvas {{ display: block; width: 100% !important; }}
+              </style>
+            </head>
+            <body>
+              <div class="chart-wrap">
+                <div class="chart-title">
+                  📊 BI RATE HISTORIS (Jan 2024 – Mei 2026)
+                  <span>Current: {_bi_current:.2f}%</span>
+                </div>
+                <canvas id="bi_rate_chart" style="height:190px !important;"></canvas>
+              </div>
+              <script>
+              (function() {{
+                var ctx = document.getElementById('bi_rate_chart').getContext('2d');
+                var labelsAll = {_bi_labels_js};
+                var valsAll   = {_bi_vals_js};
+                var labels = labelsAll;
+                var vals   = valsAll;
+                var ptColors = vals.map(function(v,i) {{
+                  if (i === 0) return '#26a69a';
+                  return v > vals[i-1] ? '#ef5350' : '#26a69a';
+                }});
+                new Chart(ctx, {{
+                  type: 'line',
+                  data: {{
+                    labels: labels,
+                    datasets: [{{
+                      label: 'BI Rate (%)',
+                      data: vals,
+                      borderColor: '#26a69a',
+                      backgroundColor: 'rgba(38,166,154,0.12)',
+                      tension: 0.3,
+                      fill: true,
+                      pointRadius: 4,
+                      pointHoverRadius: 7,
+                      borderWidth: 2.5,
+                      pointBackgroundColor: ptColors,
+                      pointBorderColor: ptColors,
+                    }}]
+                  }},
+                  options: {{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    plugins: {{
+                      legend: {{ display: false }},
+                      tooltip: {{
+                        backgroundColor: '#1a1a2e',
+                        titleColor: '#888',
+                        bodyColor: '#26a69a',
+                        callbacks: {{ label: function(c) {{ return ' ' + c.parsed.y.toFixed(2) + '%'; }} }}
+                      }}
+                    }},
+                    interaction: {{ mode: 'index', intersect: false }},
+                    scales: {{
+                      x: {{
+                        ticks: {{
+                          color: '#888',
+                          font: {{ size: 9 }},
+                          maxRotation: 45,
+                          minRotation: 0,
+                          autoSkip: true,
+                          maxTicksLimit: 18
+                        }},
+                        grid: {{ color: 'rgba(255,255,255,0.04)' }}
+                      }},
+                      y: {{
+                        ticks: {{ color: '#888', font: {{ size: 9 }}, callback: function(v) {{ return v.toFixed(2)+'%'; }} }},
+                        grid: {{ color: 'rgba(255,255,255,0.05)' }},
+                        min: 4.0, max: 6.8,
+                      }}
+                    }}
+                  }}
+                }});
+              }})();
+              </script>
+            </body>
+            </html>
+            """
+            components.html(_bi_chart_html, height=255, scrolling=False)
+
+            # ── RDG BI Schedule 2026 ──
+            st.markdown(f"<div style='font-size:0.75rem;color:#888;margin:12px 0 6px;font-family:IBM Plex Mono,monospace;'>📅 JADWAL RDG BI 2026</div>", unsafe_allow_html=True)
+            _rdg_cols = st.columns(3)
+            for _ri, _rdg in enumerate(_rdg_schedule_2026):
+                with _rdg_cols[_ri % 3]:
+                    _rdg_color = "#26a69a" if _rdg["status"] == "done" else ("#f59e0b" if _rdg["status"] == "upcoming" else "#374151")
+                    _rdg_icon  = "✅" if _rdg["status"] == "done" else ("🔔" if _rdg["status"] == "upcoming" else "📋")
+                    st.markdown(f"""
+                    <div style='background:rgba(255,255,255,0.02);border:1px solid {_rdg_color}33;
+                    border-radius:6px;padding:8px 10px;margin-bottom:6px;font-family:IBM Plex Mono,monospace;'>
+                    <div style='font-size:0.68rem;color:{_rdg_color};margin-bottom:2px;'>{_rdg_icon} {_rdg["date"]}</div>
+                    <div style='font-size:0.7rem;color:#ccc;'>{_rdg["result"]}</div>
+                    </div>""", unsafe_allow_html=True)
+
+            _rates_src_note = "US 10Y via yfinance" if _global_rates["US 10Y"]["source"] == "yfinance" else "Semua rates: hardcoded (yfinance gagal)"
+            st.caption(f"📡 Sumber data: BI Rate = hardcoded dari keputusan resmi BI · {_rates_src_note} · Cache 30 menit")
+
+
+        with _rm_tab_ai:
+            # ── AI ANALYST: Rate Monitor ──────────────────────────────
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🤖 AI ANALYST — RATE MONITOR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            if "ai_rate_monitor_result" not in st.session_state:
+                st.session_state["ai_rate_monitor_result"] = None
+            _col_ai_rm, _ = st.columns([1, 3])
+            with _col_ai_rm:
+                _btn_analyze_rate = st.button("🔍 Analyze Rate Monitor", key="btn_ai_rate_monitor", use_container_width=True)
+            if _btn_analyze_rate:
+                _bi_trend = "turun" if _bi_chg < 0 else ("naik" if _bi_chg > 0 else "stabil")
+                _rm_prompt = f"""Kamu adalah SIGMA AI, analis makro ekonomi dan pasar modal IDX.
+
+    Analisa kondisi suku bunga global dan implikasinya terhadap pasar modal Indonesia (IHSG) saat ini berdasarkan data berikut:
+
+    📌 DATA LIVE:
+    - BI Rate: {_bi_current:.2f}% (perubahan terakhir: {_bi_chg:+.2f}%, tren: {_bi_trend})
+    - Fed Funds Rate: {_global_rates["Fed Funds"]["value"]:.2f}%
+    - SOFR (Overnight USD): {_global_rates["SOFR"]["value"]:.2f}%
+    - US Treasury 10Y Yield: {_global_rates["US 10Y"]["value"]:.2f}%
+    - Indonesia Gov Bond 10Y: {_global_rates["ID 10Y"]["value"]:.2f}%
+    - Spread ID-US 10Y: +{round(_global_rates["ID 10Y"]["value"] - _global_rates["US 10Y"]["value"], 2):.2f}%
+
+    📌 KONTEKS BI RATE HISTORIS (24 bln terakhir):
+    - Puncak tertinggi: 6.25% (Apr–Ags 2024)
+    - Siklus pemotongan: Sep 2024 mulai turun bertahap
+    - Current: {_bi_current:.2f}% (target BI 2026: ~4.50%)
+
+    Buatlah analisa naratif yang mencakup:
+    1. **Kondisi Saat Ini** — Apa yang sedang terjadi dengan suku bunga global & Indonesia?
+    2. **Spread Analysis** — Spread ID-US {round(_global_rates["ID 10Y"]["value"] - _global_rates["US 10Y"]["value"], 2):.2f}% itu atraktif/tidak? Dampak ke asing masuk/keluar IDX?
+    3. **Dampak ke IHSG** — Siklus pemotongan BI Rate ini bullish/bearish? Sektor mana yang paling diuntungkan?
+    4. **Risiko** — Apa yang perlu diwaspadai investor IDX dari kondisi rate global saat ini?
+    5. **Kesimpulan** — 1–2 kalimat tegas soal outlook suku bunga untuk pasar modal Indonesia.
+
+    Format: narasi profesional, padat, 300–400 kata. Gunakan bahasa Indonesia. Jujur dan tegas."""
+                with st.spinner("🤖 SIGMA menganalisa kondisi rate monitor..."):
+                    try:
+                        _ai_rm_result, _ai_rm_model = _call_groq_primary(_rm_prompt, max_tokens=2000, temperature=0.6)
+                        st.session_state["ai_rate_monitor_result"] = (_ai_rm_result, _ai_rm_model)
+                    except Exception as _e:
+                        st.session_state["ai_rate_monitor_result"] = (f"❌ Gagal: {str(_e)}", "error")
+            if st.session_state.get("ai_rate_monitor_result"):
+                _rm_txt, _rm_mdl = st.session_state["ai_rate_monitor_result"]
+                st.markdown(f"""<div style='background:rgba(38,166,154,0.06);border:1px solid rgba(38,166,154,0.25);
+                border-radius:8px;padding:16px 18px;margin-top:8px;font-family:"DM Sans",sans-serif;font-size:0.88rem;
+                line-height:1.75;color:#e0e0e0;'>
+                <div style='font-size:0.68rem;color:#26a69a;font-family:IBM Plex Mono,monospace;margin-bottom:10px;'>
+                🤖 SIGMA AI · Rate Monitor Analysis</div>
+                {_rm_txt.replace(chr(10), "<br>")}
+                </div>""", unsafe_allow_html=True)
+            st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+            # ─────────────────────────────────────────────────────────
         # ECONOMIC CALENDAR → dipindah ke sub-tab Kalender
         # ─────────────────────────────────────────────────────────
     with _mm_subtab_cal:
