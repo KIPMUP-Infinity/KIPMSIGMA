@@ -9401,17 +9401,7 @@ def show_login():
     # ═══════════════════════════════════════════════════════════════════════
 
     def _img_to_css_url(filename: str) -> str:
-        import base64 as _b64, os as _os
-        local_path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), filename)
-        if _os.path.exists(local_path):
-            try:
-                with open(local_path, "rb") as f:
-                    b64 = _b64.b64encode(f.read()).decode()
-                ext = filename.lower().split(".")[-1]
-                mime = "image/png" if ext == "png" else "image/jpeg"
-                return f"url('data:{mime};base64,{b64}')"
-            except Exception:
-                pass
+        # Use GitHub raw URL directly to avoid embedding huge base64 in CSS
         encoded_name = filename.replace(" ", "%20")
         return f"url('https://raw.githubusercontent.com/KIPMUP-Infinity/KIPMSIGMA/main/{encoded_name}')"
 
@@ -16242,97 +16232,6 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                         _render_fs_table_bsjp(_fs_pass, _fs_watch, _fs_accent)
                     if not _fs_pass and not _fs_watch:
                         st.markdown(f"<div class='trm-card' style='text-align:center;padding:24px;'><p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};'>Tidak ada saham yang lolos filter di sektor ini.</p></div>", unsafe_allow_html=True)
-
-                    # AI Insight
-                    if _fs_pass:
-                        if st.button("🤖 ANALISA AI DARI HASIL SCREENER", use_container_width=True, key="btn_fs_ai"):
-                            with st.spinner("SIGMA AI menganalisa hasil screener - multi-disiplin Damodaran/Graham/Lynch/Schilit..."):
-                                _top5 = _fs_pass[:5]
-                                _fsl  = [f"{tk}: ROE={d['roe']:.1f}%|DER={d['der']:.2f}x|NetMargin={d['npm']:.1f}%|PBV={d['pbv']:.2f}x|PER={d['pe']:.1f}x|CurrentRatio={d['cr']:.2f}x|EPS={d['eps']:.0f}|Div={d['div']:.1f}%|Score={d['score']}/6" for tk,d in _top5]
-                                _fp   = f"""Kamu adalah SIGMA AI - analis ekuitas institusional yang menguasai teori valuasi dari Aswath Damodaran, filosofi investasi Benjamin Graham & Peter Lynch, serta teknik akuntansi forensik Howard Schilit.
-
-    5 saham teratas hasil Fundamental Screener SIGMA (Buffett criteria - IDX):
-    {chr(10).join(_fsl)}
-
-    Kriteria screening: ROE&ge;15% | DER&le;1.0x | NetMargin&ge;10% | CurrentRatio&ge;1.5x | PBV 0.5&ndash;3x | EPS positif
-
-    Lakukan analisa MULTI-DISIPLIN berikut:
-
-    1. VALUASI KUANTITATIF & EKSPEKTASI (Damodaran & Mauboussin):
-      -Tentukan apakah PER/PBV saat ini mencerminkan ekspektasi growth yang realistis
-      -Reverse DCF: pada harga pasar saat ini, berapa growth rate yang dipriced-in? Masuk akal?
-      -Saham mana yang paling menarik secara Risk/Reward?
-
-    2. KUALITAS LABA & UJI FORENSIK (Schilit):
-      -Bandingkan tren laba bersih vs estimasi arus kas operasi
-      -Ada tanda-tanda penumpukan piutang atau anomali akuntansi?
-      -Red flag atau green flag yang perlu diperhatikan?
-
-    3. KATEGORISASI PROFIL (Lynch):
-      -Klasifikasikan setiap saham: Fast Grower / Stalwart / Slow Grower / Cyclical / Asset Play / Turnaround
-      -Berdasarkan kategori itu, metrik operasional apa yang paling krusial dipantau?
-
-    4. MARGIN OF SAFETY (Graham):
-      -Estimasi nilai intrinsik sederhana (berbasis EPS/PBV historis atau earnings power)
-      -Berapa % Margin of Safety yang tersedia saat ini?
-      -Apakah neraca cukup kuat (DER rendah, CR tinggi) untuk bertahan di tekanan makro?
-
-    5. SINTESIS & SIGMA VIEW:
-      -Beri skor Risk/Reward untuk masing-masing saham
-      -Rekomendasi 1-2 saham TERBAIK untuk akumulasi 3-6 bulan ke depan
-      -Saham mana yang paling menawarkan asimetri menguntungkan bagi investor IDX?
-
-    Format: Bahasa Indonesia. Markdown rapi. Padat, jujur, actionable. Jangan ulang data mentah."""
-                                _fs_ai = _call_ai_reco(_fp)
-                                st.session_state["fs_ai_result"] = _fs_ai
-
-                    if st.session_state.get("fs_ai_result"):
-                        st.markdown(f"""<div style="background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:16px 18px;margin-top:12px;font-size:0.875rem;color:{text_main};line-height:1.8;white-space:pre-wrap;word-break:break-word;">{st.session_state['fs_ai_result']}</div>""", unsafe_allow_html=True)
-
-                    # ── Chat tanya fundamental ─────────────────────────────────
-                    st.markdown(f"<hr style='border-color:rgba(255,255,255,0.06);margin:18px 0 14px;'>", unsafe_allow_html=True)
-                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin-bottom:8px;letter-spacing:0.05em;'>💬 TANYA FUNDAMENTAL - Analisa mendalam saham apapun dari hasil screener</p>", unsafe_allow_html=True)
-                    _fs_chat_q = st.text_input(
-                        "",
-                        placeholder="Contoh: analisa fundamental BBCA | bandingkan TLKM vs BBRI | bagaimana valuasi ASII? | apakah BMRI layak akumulasi?",
-                        key="fs_chat_q",
-                        label_visibility="collapsed"
-                    )
-                    _fsc_btn = st.button("🔍 Tanya SIGMA AI", key="btn_fs_chat", use_container_width=False)
-                    if _fsc_btn and _fs_chat_q.strip():
-                        with st.spinner("SIGMA AI menganalisa fundamental..."):
-                            _all_tickers = ", ".join([tk for tk,_ in (_fs_pass + _fs_watch)[:10]])
-                            _top5_ctx = [f"{tk}: ROE={d['roe']:.1f}%|DER={d['der']:.2f}x|NPM={d['npm']:.1f}%|PBV={d['pbv']:.2f}x|PER={d['pe']:.1f}x|CR={d['cr']:.1f}x|Harga=Rp{d['price']:,.0f}|Score={d['score']}/6" for tk,d in (_fs_pass + _fs_watch)[:8]]
-                            _fs_chat_prompt = f"""Kamu adalah SIGMA AI - analis fundamental multi-disiplin berbasis kerangka:
-    - Damodaran (DCF / Reverse DCF / WACC)
-    - Benjamin Graham (Margin of Safety, neraca kuat)
-    - Peter Lynch (6 kategori saham, metrik kunci per kategori)
-    - Howard Schilit (deteksi Financial Shenanigans / kualitas laba)
-
-    Konteks screener saat ini:
-    Universe yang discreen: {_all_tickers}
-    Top hasil screener (data live): 
-    {chr(10).join(_top5_ctx)}
-
-    Pertanyaan user: {_fs_chat_q.strip()}
-
-    INSTRUKSI:
-    - Jika user tanya saham spesifik yang ada di list &rarr; analisa mendalam dengan semua 4 framework di atas
-    - Jika user minta perbandingan &rarr; bandingkan head-to-head secara kuantitatif dan kualitatif  
-    - Jika user tanya valuasi &rarr; lakukan Reverse DCF: growth rate apa yang saat ini dipriced-in oleh pasar?
-    - Jika user tanya apakah layak beli &rarr; berikan Margin of Safety estimate + Risk/Reward ratio
-    - Selalu jujur - jika ada risiko atau kondisi tidak menarik, katakan dengan tegas
-    - Akhiri dengan rekomendasi konkret: Accumulate / Wait / Avoid + alasan spesifik
-
-    Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir."""
-                            _fs_chat_ans = _call_ai_reco(_fs_chat_prompt)
-                            st.session_state["fs_chat_ans"] = _fs_chat_ans
-
-                    if st.session_state.get("fs_chat_ans"):
-                        st.markdown(f"""<div style="background:{met_bg};border:1px solid rgba(38,166,154,0.2);border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:14px 18px;margin-top:8px;font-size:0.875rem;color:{text_main};line-height:1.82;white-space:pre-wrap;word-break:break-word;">{st.session_state['fs_chat_ans']}</div>""", unsafe_allow_html=True)
-                        if st.button("🗑 Hapus Jawaban", key="btn_fs_chat_clear"):
-                            st.session_state["fs_chat_ans"] = ""
-                            st.rerun()
 
             else:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:40px 20px;">
