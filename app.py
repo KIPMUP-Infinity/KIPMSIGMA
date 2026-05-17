@@ -13409,6 +13409,18 @@ table{{margin-bottom:0!important;}}
         with _md_subtab_yield:
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏛️ INDONESIA BOND YIELD TRACKER — 10Y vs DXY vs USD/IDR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown("""<div style='background:#0a0e1a;border-top:1px solid rgba(139,92,246,0.3);border-bottom:1px solid rgba(139,92,246,0.3);border-left:3px solid #8b5cf6;padding:8px 0;font-size:0.82rem;color:rgba(255,255,255,0.75);overflow:hidden;white-space:nowrap;margin-bottom:10px;'>
+  <div style='display:inline-block;animation:sigma-scroll-yield 40s linear infinite;padding-left:100%;'>
+    <b style='color:#8b5cf6;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
+    Indonesia 10Y Bond Yield saat ini ~6.85%. Spread terhadap US 10Y (~4.47%) sekitar +238 bps. DXY melemah ke ~100.2 mendukung Rupiah di level 16.200-16.400.
+    Sentimen: Hot money masih bertahan di EM Asia. Risiko utama: data inflasi AS &amp; keputusan Fed di Jun 2026. Pantau yield spread sebagai sinyal arus modal.
+    &nbsp;&nbsp;&nbsp;<span style='color:rgba(139,92,246,0.5);'>◆</span>&nbsp;&nbsp;&nbsp;
+    <b style='color:#8b5cf6;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
+    Indonesia 10Y Bond Yield saat ini ~6.85%. Spread terhadap US 10Y (~4.47%) sekitar +238 bps. DXY melemah ke ~100.2 mendukung Rupiah di level 16.200-16.400.
+    Sentimen: Hot money masih bertahan di EM Asia. Risiko utama: data inflasi AS &amp; keputusan Fed di Jun 2026. Pantau yield spread sebagai sinyal arus modal.
+  </div>
+</div>
+<style>@keyframes sigma-scroll-yield{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}</style>""", unsafe_allow_html=True)
             st.markdown(f"""<div style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};
                 background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
                 padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
@@ -13703,6 +13715,18 @@ table{{margin-bottom:0!important;}}
             # ════════════════════════════════════════════════════════════════
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏛️ US BOND YIELD TRACKER — 10Y vs DXY vs USD/IDR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown("""<div style='background:#0a0e1a;border-top:1px solid rgba(242,54,69,0.3);border-bottom:1px solid rgba(242,54,69,0.3);border-left:3px solid #f23645;padding:8px 0;font-size:0.82rem;color:rgba(255,255,255,0.75);overflow:hidden;white-space:nowrap;margin-bottom:10px;'>
+  <div style='display:inline-block;animation:sigma-scroll-us 42s linear infinite;padding-left:100%;'>
+    <b style='color:#f23645;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
+    US 10Y Treasury Yield ~4.47%. Yield mulai turun dari puncak 2024 seiring ekspektasi Fed cut di H2 2026. DXY ~100.2, level terendah sejak 2022.
+    Implikasi IDX: yield AS turun = capital inflow ke EM. Rupiah berpotensi menguat ke 15.800-16.000. Sektor Properti &amp; Perbankan diuntungkan.
+    &nbsp;&nbsp;&nbsp;<span style='color:rgba(242,54,69,0.5);'>◆</span>&nbsp;&nbsp;&nbsp;
+    <b style='color:#f23645;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
+    US 10Y Treasury Yield ~4.47%. Yield mulai turun dari puncak 2024 seiring ekspektasi Fed cut di H2 2026. DXY ~100.2, level terendah sejak 2022.
+    Implikasi IDX: yield AS turun = capital inflow ke EM. Rupiah berpotensi menguat ke 15.800-16.000. Sektor Properti &amp; Perbankan diuntungkan.
+  </div>
+</div>
+<style>@keyframes sigma-scroll-us{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}</style>""", unsafe_allow_html=True)
             st.markdown(f"""<div style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};
                 background:rgba(242,54,69,0.07);border-left:3px solid #f23645;
                 padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
@@ -15773,6 +15797,18 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     with _md_subtab_fundamental:
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FUNDAMENTAL SCREENER - BUFFETT · GRAHAM · DAMODARAN · LYNCH</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("""<div style='background:#0a0e1a;border-top:1px solid rgba(38,166,154,0.3);border-bottom:1px solid rgba(38,166,154,0.3);border-left:3px solid #26a69a;padding:8px 0;font-size:0.82rem;color:rgba(255,255,255,0.75);overflow:hidden;white-space:nowrap;margin-bottom:10px;'>
+  <div style='display:inline-block;animation:sigma-scroll-fs 44s linear infinite;padding-left:100%;'>
+    <b style='color:#26a69a;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
+    Gunakan Buffett Score &ge;4 sebagai filter utama: ROE &ge;15%, DER &le;1.0x, Net Margin &ge;10%, Current Ratio &ge;1.5x, PBV 0.5-3x, EPS positif.
+    Kombinasikan dengan Graham MoS &gt;30% untuk margin of safety. PEG &lt;1.0 = undervalue relatif growth (Lynch/Damodaran). Prioritas: kualitas dulu, harga kemudian.
+    &nbsp;&nbsp;&nbsp;<span style='color:rgba(38,166,154,0.5);'>◆</span>&nbsp;&nbsp;&nbsp;
+    <b style='color:#26a69a;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
+    Gunakan Buffett Score &ge;4 sebagai filter utama: ROE &ge;15%, DER &le;1.0x, Net Margin &ge;10%, Current Ratio &ge;1.5x, PBV 0.5-3x, EPS positif.
+    Kombinasikan dengan Graham MoS &gt;30% untuk margin of safety. PEG &lt;1.0 = undervalue relatif growth (Lynch/Damodaran). Prioritas: kualitas dulu, harga kemudian.
+  </div>
+</div>
+<style>@keyframes sigma-scroll-fs{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}</style>""", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin-bottom:16px;'>Screening saham IDX berbasis kualitas fundamental - ROE, DER, Net Margin, Current Ratio, PBV, EPS. Urutkan berdasarkan framework: Buffett Score, Graham MoS, PEG Ratio, EPS Growth, Dividend Yield. Data live via yfinance multi-layer.</p>", unsafe_allow_html=True)
 
         _fs_accent = "#26a69a"
@@ -18058,16 +18094,40 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
   .frm-col-hdr .ch-yday {{ min-width: 55px; text-align: right; }}
   .frm-col-hdr .ch-week {{ min-width: 55px; text-align: right; }}
 
-  /* Insight box */
+  /* Insight box — scrolling ticker */
   .frm-insight {{
-    background: rgba(66,133,244,0.07);
-    border: 1px solid rgba(66,133,244,0.20);
+    background: #0a0e1a;
+    border-top: 1px solid rgba(66,133,244,0.30);
+    border-bottom: 1px solid rgba(66,133,244,0.30);
     border-left: 3px solid #4285F4;
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 0.875rem;
-    color: {'#e8eaf0' if is_dark else '#1a202c'};
-    line-height: 1.65;
+    padding: 8px 0;
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.75);
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    margin-top: 14px;
+    border-radius: 0;
+  }}
+  .frm-insight-inner {{
+    display: inline-block;
+    animation: frm-scroll 38s linear infinite;
+    padding-left: 100%;
+  }}
+  @keyframes frm-scroll {{
+    0%   {{ transform: translateX(0); }}
+    100% {{ transform: translateX(-100%); }}
+  }}
+  .frm-insight-label {{
+    color: #4285F4;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin-right: 10px;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  }}
+  .frm-insight-sep {{
+    color: rgba(66,133,244,0.45);
+    margin: 0 22px;
   }}
 
   /* Mobile: kompak &mdash; single table layout sudah vertikal by default */
@@ -18091,7 +18151,8 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
     .frm-col-hdr .ch-yday {{ min-width: 44px; }}
     .frm-col-hdr .ch-week {{ min-width: 44px; }}
     .frm-dir-badge {{ font-size: 0.65rem; padding: 1px 4px; margin-left: 2px; }}
-    .frm-insight {{ font-size: 0.875rem; padding: 10px 14px; }}
+    .frm-insight {{ font-size: 0.78rem; padding: 7px 0; }}
+    .frm-insight-inner {{ animation-duration: 28s; }}
     .frm-meeting-hdr {{ padding: 8px 12px; }}
     .frm-detail-footer {{ padding: 3px 12px 6px; }}
   }}
@@ -18112,13 +18173,21 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
   <!-- Cards Grid -->
   <div class="frm-vtbl-wrap" id="frm-vtbl"></div>
 
-  <!-- Insight -->
+  <!-- Insight — scrolling ticker -->
   <div class="frm-insight">
-     <b style="color:#4285F4;">SIGMA INSIGHT -</b>
-    FOMC 7 Mei 2026: Fed <b>HOLD</b> di 4.25&ndash;4.50% sesuai ekspektasi pasar.
-    Probabilitas ~88.5% HOLD berlanjut di FOMC Juni 2026. Ekspektasi cut pertama mulai muncul di Jul–Sep 2026 (~19–31% probabilitas).
-    Implikasi IDX: <span style="color:#089981;font-weight:600;">Rupiah stabil</span>,
-    hot money tetap di EM, sentimen netral untuk perbankan &amp; properti. Pantau data CPI AS &amp; NFP sebagai trigger perubahan ekspektasi.
+    <div class="frm-insight-inner">
+      <span class="frm-insight-label">SIGMA INSIGHT —</span>
+      FOMC 7 Mei 2026: Fed <b>HOLD</b> di 4.25–4.50% sesuai ekspektasi pasar.
+      Probabilitas ~88.5% HOLD berlanjut di FOMC Juni 2026. Ekspektasi cut pertama mulai muncul di Jul–Sep 2026 (~19–31% probabilitas).
+      Implikasi IDX: <span style="color:#089981;font-weight:600;">Rupiah stabil</span>,
+      hot money tetap di EM, sentimen netral untuk perbankan &amp; properti. Pantau data CPI AS &amp; NFP sebagai trigger perubahan ekspektasi.
+      <span class="frm-insight-sep">◆</span>
+      <span class="frm-insight-label">SIGMA INSIGHT —</span>
+      FOMC 7 Mei 2026: Fed <b>HOLD</b> di 4.25–4.50% sesuai ekspektasi pasar.
+      Probabilitas ~88.5% HOLD berlanjut di FOMC Juni 2026. Ekspektasi cut pertama mulai muncul di Jul–Sep 2026 (~19–31% probabilitas).
+      Implikasi IDX: <span style="color:#089981;font-weight:600;">Rupiah stabil</span>,
+      hot money tetap di EM, sentimen netral untuk perbankan &amp; properti. Pantau data CPI AS &amp; NFP sebagai trigger perubahan ekspektasi.
+    </div>
   </div>
 
 </div>
