@@ -8018,7 +8018,10 @@ if st.session_state.get("user"):
     _auto_refresh_bursa()
 
 
-st.markdown(f"""
+# ── CSS utama hanya dirender jika sudah login ──
+# (mencegah CSS bocor ke login page)
+if st.session_state.get("user") is not None:
+    st.markdown(f"""
 <style>
 * {{ font-family: ui-sans-serif,-apple-system,system-ui,"Segoe UI",sans-serif !important; box-sizing: border-box; }}
 .stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > section, section[data-testid="stMain"], [data-testid="stMainBlockContainer"], [data-testid="stBottom"], [data-testid="stBottom"] > div {{ background: {C['bg']} !important; }}
@@ -9410,6 +9413,10 @@ def show_login():
 
     # ── CSS: semua rule di-scope ke body.sigma-login-active ──────────────
     # Ini mencegah style bocor ke halaman terminal setelah login.
+    # FIX v5.2: Tambah guard agar CSS hanya dirender jika user belum login
+    if st.session_state.get("user") is not None:
+        return  # sudah login, jangan render login page
+
     st.markdown(f"""
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;900&display=swap" rel="stylesheet">
@@ -10769,8 +10776,9 @@ def _call_gemini_text(messages):
                 continue   # error lain → coba model berikutnya
     raise Exception(f"Gemini Text gagal semua model/key: {last_err}")
 
-# ─── PENGATURAN UI CSS KHUSUS ───
-st.markdown(f"""
+# ─── PENGATURAN UI CSS KHUSUS (hanya jika sudah login) ───
+if st.session_state.get("user") is not None:
+    st.markdown(f"""
 <style>
 /* PENANGKAL ERROR COPY PASTE: MEMAKSA STATUS UPLOAD UNTUK TETAP TERLIHAT */
 [data-testid="stStatusWidget"] {{ display: flex !important; visibility: visible !important; height: auto !important; overflow: visible !important; opacity: 1 !important; }}
@@ -20216,31 +20224,31 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
                  <b style='color:#8b5cf6;'>Efektif sejak:</b> 29 Mei 2026 (MSCI Semi-Annual Review Mei 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
                 <b style='color:#8b5cf6;'>Review berikutnya:</b> Pengumuman ~13 Agu 2026, efektif 28 Agu 2026&nbsp;&nbsp;|&nbsp;&nbsp;
-                <span style='color:{text_sub};'>Jadwal: 2&times; setahun (Feb &amp; Agu). Review interim Mei &amp; Nov. Sumber: <b>msci.com</b></span>
+                <span style='color:{text_sub};'>Jadwal: 2&times; setahun (Feb &amp; Agu). Review interim Mei &amp; Nov. <b>Standard:</b> 27 saham · <b>Small Cap:</b> 14 saham. Sumber: <b>msci.com</b></span>
                 </div>""", unsafe_allow_html=True)
 
                 import pandas as pd
                 msci_standard = {
                     "Ticker": ["AMMN","ASII","BBCA","BBNI","BBRI","BMRI","BREN","BRPT","CPIN","GOTO",
-                                "ICBP","INDF","INKP","INTP","ISAT","KLBF","MDKA","TPIA","TLKM","TOWR","UNTR","UNVR","PGEO"],
+                                "ICBP","INDF","INKP","INTP","ISAT","KLBF","MDKA","TPIA","TLKM","TOWR","UNTR","UNVR","PGEO","BBTN","PGAS","ANTM","PTBA"],
                     "Nama":   ["Amman Mineral","Astra International","Bank Central Asia","Bank Negara Indonesia","Bank Rakyat Indonesia","Bank Mandiri","Barito Renewables","Barito Pacific","Charoen Pokphand","GoTo Gojek Tokopedia",
-                                "Indofood CBP","Indofood SM","Indah Kiat Pulp","Indocement","Indosat","Kalbe Farma","Merdeka Copper Gold","Chandra Asri","Telkom Indonesia","Sarana Menara Nusantara","United Tractors","Unilever Indonesia","Pertamina Geothermal"],
+                                "Indofood CBP","Indofood SM","Indah Kiat Pulp","Indocement","Indosat","Kalbe Farma","Merdeka Copper Gold","Chandra Asri","Telkom Indonesia","Sarana Menara Nusantara","United Tractors","Unilever Indonesia","Pertamina Geothermal","Bank Tabungan Negara","Perusahaan Gas Negara","Aneka Tambang","Bukit Asam"],
                     "Sektor": ["Materials","Industrials","Finance","Finance","Finance","Finance","Energy","Materials","Consumer","Technology",
-                                "Consumer","Consumer","Materials","Materials","Infrastructures","Healthcare","Materials","Materials","Infrastructures","Infrastructures","Industrials","Consumer","Energy"],
+                                "Consumer","Consumer","Materials","Materials","Infrastructures","Healthcare","Materials","Materials","Infrastructures","Infrastructures","Industrials","Consumer","Energy","Finance","Energy","Materials","Energy"],
                     "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","NEW ENTRY"],
+                                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing"],
                 }
                 msci_smallcap = {
-                    "Ticker": ["ADRO","BRMS","BSDE","CTRA","MBMA","MYOR","PTRO","RAJA","BRIS"],
-                    "Nama":   ["Adaro Energy","Bumi Resources Minerals","Bumi Serpong Damai","Ciputra Development","Merdeka Battery Materials","Mayora Indah","Petrosea","Rukun Raharja","Bank Syariah Indonesia"],
-                    "Sektor": ["Energy","Materials","Properties","Properties","Materials","Consumer","Infrastructures","Energy","Finance"],
-                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","NEW ENTRY"],
+                    "Ticker": ["ADRO","BRMS","BSDE","CTRA","MBMA","MYOR","PTRO","RAJA","BRIS","AADI","CUAN","ESSA","HRTA","WIFI"],
+                    "Nama":   ["Adaro Energy","Bumi Resources Minerals","Bumi Serpong Damai","Ciputra Development","Merdeka Battery Materials","Mayora Indah","Petrosea","Rukun Raharja","Bank Syariah Indonesia","Adaro Andalan Indonesia","Petrindo Jaya Kreasi","ESSA Industries","Hartadinata Abadi","Solusi Net Integrasi"],
+                    "Sektor": ["Energy","Materials","Properties","Properties","Materials","Consumer","Infrastructures","Energy","Finance","Finance","Materials","Materials","Consumer","Technology"],
+                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","NEW ENTRY","NEW ENTRY","NEW ENTRY","NEW ENTRY","NEW ENTRY"],
                 }
                 msci_excluded = {
-                    "Ticker": ["ACES","CLEO","SMGR"],
-                    "Nama":   ["Ace Hardware Indonesia","Sariguna Primatirta","Semen Indonesia"],
-                    "Sektor": ["Retail","Consumer","Industrials"],
-                    "Status": ["OUT","OUT","OUT"],
+                    "Ticker": ["ACES","CLEO","SMGR","JSMR","UNVR"],
+                    "Nama":   ["Ace Hardware Indonesia","Sariguna Primatirta","Semen Indonesia","Jasa Marga","Unilever Indonesia"],
+                    "Sektor": ["Retail","Consumer","Industrials","Infrastructure","Consumer"],
+                    "Status": ["OUT","OUT","OUT","OUT","WATCH — Risiko Delisted"],
                 }
                 df_msci_std  = pd.DataFrame(msci_standard)
                 df_msci_sm   = pd.DataFrame(msci_smallcap)
@@ -20278,7 +20286,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
                  <b style='color:#00c853;'>Efektif sejak:</b> 23 Maret 2026 (FTSE Quarterly Review Q1 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
                 <b style='color:#00c853;'>Review berikutnya:</b> Juni 2026 (pengumuman ~5 Jun, efektif 22 Jun 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-                <span style='color:{text_sub};'>Jadwal: 4&times; setahun — Mar/Jun/Sep/Des. Sumber: <b>ftserussell.com</b></span>
+                <span style='color:{text_sub};'>Jadwal: 4&times; setahun — Mar/Jun/Sep/Des. <b>Large:</b> 16 · <b>Mid:</b> 5 · <b>Small:</b> 6 saham. Sumber: <b>ftserussell.com</b></span>
                 </div>""", unsafe_allow_html=True)
 
                 import pandas as pd
@@ -20297,11 +20305,11 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     "Status": ["Existing","Existing","Existing","Existing","Existing"],
                 }
                 ftse_small = {
-                    "Ticker": ["PTRO","CUAN","VKTR","RAJA"],
-                    "Nama":   ["Petrosea","Petrindo Jaya Kreasi","VKTR Teknologi Mobilitas","Rukun Raharja"],
-                    "Sektor": ["Infrastructures","Energy","Industrials","Energy"],
-                    "Tier":   ["Small Cap"]*4,
-                    "Status": ["NEW ENTRY","NEW ENTRY","Existing","Existing"],
+                    "Ticker": ["PTRO","CUAN","VKTR","RAJA","AADI","PGEO"],
+                    "Nama":   ["Petrosea","Petrindo Jaya Kreasi","VKTR Teknologi Mobilitas","Rukun Raharja","Adaro Andalan Indonesia","Pertamina Geothermal Energy"],
+                    "Sektor": ["Infrastructures","Energy","Industrials","Energy","Finance","Energy"],
+                    "Tier":   ["Small Cap"]*6,
+                    "Status": ["Existing","Existing","Existing","Existing","NEW ENTRY","NEW ENTRY"],
                 }
                 df_ftse_l  = pd.DataFrame(ftse_large)
                 df_ftse_m  = pd.DataFrame(ftse_mid)
@@ -20344,21 +20352,25 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 import pandas as pd
                 lq45_active_data = {
                     "Ticker": ["ACES","ADRO","AKRA","AMMN","AMRT","ANTM","ARTO","ASII","BBCA","BBNI",
-                                "BBRI","BBTN","BFIN","BMRI","BRIS","BRPT","BUKA","CPIN","CTRA","ESSA",
+                                "BBRI","BBTN","BFIN","BMRI","BREN","BRIS","BRPT","BUKA","CPIN","CTRA","ESSA",
                                 "EXCL","GOTO","HRUM","ICBP","INCO","INDF","INKP","INTP","ISAT","ITMG",
                                 "KLBF","MAPI","MBMA","MDKA","MEDC","MTEL","PGAS","PGEO","PTBA","PTPP",
                                 "SIDO","SMGR","TLKM","TOWR","UNTR"],
                     "Nama":   ["Ace Hardware","Adaro Energy","AKR Corporindo","Amman Mineral","Alfamart","Aneka Tambang","Bank Jago","Astra International","Bank Central Asia","Bank Negara Indonesia",
-                                "Bank Rakyat Indonesia","Bank Tabungan Negara","BFI Finance","Bank Mandiri","Bank Syariah Indonesia","Barito Pacific","Bukalapak","Charoen Pokphand","Ciputra Dev","ESSA Industries",
+                                "Bank Rakyat Indonesia","Bank Tabungan Negara","BFI Finance","Bank Mandiri","Barito Renewables","Bank Syariah Indonesia","Barito Pacific","Bukalapak","Charoen Pokphand","Ciputra Dev","ESSA Industries",
                                 "XL Axiata","GoTo Gojek Tokopedia","Harum Energy","Indofood CBP","Vale Indonesia","Indofood SM","Indah Kiat Pulp","Indocement","Indosat","Indo Tambangraya",
                                 "Kalbe Farma","Mitra Adiperkasa","Merdeka Battery","Merdeka Copper Gold","Medco Energi","Mitratel","Perusahaan Gas Negara","Pertamina Geothermal","Bukit Asam","PP Persero",
                                 "Sido Muncul","Semen Indonesia","Telkom Indonesia","Sarana Menara Nusantara","United Tractors"],
                     "Sektor": ["Cyclical","Energy","Energy","Materials","Consumer","Materials","Finance","Industrials","Finance","Finance",
-                                "Finance","Finance","Finance","Finance","Finance","Materials","Technology","Consumer","Properties","Materials",
+                                "Finance","Finance","Finance","Finance","Energy","Finance","Materials","Technology","Consumer","Properties","Materials",
                                 "Infrastructures","Technology","Energy","Consumer","Materials","Consumer","Materials","Materials","Infrastructures","Energy",
                                 "Healthcare","Cyclical","Materials","Materials","Energy","Infrastructures","Energy","Energy","Energy","Infrastructures",
                                 "Healthcare","Materials","Infrastructures","Infrastructures","Industrials"],
-                    "Status": ["Existing"]*45,
+                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
+                                "Existing","Existing","Existing","Existing","NEW ENTRY","Existing","Existing","Existing","Existing","Existing","Existing",
+                                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
+                                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","NEW ENTRY","Existing","Existing",
+                                "Existing","Existing","Existing","Existing","Existing"],
                 }
                 lq45_out_data = {
                     "Ticker": ["EMTK","SCMA","SRTG"],
@@ -20400,15 +20412,17 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 import pandas as pd
                 idx30_active_data = {
                     "Ticker": ["ADRO","AKRA","AMMN","AMRT","ANTM","ARTO","ASII","BBCA","BBNI","BBRI",
-                                "BBTN","BMRI","BRIS","BRPT","CPIN","ESSA","EXCL","GOTO","ICBP","INCO",
+                                "BBTN","BMRI","BREN","BRIS","BRPT","CPIN","ESSA","EXCL","GOTO","ICBP","INCO",
                                 "INDF","ISAT","ITMG","KLBF","MBMA","MDKA","MEDC","PGAS","PTBA","TLKM"],
                     "Nama":   ["Adaro Energy","AKR Corporindo","Amman Mineral","Alfamart","Aneka Tambang","Bank Jago","Astra International","Bank Central Asia","Bank Negara Indonesia","Bank Rakyat Indonesia",
-                                "Bank Tabungan Negara","Bank Mandiri","Bank Syariah Indonesia","Barito Pacific","Charoen Pokphand","ESSA Industries","XL Axiata","GoTo Gojek Tokopedia","Indofood CBP","Vale Indonesia",
+                                "Bank Tabungan Negara","Bank Mandiri","Barito Renewables","Bank Syariah Indonesia","Barito Pacific","Charoen Pokphand","ESSA Industries","XL Axiata","GoTo Gojek Tokopedia","Indofood CBP","Vale Indonesia",
                                 "Indofood SM","Indosat","Indo Tambangraya","Kalbe Farma","Merdeka Battery","Merdeka Copper Gold","Medco Energi","Perusahaan Gas Negara","Bukit Asam","Telkom Indonesia"],
                     "Sektor": ["Energy","Energy","Materials","Consumer","Materials","Finance","Industrials","Finance","Finance","Finance",
-                                "Finance","Finance","Finance","Materials","Consumer","Materials","Infra","Technology","Consumer","Materials",
+                                "Finance","Finance","Energy","Finance","Materials","Consumer","Materials","Infra","Technology","Consumer","Materials",
                                 "Consumer","Infra","Energy","Healthcare","Materials","Materials","Energy","Energy","Energy","Infra"],
-                    "Status": ["Existing"]*30,
+                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
+                                "Existing","Existing","NEW ENTRY","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
+                                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing"],
                 }
                 idx30_out_data = {
                     "Ticker": ["EMTK","SCMA"],
@@ -20483,10 +20497,10 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                                 "Existing","Existing","Existing","NEW ENTRY","Existing","Existing","Existing","Existing","Existing"],
                 }
                 idx80_out_data = {
-                    "Ticker": ["BTPS","DSSA","MTEL","NCKL","BREN"],
-                    "Nama":   ["Bank BTPN Syariah","Dian Swastatika Sentosa","Mitratel (periode lalu)","Trimegah Bangun Persada (lama)","Barito Renewables (lama)"],
-                    "Sektor": ["Finance","Energy","Infra","Materials","Energy"],
-                    "Status": ["OUT","OUT","OUT","OUT","OUT"],
+                    "Ticker": ["BTPS","DSSA","MTEL","NCKL","BREN","RAJA","SMGR"],
+                    "Nama":   ["Bank BTPN Syariah","Dian Swastatika Sentosa","Mitratel (periode lalu)","Trimegah Bangun Persada","Barito Renewables (periode lalu)","Rukun Raharja (periode lalu)","Semen Indonesia"],
+                    "Sektor": ["Finance","Energy","Infra","Materials","Energy","Energy","Industrials"],
+                    "Status": ["OUT","OUT","OUT","OUT","OUT","OUT","OUT"],
                 }
                 df_idx80_active = pd.DataFrame(idx80_active_data)
                 df_idx80_out    = pd.DataFrame(idx80_out_data)
@@ -20514,8 +20528,8 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 st.markdown(f"""<div style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};
                     background:rgba(239,68,68,0.07);border-left:3px solid #ef4444;
                     padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
-                 <b style='color:#ef4444;'>Efektif sejak:</b> 3 Februari 2026&nbsp;&nbsp;|&nbsp;&nbsp;
-                <b style='color:#ef4444;'>Status Mei 2026:</b> Tidak ada perubahan konstituen (evaluasi minor)&nbsp;&nbsp;|&nbsp;&nbsp;
+                 <b style='color:#ef4444;'>Efektif sejak:</b> 3 Februari 2026 (Periode Feb–Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <b style='color:#ef4444;'>Evaluasi berikutnya:</b> Agustus 2026 (Periode Agu 2026–Jan 2027)&nbsp;&nbsp;|&nbsp;&nbsp;
                 <span style='color:{text_sub};'>Evaluasi: 2&times; setahun — Februari &amp; Agustus. Penyelenggara: BEI + Kompas Gramedia. Sumber: <b>idx.co.id</b></span>
                 </div>""", unsafe_allow_html=True)
 
@@ -20704,7 +20718,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     {"Sektor":"Energi & Pertambangan","Ticker":"KRAS","Nama":"Krakatau Steel Tbk.","Indeks":"—","Keterangan":"Produsen baja BUMN. Dalam proses restrukturisasi aktif."},
                     # ── TELEKOMUNIKASI & INFRASTRUKTUR ──
                     {"Sektor":"Telekomunikasi & Infrastruktur","Ticker":"TLKM","Nama":"Telkom Indonesia Tbk.","Indeks":"LQ45·IDX30·MSCI·FTSE","Keterangan":"BUMN telekomunikasi terbesar. Induk Telkomsel & IndiHome."},
-                    {"Sektor":"Telekomunikasi & Infrastruktur","Ticker":"JSMR","Nama":"Jasa Marga (Persero) Tbk.","Indeks":"LQ45·MSCI","Keterangan":"Operator jalan tol BUMN terbesar, 60%+ jaringan tol nasional."},
+                    {"Sektor":"Telekomunikasi & Infrastruktur","Ticker":"JSMR","Nama":"Jasa Marga (Persero) Tbk.","Indeks":"LQ45·IDX80·MSCI","Keterangan":"Operator jalan tol BUMN terbesar, 60%+ jaringan tol nasional."},
                     {"Sektor":"Telekomunikasi & Infrastruktur","Ticker":"MTEL","Nama":"Mitratel (Dayamitra Telekomunikasi)","Indeks":"LQ45·IDX80","Keterangan":"Menara telekomunikasi terbesar BUMN, anak usaha Telkom."},
                     {"Sektor":"Telekomunikasi & Infrastruktur","Ticker":"GIAA","Nama":"Garuda Indonesia Tbk.","Indeks":"—","Keterangan":"Maskapai penerbangan nasional BUMN. Dalam restrukturisasi."},
                     # ── KONSTRUKSI — BUMN KARYA ──
