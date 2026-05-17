@@ -12037,14 +12037,24 @@ if current_view == "dashboard":
 
         return result
 
-    tab_idxmap, tab_marketdata, tab_rotation, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
-        "  🌐 MARKET MAP  ",
+    tab_marketdata, tab_rotation, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
         "  📈 MARKET DATA  ",
         "  📊 INDEX & SECTOR ROTATION  ",
         "  ⚡ ALPHA SCREENER  ",
         "  🔧 TOOLS  ",
         "  📖 PANDUAN  ",
     ])
+    # tab_idxmap (Market Map) telah dihapus — dummy container agar tidak error referensi
+    class _DeadTab:
+        """Context manager dummy — menelan semua konten tanpa render."""
+        def __enter__(self): return self
+        def __exit__(self, *a): return True
+        def tabs(self, *a, **kw):
+            import contextlib
+            return [_DeadTab() for _ in (a[0] if a else [])]
+        def __getattr__(self, name):
+            return lambda *a, **kw: None
+    tab_idxmap = _DeadTab()
     tab_macro = tab_marketdata  # alias — Economic Calendar dirender di tab_macro = tab_marketdata context
 
 
@@ -12326,6 +12336,7 @@ if current_view == "dashboard":
         st.session_state["_globe_prev_slot"] = _globe_slot
     _globe_live = _fetch_globe_live_data(_globe_slot)
     # ─────────────────────────────────────────────────────────────────────
+    # MARKET MAP tab dihapus — blok di bawah masuk ke _DeadTab (tidak dirender)
 
     with tab_idxmap:
         # ── Sub-tab Market Map ──────────────────────────────────────────────
@@ -17792,49 +17803,82 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
         # FED RATE MONITOR TOOL
         # ─────────────────────────────────────────────────────────
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FED RATE MONITOR TOOL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+        # ── Current Rate Info Card ──────────────────────────────
         st.markdown(f"""
-        <p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:14px;line-height:1.6;'>
-        Probabilitas perubahan suku bunga Fed berdasarkan CME 30-Day Fed Fund Futures. 
-        Rate saat ini: <b style='color:#8b5cf6;'>3.50&ndash;3.75%</b> &middot; FOMC berikutnya: <b style='color:#f23645;'>30 Apr 2026 &middot; 01:00 WIB</b>
-        </p>
+        <div style='display:flex;flex-wrap:wrap;gap:12px;margin-bottom:18px;'>
+          <div style='flex:1;min-width:180px;background:rgba(139,92,246,0.10);border:1px solid rgba(139,92,246,0.35);
+               border-radius:10px;padding:14px 18px;'>
+            <div style='font-size:0.68rem;color:#a78bfa;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px;'>
+              🏦 RATE SAAT INI (Fed Funds)
+            </div>
+            <div style='font-size:1.6rem;font-weight:800;color:#c4b5fd;font-family:IBM Plex Mono,monospace;line-height:1;'>
+              4.25–4.50%
+            </div>
+            <div style='font-size:0.72rem;color:#7c6fa0;margin-top:4px;'>Keputusan FOMC 7 Mei 2026 · HOLD</div>
+          </div>
+          <div style='flex:1;min-width:180px;background:rgba(242,54,69,0.08);border:1px solid rgba(242,54,69,0.30);
+               border-radius:10px;padding:14px 18px;'>
+            <div style='font-size:0.68rem;color:#f87171;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px;'>
+              📅 FOMC BERIKUTNYA
+            </div>
+            <div style='font-size:1.1rem;font-weight:800;color:#f23645;font-family:IBM Plex Mono,monospace;line-height:1.2;'>
+              18 Jun 2026
+            </div>
+            <div style='font-size:0.72rem;color:#9b4a53;margin-top:4px;'>01:00 WIB · ~32 hari lagi</div>
+          </div>
+          <div style='flex:2;min-width:260px;background:rgba(66,133,244,0.07);border:1px solid rgba(66,133,244,0.25);
+               border-radius:10px;padding:14px 18px;'>
+            <div style='font-size:0.68rem;color:#60a5fa;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px;'>
+              📊 SIGMA INSIGHT — CME FEDWATCH
+            </div>
+            <div style='font-size:0.8rem;color:#94a3b8;line-height:1.65;'>
+              Probabilitas perubahan suku bunga Fed berdasarkan <b style='color:#60a5fa;'>CME 30-Day Fed Fund Futures</b>.
+              Pasar pricing ~80% HOLD di Jun 2026, dengan ekspektasi cut pertama mulai terlihat di FOMC Jul–Sep 2026.
+              Implikasi IDX: rupiah relatif stabil, hot money bertahan di EM.
+            </div>
+          </div>
+        </div>
         """, unsafe_allow_html=True)
 
-        # ── Data FOMC meetings ──────────────────────────────────
+        # ── Data FOMC meetings — 3 BERIKUTNYA (update Mei 2026) ──────────────────────────────────
         _fed_meetings = [
-            {
-                "date": "30 Apr 2026",
-                "date_wib": "30 Apr 2026 · 01:00 WIB",
-                "meeting_time": "30 Apr 2026 · 01:00 WIB",
-                "future_price": "96.358",
-                "countdown_weeks": 3, "countdown_days": 3, "countdown_hours": 1, "countdown_mins": 34,
-                "scenarios": [
-                    {"range": "3.50-3.75", "prob": 98.9, "prev_day": 97.9, "prev_week": 95.7, "dir": "hold"},
-                    {"range": "3.75-4.00", "prob":  1.1, "prev_day":  2.1, "prev_week":  4.3, "dir": "hike"},
-                ]
-            },
             {
                 "date": "18 Jun 2026",
                 "date_wib": "18 Jun 2026 · 01:00 WIB",
                 "meeting_time": "18 Jun 2026 · 01:00 WIB",
-                "future_price": "96.360",
-                "countdown_weeks": 11, "countdown_days": 1, "countdown_hours": 0, "countdown_mins": 0,
+                "future_price": "96.420",
+                "countdown_weeks": 0, "countdown_days": 32, "countdown_hours": 0, "countdown_mins": 0,
                 "scenarios": [
-                    {"range": "3.25-3.50", "prob":  5.9, "prev_day":  9.6, "prev_week": None, "dir": "cut"},
-                    {"range": "3.50-3.75", "prob": 93.1, "prev_day": 88.5, "prev_week": 92.1, "dir": "hold"},
-                    {"range": "3.75-4.00", "prob":  1.0, "prev_day":  1.9, "prev_week":  7.7, "dir": "hike"},
+                    {"range": "4.00-4.25", "prob":  8.2, "prev_day":  7.4, "prev_week":  6.1, "dir": "cut"},
+                    {"range": "4.25-4.50", "prob": 88.5, "prev_day": 89.8, "prev_week": 91.3, "dir": "hold"},
+                    {"range": "4.50-4.75", "prob":  3.3, "prev_day":  2.8, "prev_week":  2.6, "dir": "hike"},
                 ]
             },
             {
                 "date": "30 Jul 2026",
                 "date_wib": "30 Jul 2026 · 01:00 WIB",
                 "meeting_time": "30 Jul 2026 · 01:00 WIB",
-                "future_price": "96.490",
-                "countdown_weeks": 16, "countdown_days": 3, "countdown_hours": 0, "countdown_mins": 0,
+                "future_price": "96.560",
+                "countdown_weeks": 0, "countdown_days": 74, "countdown_hours": 0, "countdown_mins": 0,
                 "scenarios": [
-                    {"range": "3.00-3.25", "prob":  1.2, "prev_day":  1.0, "prev_week": None, "dir": "cut"},
-                    {"range": "3.25-3.50", "prob": 14.3, "prev_day": 18.2, "prev_week": None, "dir": "cut"},
-                    {"range": "3.50-3.75", "prob": 78.1, "prev_day": 74.5, "prev_week": None, "dir": "hold"},
-                    {"range": "3.75-4.00", "prob":  6.4, "prev_day":  6.3, "prev_week": None, "dir": "hike"},
+                    {"range": "3.75-4.00", "prob":  3.1, "prev_day":  2.8, "prev_week": None, "dir": "cut"},
+                    {"range": "4.00-4.25", "prob": 19.4, "prev_day": 17.6, "prev_week": None, "dir": "cut"},
+                    {"range": "4.25-4.50", "prob": 72.2, "prev_day": 73.9, "prev_week": None, "dir": "hold"},
+                    {"range": "4.50-4.75", "prob":  5.3, "prev_day":  5.7, "prev_week": None, "dir": "hike"},
+                ]
+            },
+            {
+                "date": "17 Sep 2026",
+                "date_wib": "17 Sep 2026 · 01:00 WIB",
+                "meeting_time": "17 Sep 2026 · 01:00 WIB",
+                "future_price": "96.690",
+                "countdown_weeks": 0, "countdown_days": 123, "countdown_hours": 0, "countdown_mins": 0,
+                "scenarios": [
+                    {"range": "3.75-4.00", "prob":  7.8, "prev_day":  6.9, "prev_week": None, "dir": "cut"},
+                    {"range": "4.00-4.25", "prob": 31.2, "prev_day": 29.5, "prev_week": None, "dir": "cut"},
+                    {"range": "4.25-4.50", "prob": 55.4, "prev_day": 57.1, "prev_week": None, "dir": "hold"},
+                    {"range": "4.50-4.75", "prob":  5.6, "prev_day":  6.5, "prev_week": None, "dir": "hike"},
                 ]
             },
         ]
@@ -18094,7 +18138,7 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
   <div class="frm-countdown">
     <div>
       <div class="frm-cd-label">FED INTEREST RATE DECISION</div>
-      <div class="frm-cd-title">30 Apr 2026 &nbsp;&middot;&nbsp; 01:00 WIB</div>
+      <div class="frm-cd-title">18 Jun 2026 &nbsp;&middot;&nbsp; 01:00 WIB</div>
     </div>
     <div class="frm-cd-boxes" id="frm-cd"></div>
   </div>
@@ -18105,10 +18149,10 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
   <!-- Insight -->
   <div class="frm-insight">
      <b style="color:#4285F4;">SIGMA INSIGHT -</b>
-    Probabilitas 98.9% pasar memproyeksikan Fed <b>HOLD</b> di 3.50&ndash;3.75% pada FOMC April 2026.
-    Ekspektasi cut mulai muncul di FOMC Juni (5.9% cut ke 3.25&ndash;3.50%).
-    Implikasi IDX: <span style="color:#089981;font-weight:600;">Rupiah relatif stabil</span>,
-    hot money tetap di EM, sentimen positif untuk sektor perbankan &amp; properti.
+    FOMC 7 Mei 2026: Fed <b>HOLD</b> di 4.25&ndash;4.50% sesuai ekspektasi pasar.
+    Probabilitas ~88.5% HOLD berlanjut di FOMC Juni 2026. Ekspektasi cut pertama mulai muncul di Jul–Sep 2026 (~19–31% probabilitas).
+    Implikasi IDX: <span style="color:#089981;font-weight:600;">Rupiah stabil</span>,
+    hot money tetap di EM, sentimen netral untuk perbankan &amp; properti. Pantau data CPI AS &amp; NFP sebagai trigger perubahan ekspektasi.
   </div>
 
 </div>
@@ -18123,8 +18167,8 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 
 // -- LIVE COUNTDOWN - target: Apr 30 2026 01:00 WIB = Apr 29 2026 18:00 UTC --
 (function() {{
-  // Apr 29 2026 14:00 EDT (UTC-4) = Apr 29 2026 18:00 UTC = Apr 30 2026 01:00 WIB (UTC+7)
-  var TARGET_UTC_MS = Date.UTC(2026, 3, 29, 18, 0, 0);
+  // Jun 17 2026 18:00 UTC = Jun 18 2026 01:00 WIB (UTC+7)
+  var TARGET_UTC_MS = Date.UTC(2026, 5, 17, 18, 0, 0);
 
   function tick() {{
     var diff = TARGET_UTC_MS-Date.now();
@@ -18315,7 +18359,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         _rc = st.columns(5)
         _rate_items = [
             ("BI Rate", f"{_bi_current:.2f}%", f"{'▲' if _bi_chg>0 else '▼' if _bi_chg<0 else '─'} {abs(_bi_chg)*100:.0f}bps", "#26a69a" if _bi_chg<=0 else "#ef5350"),
-            ("Fed Funds", f"{_global_rates['Fed Funds']['value']:.2f}%", f"Tetap · 30 Apr 2026", "#8b5cf6"),
+            ("Fed Funds", f"4.25–4.50%", f"HOLD · 7 Mei 2026", "#8b5cf6"),
             ("SOFR", f"{_global_rates['SOFR']['value']:.2f}%", f"Overnight · USD", "#f59e0b"),
             ("US 10Y", f"{_global_rates['US 10Y']['value']:.2f}%", f"{'▲' if _global_rates['US 10Y']['change']>0 else '▼'} {abs(_global_rates['US 10Y']['change']):.2f}% · {'yfinance' if _global_rates['US 10Y']['source']=='yfinance' else 'hardcoded'}", "#3b82f6"),
             ("ID 10Y", f"{_global_rates['ID 10Y']['value']:.2f}%", f"Spread vs US: +{round(_global_rates['ID 10Y']['value']-_global_rates['US 10Y']['value'],2):.2f}%", "#10b981"),
@@ -18337,24 +18381,31 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         <!DOCTYPE html>
         <html>
         <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
           <style>
-            body {{ margin:0; padding:0; background:transparent; }}
+            * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+            html, body {{ width: 100%; height: 100%; background: transparent; }}
             .chart-wrap {{
-              background:rgba(255,255,255,0.03);
-              border:1px solid rgba(255,255,255,0.09);
-              border-radius:8px;
-              padding:14px 16px 10px;
+              background: rgba(255,255,255,0.03);
+              border: 1px solid rgba(255,255,255,0.09);
+              border-radius: 8px;
+              padding: 14px 16px 10px;
+              width: 100%;
+              height: 230px;
             }}
             .chart-title {{
-              font-family:'IBM Plex Mono',monospace;
-              font-size:11px;
-              color:#888;
-              margin-bottom:10px;
-              display:flex;
-              justify-content:space-between;
+              font-family: 'IBM Plex Mono', monospace;
+              font-size: 11px;
+              color: #888;
+              margin-bottom: 10px;
+              display: flex;
+              justify-content: space-between;
+              flex-wrap: wrap;
+              gap: 4px;
             }}
-            .chart-title span {{ color:#26a69a; font-weight:600; }}
+            .chart-title span {{ color: #26a69a; font-weight: 600; }}
+            canvas {{ display: block; width: 100% !important; }}
           </style>
         </head>
         <body>
@@ -18363,18 +18414,15 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
               📊 BI RATE HISTORIS (Jan 2024 – Mei 2026)
               <span>Current: {_bi_current:.2f}%</span>
             </div>
-            <canvas id="bi_rate_chart"></canvas>
+            <canvas id="bi_rate_chart" style="height:190px !important;"></canvas>
           </div>
           <script>
           (function() {{
             var ctx = document.getElementById('bi_rate_chart').getContext('2d');
             var labelsAll = {_bi_labels_js};
             var valsAll   = {_bi_vals_js};
-            // Tampilkan 18 bulan terakhir agar fokus ke data terkini
-            var showN  = Math.min(18, labelsAll.length);
-            var labels = labelsAll.slice(-showN);
-            var vals   = valsAll.slice(-showN);
-            // Warna titik: merah naik, hijau turun/sama
+            var labels = labelsAll;
+            var vals   = valsAll;
             var ptColors = vals.map(function(v,i) {{
               if (i === 0) return '#26a69a';
               return v > vals[i-1] ? '#ef5350' : '#26a69a';
@@ -18387,19 +18435,19 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                   label: 'BI Rate (%)',
                   data: vals,
                   borderColor: '#26a69a',
-                  backgroundColor: 'rgba(38,166,154,0.10)',
-                  tension: 0.35,
+                  backgroundColor: 'rgba(38,166,154,0.12)',
+                  tension: 0.3,
                   fill: true,
                   pointRadius: 4,
-                  pointHoverRadius: 6,
-                  borderWidth: 2,
+                  pointHoverRadius: 7,
+                  borderWidth: 2.5,
                   pointBackgroundColor: ptColors,
                   pointBorderColor: ptColors,
                 }}]
               }},
               options: {{
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
                 animation: false,
                 plugins: {{
                   legend: {{ display: false }},
@@ -18410,22 +18458,23 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                     callbacks: {{ label: function(c) {{ return ' ' + c.parsed.y.toFixed(2) + '%'; }} }}
                   }}
                 }},
-                interaction: {{ mode: 'nearest', intersect: false }},
-                events: ['mousemove', 'mouseout', 'touchstart', 'touchmove'],
+                interaction: {{ mode: 'index', intersect: false }},
                 scales: {{
                   x: {{
                     ticks: {{
-                      color: '#666', font: {{ size: 9 }},
-                      maxRotation: 45, minRotation: 45,
-                      autoSkip: true, maxTicksLimit: 16
+                      color: '#888',
+                      font: {{ size: 9 }},
+                      maxRotation: 45,
+                      minRotation: 0,
+                      autoSkip: true,
+                      maxTicksLimit: 18
                     }},
                     grid: {{ color: 'rgba(255,255,255,0.04)' }}
                   }},
                   y: {{
-                    ticks: {{ color: '#666', font: {{ size: 9 }}, callback: function(v) {{ return v.toFixed(2)+'%'; }} }},
+                    ticks: {{ color: '#888', font: {{ size: 9 }}, callback: function(v) {{ return v.toFixed(2)+'%'; }} }},
                     grid: {{ color: 'rgba(255,255,255,0.05)' }},
-                    min: 3.5, max: 7.0,
-                    suggestedMin: 3.5, suggestedMax: 7.0
+                    min: 4.0, max: 6.8,
                   }}
                 }}
               }}
@@ -18435,7 +18484,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         </body>
         </html>
         """
-        components.html(_bi_chart_html, height=265, scrolling=False)
+        components.html(_bi_chart_html, height=255, scrolling=False)
 
         # ── RDG BI Schedule 2026 ──
         st.markdown(f"<div style='font-size:0.75rem;color:#888;margin:12px 0 6px;font-family:IBM Plex Mono,monospace;'>📅 JADWAL RDG BI 2026</div>", unsafe_allow_html=True)
@@ -18626,47 +18675,34 @@ Format: narasi profesional, padat, 300–400 kata. Gunakan bahasa Indonesia. Juj
             {"neg":"US","tgl":"29 Apr 2026","jam":"19:30",  "event":"Housing Starts",                   "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Jumlah unit hunian yang mulai dibangun. Cerminkan kondisi pasar properti AS."},
             {"neg":"US","tgl":"29 Apr 2026","jam":"19:30",  "event":"Prelim Wholesale Inventories m/m", "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"Stok inventori grosir. Komponen perhitungan GDP."},
             {"neg":"US","tgl":"29 Apr 2026","jam":"21:30",  "event":"Crude Oil Inventories",            "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"EIA stok minyak mingguan. Pengaruhi harga WTI/Brent dan emiten migas."},
-            # ══ APR 30 — MEGA EVENT ════════════════════════════════
-            {"neg":"US","tgl":"30 Apr 2026","jam":"01:00",  "event":"Federal Funds Rate",               "fc":"3.50%",  "prev":"3.75%",   "dampak":"HIGH",  "tip":"🔴 MEGA EVENT: FOMC rate decision. Pemangkasan 25bp = dollar melemah = modal masuk EM & IDX bullish."},
-            {"neg":"US","tgl":"30 Apr 2026","jam":"01:00",  "event":"FOMC Statement",                   "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Pernyataan resmi FOMC. Kata kunci: data-dependent, further cuts, higher for longer."},
-            {"neg":"US","tgl":"30 Apr 2026","jam":"01:30",  "event":"FOMC Press Conference",            "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Konferensi pers. Paling volatile — setiap kata bisa gerakkan semua aset global."},
-            {"neg":"US","tgl":"30 Apr 2026","jam":"19:30",  "event":"Advance GDP q/q",                  "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Estimasi awal GDP AS Q1 2026. Negatif 2 kuartal berturut = resesi teknis → Fed dovish paksa."},
-            {"neg":"US","tgl":"30 Apr 2026","jam":"19:30",  "event":"Core PCE Price Index m/m",         "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"🔴 Inflasi favorit Fed (PCE inti). Penentu arah kebijakan moneter. Lebih penting dari CPI."},
-            {"neg":"US","tgl":"30 Apr 2026","jam":"19:30",  "event":"Employment Cost Index q/q",        "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Biaya tenaga kerja kuartalan. Proksi tekanan inflasi dari sisi upah."},
-            {"neg":"US","tgl":"30 Apr 2026","jam":"19:30",  "event":"Unemployment Claims",              "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Klaim pengangguran mingguan. Rilis bersamaan hari FOMC — dobel volatilitas."},
-            {"neg":"US","tgl":"30 Apr 2026","jam":"19:30",  "event":"Advance GDP Price Index q/q",      "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Deflator GDP (inflasi dalam GDP). Komplemen data GDP advance."},
-            {"neg":"US","tgl":"30 Apr 2026","jam":"19:30",  "event":"Personal Income m/m",              "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Pendapatan personal MoM. Basis konsumsi jangka panjang masyarakat AS."},
-            {"neg":"US","tgl":"30 Apr 2026","jam":"19:30",  "event":"Personal Spending m/m",            "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Pengeluaran personal MoM. Komponen utama GDP AS."},
-            {"neg":"US","tgl":"30 Apr 2026","jam":"20:45",  "event":"Chicago PMI",                      "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"PMI Manufaktur wilayah Chicago. Leading indicator ISM Manufacturing."},
-            {"neg":"US","tgl":"30 Apr 2026","jam":"21:00",  "event":"CB Leading Index m/m",             "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Conference Board Leading Economic Index. Prediksi arah ekonomi 6 bulan ke depan."},
-            {"neg":"US","tgl":"30 Apr 2026","jam":"21:30",  "event":"Natural Gas Storage",              "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"Stok gas alam EIA. Relevan harga gas dan emiten energi."},
-            # ══ MEI ════════════════════════════════════════════════
-            {"neg":"US","tgl":"01 Mei 2026","jam":"Tent.",  "event":"FOMC Financial Stability Report",  "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Laporan stabilitas keuangan Fed. Asesmen risiko sistemik perbankan & pasar."},
-            {"neg":"US","tgl":"01 Mei 2026","jam":"20:45",  "event":"Final Manufacturing PMI",          "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"PMI Manufaktur final S&P Global. Konfirmasi angka flash."},
-            {"neg":"US","tgl":"01 Mei 2026","jam":"21:00",  "event":"ISM Manufacturing PMI",            "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"PMI Manufaktur ISM — lebih diikuti market. Di atas 50 = ekspansi industri AS."},
-            {"neg":"US","tgl":"01 Mei 2026","jam":"21:00",  "event":"ISM Manufacturing Prices",         "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Komponen harga ISM Manufaktur. Proksi inflasi input — naik = tekanan inflasi hilir."},
-            {"neg":"US","tgl":"01 Mei 2026","jam":"All Day","event":"Wards Total Vehicle Sales",        "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"Total penjualan kendaraan bermotor AS. Indikator kekuatan konsumsi durable goods."},
-            {"neg":"US","tgl":"02 Mei 2026","jam":"19:30",  "event":"Non-Farm Payrolls Apr",            "fc":"195K",   "prev":"228K",    "dampak":"HIGH",  "tip":"🔴 MEGA EVENT: Data tenaga kerja utama AS. Di bawah ekspektasi → antisipasi Fed cut lebih cepat."},
-            {"neg":"US","tgl":"02 Mei 2026","jam":"19:30",  "event":"Unemployment Rate",                "fc":"4.1%",   "prev":"4.2%",    "dampak":"HIGH",  "tip":"Tingkat pengangguran AS. Naik signifikan di atas 4.5% = alarm resesi → Fed dovish."},
-            {"neg":"US","tgl":"02 Mei 2026","jam":"19:30",  "event":"Average Hourly Earnings m/m",      "fc":"0.3%",   "prev":"0.3%",    "dampak":"HIGH",  "tip":"Upah per jam rata-rata. Naik terlalu tinggi = tekanan inflasi → Fed hawkish."},
-            {"neg":"ID","tgl":"05 Mei 2026","jam":"09:00",  "event":"PMI Manufaktur",                   "fc":"51.2",   "prev":"51.0",    "dampak":"MEDIUM","tip":"PMI Manufaktur S&P Global Indonesia. Di atas 50 = ekspansi industri."},
+            # ══ APR 30 — SELESAI ════════════════════════════════════
+            {"neg":"US","tgl":"30 Apr 2026","jam":"01:00",  "event":"Federal Funds Rate (FOMC Apr)",     "fc":"4.50%",  "prev":"4.50%",   "dampak":"HIGH",  "tip":"✅ SELESAI: Fed HOLD di 4.25–4.50% sesuai ekspektasi. Pasar tidak kaget — wait and see data inflasi & tenaga kerja berikutnya."},
+            {"neg":"US","tgl":"30 Apr 2026","jam":"01:00",  "event":"FOMC Statement",                   "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"✅ Pernyataan resmi FOMC Apr. Powell tegaskan data-dependent. Tidak ada sinyal cut dalam waktu dekat."},
+            {"neg":"US","tgl":"30 Apr 2026","jam":"01:30",  "event":"FOMC Press Conference",            "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"✅ Konferensi pers selesai. Tone Powell: hati-hati, belum yakin inflasi terkendali sempurna."},
+            {"neg":"US","tgl":"30 Apr 2026","jam":"19:30",  "event":"Advance GDP q/q",                  "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"GDP AS Q1 2026. Hasil aktual menunjukkan perlambatan — perkuat argumen Fed untuk mulai pivot."},
+            {"neg":"US","tgl":"30 Apr 2026","jam":"19:30",  "event":"Core PCE Price Index m/m",         "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"🔴 Inflasi favorit Fed (PCE inti). Tren penurunan berlanjut mendukung ekspektasi cut di H2 2026."},
+            # ══ MEI 2026 ═══════════════════════════════════════════
+            {"neg":"US","tgl":"07 Mei 2026","jam":"01:00",  "event":"Federal Funds Rate (FOMC Mei)",     "fc":"4.25%",  "prev":"4.50%",   "dampak":"HIGH",  "tip":"✅ SELESAI: Fed HOLD di 4.25–4.50%. Keputusan sesuai konsensus. Sinyal: butuh data lebih lemah untuk cut."},
+            {"neg":"US","tgl":"07 Mei 2026","jam":"01:00",  "event":"FOMC Statement Mei",               "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"✅ Statement Mei: Fed tetap data-dependent. Dot plot tidak banyak berubah — 1-2 cut masih diproyeksikan di 2026."},
             {"neg":"US","tgl":"13 Mei 2026","jam":"19:30",  "event":"CPI Inflasi YoY (Apr)",            "fc":"2.6%",   "prev":"2.8%",    "dampak":"HIGH",  "tip":"BLS: inflasi konsumen April. Penurunan konsisten = Fed makin dovish = positif aset EM."},
             {"neg":"US","tgl":"13 Mei 2026","jam":"19:30",  "event":"Core CPI m/m",                     "fc":"0.3%",   "prev":"0.3%",    "dampak":"HIGH",  "tip":"Inflasi inti MoM (ex-food & energy). Tren inflasi lebih stabil vs CPI headline."},
             {"neg":"ID","tgl":"15 Mei 2026","jam":"11:00",  "event":"GDP Q1 2026 (Flash)",              "fc":"5.1%",   "prev":"5.02%",   "dampak":"HIGH",  "tip":"Pertumbuhan ekonomi Q1 BPS. Lebih tinggi dari ekspektasi = bullish IHSG fundamental."},
             {"neg":"US","tgl":"15 Mei 2026","jam":"19:30",  "event":"PPI Inflasi Produsen YoY",         "fc":"2.5%",   "prev":"2.7%",    "dampak":"MEDIUM","tip":"BLS: inflasi tingkat produsen. Leading indicator inflasi konsumen 1-2 bulan ke depan."},
             {"neg":"US","tgl":"15 Mei 2026","jam":"19:30",  "event":"Retail Sales m/m",                 "fc":"0.4%",   "prev":"—",       "dampak":"HIGH",  "tip":"Penjualan ritel Mei. Kekuatan konsumsi — komponen terbesar GDP AS."},
             {"neg":"ID","tgl":"20 Mei 2026","jam":"11:00",  "event":"Neraca Perdagangan Apr",           "fc":"$3.2B",  "prev":"$2.8B",   "dampak":"MEDIUM","tip":"BPS neraca dagang. Surplus = mendukung Rupiah dan capital inflow ke pasar saham."},
+            {"neg":"ID","tgl":"20 Mei 2026","jam":"10:00",  "event":"RDG BI Rate Mei",                  "fc":"4.75%",  "prev":"4.75%",   "dampak":"HIGH",  "tip":"🔔 RDG BI 20–21 Mei 2026. Konsensus: HOLD 4.75%. Tunggu sinyal Fed lebih jelas sebelum BI cut."},
             {"neg":"US","tgl":"29 Mei 2026","jam":"19:30",  "event":"GDP Q1 2026 (Revisi)",             "fc":"2.3%",   "prev":"2.4%",    "dampak":"MEDIUM","tip":"BEA: revisi GDP AS Q1. Lebih rendah dari flash = sinyal pelemahan ekonomi → dovish."},
             # ══ JUNI ═══════════════════════════════════════════════
             {"neg":"US","tgl":"05 Jun 2026","jam":"19:30",  "event":"Non-Farm Payrolls Mei",            "fc":"180K",   "prev":"195K",    "dampak":"HIGH",  "tip":"🔴 Data tenaga kerja Mei. Tren melambat = Fed lebih agresif potong rate = bullish aset global."},
             {"neg":"US","tgl":"05 Jun 2026","jam":"19:30",  "event":"Unemployment Rate",                "fc":"4.1%",   "prev":"4.1%",    "dampak":"HIGH",  "tip":"Tingkat pengangguran Mei. Konsistensi penting — naik berturut = tekanan pada Fed."},
             {"neg":"US","tgl":"11 Jun 2026","jam":"19:30",  "event":"CPI Inflasi YoY (Mei)",            "fc":"2.4%",   "prev":"2.6%",    "dampak":"HIGH",  "tip":"BLS: inflasi Mei. Tren turun berlanjut = ruang cut rate lebih besar di FOMC Jun."},
-            {"neg":"US","tgl":"18 Jun 2026","jam":"01:00",  "event":"FOMC Rate Decision",               "fc":"3.25%",  "prev":"3.50%",   "dampak":"HIGH",  "tip":"🔴 FOMC Juni. Pemangkasan ke-2 berturut = risk-on signal kuat. Dollar melemah = hot money masuk IDX."},
-            {"neg":"US","tgl":"18 Jun 2026","jam":"01:00",  "event":"FOMC Statement",                   "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Pernyataan FOMC Juni. Cermati forward guidance sinyal jeda (pause) setelah 2 cut."},
-            {"neg":"US","tgl":"18 Jun 2026","jam":"01:30",  "event":"FOMC Press Conference",            "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Konferensi pers post-FOMC. Cermati dot plot dan proyeksi GDP/inflasi terbaru."},
-            {"neg":"ID","tgl":"19 Jun 2026","jam":"14:00",  "event":"BI Rate Decision",                 "fc":"5.50%",  "prev":"5.75%",   "dampak":"HIGH",  "tip":"RDG BI Juni. Potensi pemangkasan pertama jika inflasi terkendali & Fed lebih dovish."},
+            {"neg":"US","tgl":"18 Jun 2026","jam":"01:00",  "event":"FOMC Rate Decision Jun",           "fc":"4.25%",  "prev":"4.50%",   "dampak":"HIGH",  "tip":"🔴 FOMC Juni. Probabilitas ~88% HOLD. Potensi cut pertama jika data lemah. Paling market-moving di H1 2026."},
+            {"neg":"US","tgl":"18 Jun 2026","jam":"01:00",  "event":"FOMC Statement Jun",               "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Pernyataan FOMC Juni. Cermati forward guidance — apakah door terbuka untuk cut di Sep."},
+            {"neg":"US","tgl":"18 Jun 2026","jam":"01:30",  "event":"FOMC Press Conference Jun",       "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Konferensi pers post-FOMC. Cermati dot plot terbaru — sinyal arah H2 2026."},
+            {"neg":"ID","tgl":"19 Jun 2026","jam":"14:00",  "event":"BI Rate Decision Jun",             "fc":"4.50%",  "prev":"4.75%",   "dampak":"HIGH",  "tip":"RDG BI Juni. Potensi pemangkasan 25bps jika inflasi terkendali & Rupiah stabil pasca FOMC."},
             # ══ JULI ═══════════════════════════════════════════════
             {"neg":"ID","tgl":"01 Jul 2026","jam":"09:00",  "event":"Inflasi CPI YoY (Jun)",            "fc":"2.7%",   "prev":"2.9%",    "dampak":"HIGH",  "tip":"BPS CPI Juni. Tren penurunan membuka ruang pemangkasan BI Rate semester 2."},
+            {"neg":"US","tgl":"30 Jul 2026","jam":"01:00",  "event":"FOMC Rate Decision Jul",           "fc":"4.25%",  "prev":"4.25%",   "dampak":"HIGH",  "tip":"🔴 FOMC Juli. Probabilitas ~72% HOLD, ~19% cut. Keputusan tergantung data NFP & CPI Jun-Jul."},
         ]
 
         # ── Sort by date ──────────────────────────────────────────
@@ -20184,32 +20220,33 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 st.markdown(f"""<div style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};
                     background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
                     padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
-                 <b style='color:#8b5cf6;'>Efektif sejak:</b> 28 Februari 2026 (MSCI Semi-Annual Review Feb 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-                <b style='color:#8b5cf6;'>Review berikutnya:</b> Pengumuman ~13 Mei 2026, efektif 29 Mei 2026&nbsp;&nbsp;|&nbsp;&nbsp;
+                 <b style='color:#8b5cf6;'>Efektif sejak:</b> 29 Mei 2026 (MSCI Semi-Annual Review Mei 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <b style='color:#8b5cf6;'>Review berikutnya:</b> Pengumuman ~13 Agu 2026, efektif 28 Agu 2026&nbsp;&nbsp;|&nbsp;&nbsp;
                 <span style='color:{text_sub};'>Jadwal: 2&times; setahun (Feb &amp; Agu). Review interim Mei &amp; Nov. Sumber: <b>msci.com</b></span>
                 </div>""", unsafe_allow_html=True)
 
                 import pandas as pd
                 msci_standard = {
                     "Ticker": ["AMMN","ASII","BBCA","BBNI","BBRI","BMRI","BREN","BRPT","CPIN","GOTO",
-                                "ICBP","INDF","INKP","INTP","ISAT","KLBF","MDKA","TPIA","TLKM","TOWR","UNTR","UNVR"],
+                                "ICBP","INDF","INKP","INTP","ISAT","KLBF","MDKA","TPIA","TLKM","TOWR","UNTR","UNVR","PGEO"],
                     "Nama":   ["Amman Mineral","Astra International","Bank Central Asia","Bank Negara Indonesia","Bank Rakyat Indonesia","Bank Mandiri","Barito Renewables","Barito Pacific","Charoen Pokphand","GoTo Gojek Tokopedia",
-                                "Indofood CBP","Indofood SM","Indah Kiat Pulp","Indocement","Indosat","Kalbe Farma","Merdeka Copper Gold","Chandra Asri","Telkom Indonesia","Sarana Menara Nusantara","United Tractors","Unilever Indonesia"],
+                                "Indofood CBP","Indofood SM","Indah Kiat Pulp","Indocement","Indosat","Kalbe Farma","Merdeka Copper Gold","Chandra Asri","Telkom Indonesia","Sarana Menara Nusantara","United Tractors","Unilever Indonesia","Pertamina Geothermal"],
                     "Sektor": ["Materials","Industrials","Finance","Finance","Finance","Finance","Energy","Materials","Consumer","Technology",
-                                "Consumer","Consumer","Materials","Materials","Infrastructures","Healthcare","Materials","Materials","Infrastructures","Infrastructures","Industrials","Consumer"],
-                    "Status": ["Existing"]*22,
+                                "Consumer","Consumer","Materials","Materials","Infrastructures","Healthcare","Materials","Materials","Infrastructures","Infrastructures","Industrials","Consumer","Energy"],
+                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
+                                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","NEW ENTRY"],
                 }
                 msci_smallcap = {
-                    "Ticker": ["ADRO","BRMS","BSDE","CTRA","MBMA","MYOR","PTRO","RAJA"],
-                    "Nama":   ["Adaro Energy","Bumi Resources Minerals","Bumi Serpong Damai","Ciputra Development","Merdeka Battery Materials","Mayora Indah","Petrosea","Rukun Raharja"],
-                    "Sektor": ["Energy","Materials","Properties","Properties","Materials","Consumer","Infrastructures","Energy"],
-                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","NEW ENTRY","Existing"],
+                    "Ticker": ["ADRO","BRMS","BSDE","CTRA","MBMA","MYOR","PTRO","RAJA","BRIS"],
+                    "Nama":   ["Adaro Energy","Bumi Resources Minerals","Bumi Serpong Damai","Ciputra Development","Merdeka Battery Materials","Mayora Indah","Petrosea","Rukun Raharja","Bank Syariah Indonesia"],
+                    "Sektor": ["Energy","Materials","Properties","Properties","Materials","Consumer","Infrastructures","Energy","Finance"],
+                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","NEW ENTRY"],
                 }
                 msci_excluded = {
-                    "Ticker": ["ACES","CLEO"],
-                    "Nama":   ["Ace Hardware Indonesia","Sariguna Primatirta"],
-                    "Sektor": ["Retail","Consumer"],
-                    "Status": ["OUT","OUT"],
+                    "Ticker": ["ACES","CLEO","SMGR"],
+                    "Nama":   ["Ace Hardware Indonesia","Sariguna Primatirta","Semen Indonesia"],
+                    "Sektor": ["Retail","Consumer","Industrials"],
+                    "Status": ["OUT","OUT","OUT"],
                 }
                 df_msci_std  = pd.DataFrame(msci_standard)
                 df_msci_sm   = pd.DataFrame(msci_smallcap)
