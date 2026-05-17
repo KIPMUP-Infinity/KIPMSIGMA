@@ -21009,24 +21009,27 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 label_visibility="collapsed"
             )
 
-            # ── State management: simpan hasil analisa ────────────────────
+            # ── State management: simpan hasil analisa & file bytes ──────
             if "ipo_tab_result" not in st.session_state:
                 st.session_state["ipo_tab_result"] = None
             if "ipo_tab_emiten_last" not in st.session_state:
                 st.session_state["ipo_tab_emiten_last"] = ""
 
-            # Track file upload status in session_state untuk hindari disabled bug
+            # Simpan BYTES PDF ke session_state supaya tidak hilang setelah rerun
             if _ipo_pdf_file is not None:
-                st.session_state["ipo_tab_has_file"] = True
+                _raw_bytes = _ipo_pdf_file.read()
+                st.session_state["ipo_tab_pdf_bytes"] = _raw_bytes
                 st.session_state["ipo_tab_file_name"] = _ipo_pdf_file.name
-            _ipo_has_file = _ipo_pdf_file is not None or st.session_state.get("ipo_tab_has_file", False)
-            _ipo_ready = _ipo_has_file and bool(_ipo_emiten.strip())
+                st.session_state["ipo_tab_has_file"] = True
 
-            # Tampilkan status file jika ada dari state
+            _ipo_pdf_bytes = st.session_state.get("ipo_tab_pdf_bytes", None)
+            _ipo_pdf_name  = st.session_state.get("ipo_tab_file_name", "")
+            _ipo_has_file  = _ipo_pdf_bytes is not None
+            _ipo_ready     = _ipo_has_file and bool(_ipo_emiten.strip())
+
+            # Tampilkan status file dari session_state
             if _ipo_has_file and _ipo_pdf_file is None:
-                _fn_prev = st.session_state.get("ipo_tab_file_name", "")
-                if _fn_prev:
-                    st.info(f"📄 File tersimpan: **{_fn_prev}** — Klik ANALISA untuk mulai bedah prospektus.")
+                st.info(f"📄 File siap: **{_ipo_pdf_name}** — Masukkan nama emiten lalu klik ANALISA.")
 
             # ── Tombol analisa ─────────────────────────────────────────────
             _ipo_col_btn, _ipo_col_clear = st.columns([3, 1])
@@ -21040,22 +21043,22 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 )
             with _ipo_col_clear:
                 if st.button("🗑️ Clear", key="ipo_tab_clear_btn", use_container_width=True):
-                    st.session_state["ipo_tab_result"] = None
-                    st.session_state["ipo_tab_emiten_last"] = ""
+                    for _k in ["ipo_tab_result", "ipo_tab_emiten_last",
+                               "ipo_tab_pdf_bytes", "ipo_tab_file_name", "ipo_tab_has_file"]:
+                        st.session_state.pop(_k, None)
                     st.rerun()
 
             # ── Validasi & eksekusi analisa ────────────────────────────────
             if _ipo_run:
                 if not _ipo_emiten.strip():
                     st.warning("⚠️ Masukkan nama atau kode emiten terlebih dahulu.")
-                elif not _ipo_pdf_file:
+                elif not _ipo_pdf_bytes:
                     st.warning("⚠️ Upload file PDF Prospektus terlebih dahulu.")
                 else:
                     with st.spinner("📖 Membaca & Membedah Ratusan Halaman Prospektus IPO..."):
                         try:
-                            # Baca PDF dengan fitz (sudah diimport di top)
-                            _ipo_raw = _ipo_pdf_file.read()
-                            _ipo_doc = fitz.open(stream=_ipo_raw, filetype="pdf")
+                            # Baca PDF dari bytes yang tersimpan di session_state
+                            _ipo_doc = fitz.open(stream=_ipo_pdf_bytes, filetype="pdf")
                             _ipo_txt = ""
                             for _pg in _ipo_doc:
                                 _ipo_txt += _pg.get_text()
@@ -21063,7 +21066,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 
                             # Truncate ke 12.000 char (sama dengan chat engine)
                             _ipo_pdf_content = (
-                                f"[PDF: {_ipo_pdf_file.name} | "
+                                f"[PDF: {_ipo_pdf_name} | "
                                 f"{len(_ipo_txt):,} karakter terbaca]\n"
                                 + _ipo_txt[:12000]
                             )
@@ -21102,7 +21105,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                                 _ipo_ans = _sanitize_html_text(_ipo_ans)
                                 st.session_state["ipo_tab_result"] = {
                                     "emiten":     _ipo_emiten_clean,
-                                    "filename":   _ipo_pdf_file.name,
+                                    "filename":   _ipo_pdf_name,
                                     "result":     _ipo_ans,
                                     "model":      _ipo_model_used,
                                     "timestamp":  _wib_now().strftime("%d %b %Y, %H:%M WIB"),
