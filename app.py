@@ -9393,132 +9393,284 @@ C = get_colors(st.session_state.theme)
 
 
 def show_login():
-    # ── Load background images sebagai base64 dari file lokal (paling reliable) ──
-    # Fallback ke raw GitHub URL jika file tidak ada di lokal
+    # ═══════════════════════════════════════════════════════════════════════
+    # SIGMA LOGIN PAGE  —  Premium Glassmorphism Dark Terminal Edition v5.1
+    # FIX: Semua CSS di-scope ke body.sigma-login-active agar tidak bocor
+    #      ke halaman utama. JS inject class ke <body> saat login, dan
+    #      remove saat user sudah login (Streamlit rerun).
+    # ═══════════════════════════════════════════════════════════════════════
+
     def _img_to_css_url(filename: str) -> str:
-        """Return CSS url() value: base64 data URI jika file ada, fallback raw GitHub."""
-        import base64, os
-        local_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
-        if os.path.exists(local_path):
+        import base64 as _b64, os as _os
+        local_path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), filename)
+        if _os.path.exists(local_path):
             try:
                 with open(local_path, "rb") as f:
-                    b64 = base64.b64encode(f.read()).decode()
+                    b64 = _b64.b64encode(f.read()).decode()
                 ext = filename.lower().split(".")[-1]
                 mime = "image/png" if ext == "png" else "image/jpeg"
                 return f"url('data:{mime};base64,{b64}')"
             except Exception:
                 pass
-        # Fallback: raw GitHub URL (harus publik)
         encoded_name = filename.replace(" ", "%20")
         return f"url('https://raw.githubusercontent.com/KIPMUP-Infinity/KIPMSIGMA/main/{encoded_name}')"
 
     _bg_desktop = _img_to_css_url("KIPM-UP.png")
     _bg_mobile  = _img_to_css_url("KIPM-UP M.png")
 
+    # ── CSS: semua rule di-scope ke body.sigma-login-active ──────────────
+    # Ini mencegah style bocor ke halaman terminal setelah login.
     st.markdown(f"""
-    <style>
-    [data-testid="stSidebar"] {{ display: none !important; }}
-    [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{ background: {_bg_desktop} center/cover no-repeat fixed !important; min-height: 100vh !important; }}
-    section[data-testid="stMain"]::before {{ display: none !important; }}
-    /* FIX v4.2: Card login pojok kiri bawah */
-    [data-testid="stMainBlockContainer"] {{
-        max-width: 300px !important;
-        margin: 0 !important;
-        padding: 14px 20px 18px !important;
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <style id="sigma-login-css">
+
+    /* ── Hanya aktif saat body.sigma-login-active ── */
+    body.sigma-login-active [data-testid="stSidebar"]        {{ display: none !important; }}
+    body.sigma-login-active header[data-testid="stHeader"]   {{ display: none !important; }}
+    body.sigma-login-active #MainMenu                        {{ display: none !important; }}
+    body.sigma-login-active footer                           {{ display: none !important; }}
+    body.sigma-login-active [data-testid="stToolbar"]        {{ display: none !important; }}
+    body.sigma-login-active [data-testid="stDecoration"]     {{ display: none !important; }}
+    body.sigma-login-active [data-testid="stStatusWidget"]   {{ display: none !important; }}
+    body.sigma-login-active .stDeployButton                  {{ display: none !important; }}
+
+    body.sigma-login-active [data-testid="stAppViewContainer"],
+    body.sigma-login-active section[data-testid="stMain"] {{
+        background: {_bg_desktop} center/cover no-repeat fixed !important;
+        min-height: 100vh !important;
+    }}
+    body.sigma-login-active section[data-testid="stMain"]::before {{ display: none !important; }}
+
+    body.sigma-login-active [data-testid="stAppViewContainer"]::after {{
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(4,6,18,0.52) 0%, rgba(7,10,22,0.42) 100%);
+        pointer-events: none;
+        z-index: 0;
+    }}
+
+    /* ── Login card ── */
+    body.sigma-login-active [data-testid="stMainBlockContainer"] {{
         position: fixed !important;
-        bottom: 20px !important;
-        left: 20px !important;
-        z-index: 10 !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: 420px !important;
+        max-width: 92vw !important;
         min-height: unset !important;
         height: fit-content !important;
-        background: rgba(5, 8, 20, 0.65) !important;
-        backdrop-filter: blur(20px) saturate(1.4) !important;
-        -webkit-backdrop-filter: blur(20px) saturate(1.4) !important;
-        border: 1px solid rgba(255,255,255,0.10) !important;
-        border-radius: 20px !important;
-        box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important;
+        padding: 40px 36px 36px !important;
+        margin: 0 !important;
+        z-index: 10 !important;
+        background: rgba(255,255,255,0.03) !important;
+        backdrop-filter: blur(24px) saturate(1.6) !important;
+        -webkit-backdrop-filter: blur(24px) saturate(1.6) !important;
+        border: 1px solid rgba(255,255,255,0.08) !important;
+        border-radius: 24px !important;
+        box-shadow:
+            0 0 0 1px rgba(255,255,255,0.04),
+            0 24px 64px rgba(0,0,0,0.55),
+            0 4px 16px rgba(0,0,0,0.35),
+            inset 0 1px 0 rgba(255,255,255,0.06) !important;
     }}
+
     @media(max-width: 768px) {{
-        [data-testid="stMainBlockContainer"] {{
+        body.sigma-login-active [data-testid="stMainBlockContainer"] {{
             position: relative !important;
-            bottom: unset !important;
+            top: unset !important;
             left: unset !important;
-            margin: 75px auto 0 auto !important;
-            max-width: 88% !important;
-            padding: 20px 20px 28px !important;
-            backdrop-filter: blur(20px) !important;
+            transform: none !important;
+            margin: 80px auto 40px auto !important;
+            width: 88% !important;
+            padding: 32px 24px 28px !important;
             border-radius: 20px !important;
-            border: 1px solid rgba(255,255,255,0.12) !important;
-            box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important;
         }}
-        [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{ background: {_bg_mobile} center top/cover no-repeat fixed !important; }}
+        body.sigma-login-active [data-testid="stAppViewContainer"],
+        body.sigma-login-active section[data-testid="stMain"] {{
+            background: {_bg_mobile} center top/cover no-repeat fixed !important;
+        }}
     }}
-    header[data-testid="stHeader"] {{ display: none !important; }} #MainMenu {{ display: none !important; }}
-    .stTabs, [data-testid="stVerticalBlock"] {{ background: transparent !important; }}
-    [data-testid="stTextInput"] input {{ background: rgba(255,255,255,0.06) !important; border: 1px solid rgba(255,255,255,0.12) !important; border-radius: 12px !important; color: #fff !important; padding: 12px 16px !important; font-size: 0.95rem !important; backdrop-filter: blur(10px) !important; transition: border 0.2s !important; }}
-    [data-testid="stTextInput"] input:focus {{ border: 1px solid #a78bfa !important; box-shadow: 0 0 0 2px rgba(167,139,250,0.15) !important; outline: none !important; }}
-    [data-testid="stTextInput"] input::placeholder {{ color: rgba(255,255,255,0.35) !important; }}
-    [data-testid="stTextInput"] label {{ color: rgba(255,255,255,0.6) !important; font-size: 0.82rem !important; }}
-    [data-testid="stMainBlockContainer"] .stButton > button {{ background: linear-gradient(135deg, #7c3aed, #2563eb) !important; color: #fff !important; font-weight: 700 !important; border: none !important; border-radius: 12px !important; padding: 12px !important; font-size: 0.95rem !important; letter-spacing: 0.5px !important; transition: opacity 0.2s, transform 0.1s !important; box-shadow: 0 4px 20px rgba(124,58,237,0.35) !important; }}
-    [data-testid="stMainBlockContainer"] .stButton > button:hover {{ opacity: 0.92 !important; transform: translateY(-1px) !important; }}
-    [data-testid="stTabs"] [role="tablist"] {{ background: rgba(255,255,255,0.05) !important; border-radius: 12px !important; padding: 4px !important; border: 1px solid rgba(255,255,255,0.08) !important; gap: 2px !important; }}
-    [data-testid="stTabs"] button[role="tab"] {{ border-radius: 9px !important; color: rgba(255,255,255,0.5) !important; font-size: 0.85rem !important; padding: 7px 12px !important; border: none !important; background: transparent !important; }}
-    [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{ background: linear-gradient(135deg,rgba(124,58,237,0.22),rgba(59,130,246,0.18)) !important; color: #a78bfa !important; font-weight: 700 !important; border-bottom: 2px solid #a78bfa !important; }}
-    [data-testid="stTabs"] [role="tabpanel"] {{ background: rgba(255,255,255,0.03) !important; border-radius: 16px !important; border: 1px solid rgba(255,255,255,0.08) !important; padding: 20px 16px !important; margin-top: 8px !important; backdrop-filter: blur(10px) !important; }}
-    [data-testid="stAlert"] {{ border-radius: 10px !important; }}
+
+    body.sigma-login-active .stTabs,
+    body.sigma-login-active [data-testid="stVerticalBlock"] {{ background: transparent !important; }}
+
+    /* ── Inputs ── */
+    body.sigma-login-active [data-testid="stTextInput"] input {{
+        background: rgba(0,0,0,0.20) !important;
+        border: 1px solid rgba(255,255,255,0.10) !important;
+        border-radius: 12px !important;
+        color: #FFFFFF !important;
+        padding: 13px 16px !important;
+        font-size: 0.92rem !important;
+        font-family: 'Inter', sans-serif !important;
+        transition: border-color 0.25s ease, box-shadow 0.25s ease !important;
+    }}
+    body.sigma-login-active [data-testid="stTextInput"] input:focus {{
+        border-color: rgba(201,162,39,0.70) !important;
+        box-shadow: 0 0 0 3px rgba(201,162,39,0.12), 0 0 14px rgba(201,162,39,0.10) !important;
+        outline: none !important;
+        background: rgba(0,0,0,0.28) !important;
+    }}
+    body.sigma-login-active [data-testid="stTextInput"] input::placeholder {{ color: rgba(255,255,255,0.28) !important; }}
+    body.sigma-login-active [data-testid="stTextInput"] label {{
+        color: #94A3B8 !important;
+        font-size: 0.78rem !important;
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 500 !important;
+        letter-spacing: 0.6px !important;
+        text-transform: uppercase !important;
+    }}
+
+    /* ── Buttons: HANYA di dalam login card ── */
+    body.sigma-login-active [data-testid="stMainBlockContainer"] .stButton > button {{
+        background: linear-gradient(135deg, #c9a227 0%, #a07a14 100%) !important;
+        color: #0A0C12 !important;
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 700 !important;
+        font-size: 0.92rem !important;
+        letter-spacing: 0.6px !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 13px !important;
+        width: 100% !important;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease !important;
+        box-shadow: 0 4px 18px rgba(201,162,39,0.28), 0 2px 6px rgba(0,0,0,0.3) !important;
+    }}
+    body.sigma-login-active [data-testid="stMainBlockContainer"] .stButton > button:hover {{
+        transform: translateY(-2px) scale(1.008) !important;
+        filter: brightness(1.10) !important;
+        box-shadow: 0 8px 28px rgba(201,162,39,0.40), 0 4px 12px rgba(0,0,0,0.35) !important;
+    }}
+    body.sigma-login-active [data-testid="stMainBlockContainer"] .stButton > button:active {{
+        transform: translateY(0px) scale(0.997) !important;
+        filter: brightness(0.96) !important;
+    }}
+
+    /* ── Tabs ── */
+    body.sigma-login-active [data-testid="stTabs"] [role="tablist"] {{
+        background: rgba(255,255,255,0.04) !important;
+        border-radius: 12px !important;
+        padding: 4px !important;
+        border: 1px solid rgba(255,255,255,0.07) !important;
+    }}
+    body.sigma-login-active [data-testid="stTabs"] button[role="tab"] {{
+        border-radius: 9px !important;
+        color: rgba(255,255,255,0.40) !important;
+        font-size: 0.84rem !important;
+        font-family: 'Inter', sans-serif !important;
+        padding: 7px 12px !important;
+        border: none !important;
+        background: transparent !important;
+    }}
+    body.sigma-login-active [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{
+        background: rgba(201,162,39,0.12) !important;
+        color: #c9a227 !important;
+        font-weight: 700 !important;
+        border-bottom: 2px solid #c9a227 !important;
+    }}
+    body.sigma-login-active [data-testid="stTabs"] [role="tabpanel"] {{
+        background: rgba(255,255,255,0.02) !important;
+        border-radius: 14px !important;
+        border: 1px solid rgba(255,255,255,0.06) !important;
+        padding: 20px 16px !important;
+        margin-top: 8px !important;
+        backdrop-filter: blur(10px) !important;
+    }}
+    body.sigma-login-active [data-testid="stAlert"] {{
+        border-radius: 10px !important;
+        font-family: 'Inter', sans-serif !important;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
+    # ── JS: tambah class ke <body>, hide fork bar, mobile logo ───────────
     components.html(f"""
 <script>
 (function() {{
     var pd = window.parent.document;
-    var forkStyle = pd.getElementById('hide-fork-bar');
-    if (!forkStyle) {{
+
+    /* Tambah class sigma-login-active ke body — aktifkan scoped CSS */
+    pd.body.classList.add('sigma-login-active');
+
+    /* Hide fork/share bar Streamlit */
+    if (!pd.getElementById('hide-fork-bar')) {{
         var fs = pd.createElement('style');
         fs.id = 'hide-fork-bar';
-        fs.textContent = `
-            .viewerBadge_container__r5tak, .viewerBadge_link__qRIco, [class*="viewerBadge"], [class*="styles_viewerBadge"], #MainMenu, footer, [data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"], header[data-testid="stHeader"], .stDeployButton, [kind="header"], div[data-testid="collapsedControl"] {{ display: none !important; visibility: hidden !important; height: 0 !important; overflow: hidden !important; }}
-        `;
+        fs.textContent = '.viewerBadge_container__r5tak,.viewerBadge_link__qRIco,[class*="viewerBadge"],[class*="styles_viewerBadge"],#MainMenu,footer,[data-testid="stToolbar"],[data-testid="stDecoration"],[data-testid="stStatusWidget"],header[data-testid="stHeader"],.stDeployButton,[kind="header"],div[data-testid="collapsedControl"]{{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;}}';
         pd.head.appendChild(fs);
     }}
-    if (pd.getElementById('kipm-mobile-logo')) return;
-    var s = pd.createElement('style');
-    s.id = 'kipm-mobile-logo-style';
-    s.textContent = `
-        #kipm-mobile-logo {{ display: none; text-align: center; padding: 14px 0 10px; position: fixed; top: 0; left: 0; right: 0; z-index: 10; pointer-events: none; }}
-        #kipm-mobile-logo img {{ width: 80px; height: 80px; object-fit: contain; filter: drop-shadow(0 2px 12px rgba(0,0,0,0.6)); }}
-        #kipm-mobile-logo .kipm-name {{ font-size: 0.7rem; color: rgba(255,255,255,0.7); letter-spacing: 2px; font-family: sans-serif; margin-top: 4px; }}
-        @media(max-width: 768px) {{ #kipm-mobile-logo {{ display: block !important; }} }}
-    `;
-    pd.head.appendChild(s);
-    var div = pd.createElement('div');
-    div.id = 'kipm-mobile-logo';
-    div.innerHTML = `<img src="https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/Mate%20KIPM%20LOGO.png" onerror="this.style.display='none'" style="width:80px;height:80px;object-fit:contain;"><div class="kipm-name">KIPM-UP</div>`;
-    pd.body.appendChild(div);
+
+    /* Mobile logo */
+    if (!pd.getElementById('kipm-mobile-logo')) {{
+        var s = pd.createElement('style');
+        s.id = 'kipm-mobile-logo-style';
+        s.textContent = '#kipm-mobile-logo{{display:none;text-align:center;padding:14px 0 10px;position:fixed;top:0;left:0;right:0;z-index:10;pointer-events:none;}}#kipm-mobile-logo img{{width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.6));}}#kipm-mobile-logo .kipm-name{{font-size:0.7rem;color:rgba(255,255,255,0.7);letter-spacing:2px;font-family:Inter,sans-serif;margin-top:4px;}}@media(max-width:768px){{#kipm-mobile-logo{{display:block!important;}}}}';
+        pd.head.appendChild(s);
+        var div = pd.createElement('div');
+        div.id = 'kipm-mobile-logo';
+        div.innerHTML = '<img src="https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/Mate%20KIPM%20LOGO.png" onerror="this.style.display=\'none\'" style="width:80px;height:80px;object-fit:contain;"><div class="kipm-name">KIPM-UP</div>';
+        pd.body.appendChild(div);
+    }}
+
+    /* Poll: kalau user sudah login (sigma-login-active tidak relevan lagi),
+       remove class dari body saat Streamlit rerun menghapus elemen login */
+    var _poll = setInterval(function() {{
+        var loginCss = pd.getElementById('sigma-login-css');
+        if (!loginCss) {{
+            pd.body.classList.remove('sigma-login-active');
+            var logo = pd.getElementById('kipm-mobile-logo');
+            if (logo) logo.remove();
+            clearInterval(_poll);
+        }}
+    }}, 400);
 }})();
 </script>
 """, height=0)
-    st.markdown('''
-        <div style="text-align:center;margin:0 0 10px;">
-            <div style="font-size:2.8rem;font-weight:900;letter-spacing:5px;color:#ffffff;font-family:sans-serif;line-height:1.2;">SIGMA <span style="color:#a78bfa;">Σ</span></div>
-            <div class="sigma-tagline" style="font-size:0.72rem;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-top:4px;font-family:sans-serif;">Strategic Intelligence & Global Market Analysis</div>
-        </div>
-        <style>@media(min-width: 769px) { .sigma-tagline { display: none !important; } }</style>
-    ''', unsafe_allow_html=True)
+
+    # ── Header ───────────────────────────────────────────────────────────────
+    st.markdown("""
+<div style="text-align:center;margin:0 0 28px;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;">
+    <div style="display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,rgba(201,162,39,0.18) 0%,rgba(160,122,20,0.10) 100%);border:1px solid rgba(201,162,39,0.30);margin-bottom:16px;box-shadow:0 0 24px rgba(201,162,39,0.12);">
+        <span style="font-size:1.8rem;color:#c9a227;line-height:1;">&#931;</span>
+    </div>
+    <div style="font-size:2.4rem;font-weight:900;letter-spacing:8px;color:#FFFFFF;line-height:1;text-transform:uppercase;">SIGMA</div>
+    <div style="font-size:0.65rem;font-weight:400;color:#64748B;letter-spacing:2.5px;text-transform:uppercase;margin-top:6px;">Strategic Intelligence &amp; Global Market Analysis</div>
+    <div style="width:48px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,162,39,0.6),transparent);margin:16px auto 0;"></div>
+</div>
+""", unsafe_allow_html=True)
+
+    # ── Google OAuth button ───────────────────────────────────────────────────
     try:
         auth_url = google_auth_url()
         st.markdown(f"""
-        <div style="margin-top:16px;">
-            <a href="{auth_url}" style="display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(255,255,255,0.95);color:#1a1a1a;border-radius:12px;padding:14px;text-decoration:none;font-size:0.9rem;font-weight:600;border:none;box-shadow:0 4px 15px rgba(0,0,0,0.3);">
-                <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-                Lanjutkan dengan Google
-            </a>
-        </div>
-        """, unsafe_allow_html=True)
-    except: st.info("Google login belum dikonfigurasi di Secrets")
+<div style="margin-bottom:18px;">
+    <a href="{auth_url}" style="display:flex;align-items:center;justify-content:center;gap:11px;background:rgba(255,255,255,0.95);color:#1a1a1a;border-radius:12px;padding:14px;text-decoration:none;font-size:0.9rem;font-weight:600;font-family:'Inter',sans-serif;letter-spacing:0.2px;border:none;box-shadow:0 4px 18px rgba(0,0,0,0.30),inset 0 1px 0 rgba(255,255,255,0.6);transition:transform 0.18s,box-shadow 0.18s;"
+    onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 28px rgba(0,0,0,0.38)'"
+    onmouseout="this.style.transform='';this.style.boxShadow='0 4px 18px rgba(0,0,0,0.30)'"
+    >
+        <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Lanjutkan dengan Google
+    </a>
+</div>
+<div style="display:flex;align-items:center;gap:10px;margin:0 0 20px;font-family:'Inter',sans-serif;">
+    <div style="flex:1;height:1px;background:rgba(255,255,255,0.07);"></div>
+    <span style="font-size:0.70rem;color:#3D4A5C;letter-spacing:1px;text-transform:uppercase;">atau masuk dengan akun</span>
+    <div style="flex:1;height:1px;background:rgba(255,255,255,0.07);"></div>
+</div>
+""", unsafe_allow_html=True)
+    except Exception:
+        st.info("Google login belum dikonfigurasi di Secrets")
 
-    st.markdown(f"""<p style="text-align:center;color:rgba(255,255,255,0.25);font-size:0.72rem;margin-top:24px;line-height:1.6;">Dengan masuk, kamu menyetujui penggunaan platform untuk analisa.<br>Analisa bersifat <em>do your own research</em> dan disclaimer berlaku.<br> by. @MarketnMocha</p>""", unsafe_allow_html=True)
+    # ── Footer ───────────────────────────────────────────────────────────────
+    st.markdown("""
+<p style="text-align:center;color:rgba(255,255,255,0.20);font-size:0.68rem;font-family:'Inter',sans-serif;font-weight:300;margin-top:28px;line-height:1.7;letter-spacing:0.1px;">
+    Dengan masuk, kamu menyetujui penggunaan platform untuk analisa.<br>
+    Analisa bersifat <em>do your own research</em> dan disclaimer berlaku.<br>
+    <span style="color:rgba(255,255,255,0.13);">by. @MarketnMocha</span>
+</p>
+""", unsafe_allow_html=True)
     st.stop()
 
 if st.session_state.user is None: show_login()
