@@ -28582,8 +28582,8 @@ function calculate() {{
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📖 PANDUAN SIGMA TERMINAL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
         # ── Versi & tanggal panduan ──────────────────────────────────────
-        _PANDUAN_VERSION = "v4.2"
-        _PANDUAN_LAST_UPDATED = "01 Mei 2026"
+        _PANDUAN_VERSION = "v5.0"
+        _PANDUAN_LAST_UPDATED = "20 Mei 2026"
         _pan_col1, _pan_col2 = st.columns([3, 2])
         with _pan_col1:
             st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.875rem;color:{text_sub};margin-bottom:4px;'>Panduan lengkap penggunaan semua fitur SIGMA Terminal. Pilih kategori di bawah untuk membaca penjelasan detail.</p>", unsafe_allow_html=True)
@@ -28672,17 +28672,13 @@ function calculate() {{
 </style>""", unsafe_allow_html=True)
 
         # ── Sub-tabs Panduan ─────────────────────────────────────────────
-        pg_tab0, pg_tab1, pg_tab2, pg_tab3, pg_tab4, pg_tab5, pg_tab6, pg_tab7, pg_tab8, pg_tab9 = st.tabs([
-            "  🌐 MARKET MAP  ",
-            "  🌍 GLOBAL MACRO & NEWS  ",
-            "  🔄 INDEX & REBALANCING  ",
-            "  👥 SHAREHOLDER  ",
+        pg_tab0, pg_tab1, pg_tab2, pg_tab3, pg_tab4, pg_tab5 = st.tabs([
+            "  📡 MARKET LIVE  ",
+            "  📈 MARKET DATA  ",
+            "  📊 INDEX & SECTOR ROTATION  ",
             "  ⚡ ALPHA SCREENER  ",
-            "  📋 ANALISA IPO  ",
-            "  🏆 TRACK RECORD  ",
             "  🔧 TOOLS  ",
-            "  📊 BROKER SUMMARY  ",
-            "  🔬 CARA KERJA SCREENER  ",
+            "  📖 PANDUAN  ",
         ])
 
         # ── Shared CSS (dipakai semua tab panduan) ───────────────────────
@@ -28779,7 +28775,8 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
 """
 
         # ══════════════════════════════════════════════════════════════
-        # PANDUAN 0 — MARKET MAP
+        # ══════════════════════════════════════════════════════════════
+        # PANDUAN 0 — MARKET LIVE
         # ══════════════════════════════════════════════════════════════
         with pg_tab0:
             _guide_html_0 = f"""<!DOCTYPE html><html><head>
@@ -28787,18 +28784,19 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
 <style>{_PANDUAN_SHARED_CSS}</style></head><body><div class="wrap">
 
 <div class="hero">
-  <div class="hero-badge">🌐 MARKET MAP</div>
-  <div class="hero-title">Market Map — Peta Pasar Visual IDX</div>
+  <div class="hero-badge">📡 MARKET LIVE</div>
+  <div class="hero-title">Market Live — Pantau Pasar Real-Time</div>
   <div class="hero-sub">
-    Visualisasi heat-map interaktif seluruh emiten IDX berdasarkan sektor, kapitalisasi, dan performa harga.
-    Satu tampilan untuk melihat <strong style="color:#a78bfa;">mana sektor panas</strong> dan mana yang sedang tertekan hari ini.
+    Dua fitur utama di tab ini: <strong style="color:#a78bfa;">Market Map</strong> (heat-map visual IDX) dan
+    <strong style="color:#a78bfa;">Live Market</strong> (indeks global, forex, komoditas, VIX real-time).
+    Wajib dibuka setiap pagi sebelum market buka <strong style="color:#a78bfa;">(08:30–09:00 WIB)</strong>.
   </div>
 </div>
 
 <div class="grid3">
-  <div class="gcard"><div class="gcard-lbl">Jenis Tampilan</div><div class="gcard-val">Heat-Map</div><div class="gcard-sub">Hijau = naik · Merah = turun · Ukuran blok = market cap</div></div>
-  <div class="gcard blue"><div class="gcard-lbl">Cakupan</div><div class="gcard-val">600+ Emiten</div><div class="gcard-sub">Semua saham IDX aktif, terkelompok per sektor otomatis</div></div>
-  <div class="gcard green"><div class="gcard-lbl">Update</div><div class="gcard-val">Intraday</div><div class="gcard-sub">Refresh otomatis beberapa menit sekali saat market buka</div></div>
+  <div class="gcard"><div class="gcard-lbl">Market Map</div><div class="gcard-val">Heat-Map IDX</div><div class="gcard-sub">Hijau = naik · Merah = turun · Ukuran blok = market cap</div></div>
+  <div class="gcard blue"><div class="gcard-lbl">Live Market</div><div class="gcard-val">Indeks + Forex</div><div class="gcard-sub">IHSG · S&P500 · Nasdaq · DXY · USD/IDR · VIX</div></div>
+  <div class="gcard green"><div class="gcard-lbl">Cakupan Emiten</div><div class="gcard-val">600+ Saham</div><div class="gcard-sub">Semua emiten IDX aktif, dikelompokkan per sektor otomatis</div></div>
 </div>
 
 <div class="div"></div>
@@ -28806,13 +28804,13 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
 <div class="mockup">
   <div class="mockup-bar">
     <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
-    <span class="mock-title">SIGMA TERMINAL · MARKET MAP · IDX SECTOR HEATMAP</span>
+    <span class="mock-title">SIGMA TERMINAL · MARKET LIVE · IDX SECTOR HEATMAP</span>
   </div>
   <div class="mockup-body">
     <div class="mock-tab-row">
-      <div class="mock-tab active">🌐 MARKET MAP</div>
-      <div class="mock-tab">🌍 GLOBAL MACRO</div>
-      <div class="mock-tab">🔄 INDEX</div>
+      <div class="mock-tab active">📡 MARKET LIVE</div>
+      <div class="mock-tab">📈 MARKET DATA</div>
+      <div class="mock-tab">📊 INDEX & SECTOR ROTATION</div>
     </div>
     <div style="display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr;gap:4px;margin-bottom:4px;">
       <div style="background:rgba(0,229,190,0.28);border:1px solid rgba(0,229,190,0.4);border-radius:6px;padding:14px 12px;">
@@ -28873,50 +28871,7 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
   <div class="step"><div class="snum">3</div><div class="stext">
     <b>Ukuran Blok</b> → Semakin besar blok = semakin besar market cap. BBCA dan BBRI selalu tampil sebagai blok terbesar di sektor Perbankan.
   </div></div>
-  <div class="step"><div class="snum">4</div><div class="stext">
-    <b>Hover / Klik blok</b> → Menampilkan detail: nama emiten, harga terakhir, % perubahan, dan volume hari ini.
-  </div></div>
-  <div class="tip">💡 <b>Tip Pagi:</b> Buka Market Map pukul 09:05–09:30 untuk lihat sektor mana yang langsung mendapat tekanan beli sejak opening. Sektor yang konsisten hijau di 30 menit pertama cenderung <b>leading</b> sepanjang hari.</div>
-</div>
-
-<div class="feat blue">
-  <div class="feat-title">🔍 Strategi Penggunaan Market Map</div>
-  <div class="step"><div class="snum">1</div><div class="stext">
-    <b>Identifikasi Sektor Dominan</b> → Cari sektor dengan blok terbesar dan terhijau. Ini sektor yang sedang di-inflow hari ini — prioritas hunting Alpha Screener.
-  </div></div>
-  <div class="step"><div class="snum">2</div><div class="stext">
-    <b>Bandingkan dengan IHSG</b> → Jika IHSG naik tapi sektor Perbankan merah = rally sempit (hanya saham kecil), waspada reverse. Jika semua sektor hijau = <span class="ok">rally melebar = risk-on kuat</span>.
-  </div></div>
-  <div class="step"><div class="snum">3</div><div class="stext">
-    <b>Deteksi Rotasi Intraday</b> → Sektor hijau di pagi + berubah merah di sore = distribusi intraday. Pindah ke sektor yang masih hijau sore = sinyal smart money rotation.
-  </div></div>
-  <div class="key">🔑 <b>Key Rule:</b> Jika sektor Perbankan + Infrastruktur bersama-sama hijau ≥1% → kondisi risk-on IDX sangat kuat. Aman untuk scaling posisi di saham BSJP dengan score tinggi.</div>
-</div>
-
-</div></body></html>"""
-            components.html(_guide_html_0, height=2400, scrolling=True)
-
-        # ══════════════════════════════════════════════════════════════
-        # PANDUAN 1 — GLOBAL MACRO & NEWS
-        # ══════════════════════════════════════════════════════════════
-        with pg_tab1:
-            _guide_html_1 = f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>{_PANDUAN_SHARED_CSS}</style></head><body><div class="wrap">
-
-<div class="hero">
-  <div class="hero-badge">🌍 GLOBAL MACRO & NEWS</div>
-  <div class="hero-title">Pantau Makro Dunia & Berita Pasar</div>
-  <div class="hero-sub">
-    6 sub-fitur dalam satu menu: Live Market, Macro Indicators, Market Brief AI, Komoditas & Forex, FedWatch, dan Kalender Ekonomi.
-    Wajib dibuka <strong style="color:#a78bfa;">setiap pagi sebelum market buka (08:30–09:00 WIB)</strong>.
-  </div>
-</div>
-
-<div class="grid3">
-  <div class="gcard"><div class="gcard-lbl">Sub-Fitur</div><div class="gcard-val">6 Modul</div><div class="gcard-sub">Live · Macro · Brief · Komoditas · FedWatch · Kalender</div></div>
-  <div class="gcard blue"><div class="gcard-lbl">Sumber Data</div><div class="gcard-val">Real-time</div><div class="gcard-sub">Yahoo Finance, FMP, Alpha Vantage, NewsAPI</div></div>
-  <div class="gcard green"><div class="gcard-lbl">Relevansi IDX</div><div class="gcard-val">⭐⭐⭐⭐⭐</div><div class="gcard-sub">DXY & Komoditas langsung gerakkan IHSG</div></div>
+  <div class="tip">💡 <b>Tip Pagi:</b> Buka Market Live pukul 09:05–09:30 untuk lihat sektor mana yang langsung mendapat tekanan beli sejak opening. Sektor yang konsisten hijau di 30 menit pertama cenderung <b>leading</b> sepanjang hari.</div>
 </div>
 
 <div class="div"></div>
@@ -28924,17 +28879,9 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
 <div class="mockup">
   <div class="mockup-bar">
     <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
-    <span class="mock-title">SIGMA · GLOBAL MACRO & NEWS · LIVE MARKET</span>
+    <span class="mock-title">SIGMA · MARKET LIVE · LIVE MARKET</span>
   </div>
   <div class="mockup-body">
-    <div class="mock-tab-row">
-      <div class="mock-tab active">📊 LIVE MARKET</div>
-      <div class="mock-tab">📈 MACRO</div>
-      <div class="mock-tab">📰 BRIEF</div>
-      <div class="mock-tab">🪙 KOMODITAS</div>
-      <div class="mock-tab">🏛 FEDWATCH</div>
-      <div class="mock-tab">📅 KALENDER</div>
-    </div>
     <div class="mock-card-row col4">
       <div class="mcard"><div class="mcard-lbl">IHSG</div><div class="mcard-val up">7,284</div><div class="mcard-chg up">▲ +0.84%</div></div>
       <div class="mcard"><div class="mcard-lbl">S&P 500</div><div class="mcard-val up">5,648</div><div class="mcard-chg up">▲ +0.52%</div></div>
@@ -28949,31 +28896,49 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
   </div>
 </div>
 
-<div class="sec-head"><div class="sec-icon">📊</div>
-<div><div class="sec-title">1 · LIVE MARKET</div>
-<div class="sec-desc">Harga real-time IHSG, indeks global, forex, dan indikator sentimen pasar</div></div></div>
-
-<div class="feat">
+<div class="feat blue">
   <div class="feat-title">📊 Cara Membaca Live Market</div>
   <div class="step"><div class="snum">1</div><div class="stext">Cek <b>IHSG + S&P500 + Nasdaq</b> — Jika ketiganya hijau = risk-on environment kuat. Entry lebih aman pagi hari.</div></div>
   <div class="step"><div class="snum">2</div><div class="stext">Pantau <b>DXY (Dollar Index)</b> — DXY <span class="dn">naik</span> → Rupiah melemah → capital outflow dari IDX. DXY <span class="ok">turun</span> → Rupiah menguat → positif IHSG.</div></div>
   <div class="step"><div class="snum">3</div><div class="stext">Cek <b>VIX</b> — <span class="ok">VIX &lt;15</span> = pasar tenang, aman ekspansi posisi. <span class="yl">VIX 15–25</span> = waspada. <span class="dn">VIX &gt;25</span> = pasar cemas, kurangi risk.</div></div>
-  <div class="tip">💡 <b>Tip Pagi:</b> Jika S&P500 atau Nasdaq turun &gt;1% semalam → waspadai tekanan di opening IHSG. Tunda entry saham kecil, fokus blue chip liquid saja.</div>
+  <div class="key">🔑 <b>Key Rule:</b> Jika sektor Perbankan + Infrastruktur bersama-sama hijau ≥1% → kondisi risk-on IDX sangat kuat. Aman untuk scaling posisi di saham BSJP dengan score tinggi.</div>
 </div>
 
+</div></body></html>"""
+            components.html(_guide_html_0, height=2800, scrolling=True)
+
+        # ══════════════════════════════════════════════════════════════
+        # PANDUAN 1 — MARKET DATA
+        # ══════════════════════════════════════════════════════════════
+        with pg_tab1:
+            _guide_html_1 = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>{_PANDUAN_SHARED_CSS}</style></head><body><div class="wrap">
+
+<div class="hero">
+  <div class="hero-badge">📈 MARKET DATA</div>
+  <div class="hero-title">Market Data — Makro, Komoditas & Kalender Ekonomi</div>
+  <div class="hero-sub">
+    Data fundamental pasar: <strong style="color:#a78bfa;">Market Brief AI</strong>, <strong style="color:#a78bfa;">Komoditas & Forex</strong>,
+    <strong style="color:#a78bfa;">FedWatch</strong>, dan <strong style="color:#a78bfa;">Kalender Ekonomi</strong>.
+    Sumber konteks makro sebelum membuat keputusan entry.
+  </div>
+</div>
+
+<div class="grid3">
+  <div class="gcard"><div class="gcard-lbl">Market Brief AI</div><div class="gcard-val">Daily & Weekly</div><div class="gcard-sub">Ringkasan otomatis kondisi pasar oleh SIGMA AI</div></div>
+  <div class="gcard blue"><div class="gcard-lbl">Komoditas IDX</div><div class="gcard-val">Coal · CPO · Gold</div><div class="gcard-sub">Nikel · Timah · Minyak · Efek langsung ke emiten IDX</div></div>
+  <div class="gcard green"><div class="gcard-lbl">Kalender Ekonomi</div><div class="gcard-val">High Impact Event</div><div class="gcard-sub">CPI · FOMC · NFP · BI Rate — pantau sebelum entry besar</div></div>
+</div>
+
+<div class="div"></div>
 <div class="cap-label">📸 CONTOH TAMPILAN — KOMODITAS & FOREX</div>
 <div class="mockup">
   <div class="mockup-bar">
     <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
-    <span class="mock-title">SIGMA · GLOBAL MACRO · KOMODITAS & FOREX</span>
+    <span class="mock-title">SIGMA · MARKET DATA · KOMODITAS & FOREX</span>
   </div>
   <div class="mockup-body">
-    <div class="mock-tab-row">
-      <div class="mock-tab">📊 LIVE MARKET</div>
-      <div class="mock-tab">📈 MACRO</div>
-      <div class="mock-tab">📰 BRIEF</div>
-      <div class="mock-tab active">🪙 KOMODITAS</div>
-    </div>
     <div class="mock-card-row col4">
       <div class="mcard"><div class="mcard-lbl">COAL (ARA)</div><div class="mcard-val up">$142.5</div><div class="mcard-chg up">▲ +1.80%</div></div>
       <div class="mcard"><div class="mcard-lbl">CPO (MYR)</div><div class="mcard-val up">RM 4,120</div><div class="mcard-chg up">▲ +0.60%</div></div>
@@ -28988,6 +28953,10 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
   </div>
 </div>
 
+<div class="sec-head"><div class="sec-icon">🪙</div>
+<div><div class="sec-title">KOMODITAS — EFEK KE EMITEN IDX</div>
+<div class="sec-desc">Cara membaca pergerakan komoditas dan dampaknya ke saham IDX</div></div></div>
+
 <div class="feat blue">
   <div class="feat-title">🪙 Cara Membaca Komoditas untuk IDX</div>
   <div class="step"><div class="snum">1</div><div class="stext"><b>Coal naik</b> → positif untuk <span class="hi">ADRO, PTBA, ITMG, INDY, HRUM</span>. Sektor energi mendapat sentimen positif.</div></div>
@@ -29001,13 +28970,9 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
 <div class="mockup">
   <div class="mockup-bar">
     <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
-    <span class="mock-title">SIGMA · GLOBAL MACRO · FEDWATCH & KALENDER</span>
+    <span class="mock-title">SIGMA · MARKET DATA · FEDWATCH & KALENDER</span>
   </div>
   <div class="mockup-body">
-    <div class="mock-tab-row">
-      <div class="mock-tab active">🏛 FEDWATCH</div>
-      <div class="mock-tab">📅 KALENDER</div>
-    </div>
     <div class="mock-card-row">
       <div class="mcard"><div class="mcard-lbl">Fed Rate Saat Ini</div><div class="mcard-val" style="color:#a78bfa;">5.25–5.50%</div><div class="mcard-chg" style="color:rgba(255,255,255,0.35);">Hold · FOMC Jun 2025</div></div>
       <div class="mcard"><div class="mcard-lbl">Prob. Cut Next FOMC</div><div class="mcard-val up">72%</div><div class="mcard-chg up">Market pricing Sep cut</div></div>
@@ -29031,10 +28996,10 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
 </div>
 
 </div></body></html>"""
-            components.html(_guide_html_1, height=3400, scrolling=True)
+            components.html(_guide_html_1, height=3200, scrolling=True)
 
         # ══════════════════════════════════════════════════════════════
-        # PANDUAN 2 — INDEX & REBALANCING
+        # PANDUAN 2 — INDEX & SECTOR ROTATION
         # ══════════════════════════════════════════════════════════════
         with pg_tab2:
             _guide_html_2 = f"""<!DOCTYPE html><html><head>
@@ -29042,18 +29007,19 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
 <style>{_PANDUAN_SHARED_CSS}</style></head><body><div class="wrap">
 
 <div class="hero">
-  <div class="hero-badge">🔄 INDEX & REBALANCING</div>
-  <div class="hero-title">Rotasi Sektor & Rebalancing Indeks</div>
+  <div class="hero-badge">📊 INDEX & SECTOR ROTATION</div>
+  <div class="hero-title">Rotasi Sektor, RRG & Komposisi Indeks</div>
   <div class="hero-sub">
-    Pantau RRG (Relative Rotation Graph), komposisi IDX30/LQ45/KOMPAS100, jadwal rebalancing,
-    dan identifikasi sektor mana yang sedang <strong style="color:#a78bfa;">Leading vs. Lagging</strong>.
+    Pantau <strong style="color:#a78bfa;">RRG (Relative Rotation Graph)</strong> untuk identifikasi sektor Leading vs Lagging,
+    komposisi IDX30/LQ45/KOMPAS100, jadwal rebalancing, serta data <strong style="color:#a78bfa;">Shareholder</strong>
+    untuk deteksi akumulasi &amp; distribusi smart money.
   </div>
 </div>
 
 <div class="grid3">
   <div class="gcard"><div class="gcard-lbl">Fitur Utama</div><div class="gcard-val">RRG Chart</div><div class="gcard-sub">Relative Rotation Graph — visualisasi 4 kuadran sektor</div></div>
-  <div class="gcard blue"><div class="gcard-lbl">Indeks</div><div class="gcard-val">IDX30 · LQ45</div><div class="gcard-sub">KOMPAS100 · MSCI · FTSE</div></div>
-  <div class="gcard green"><div class="gcard-lbl">Rebalancing</div><div class="gcard-val">Feb & Agustus</div><div class="gcard-sub">LQ45 review · IDX30 review · MSCI quarterly</div></div>
+  <div class="gcard blue"><div class="gcard-lbl">Indeks</div><div class="gcard-val">IDX30 · LQ45</div><div class="gcard-sub">KOMPAS100 · MSCI · FTSE · Jadwal rebalancing</div></div>
+  <div class="gcard green"><div class="gcard-lbl">Shareholder</div><div class="gcard-val">Tracker + Screening</div><div class="gcard-sub">Grafik dual-axis holder vs harga · 60+ emiten</div></div>
 </div>
 
 <div class="div"></div>
@@ -29061,7 +29027,7 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
 <div class="mockup">
   <div class="mockup-bar">
     <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
-    <span class="mock-title">SIGMA · INDEX & REBALANCING · RRG CHART</span>
+    <span class="mock-title">SIGMA · INDEX & SECTOR ROTATION · RRG CHART</span>
   </div>
   <div class="mockup-body">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;border:1px solid rgba(255,255,255,0.07);border-radius:8px;overflow:hidden;margin-bottom:10px;">
@@ -29106,80 +29072,19 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
   <div class="tip">💡 Strategi: Watchlist saham di sektor IMPROVING. Naikkan posisi saat sektor bergerak ke kuadran LEADING.</div>
 </div>
 
-<div class="feat" style="border-left-color:#a78bfa;">
-  <div class="feat-title" style="color:#a78bfa;">↘ WEAKENING — Mulai Lesu, Hindari Entry Baru</div>
-  <div class="stext">Sektor di kuadran <span class="hi"><b>WEAKENING</b></span> masih di atas rata-rata tapi momentum menurun. <b>Hindari entry baru</b>. Jika sudah punya posisi, pertimbangkan profit taking sebagian.</div>
-</div>
-
 <div class="feat red">
   <div class="feat-title">⬇ LAGGING — Sektor Terlemah, Jangan Entry</div>
   <div class="stext">Sektor di kuadran <span class="dn"><b>LAGGING</b></span> underperform IHSG dan kehilangan momentum. <b>Jangan entry.</b> Jika punya posisi, segera cut atau pasang trailing stop ketat.</div>
   <div class="key">🔑 <b>Key Rule Mingguan:</b> Setiap Sabtu/Minggu, cek RRG. Sektor apa yang pindah ke LEADING minggu ini? Itu hunting ground utama untuk Alpha Screener minggu depan.</div>
 </div>
 
-<div class="cap-label">📸 CONTOH TAMPILAN — KOMPOSISI LQ45 & JADWAL REBALANCING</div>
-<div class="mockup">
-  <div class="mockup-bar">
-    <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
-    <span class="mock-title">SIGMA · INDEX & REBALANCING · LQ45 COMPOSITION</span>
-  </div>
-  <div class="mockup-body">
-    <div class="mock-tab-row">
-      <div class="mock-tab active">📊 LQ45</div>
-      <div class="mock-tab">📊 IDX30</div>
-      <div class="mock-tab">📊 KOMPAS100</div>
-      <div class="mock-tab">🌍 MSCI / FTSE</div>
-    </div>
-    <div class="mock-row"><span class="mock-row-name">BBCA — Bank Central Asia</span><span><div class="mock-badge mb-g">IDX30 ✓</div><div class="mock-badge mb-b">LQ45 ✓</div><div class="mock-badge mb-p">MSCI ✓</div></span></div>
-    <div class="mock-row"><span class="mock-row-name">BBRI — Bank Rakyat Indonesia</span><span><div class="mock-badge mb-g">IDX30 ✓</div><div class="mock-badge mb-b">LQ45 ✓</div></span></div>
-    <div class="mock-row"><span class="mock-row-name">ADRO — Adaro Energy</span><span><div class="mock-badge mb-b">LQ45 ✓</div><div class="mock-badge mb-p">MSCI ✓</div></span></div>
-    <div class="mock-row"><span class="mock-row-name">GOTO — GoTo Gojek Tokopedia</span><span><div class="mock-badge mb-b">LQ45 ✓</div><div class="mock-badge mb-y">Review Aug</div></span></div>
-    <div style="margin-top:10px;background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:9px 12px;font-size:0.78rem;color:#fbbf24;">
-      📅 Rebalancing LQ45 berikutnya: <b>Agustus 2025</b> — Pantau emiten di zona review
-    </div>
-  </div>
-</div>
-
-<div class="feat blue">
-  <div class="feat-title">📋 Strategi Trading Rebalancing IDX30 & LQ45</div>
-  <div class="step"><div class="snum">1</div><div class="stext"><b>Saham masuk LQ45/IDX30</b> → passive fund wajib beli → demand naik → harga cenderung naik sebelum effective date. Entry sebelum tanggal efektif.</div></div>
-  <div class="step"><div class="snum">2</div><div class="stext"><b>Saham keluar LQ45/IDX30</b> → passive fund wajib jual → tekanan jual → harga bisa turun. Kurangi atau hindari posisi di emiten ini.</div></div>
-  <div class="step"><div class="snum">3</div><div class="stext"><b>Saham masuk MSCI / FTSE</b> → institutional global fund wajib beli → impact lebih besar dari LQ45. Pantau di sub-tab MSCI/FTSE.</div></div>
-  <div class="tip">💡 Jadwal review LQ45: Februari & Agustus. Efektif sekitar 1 bulan setelah pengumuman resmi BEI.</div>
-</div>
-
-</div></body></html>"""
-            components.html(_guide_html_2, height=3600, scrolling=True)
-
-        # ══════════════════════════════════════════════════════════════
-        # PANDUAN 3 — SHAREHOLDER
-        # ══════════════════════════════════════════════════════════════
-        with pg_tab3:
-            _guide_html_3 = f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>{_PANDUAN_SHARED_CSS}</style></head><body><div class="wrap">
-
-<div class="hero">
-  <div class="hero-badge">👥 SHAREHOLDER</div>
-  <div class="hero-title">Lacak Komposisi & Perubahan Pemegang Saham</div>
-  <div class="hero-sub">
-    Dua fitur utama: <strong style="color:#a78bfa;">Shareholder Tracker</strong> (grafik perubahan jumlah holder vs harga)
-    dan <strong style="color:#a78bfa;">Shareholder Screening</strong> (tabel komposisi 60+ emiten).
-    Alat deteksi akumulasi & distribusi smart money.
-  </div>
-</div>
-
 <div class="cap-label">📸 CONTOH TAMPILAN — SHAREHOLDER TRACKER (GRAFIK DUAL-AXIS)</div>
 <div class="mockup">
   <div class="mockup-bar">
     <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
-    <span class="mock-title">SIGMA · SHAREHOLDER · TRACKER — BBCA</span>
+    <span class="mock-title">SIGMA · INDEX & SECTOR ROTATION · SHAREHOLDER TRACKER — BBCA</span>
   </div>
   <div class="mockup-body">
-    <div style="margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-      <div style="background:rgba(30,35,55,0.9);border:1px solid rgba(124,58,237,0.3);border-radius:8px;padding:7px 16px;font-size:0.85rem;color:#a78bfa;font-weight:700;">BBCA</div>
-      <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);">Tracker 6 bulan terakhir</div>
-    </div>
     <div style="background:rgba(20,25,40,0.6);border-radius:8px;padding:14px;position:relative;height:110px;overflow:hidden;">
       <svg viewBox="0 0 400 90" style="width:100%;height:90px;" preserveAspectRatio="none">
         <polyline points="0,70 60,60 120,50 180,35 240,40 300,25 360,20 400,22" fill="none" stroke="#00E5BE" stroke-width="2.5" opacity="0.9"/>
@@ -29196,10 +29101,6 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
   </div>
 </div>
 
-<div class="sec-head"><div class="sec-icon">🔍</div>
-<div><div class="sec-title">MEMBACA GRAFIK TRACKER</div>
-<div class="sec-desc">Interpretasi divergensi antara jumlah holder dan harga saham</div></div></div>
-
 <div class="grid2">
   <div class="gcard green">
     <div class="gcard-lbl">✅ SINYAL AKUMULASI</div>
@@ -29213,50 +29114,22 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
   </div>
 </div>
 
-<div class="feat">
-  <div class="feat-title">📊 Cara Menggunakan Shareholder Tracker</div>
-  <div class="step"><div class="snum">1</div><div class="stext">Masukkan <b>kode emiten IDX</b> (contoh: <span class="hi">BBCA</span>, <span class="hi">GOTO</span>, <span class="hi">BRMS</span>) di kolom input, lalu klik <b>"Tampilkan Tracker"</b>.</div></div>
-  <div class="step"><div class="snum">2</div><div class="stext">Baca grafik dual-axis: <span class="hi">garis putus-putus (ungu)</span> = jumlah holder | <span class="ok">garis solid (hijau)</span> = harga saham (Rp).</div></div>
-  <div class="step"><div class="snum">3</div><div class="stext">Identifikasi divergensi: harga naik tapi holder turun = <span class="ok">AKUMULASI</span> institusi. Harga turun tapi holder naik = <span class="dn">DISTRIBUSI</span> ke retail.</div></div>
-  <div class="step"><div class="snum">4</div><div class="stext">Gunakan bersama data <b>Broker Summary</b> untuk konfirmasi — siapa broker yang net buy? Asing atau lokal institusi?</div></div>
-  <div class="tip">💡 <b>Tip:</b> Holder turun + Harga sideways selama 2–4 minggu = potensi <b>breakout imminent</b>. Masukkan ke watchlist Alpha Screener segera.</div>
-</div>
-
-<div class="cap-label">📸 CONTOH TAMPILAN — SHAREHOLDER SCREENING TABLE</div>
-<div class="mockup">
-  <div class="mockup-bar">
-    <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
-    <span class="mock-title">SIGMA · SHAREHOLDER · SCREENING TABLE — 60+ EMITEN</span>
-  </div>
-  <div class="mockup-body">
-    <div class="tbl-wrap">
-      <table>
-        <tr><th>Emiten</th><th>% Publik</th><th>% Inst. Asing</th><th>% Promotor</th><th>Float</th></tr>
-        <tr><td><b style="color:#a78bfa;">BBCA</b></td><td class="up">43.2%</td><td class="up">38.1%</td><td>56.8%</td><td><div class="mock-badge mb-g">Besar</div></td></tr>
-        <tr><td><b style="color:#a78bfa;">BRMS</b></td><td class="dn">12.4%</td><td class="dn">8.2%</td><td>87.6%</td><td><div class="mock-badge mb-r">Kecil ⚡</div></td></tr>
-        <tr><td><b style="color:#a78bfa;">GOTO</b></td><td>67.8%</td><td class="up">41.3%</td><td>32.2%</td><td><div class="mock-badge mb-g">Besar</div></td></tr>
-        <tr><td><b style="color:#a78bfa;">NICL</b></td><td class="dn">18.7%</td><td class="dn">5.4%</td><td>81.3%</td><td><div class="mock-badge mb-y">Sedang</div></td></tr>
-      </table>
-    </div>
-  </div>
-</div>
-
 <div class="feat blue">
-  <div class="feat-title">📋 Cara Membaca Tabel Screening</div>
-  <div class="step"><div class="snum">1</div><div class="stext"><b>% Publik rendah (&lt;30%)</b> = float kecil → saham lebih mudah digerakkan bandar. Volatilitas lebih tinggi — peluang dan risiko lebih besar.</div></div>
-  <div class="step"><div class="snum">2</div><div class="stext"><b>% Institusi Asing tinggi (&gt;30%)</b> = sensitif sentimen global dan MSCI/FTSE rebalancing. Cepat naik saat risk-on, cepat turun saat risk-off.</div></div>
-  <div class="step"><div class="snum">3</div><div class="stext"><b>Strategi ideal:</b> Filter emiten dengan % asing tinggi + float kecil + sektor LEADING di RRG = kandidat volatile upside terbaik.</div></div>
-  <div class="warn">⚠️ <b>Catatan:</b> Data shareholder bersumber dari laporan publik IDX. Diperbarui berkala — bukan real-time harian. Ada kemungkinan lag beberapa minggu.</div>
+  <div class="feat-title">📋 Strategi Trading Rebalancing IDX30 & LQ45</div>
+  <div class="step"><div class="snum">1</div><div class="stext"><b>Saham masuk LQ45/IDX30</b> → passive fund wajib beli → demand naik → harga cenderung naik sebelum effective date. Entry sebelum tanggal efektif.</div></div>
+  <div class="step"><div class="snum">2</div><div class="stext"><b>Saham keluar LQ45/IDX30</b> → passive fund wajib jual → tekanan jual → harga bisa turun. Kurangi atau hindari posisi di emiten ini.</div></div>
+  <div class="step"><div class="snum">3</div><div class="stext"><b>Saham masuk MSCI / FTSE</b> → institutional global fund wajib beli → impact lebih besar dari LQ45. Pantau di sub-tab MSCI/FTSE.</div></div>
+  <div class="tip">💡 Jadwal review LQ45: Februari & Agustus. Efektif sekitar 1 bulan setelah pengumuman resmi BEI.</div>
 </div>
 
 </div></body></html>"""
-            components.html(_guide_html_3, height=2800, scrolling=True)
+            components.html(_guide_html_2, height=3800, scrolling=True)
 
         # ══════════════════════════════════════════════════════════════
-        # PANDUAN 4 — ALPHA SCREENER
+        # PANDUAN 3 — ALPHA SCREENER
         # ══════════════════════════════════════════════════════════════
-        with pg_tab4:
-            _guide_html_4 = f"""<!DOCTYPE html><html><head>
+        with pg_tab3:
+            _guide_html_3 = f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>{_PANDUAN_SHARED_CSS}
 .plan-card{{background:rgba(10,15,30,0.8);border:1px solid rgba(124,58,237,0.3);border-radius:10px;padding:14px 16px;margin-bottom:10px;}}
@@ -29268,466 +29141,13 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
 .plan-levels{{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;}}
 .pl-item{{background:rgba(20,25,40,0.9);border-radius:6px;padding:6px 8px;}}
 .pl-lbl{{font-size:0.6rem;color:rgba(255,255,255,0.3);margin-bottom:2px;letter-spacing:0.08em;}}
-.pl-val{{font-size:0.78rem;font-weight:700;}}
-</style></head><body><div class="wrap">
-
-<div class="hero">
-  <div class="hero-badge">⚡ ALPHA SCREENER</div>
-  <div class="hero-title">Alpha Screener — Core Feature SIGMA</div>
-  <div class="hero-sub">
-    4 mode screener terintegrasi: <strong style="color:#a78bfa;">BSJP</strong> (Best Stock of the Day),
-    <strong style="color:#a78bfa;">Daily Plan</strong>, <strong style="color:#a78bfa;">Weekly Plan</strong>,
-    dan <strong style="color:#a78bfa;">AI Stock Insight</strong>. Semua berbasis algoritma SIGMA Score multi-faktor.
-  </div>
-</div>
-
-<div class="grid2">
-  <div class="gcard"><div class="gcard-lbl">BSJP Auto-Scan</div><div class="gcard-val">Tersedia 16:00</div><div class="gcard-sub">Scan otomatis seluruh IDX setiap hari. Top kandidat sudah siap saat pasar tutup.</div></div>
-  <div class="gcard blue"><div class="gcard-lbl">AI Generate Plan</div><div class="gcard-val">Instan</div><div class="gcard-sub">Input ticker → AI buat trading plan lengkap (entry/TP/SL/insight) dalam hitungan detik.</div></div>
-</div>
-
-<div class="div"></div>
-<div class="cap-label">📸 CONTOH TAMPILAN — BSJP CARD (BEST STOCK OF THE DAY)</div>
-<div class="mockup">
-  <div class="mockup-bar">
-    <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
-    <span class="mock-title">SIGMA · ALPHA SCREENER · BSJP — Rabu 14 Mei 2025</span>
-  </div>
-  <div class="mockup-body">
-    <div class="mock-tab-row">
-      <div class="mock-tab active">⚡ BSJP</div>
-      <div class="mock-tab">📊 DAILY PLAN</div>
-      <div class="mock-tab">📅 WEEKLY PLAN</div>
-      <div class="mock-tab">🤖 AI STOCK INSIGHT</div>
-    </div>
-    <div class="plan-card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-        <div>
-          <div class="plan-ticker">ADRO <span class="plan-rating rating-sb">STRONG BUY</span></div>
-          <div class="plan-name">Adaro Andalan Indonesia Tbk</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:1.4rem;font-weight:800;color:#00E5BE;">88</div>
-          <div style="font-size:0.6rem;color:rgba(255,255,255,0.3);">SIGMA SCORE /100</div>
-        </div>
-      </div>
-      <div class="plan-levels">
-        <div class="pl-item"><div class="pl-lbl">ENTRY ZONE</div><div class="pl-val" style="color:#fbbf24;">2,380–2,420</div></div>
-        <div class="pl-item"><div class="pl-lbl">TARGET 1</div><div class="pl-val" style="color:#00E5BE;">2,580</div></div>
-        <div class="pl-item"><div class="pl-lbl">TARGET 2</div><div class="pl-val" style="color:#00E5BE;">2,740</div></div>
-        <div class="pl-item"><div class="pl-lbl">STOP LOSS</div><div class="pl-val" style="color:#f23645;">2,300</div></div>
-      </div>
-      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
-        <div class="mock-badge mb-g">Vol Spike 3.2x</div>
-        <div class="mock-badge mb-g">Breakout MA20</div>
-        <div class="mock-badge mb-b">Asing Net Buy</div>
-        <div class="mock-badge mb-y">R/R 2.5x</div>
-      </div>
-      <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:8px;font-style:italic;">⚡ Breakout dari konsolidasi 3 minggu. Vol spike 3.2x avg. Bandar akumulasi kuat. HAKA Closing.</div>
-    </div>
-    <div class="plan-card" style="opacity:0.65;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-        <div><div class="plan-ticker">BBRI <span class="plan-rating rating-buy">BUY</span></div><div class="plan-name">Bank Rakyat Indonesia Tbk</div></div>
-        <div style="text-align:right;"><div style="font-size:1.4rem;font-weight:800;color:#1D9E75;">74</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.3);">SIGMA SCORE /100</div></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="sec-head"><div class="sec-icon">⚡</div>
-<div><div class="sec-title">MODUL 1 — BSJP (Best Stock Jangka Pendek)</div>
-<div class="sec-desc">Scan otomatis harian. Tersedia setelah 16:00 WIB. Wajib dibaca malam sebelum trading.</div></div></div>
-
-<div class="feat">
-  <div class="feat-title">⚡ Cara Menggunakan BSJP</div>
-  <div class="step"><div class="snum">1</div><div class="stext">Buka <b>Alpha Screener → tab BSJP</b> setelah pukul 16:00 WIB. Hasil scan otomatis sudah tersedia.</div></div>
-  <div class="step"><div class="snum">2</div><div class="stext">Urutkan berdasarkan <b>SIGMA Score tertinggi</b>. Rating <span class="ok">STRONG BUY</span> = prioritas utama. Score &gt;80 = kandidat terbaik.</div></div>
-  <div class="step"><div class="snum">3</div><div class="stext">Baca kartu saham: perhatikan <b>Entry Zone, TP1, TP2, Stop Loss, dan R/R ratio</b>. R/R ≥ 2x = setup layak eksekusi.</div></div>
-  <div class="step"><div class="snum">4</div><div class="stext">Cek <b>badge indikator</b> di bawah level — Vol Spike, Breakout MA, Asing Net Buy = konfluensi sinyal semakin kuat.</div></div>
-  <div class="step"><div class="snum">5</div><div class="stext">Konfirmasi dengan <b>Broker Summary</b> — apakah broker akumulator (asing/BUMN) sedang net buy di saham ini 5–10 hari terakhir?</div></div>
-  <div class="key">🔑 <b>Key Rule — HAKA:</b> Entry hanya saat harga <b>CLOSING di atas batas atas entry zone</b>. Jangan entry di tengah hari. Tunggu konfirmasi closing untuk kurangi false signal.</div>
-</div>
-
-<div class="cap-label">📸 CONTOH TAMPILAN — DAILY PLAN & INDIKATOR TEKNIKAL</div>
-<div class="mockup">
-  <div class="mockup-bar">
-    <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
-    <span class="mock-title">SIGMA · ALPHA SCREENER · DAILY PLAN — TLKM</span>
-  </div>
-  <div class="mockup-body">
-    <div class="mock-tab-row">
-      <div class="mock-tab">⚡ BSJP</div>
-      <div class="mock-tab active">📊 DAILY PLAN</div>
-    </div>
-    <div style="background:rgba(20,25,40,0.8);border:1px solid rgba(139,92,246,0.3);border-radius:10px;padding:14px;">
-      <div style="font-size:0.7rem;color:#a78bfa;letter-spacing:0.1em;margin-bottom:10px;">📊 DAILY PLAN — TLKM · Rabu 14 Mei 2025</div>
-      <div class="mock-bar-row">
-        <div class="mock-bar-label"><span>SIGMA Score</span><span style="color:#00E5BE;font-weight:700;">78 / 100</span></div>
-        <div class="mock-bar-track"><div class="mock-bar-fill" style="width:78%;background:linear-gradient(90deg,#1D9E75,#00E5BE);"></div></div>
-      </div>
-      <div class="mock-bar-row">
-        <div class="mock-bar-label"><span>RSI (14)</span><span style="color:#fbbf24;">52 · Neutral</span></div>
-        <div class="mock-bar-track"><div class="mock-bar-fill" style="width:52%;background:#fbbf24;"></div></div>
-      </div>
-      <div class="mock-bar-row">
-        <div class="mock-bar-label"><span>Bandar Flow</span><span style="color:#00E5BE;">68% Akumulasi</span></div>
-        <div class="mock-bar-track"><div class="mock-bar-fill" style="width:68%;background:#a78bfa;"></div></div>
-      </div>
-      <div class="mock-bar-row">
-        <div class="mock-bar-label"><span>Volume / MA10</span><span style="color:#60a5fa;">1.8x Spike</span></div>
-        <div class="mock-bar-track"><div class="mock-bar-fill" style="width:65%;background:#60a5fa;"></div></div>
-      </div>
-      <div style="margin-top:12px;font-size:0.75rem;color:rgba(255,255,255,0.45);font-style:italic;border-top:1px solid rgba(255,255,255,0.07);padding-top:10px;">"TLKM konsolidasi healthy di atas MA20. Volume mulai meningkat. Setup buy on dip area 3,150–3,200. TP1: 3,380. SL: 3,080."</div>
-    </div>
-  </div>
-</div>
-
-<div class="feat blue">
-  <div class="feat-title">📊 Modul Daily Plan, Weekly Plan & AI Stock Insight</div>
-  <div class="step"><div class="snum">1</div><div class="stext"><b>Daily Plan:</b> Input ticker saham watchlist → SIGMA AI generate trading plan lengkap untuk hari berikutnya. Gunakan malam hari (20:00–23:00 WIB).</div></div>
-  <div class="step"><div class="snum">2</div><div class="stext"><b>Weekly Plan:</b> Input 3–5 ticker → AI buat rencana trading untuk seluruh minggu depan dengan level entry/TP/SL per saham. Gunakan setiap Sabtu/Minggu.</div></div>
-  <div class="step"><div class="snum">3</div><div class="stext"><b>AI Stock Insight:</b> Analisa mendalam satu saham — fundamental, teknikal, bandarmologi, dan outlook 1–3 bulan ke depan. Untuk research sebelum posisi jangka menengah.</div></div>
-  <div class="tip">💡 Urutan ideal malam hari: (1) Cek makro di Global Macro → (2) Lihat BSJP result → (3) Buat Daily Plan untuk 2–3 kandidat terbaik → (4) Cek Broker Summary untuk konfirmasi.</div>
-</div>
-
-</div></body></html>"""
-            components.html(_guide_html_4, height=4000, scrolling=True)
-
-        # ══════════════════════════════════════════════════════════════
-        # PANDUAN 5 — ANALISA IPO
-        # ══════════════════════════════════════════════════════════════
-        with pg_tab5:
-            _guide_html_ipo = f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>{_PANDUAN_SHARED_CSS}
-.ratio-row{{display:flex;align-items:center;gap:12px;margin-bottom:8px;padding:8px 12px;border-radius:8px;}}
-.ratio-bar-track{{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,0.07);overflow:hidden;}}
-.ratio-bar-fill{{height:100%;border-radius:4px;}}
-</style></head><body><div class="wrap">
-
-<div class="hero">
-  <div class="hero-badge">📋 ANALISA IPO</div>
-  <div class="hero-title">Bedah Prospektus & Profil Risiko IPO</div>
-  <div class="hero-sub">
-    Dua fitur utama: <strong style="color:#a78bfa;">Bedah Prospektus</strong> (upload PDF → AI analisa otomatis)
-    dan <strong style="color:#a78bfa;">Profil Risiko & Money Management</strong> (kalkulasi threshold volume berbasis float size).
-  </div>
-</div>
-
-<div class="cap-label">📸 CONTOH TAMPILAN — BEDAH PROSPEKTUS IPO</div>
-<div class="mockup">
-  <div class="mockup-bar">
-    <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
-    <span class="mock-title">SIGMA · ANALISA IPO · BEDAH PROSPEKTUS</span>
-  </div>
-  <div class="mockup-body">
-    <div style="border:1px dashed rgba(139,92,246,0.45);border-radius:10px;padding:18px;text-align:center;margin-bottom:14px;">
-      <div style="font-size:2rem;margin-bottom:6px;">📄</div>
-      <div style="font-size:0.82rem;color:#a78bfa;font-weight:700;">Upload Prospektus PDF</div>
-      <div style="font-size:0.68rem;color:rgba(255,255,255,0.3);margin-top:4px;">Drag & drop atau klik untuk pilih file · Max 50MB</div>
-      <div style="margin-top:12px;padding:7px 20px;background:rgba(139,92,246,0.22);border:1px solid rgba(139,92,246,0.45);border-radius:20px;display:inline-block;font-size:0.78rem;color:#a78bfa;font-weight:700;">🔍 BEDAH PROSPEKTUS</div>
-    </div>
-    <div style="background:rgba(20,25,40,0.8);border:1px solid rgba(96,165,250,0.25);border-radius:10px;padding:14px;">
-      <div style="font-size:0.68rem;color:#60a5fa;letter-spacing:0.1em;margin-bottom:10px;">🤖 SIGMA AI · ANALISA PROSPEKTUS — PT XYZ Tbk</div>
-      <div class="mock-row"><span class="mock-row-name">Sektor Bisnis</span><span style="color:#a78bfa;font-weight:700;">Teknologi Keuangan</span></div>
-      <div class="mock-row"><span class="mock-row-name">Total Dana Dihimpun</span><span style="color:#00E5BE;font-weight:700;">Rp 1.2 Triliun</span></div>
-      <div class="mock-row"><span class="mock-row-name">Penggunaan Dana</span><span><div class="mock-badge mb-g">60% Ekspansi</div><div class="mock-badge mb-y">40% Modal Kerja</div></span></div>
-      <div class="mock-row"><span class="mock-row-name">Penjamin Emisi</span><span style="color:#fbbf24;font-weight:700;">BRI Danareksa Sekuritas</span></div>
-      <div class="mock-row"><span class="mock-row-name">Valuasi P/E</span><span><div class="mock-badge mb-y">22.4x — WAJAR</div></span></div>
-      <div style="margin-top:10px;font-size:0.72rem;color:rgba(255,255,255,0.4);font-style:italic;border-top:1px solid rgba(255,255,255,0.07);padding-top:8px;">"Penggunaan dana mayoritas untuk ekspansi kapasitas. Valuasi reasonable untuk sektor. Underwriter tier-1. Layak dipertimbangkan dengan manajemen risiko ketat."</div>
-    </div>
-  </div>
-</div>
-
-<div class="sec-head"><div class="sec-icon">📄</div>
-<div><div class="sec-title">FITUR 1 — BEDAH PROSPEKTUS OTOMATIS</div>
-<div class="sec-desc">Upload PDF prospektus → SIGMA AI analisa 6 poin kunci dalam hitungan detik</div></div></div>
-
-<div class="feat">
-  <div class="feat-title">📄 Cara Menggunakan Bedah Prospektus</div>
-  <div class="step"><div class="snum">1</div><div class="stext">Buka <b>Alpha Screener → tab Analisa IPO → sub-fitur Bedah Prospektus</b>.</div></div>
-  <div class="step"><div class="snum">2</div><div class="stext">Upload <b>file PDF prospektus</b> IPO — bisa diunduh dari website BEI (idx.co.id) atau portal e-IPO.</div></div>
-  <div class="step"><div class="snum">3</div><div class="stext">Klik <b>"Bedah Prospektus"</b> → SIGMA AI analisa: sektor bisnis, valuasi, underwriter, penggunaan dana, risiko utama, dan prospek bisnis.</div></div>
-  <div class="step"><div class="snum">4</div><div class="stext">Fokus baca bagian <b>Penggunaan Dana</b>: Dana untuk bayar utang / cash-out pemegang lama → <span class="dn">waspada</span>. Dana untuk ekspansi kapasitas nyata → <span class="ok">lebih menarik</span>.</div></div>
-  <div class="key">🔑 <b>Key Rule:</b> Underwriter tier-1 (BRI Danareksa, Mandiri Sekuritas, BCA Sekuritas) = lebih kredibel. Underwriter tidak dikenal + overallotment tinggi = <span class="dn">waspada pump & dump pasca listing</span>.</div>
-</div>
-
-<div class="cap-label">📸 CONTOH TAMPILAN — KALKULATOR PROFIL RISIKO IPO</div>
-<div class="mockup">
-  <div class="mockup-bar">
-    <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
-    <span class="mock-title">SIGMA · ANALISA IPO · PROFIL RISIKO & MONEY MANAGEMENT</span>
-  </div>
-  <div class="mockup-body">
-    <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
-      <div style="flex:1;min-width:200px;">
-        <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);margin-bottom:4px;">Total Saham Ditawarkan (dalam LOT)</div>
-        <div style="background:rgba(30,35,55,0.9);border:1px solid rgba(124,58,237,0.35);border-radius:8px;padding:10px 14px;font-size:1rem;font-weight:700;color:#a78bfa;">8,500,000</div>
-      </div>
-      <div style="padding:9px 20px;background:rgba(242,54,69,0.18);border:1px solid rgba(242,54,69,0.4);border-radius:20px;font-size:0.78rem;color:#f23645;font-weight:700;cursor:pointer;white-space:nowrap;">⚠️ HITUNG RISIKO</div>
-    </div>
-    <div style="background:rgba(242,54,69,0.1);border:2px solid rgba(242,54,69,0.35);border-radius:10px;padding:14px;margin-bottom:10px;">
-      <div style="font-size:0.82rem;font-weight:700;color:#f23645;margin-bottom:10px;">🔴 KONDISI A — FLOAT KECIL (&lt;12 Juta Lot)</div>
-      <div class="mock-row"><span class="mock-row-name">Total Lot Ditawarkan</span><span style="color:#f23645;font-weight:700;">8,500,000 Lot</span></div>
-      <div class="mock-row"><span class="mock-row-name">⚠️ STATUS RISIKO 1 — Mulai Waspada, Jual Sebagian</span><span style="color:#fbbf24;font-weight:700;">850,000 Lot kumulatif</span></div>
-      <div class="mock-row"><span class="mock-row-name">🚨 STATUS RISIKO 2 — SEGERA JUAL SEMUA</span><span style="color:#f23645;font-weight:700;">2,550,000 Lot kumulatif</span></div>
-    </div>
-    <div style="font-size:0.7rem;color:rgba(255,255,255,0.35);font-style:italic;">⚠️ Volume dipantau secara KUMULATIF sejak hari pertama listing. 1 Lot = 100 Lembar.</div>
-  </div>
-</div>
-
-<div class="feat blue">
-  <div class="feat-title">📊 Cara Menggunakan Kalkulator Profil Risiko</div>
-  <div class="step"><div class="snum">1</div><div class="stext">Masukkan <b>Total Saham Ditawarkan dalam LOT</b> (dari prospektus). Jika prospektus menyebut dalam Lembar → bagi dengan 100.</div></div>
-  <div class="step"><div class="snum">2</div><div class="stext">Klik <b>"Hitung Risiko"</b> → sistem mengklasifikasikan kondisi float dan menampilkan dua angka threshold volume.</div></div>
-  <div class="step"><div class="snum">3</div><div class="stext">Pantau <b>volume kumulatif sejak listing</b> via RTI/Stockbit. Saat mendekati <span class="yl">Risiko 1</span> → jual sebagian & perketat trailing stop. Saat capai <span class="dn">Risiko 2</span> → JUAL SEMUA segera.</div></div>
-  <div class="warn">⚠️ <b>Penting:</b> Volume yang dipantau adalah <b>KUMULATIF</b> sejak hari pertama listing — bukan volume harian saja. Catat angka threshold dan update perhitungan setiap hari.</div>
-</div>
-
-<div class="feat">
-  <div class="feat-title">📊 Tabel 3 Kondisi Risiko Berdasarkan Float Size</div>
-  <div class="tbl-wrap">
-    <table>
-      <tr><th>Kondisi</th><th>Total Lot Ditawarkan</th><th>Karakteristik</th></tr>
-      <tr><td><div class="mock-badge mb-r">🔴 KONDISI A</div></td><td style="color:#f23645;font-weight:700;">&lt; 12 Juta Lot</td><td>Float kecil — volatilitas tinggi, bandar mudah gerakkan harga. ARA multiple hari lebih mungkin terjadi.</td></tr>
-      <tr><td><div class="mock-badge mb-y">🟡 KONDISI B</div></td><td style="color:#fbbf24;font-weight:700;">12 – 30 Juta Lot</td><td>Float sedang — likuiditas cukup, pergerakan lebih terkontrol. Risk moderate.</td></tr>
-      <tr><td><div class="mock-badge mb-g">🟢 KONDISI C</div></td><td style="color:#00E5BE;font-weight:700;">&gt; 30 Juta Lot</td><td>Float besar — supply banyak, harga cenderung berat untuk naik terlalu cepat.</td></tr>
-    </table>
-  </div>
-</div>
-
-<div class="feat yellow">
-  <div class="feat-title">📊 Rasio Harga / Nominal — Interpretasi Valuasi IPO</div>
-  <div class="stext" style="margin-bottom:14px;">Rasio = Harga Penawaran ÷ Nilai Nominal saham. Semakin tinggi rasio, semakin premium valuasi IPO tersebut.</div>
-  <div class="ratio-row" style="background:rgba(0,229,190,0.06);border:1px solid rgba(0,229,190,0.2);">
-    <div style="min-width:85px;font-size:0.78rem;font-weight:700;color:#00E5BE;">1x – 5x</div>
-    <div class="ratio-bar-track"><div class="ratio-bar-fill" style="width:20%;background:#00E5BE;"></div></div>
-    <div style="font-size:0.72rem;color:rgba(255,255,255,0.45);">Murah · Valuasi wajar · Potensi upside lebih besar</div>
-  </div>
-  <div class="ratio-row" style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);">
-    <div style="min-width:85px;font-size:0.78rem;font-weight:700;color:#fbbf24;">5x – 15x</div>
-    <div class="ratio-bar-track"><div class="ratio-bar-fill" style="width:55%;background:#fbbf24;"></div></div>
-    <div style="font-size:0.72rem;color:rgba(255,255,255,0.45);">Waspada · Valuasi mulai premium · Cek fundamental sebelum masuk</div>
-  </div>
-  <div class="ratio-row" style="background:rgba(242,54,69,0.06);border:1px solid rgba(242,54,69,0.2);">
-    <div style="min-width:85px;font-size:0.78rem;font-weight:700;color:#f23645;">&gt; 15x</div>
-    <div class="ratio-bar-track"><div class="ratio-bar-fill" style="width:90%;background:#f23645;"></div></div>
-    <div style="font-size:0.72rem;color:rgba(255,255,255,0.45);">Mahal · Risiko distribusi tinggi · Hanya untuk scalping ARA jangka pendek</div>
-  </div>
-</div>
-
-</div></body></html>"""
-            components.html(_guide_html_ipo, height=3400, scrolling=True)
-
-        # ══════════════════════════════════════════════════════════════
-        # PANDUAN 6 — TRACK RECORD
-        # ══════════════════════════════════════════════════════════════
-        with pg_tab6:
-            _guide_html_6 = f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>{_PANDUAN_SHARED_CSS}</style></head><body><div class="wrap">
-
-<div class="hero">
-  <div class="hero-badge">🏆 TRACK RECORD</div>
-  <div class="hero-title">Evaluasi Performa Trading Plan SIGMA</div>
-  <div class="hero-sub">
-    Dashboard terpusat monitoring semua trading plan: <strong style="color:#a78bfa;">BSJP, Daily Plan, dan Weekly Plan</strong>.
-    Lihat win rate, R/R rata-rata, dan histori per saham atau per mode dalam satu tampilan.
-  </div>
-</div>
-
-<div class="cap-label">📸 CONTOH TAMPILAN — TRACK RECORD PUSAT</div>
-<div class="mockup">
-  <div class="mockup-bar">
-    <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
-    <span class="mock-title">SIGMA · ALPHA SCREENER · TRACK RECORD PUSAT</span>
-  </div>
-  <div class="mockup-body">
-    <div class="mock-card-row col4">
-      <div class="mcard"><div class="mcard-lbl">Win Rate</div><div class="mcard-val up">68.4%</div><div class="mcard-chg up">Last 30 hari</div></div>
-      <div class="mcard"><div class="mcard-lbl">Avg R/R</div><div class="mcard-val up">2.4x</div><div class="mcard-chg up">Ekspektasi positif ✓</div></div>
-      <div class="mcard"><div class="mcard-lbl">Total Plan</div><div class="mcard-val" style="color:#a78bfa;">84</div><div class="mcard-chg" style="color:rgba(255,255,255,0.35);">Closed all modes</div></div>
-      <div class="mcard"><div class="mcard-lbl">Still Open</div><div class="mcard-val neu">12</div><div class="mcard-chg neu">Dipantau ⏳</div></div>
-    </div>
-    <div style="margin:14px 0 10px;">
-      <div style="font-size:0.68rem;color:rgba(255,255,255,0.35);margin-bottom:6px;letter-spacing:0.1em;">DISTRIBUSI HASIL PLAN (LAST 30 HARI)</div>
-      <div style="display:flex;height:20px;border-radius:10px;overflow:hidden;gap:2px;">
-        <div style="flex:68;background:rgba(0,229,190,0.6);border-radius:10px 0 0 10px;display:flex;align-items:center;justify-content:center;font-size:0.65rem;color:#0a0d1a;font-weight:800;">HIT TP 68.4%</div>
-        <div style="flex:18;background:rgba(242,54,69,0.65);display:flex;align-items:center;justify-content:center;font-size:0.65rem;color:#fff;font-weight:800;">SL 18%</div>
-        <div style="flex:14;background:rgba(251,191,36,0.55);border-radius:0 10px 10px 0;display:flex;align-items:center;justify-content:center;font-size:0.65rem;color:#0a0d1a;font-weight:800;">OPEN 14%</div>
-      </div>
-    </div>
-    <div class="tbl-wrap">
-      <table>
-        <tr><th>Ticker</th><th>Mode</th><th>Entry</th><th>Target / SL</th><th>Status</th><th>R/R</th></tr>
-        <tr><td><b style="color:#a78bfa;">ADRO</b></td><td><div class="mock-badge mb-p">BSJP</div></td><td>2,380</td><td style="color:#00E5BE;">2,580 / 2,300</td><td><div class="mock-badge mb-g">HIT TP1 ✓</div></td><td class="up">2.5x</td></tr>
-        <tr><td><b style="color:#a78bfa;">BBRI</b></td><td><div class="mock-badge mb-b">DAILY</div></td><td>4,850</td><td>5,120 / 4,700</td><td><div class="mock-badge mb-r">HIT SL ✗</div></td><td class="dn">-1x</td></tr>
-        <tr><td><b style="color:#a78bfa;">TLKM</b></td><td><div class="mock-badge mb-y">WEEKLY</div></td><td>3,180</td><td>3,400 / 3,050</td><td><div class="mock-badge mb-y">OPEN ⏳</div></td><td class="neu">—</td></tr>
-        <tr><td><b style="color:#a78bfa;">ANTM</b></td><td><div class="mock-badge mb-p">BSJP</div></td><td>2,120</td><td>2,400 / 2,000</td><td><div class="mock-badge mb-g">HIT TP2 ✓✓</div></td><td class="up">3.5x</td></tr>
-      </table>
-    </div>
-  </div>
-</div>
-
-<div class="sec-head"><div class="sec-icon">📊</div>
-<div><div class="sec-title">CARA MEMBACA & MENGGUNAKAN TRACK RECORD</div>
-<div class="sec-desc">Panduan evaluasi performa dan aksi perbaikan yang perlu diambil</div></div></div>
-
-<div class="feat">
-  <div class="feat-title">📊 Membaca Statistik Summary</div>
-  <div class="step"><div class="snum">1</div><div class="stext"><b>Win Rate ≥ 55% dengan R/R ≥ 1.5x</b> → sistem trading plan berjalan sehat. Ekspektasi nilai positif terpenuhi. Pertahankan disiplin eksekusi.</div></div>
-  <div class="step"><div class="snum">2</div><div class="stext"><b>Win Rate &lt;45%</b> → evaluasi kualitas entry. Apakah sering masuk terlalu early? Atau kondisi makro sedang unfavorable? Kurangi frekuensi trading sementara.</div></div>
-  <div class="step"><div class="snum">3</div><div class="stext"><b>Banyak plan "OPEN" &gt;5 hari tanpa bergerak</b> → pertimbangkan cut untuk realokasi modal ke saham yang lebih aktif.</div></div>
-  <div class="step"><div class="snum">4</div><div class="stext"><b>Filter per ticker</b> → lihat saham mana yang historis lebih reliable di SIGMA. Fokuskan modal ke saham dengan win rate pribadi &gt;60%.</div></div>
-  <div class="key">🔑 <b>Rutinitas Evaluasi Mingguan:</b> Setiap Sabtu, buka Track Record. Review semua plan yang closed: apa yang benar, apa yang salah? Perbaiki timing dan parameter entry untuk minggu depan.</div>
-</div>
-
-<div class="grid2">
-  <div class="gcard green">
-    <div class="gcard-lbl">✅ Performa Sehat</div>
-    <div class="gcard-val">WR &gt;55% · R/R &gt;1.5x</div>
-    <div class="gcard-sub">Sistem berjalan baik. Pertahankan disiplin. Mulai scale-up position size secara bertahap (10–20% tiap bulan).</div>
-  </div>
-  <div class="gcard red">
-    <div class="gcard-lbl">⚠️ Perlu Evaluasi</div>
-    <div class="gcard-val">WR &lt;45% · R/R &lt;1x</div>
-    <div class="gcard-sub">Kurangi frekuensi. Fokus hanya pada Strong Buy score &gt;80. Tunggu kondisi makro lebih kondusif sebelum full deployment.</div>
-  </div>
-</div>
-
-<div class="feat yellow">
-  <div class="feat-title">📋 Filter Berdasarkan Mode Plan</div>
-  <div class="step"><div class="snum">1</div><div class="stext"><b>Filter BSJP</b> → lihat performa signal BSJP. Bandingkan STRONG BUY vs BUY — mana yang win rate lebih tinggi untuk kamu pribadi?</div></div>
-  <div class="step"><div class="snum">2</div><div class="stext"><b>Filter Daily</b> → evaluasi hasil trading plan harian yang kamu generate. Identifikasi pola: jam berapa entry paling sering berhasil?</div></div>
-  <div class="step"><div class="snum">3</div><div class="stext"><b>Filter Weekly</b> → win rate weekly cenderung lebih tinggi karena timeframe lebih panjang. Cocok untuk trader yang sibuk dengan pekerjaan sehari-hari.</div></div>
-  <div class="tip">💡 <b>Insight:</b> Jika BSJP + Daily win rate berbeda jauh, pertimbangkan untuk hanya gunakan mode yang lebih baik. Fokus pada kekuatan, bukan coba semua mode sekaligus.</div>
-</div>
-
-</div></body></html>"""
-            components.html(_guide_html_6, height=2800, scrolling=True)
-
-        # ══════════════════════════════════════════════════════════════
-        # PANDUAN 7 — TOOLS
-        # ══════════════════════════════════════════════════════════════
-        with pg_tab7:
-            _guide_html_7 = f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>{_PANDUAN_SHARED_CSS}</style></head><body><div class="wrap">
-
-<div class="hero">
-  <div class="hero-badge">🔧 TOOLS</div>
-  <div class="hero-title">Kalkulator Trading — Keputusan Cepat & Akurat</div>
-  <div class="hero-sub">
-    Dua kalkulator instan untuk <strong style="color:#a78bfa;">money management saat live trading</strong>:
-    ARA/ARB Calculator dan Average Down Calculator.
-    Hasil instan tanpa perlu hitung manual.
-  </div>
-</div>
-
-<div class="cap-label">📸 CONTOH TAMPILAN — ARA/ARB CALCULATOR</div>
-<div class="mockup">
-  <div class="mockup-bar">
-    <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
-    <span class="mock-title">SIGMA · TOOLS · ARA/ARB CALCULATOR</span>
-  </div>
-  <div class="mockup-body">
-    <div class="mock-tab-row">
-      <div class="mock-tab active">📊 ARA / ARB</div>
-      <div class="mock-tab">📉 AVERAGE DOWN</div>
-    </div>
-    <div class="mock-card-row">
-      <div class="mcard"><div class="mcard-lbl">Harga Acuan (Kemarin)</div><div class="mcard-val" style="color:#a78bfa;">Rp 2,400</div><div class="mcard-sub">Harga penutupan kemarin</div></div>
-      <div class="mcard"><div class="mcard-lbl">Fraksi Harga</div><div class="mcard-val" style="color:#60a5fa;">Rp 50</div><div class="mcard-sub">Range Rp 200 – 5.000</div></div>
-    </div>
-    <div class="mock-card-row">
-      <div class="mcard" style="border-color:rgba(0,229,190,0.4);"><div class="mcard-lbl">🟢 Batas ARA (Max UP)</div><div class="mcard-val up" style="font-size:1.4rem;">Rp 3,000</div><div class="mcard-chg up">+25% · Auto Rejection Atas</div></div>
-      <div class="mcard" style="border-color:rgba(242,54,69,0.4);"><div class="mcard-lbl">🔴 Batas ARB (Max DOWN)</div><div class="mcard-val dn" style="font-size:1.4rem;">Rp 1,800</div><div class="mcard-chg dn">-25% · Auto Rejection Bawah</div></div>
-    </div>
-  </div>
-</div>
-
-<div class="sec-head"><div class="sec-icon">📊</div>
-<div><div class="sec-title">KALKULATOR 1 — ARA / ARB</div>
-<div class="sec-desc">Hitung batas harga maksimum (ARA) dan minimum (ARB) dalam hitungan detik</div></div></div>
-
-<div class="feat">
-  <div class="feat-title">📊 Cara Menggunakan ARA/ARB Calculator</div>
-  <div class="step"><div class="snum">1</div><div class="stext">Masukkan <b>harga acuan</b> — harga penutupan kemarin atau harga referensi IPO hari pertama.</div></div>
-  <div class="step"><div class="snum">2</div><div class="stext">Pilih <b>fraksi harga</b> yang berlaku sesuai range harga saham tersebut (lihat tabel di bawah).</div></div>
-  <div class="step"><div class="snum">3</div><div class="stext">Kalkulator otomatis menampilkan <span class="ok">batas ARA</span> (hijau) dan <span class="dn">batas ARB</span> (merah) secara instan.</div></div>
-  <div class="tip">💡 <b>Kapan digunakan:</b> Sebelum eksekusi saham IPO hari pertama, atau saat saham yang kamu hold mendekati batas rejection harian.</div>
-</div>
-
-<div class="feat green">
-  <div class="feat-title">📋 Tabel Aturan ARA/ARB IDX</div>
-  <div class="tbl-wrap">
-    <table>
-      <tr><th>Range Harga Saham</th><th>Auto Rejection (%)</th><th>Keterangan</th></tr>
-      <tr><td>&lt; Rp 200</td><td class="dn" style="font-weight:700;">35%</td><td>Saham sangat murah — volatilitas sangat tinggi</td></tr>
-      <tr><td>Rp 200 – Rp 5.000</td><td class="neu" style="font-weight:700;">25%</td><td>Range harga umum — mayoritas saham IDX ada di sini</td></tr>
-      <tr><td>&gt; Rp 5.000</td><td class="up" style="font-weight:700;">20%</td><td>Saham premium / blue chip — batas lebih ketat</td></tr>
-      <tr><td><b style="color:#a78bfa;">Hari Pertama IPO</b></td><td style="color:#a78bfa;font-weight:700;">∞ Tidak Ada Batas Atas</td><td>ARA unlimited — saham bisa naik ratusan persen hari pertama</td></tr>
-    </table>
-  </div>
-  <div class="warn">⚠️ <b>Penting untuk IPO:</b> ARA hari pertama tidak terbatas. Saham bisa naik +100% hingga +300% dalam sehari. Namun apa yang naik dengan ARA bisa turun dengan ARB di hari berikutnya — kelola posisi dengan ketat menggunakan Kalkulator Profil Risiko IPO.</div>
-</div>
-
-<div class="cap-label">📸 CONTOH TAMPILAN — AVERAGE DOWN CALCULATOR</div>
-<div class="mockup">
-  <div class="mockup-bar">
-    <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
-    <span class="mock-title">SIGMA · TOOLS · AVERAGE DOWN CALCULATOR</span>
-  </div>
-  <div class="mockup-body">
-    <div class="mock-tab-row">
-      <div class="mock-tab">📊 ARA / ARB</div>
-      <div class="mock-tab active">📉 AVERAGE DOWN</div>
-    </div>
-    <div class="mock-card-row col2" style="margin-bottom:10px;">
-      <div class="mcard"><div class="mcard-lbl">Harga Beli Pertama</div><div class="mcard-val" style="color:#f23645;">Rp 3,200</div><div class="mcard-sub">Jumlah: 50 Lot</div></div>
-      <div class="mcard"><div class="mcard-lbl">Harga Average Down</div><div class="mcard-val" style="color:#fbbf24;">Rp 2,800</div><div class="mcard-sub">Tambahan: 50 Lot</div></div>
-    </div>
-    <div class="mock-card-row">
-      <div class="mcard"><div class="mcard-lbl">Average Price Baru</div><div class="mcard-val" style="color:#a78bfa;">Rp 3,000</div></div>
-      <div class="mcard"><div class="mcard-lbl">Total Modal Terpakai</div><div class="mcard-val up">Rp 30,000,000</div></div>
-      <div class="mcard"><div class="mcard-lbl">Break Even Point</div><div class="mcard-val neu">Rp 3,000</div></div>
-    </div>
-    <div style="margin-top:10px;background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.25);border-radius:8px;padding:10px 12px;font-size:0.75rem;color:#fbbf24;">
-      📊 Butuh kenaikan +7.1% dari harga saat ini (Rp 2,800) untuk mencapai Break Even Point
-    </div>
-  </div>
-</div>
-
-<div class="sec-head"><div class="sec-icon">📉</div>
-<div><div class="sec-title">KALKULATOR 2 — AVERAGE DOWN</div>
-<div class="sec-desc">Hitung average price baru dan break even point setelah averaging down posisi</div></div></div>
-
-<div class="feat blue">
-  <div class="feat-title">📉 Cara Menggunakan Average Down Calculator</div>
-  <div class="step"><div class="snum">1</div><div class="stext">Masukkan <b>harga beli pertama</b> dan <b>jumlah lot</b> yang sudah dibeli sebelumnya.</div></div>
-  <div class="step"><div class="snum">2</div><div class="stext">Masukkan <b>harga beli kedua</b> (harga averaging down yang direncanakan) dan <b>jumlah lot tambahan</b> yang akan ditambah.</div></div>
-  <div class="step"><div class="snum">3</div><div class="stext">Kalkulator otomatis menghitung: <b>Average Price Baru, Total Modal, Break Even Point, dan % kenaikan yang dibutuhkan</b>.</div></div>
-  <div class="danger">🚫 <b>PERINGATAN KERAS:</b> Average down <em>hanya valid</em> untuk saham dengan <b>fundamental kuat</b> dan penurunan bersifat sementara karena sentimen pasar — bukan karena perubahan fundamental. JANGAN average down saham yang turun karena berita negatif fundamental.</div>
-</div>
-
-<div class="feat yellow">
-  <div class="feat-title">✅ Kapan Boleh & Tidak Boleh Average Down</div>
-  <div class="step"><div class="snum">✓</div><div class="stext"><span class="ok">BOLEH:</span> Saham blue chip (BBCA, TLKM, ICBP) koreksi karena sentimen pasar bukan fundamental. Koreksi &lt;20% dari harga beli. Support teknikal kuat di bawah harga saat ini.</div></div>
-  <div class="step"><div class="snum">✗</div><div class="stext"><span class="dn">JANGAN:</span> Saham dengan berita negatif fundamental (fraud, gagal bayar utang, delisting warning, penurunan laba drastis, management bermasalah).</div></div>
-  <div class="step"><div class="snum">✗</div><div class="stext"><span class="dn">JANGAN:</span> Saham yang sudah turun &gt;30% dari harga beli tanpa recovery — kemungkinan ada masalah fundamental yang belum terungkap ke publik.</div></div>
-  <div class="key">🔑 <b>Key Rule:</b> Sebelum average down, tanya diri: "Apakah alasan saya beli saham ini pertama kali masih valid?" Jika jawabannya tidak pasti — <b>jangan average down, cut loss lebih baik</b>.</div>
-</div>
-
-</div></body></html>"""
-            components.html(_guide_html_7, height=3600, scrolling=True)
-
-        # ══════════════════════════════════════════════════════════════
-        # PANDUAN 8 — BROKER SUMMARY
-        # ══════════════════════════════════════════════════════════════
-        with pg_tab8:
-            _guide_html_brosum = f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>{_PANDUAN_SHARED_CSS}
+.pl-val{{font-size:0.9rem;font-weight:700;color:#a78bfa;}}
+.formula-box{{background:rgba(10,15,30,0.9);border:1px solid rgba(124,58,237,0.4);border-radius:10px;padding:16px 20px;margin:12px 0;}}
+.f-line{{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);}}
+.f-line:last-child{{border-bottom:none;}}
+.f-name{{font-size:0.85rem;font-weight:700;color:rgba(255,255,255,0.8);}}
+.f-desc{{font-size:0.72rem;color:rgba(255,255,255,0.4);margin-top:3px;line-height:1.5;}}
+.f-weight{{font-size:0.9rem;font-weight:800;color:#a78bfa;white-space:nowrap;min-width:50px;text-align:right;}}
 .broker-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:12px 0;}}
 .broker-card{{background:{_FEAT_BG};border:1px solid {_FEAT_BD};border-radius:8px;padding:12px 14px;}}
 .broker-card.asing{{border-left:3px solid rgba(242,54,69,0.7);}}
@@ -29736,38 +29156,65 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
 .broker-code{{font-size:1rem;font-weight:800;color:{_P};letter-spacing:0.08em;}}
 .broker-name{{font-size:0.72rem;color:{_SUB};margin-top:2px;line-height:1.4;}}
 .broker-type{{font-size:0.68rem;margin-top:6px;}}
+.ratio-row{{display:flex;align-items:center;gap:12px;margin-bottom:8px;padding:8px 12px;border-radius:8px;}}
+.ratio-bar-track{{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,0.07);overflow:hidden;}}
+.ratio-bar-fill{{height:100%;border-radius:4px;}}
 </style></head><body><div class="wrap">
 
 <div class="hero">
-  <div class="hero-badge">📊 BROKER SUMMARY</div>
-  <div class="hero-title">Analisa Aliran Dana Broker (Bandarmologi)</div>
+  <div class="hero-badge">⚡ ALPHA SCREENER</div>
+  <div class="hero-title">Alpha Screener — Engine Utama Pencarian Saham</div>
   <div class="hero-sub">
-    Lacak siapa yang membeli dan menjual saham berdasarkan data broker. Identifikasi
-    <strong style="color:#a78bfa;">broker bandar/akumulator</strong> vs broker distributor
-    untuk konfirmasi entry dan exit posisi.
+    Hub utama SIGMA: <strong style="color:#a78bfa;">BSJP</strong> (broker-based screener),
+    <strong style="color:#a78bfa;">Daily & Weekly Plan</strong> (trading plan AI),
+    <strong style="color:#a78bfa;">Broker Summary</strong> (bandarmologi),
+    <strong style="color:#a78bfa;">Analisa IPO</strong>, dan <strong style="color:#a78bfa;">Track Record</strong>.
+    Semua dalam satu tab.
   </div>
 </div>
 
-<div class="cap-label">📸 CONTOH TAMPILAN — BROKER NET BUY/SELL CHART</div>
+<div class="grid3">
+  <div class="gcard"><div class="gcard-lbl">BSJP Screener</div><div class="gcard-val">Score 0–100</div><div class="gcard-sub">TA + Bandar Flow + Volume + Price Action scanning harian</div></div>
+  <div class="gcard blue"><div class="gcard-lbl">Trading Plan</div><div class="gcard-val">Daily & Weekly</div><div class="gcard-sub">Entry · SL · TP1/TP2/TP3 · R/R · Bias AI otomatis</div></div>
+  <div class="gcard green"><div class="gcard-lbl">Broker Summary</div><div class="gcard-val">Bandarmologi</div><div class="gcard-sub">Net Buy/Sell per broker · Asing vs Retail flow tracking</div></div>
+</div>
+
+<div class="sec-head"><div class="sec-icon">🔢</div>
+<div><div class="sec-title">SIGMA SCORE — KOMPONEN & BOBOT</div>
+<div class="sec-desc">Multi-faktor scoring system yang menggabungkan analisa teknikal, volume, dan bandarmologi</div></div></div>
+
+<div class="formula-box">
+  <div style="font-size:0.78rem;color:#a78bfa;font-weight:700;letter-spacing:0.08em;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(124,58,237,0.25);">SIGMA SCORE = COMBINED SCORE (0 – 100 POIN)</div>
+  <div class="f-line">
+    <div><div class="f-name">📊 Technical Analysis Score (TA Score)</div><div class="f-desc">RSI · MACD · Bollinger Band · Moving Average Crossover · Candle Pattern strength</div></div>
+    <div class="f-weight">~40%</div>
+  </div>
+  <div class="f-line">
+    <div><div class="f-name">💹 Bandar Flow Score</div><div class="f-desc">Broker net buy/sell · Asing vs retail flow ratio · Konsistensi akumulasi multi-hari</div></div>
+    <div class="f-weight">~25%</div>
+  </div>
+  <div class="f-line">
+    <div><div class="f-name">📈 Volume Analysis</div><div class="f-desc">Volume spike ratio (vs MA10) · Konsistensi volume naik · Breakout volume confirmation</div></div>
+    <div class="f-weight">~20%</div>
+  </div>
+  <div class="f-line">
+    <div><div class="f-name">🕯 Price Action</div><div class="f-desc">Closing strength (posisi close di range harian) · Consecutive up streak · Candle body quality</div></div>
+    <div class="f-weight">~15%</div>
+  </div>
+</div>
+
+<div class="cap-label">📸 CONTOH TAMPILAN — BROKER SUMMARY (BANDARMOLOGI)</div>
 <div class="mockup">
   <div class="mockup-bar">
     <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
-    <span class="mock-title">SIGMA · BROKER SUMMARY · NET BUY/SELL — ADRO (10 Hari)</span>
+    <span class="mock-title">SIGMA · ALPHA SCREENER · BROKER SUMMARY — ADRO (10 Hari)</span>
   </div>
   <div class="mockup-body">
-    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
-      <div style="background:rgba(30,35,55,0.9);border:1px solid rgba(124,58,237,0.3);border-radius:8px;padding:7px 16px;font-size:0.9rem;color:#a78bfa;font-weight:700;">ADRO</div>
-      <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);">Data 10 Hari Terakhir · Net Buy/Sell per Broker</div>
-    </div>
     <div style="margin-bottom:14px;">
       <div style="font-size:0.65rem;color:rgba(0,229,190,0.7);letter-spacing:0.1em;margin-bottom:8px;">📈 TOP NET BUY (AKUMULATOR)</div>
       <div class="mock-bar-row">
         <div class="mock-bar-label"><span style="color:#00E5BE;font-weight:700;">DB · Deutsche Bank</span><span style="color:#00E5BE;">+Rp 48.2 M</span></div>
         <div class="mock-bar-track"><div class="mock-bar-fill" style="width:92%;background:rgba(0,229,190,0.65);"></div></div>
-      </div>
-      <div class="mock-bar-row">
-        <div class="mock-bar-label"><span style="color:#00E5BE;font-weight:700;">CS · Credit Suisse</span><span style="color:#00E5BE;">+Rp 31.7 M</span></div>
-        <div class="mock-bar-track"><div class="mock-bar-fill" style="width:62%;background:rgba(0,229,190,0.5);"></div></div>
       </div>
       <div class="mock-bar-row">
         <div class="mock-bar-label"><span style="color:#00E5BE;font-weight:700;">RX · BCA Sekuritas</span><span style="color:#00E5BE;">+Rp 22.4 M</span></div>
@@ -29779,10 +29226,6 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
       <div class="mock-bar-row">
         <div class="mock-bar-label"><span style="color:#f23645;font-weight:700;">YP · Phillip Sekuritas</span><span style="color:#f23645;">-Rp 18.6 M</span></div>
         <div class="mock-bar-track"><div class="mock-bar-fill" style="width:36%;background:rgba(242,54,69,0.65);"></div></div>
-      </div>
-      <div class="mock-bar-row">
-        <div class="mock-bar-label"><span style="color:#f23645;font-weight:700;">OD · Mirae Asset</span><span style="color:#f23645;">-Rp 11.2 M</span></div>
-        <div class="mock-bar-track"><div class="mock-bar-fill" style="width:22%;background:rgba(242,54,69,0.5);"></div></div>
       </div>
     </div>
     <div class="mock-card-row">
@@ -29819,30 +29262,161 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
 </div>
 
 <div class="feat">
-  <div class="feat-title">🔍 Cara Menggunakan Broker Summary</div>
-  <div class="step"><div class="snum">1</div><div class="stext">Masukkan <b>ticker saham</b> yang ingin dianalisa di kolom input Broker Summary, lalu tentukan periode (5/10/20 hari).</div></div>
-  <div class="step"><div class="snum">2</div><div class="stext">Lihat <b>Top Net Buy</b> — broker mana yang paling konsisten net beli dalam periode tersebut?</div></div>
-  <div class="step"><div class="snum">3</div><div class="stext">Identifikasi <b>kategori broker</b> — broker asing (DB, CS, JP) atau BUMN (RX, YJ) sedang net buy besar = sinyal akumulasi institusional kuat.</div></div>
-  <div class="step"><div class="snum">4</div><div class="stext">Cek <b>Net Asing vs Net Retail</b> — ideal setup: <span class="ok">asing beli bersih + retail jual bersih</span> = smart money masuk, retail panik jual = potensi breakout.</div></div>
+  <div class="feat-title">🔑 Logika Bandarmologi (Counter-Intuitive)</div>
+  <div class="step"><div class="snum">1</div><div class="stext"><b>Banyak broker pembeli + sedikit penjual</b> = <span class="dn">DISTRIBUSI</span> — bandar sedang jual ke retail yang FOMO masuk. Hindari entry baru.</div></div>
+  <div class="step"><div class="snum">2</div><div class="stext"><b>Sedikit broker pembeli + banyak penjual</b> = <span class="ok">AKUMULASI</span> — bandar diam-diam beli dari retail yang panik jual. Setup entry terbaik.</div></div>
   <div class="key">🔑 <b>Key Rule Konfluensi:</b> Broker asing + BUMN net buy bersamaan &gt;3 hari berturut-turut = konfluensi sangat kuat. Kombinasikan dengan SIGMA Score ≥70 + BSJP signal = setup entry terbaik.</div>
 </div>
 
+<div class="sec-head"><div class="sec-icon">📋</div>
+<div><div class="sec-title">ANALISA IPO — BEDAH PROSPEKTUS</div>
+<div class="sec-desc">Upload PDF prospektus → SIGMA AI analisa 6 poin kunci otomatis</div></div></div>
+
 <div class="feat blue">
-  <div class="feat-title">🤖 Analisa Broker Summary via SIGMA AI Chat</div>
-  <div class="step"><div class="snum">1</div><div class="stext">Screenshot atau copy tabel broker summary dari menu Broker Summary SIGMA.</div></div>
-  <div class="step"><div class="snum">2</div><div class="stext">Paste di <b>SIGMA AI Chat</b> dengan perintah: <span class="hi">"Analisa broker summary saham ADRO berikut ini"</span></div></div>
-  <div class="step"><div class="snum">3</div><div class="stext">SIGMA AI akan: identifikasi broker, kategorikan (asing/BUMN/retail), hitung net per kategori, dan buat skenario akumulasi atau distribusi lengkap dengan rekomendasi.</div></div>
-  <div class="tip">💡 Pertanyaan lanjutan ke SIGMA AI: <span class="hi">"Siapa yang jadi bandar saham ini?"</span> atau <span class="hi">"Apakah asing sedang akumulasi atau distribusi di ADRO?"</span></div>
+  <div class="feat-title">📄 Cara Menggunakan Bedah Prospektus</div>
+  <div class="step"><div class="snum">1</div><div class="stext">Buka <b>Alpha Screener → tab Analisa IPO → sub-fitur Bedah Prospektus</b>.</div></div>
+  <div class="step"><div class="snum">2</div><div class="stext">Upload <b>file PDF prospektus</b> IPO — bisa diunduh dari website BEI (idx.co.id) atau portal e-IPO.</div></div>
+  <div class="step"><div class="snum">3</div><div class="stext">Klik <b>"Bedah Prospektus"</b> → SIGMA AI analisa: sektor bisnis, valuasi, underwriter, penggunaan dana, risiko utama, dan prospek bisnis.</div></div>
+  <div class="key">🔑 <b>Key Rule:</b> Underwriter tier-1 (BRI Danareksa, Mandiri Sekuritas, BCA Sekuritas) = lebih kredibel. Underwriter tidak dikenal + overallotment tinggi = <span class="dn">waspada pump & dump pasca listing</span>.</div>
+</div>
+
+<div class="feat green">
+  <div class="feat-title">📊 3 Kondisi Risiko Berdasarkan Float Size IPO</div>
+  <div class="tbl-wrap">
+    <table>
+      <tr><th>Kondisi</th><th>Total Lot Ditawarkan</th><th>Karakteristik</th></tr>
+      <tr><td><div class="mock-badge mb-r">🔴 KONDISI A</div></td><td style="color:#f23645;font-weight:700;">&lt; 12 Juta Lot</td><td>Float kecil — volatilitas tinggi, bandar mudah gerakkan harga. ARA multiple hari lebih mungkin terjadi.</td></tr>
+      <tr><td><div class="mock-badge mb-y">🟡 KONDISI B</div></td><td style="color:#fbbf24;font-weight:700;">12 – 30 Juta Lot</td><td>Float sedang — likuiditas cukup, pergerakan lebih terkontrol. Risk moderate.</td></tr>
+      <tr><td><div class="mock-badge mb-g">🟢 KONDISI C</div></td><td style="color:#00E5BE;font-weight:700;">&gt; 30 Juta Lot</td><td>Float besar — supply banyak, harga cenderung berat untuk naik terlalu cepat.</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="sec-head"><div class="sec-icon">🏆</div>
+<div><div class="sec-title">TRACK RECORD — EVALUASI PERFORMA SIGMA</div>
+<div class="sec-desc">Monitoring win rate, R/R, dan histori semua trading plan dalam satu dashboard</div></div></div>
+
+<div class="feat yellow">
+  <div class="feat-title">📊 Membaca Statistik Track Record</div>
+  <div class="step"><div class="snum">1</div><div class="stext"><b>Win Rate ≥ 55% dengan R/R ≥ 1.5x</b> → sistem trading plan berjalan sehat. Ekspektasi nilai positif terpenuhi. Pertahankan disiplin eksekusi.</div></div>
+  <div class="step"><div class="snum">2</div><div class="stext"><b>Win Rate &lt;45%</b> → evaluasi kualitas entry. Apakah sering masuk terlalu early? Atau kondisi makro sedang unfavorable? Kurangi frekuensi trading sementara.</div></div>
+  <div class="step"><div class="snum">3</div><div class="stext"><b>Filter per mode</b> → BSJP / Daily / Weekly. Identifikasi mode mana yang win rate paling tinggi untuk profil trading kamu.</div></div>
+  <div class="key">🔑 <b>Rutinitas Mingguan:</b> Setiap Sabtu, buka Track Record. Review semua plan yang closed. Perbaiki timing dan parameter entry untuk minggu depan.</div>
+</div>
+
+<div class="danger">🚫 <b>DISCLAIMER RESMI:</b> Seluruh analisis, skor, dan rekomendasi yang dihasilkan SIGMA Terminal bersifat sebagai <b>alat bantu keputusan (decision support tool)</b>, bukan saran investasi. Keputusan akhir sepenuhnya ada di tangan pengguna. Selalu lakukan riset independen dan pertimbangkan profil risiko pribadi sebelum eksekusi. <b>DYOR — Do Your Own Research.</b></div>
+
+</div></body></html>"""
+            components.html(_guide_html_3, height=4800, scrolling=True)
+
+        # ══════════════════════════════════════════════════════════════
+        # PANDUAN 4 — TOOLS
+        # ══════════════════════════════════════════════════════════════
+        with pg_tab4:
+            _guide_html_4 = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>{_PANDUAN_SHARED_CSS}</style></head><body><div class="wrap">
+
+<div class="hero">
+  <div class="hero-badge">🔧 TOOLS</div>
+  <div class="hero-title">Kalkulator Trading — Keputusan Cepat & Akurat</div>
+  <div class="hero-sub">
+    Dua kalkulator instan untuk <strong style="color:#a78bfa;">money management saat live trading</strong>:
+    ARA/ARB Calculator dan Average Down Calculator.
+    Hasil instan tanpa perlu hitung manual.
+  </div>
+</div>
+
+<div class="cap-label">📸 CONTOH TAMPILAN — ARA/ARB CALCULATOR</div>
+<div class="mockup">
+  <div class="mockup-bar">
+    <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
+    <span class="mock-title">SIGMA · TOOLS · ARA/ARB CALCULATOR</span>
+  </div>
+  <div class="mockup-body">
+    <div class="mock-tab-row">
+      <div class="mock-tab active">📊 ARA / ARB</div>
+      <div class="mock-tab">📉 AVERAGE DOWN</div>
+    </div>
+    <div class="mock-card-row">
+      <div class="mcard" style="border-color:rgba(0,229,190,0.4);"><div class="mcard-lbl">🟢 Batas ARA (Max UP)</div><div class="mcard-val up" style="font-size:1.4rem;">Rp 3,000</div><div class="mcard-chg up">+25% · Auto Rejection Atas</div></div>
+      <div class="mcard" style="border-color:rgba(242,54,69,0.4);"><div class="mcard-lbl">🔴 Batas ARB (Max DOWN)</div><div class="mcard-val dn" style="font-size:1.4rem;">Rp 1,800</div><div class="mcard-chg dn">-25% · Auto Rejection Bawah</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="sec-head"><div class="sec-icon">📊</div>
+<div><div class="sec-title">KALKULATOR 1 — ARA / ARB</div>
+<div class="sec-desc">Hitung batas harga maksimum (ARA) dan minimum (ARB) dalam hitungan detik</div></div></div>
+
+<div class="feat">
+  <div class="feat-title">📊 Cara Menggunakan ARA/ARB Calculator</div>
+  <div class="step"><div class="snum">1</div><div class="stext">Masukkan <b>harga acuan</b> — harga penutupan kemarin atau harga referensi IPO hari pertama.</div></div>
+  <div class="step"><div class="snum">2</div><div class="stext">Pilih <b>fraksi harga</b> yang berlaku sesuai range harga saham tersebut (lihat tabel di bawah).</div></div>
+  <div class="step"><div class="snum">3</div><div class="stext">Kalkulator otomatis menampilkan <span class="ok">batas ARA</span> (hijau) dan <span class="dn">batas ARB</span> (merah) secara instan.</div></div>
+  <div class="tip">💡 <b>Kapan digunakan:</b> Sebelum eksekusi saham IPO hari pertama, atau saat saham yang kamu hold mendekati batas rejection harian.</div>
+</div>
+
+<div class="feat green">
+  <div class="feat-title">📋 Tabel Aturan ARA/ARB IDX</div>
+  <div class="tbl-wrap">
+    <table>
+      <tr><th>Range Harga Saham</th><th>Auto Rejection (%)</th><th>Keterangan</th></tr>
+      <tr><td>&lt; Rp 200</td><td class="dn" style="font-weight:700;">35%</td><td>Saham sangat murah — volatilitas sangat tinggi</td></tr>
+      <tr><td>Rp 200 – Rp 5.000</td><td class="neu" style="font-weight:700;">25%</td><td>Range harga umum — mayoritas saham IDX ada di sini</td></tr>
+      <tr><td>&gt; Rp 5.000</td><td class="up" style="font-weight:700;">20%</td><td>Saham premium / blue chip — batas lebih ketat</td></tr>
+      <tr><td><b style="color:#a78bfa;">Hari Pertama IPO</b></td><td style="color:#a78bfa;font-weight:700;">∞ Tidak Ada Batas Atas</td><td>ARA unlimited — saham bisa naik ratusan persen hari pertama</td></tr>
+    </table>
+  </div>
+  <div class="warn">⚠️ <b>Penting untuk IPO:</b> ARA hari pertama tidak terbatas. Saham bisa naik +100% hingga +300% dalam sehari. Namun apa yang naik dengan ARA bisa turun dengan ARB di hari berikutnya — kelola posisi dengan ketat.</div>
+</div>
+
+<div class="cap-label">📸 CONTOH TAMPILAN — AVERAGE DOWN CALCULATOR</div>
+<div class="mockup">
+  <div class="mockup-bar">
+    <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
+    <span class="mock-title">SIGMA · TOOLS · AVERAGE DOWN CALCULATOR</span>
+  </div>
+  <div class="mockup-body">
+    <div class="mock-card-row col2" style="margin-bottom:10px;">
+      <div class="mcard"><div class="mcard-lbl">Harga Beli Pertama</div><div class="mcard-val" style="color:#f23645;">Rp 3,200</div><div class="mcard-sub">Jumlah: 50 Lot</div></div>
+      <div class="mcard"><div class="mcard-lbl">Harga Average Down</div><div class="mcard-val" style="color:#fbbf24;">Rp 2,800</div><div class="mcard-sub">Tambahan: 50 Lot</div></div>
+    </div>
+    <div class="mock-card-row">
+      <div class="mcard"><div class="mcard-lbl">Average Price Baru</div><div class="mcard-val" style="color:#a78bfa;">Rp 3,000</div></div>
+      <div class="mcard"><div class="mcard-lbl">Total Modal Terpakai</div><div class="mcard-val up">Rp 30,000,000</div></div>
+      <div class="mcard"><div class="mcard-lbl">Break Even Point</div><div class="mcard-val neu">Rp 3,000</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="sec-head"><div class="sec-icon">📉</div>
+<div><div class="sec-title">KALKULATOR 2 — AVERAGE DOWN</div>
+<div class="sec-desc">Hitung average price baru dan break even point setelah averaging down posisi</div></div></div>
+
+<div class="feat blue">
+  <div class="feat-title">📉 Cara Menggunakan Average Down Calculator</div>
+  <div class="step"><div class="snum">1</div><div class="stext">Masukkan <b>harga beli pertama</b> dan <b>jumlah lot</b> yang sudah dibeli sebelumnya.</div></div>
+  <div class="step"><div class="snum">2</div><div class="stext">Masukkan <b>harga beli kedua</b> (harga averaging down yang direncanakan) dan <b>jumlah lot tambahan</b> yang akan ditambah.</div></div>
+  <div class="step"><div class="snum">3</div><div class="stext">Kalkulator otomatis menghitung: <b>Average Price Baru, Total Modal, Break Even Point, dan % kenaikan yang dibutuhkan</b>.</div></div>
+  <div class="danger">🚫 <b>PERINGATAN KERAS:</b> Average down <em>hanya valid</em> untuk saham dengan <b>fundamental kuat</b> dan penurunan bersifat sementara karena sentimen pasar — bukan karena perubahan fundamental. JANGAN average down saham yang turun karena berita negatif fundamental.</div>
+</div>
+
+<div class="feat yellow">
+  <div class="feat-title">✅ Kapan Boleh & Tidak Boleh Average Down</div>
+  <div class="step"><div class="snum">✓</div><div class="stext"><span class="ok">BOLEH:</span> Saham blue chip (BBCA, TLKM, ICBP) koreksi karena sentimen pasar bukan fundamental. Koreksi &lt;20% dari harga beli. Support teknikal kuat di bawah harga saat ini.</div></div>
+  <div class="step"><div class="snum">✗</div><div class="stext"><span class="dn">JANGAN:</span> Saham dengan berita negatif fundamental (fraud, gagal bayar utang, delisting warning, penurunan laba drastis, management bermasalah).</div></div>
+  <div class="key">🔑 <b>Key Rule:</b> Sebelum average down, tanya diri: "Apakah alasan saya beli saham ini pertama kali masih valid?" Jika jawabannya tidak pasti — <b>jangan average down, cut loss lebih baik</b>.</div>
 </div>
 
 </div></body></html>"""
-            components.html(_guide_html_brosum, height=3400, scrolling=True)
+            components.html(_guide_html_4, height=3400, scrolling=True)
 
         # ══════════════════════════════════════════════════════════════
-        # PANDUAN 9 — CARA KERJA SCREENER
+        # PANDUAN 5 — CARA KERJA & TENTANG SIGMA
         # ══════════════════════════════════════════════════════════════
-        with pg_tab9:
-            _guide_html_screener = f"""<!DOCTYPE html><html><head>
+        with pg_tab5:
+            _guide_html_5 = f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>{_PANDUAN_SHARED_CSS}
 .formula-box{{background:rgba(10,15,30,0.9);border:1px solid rgba(124,58,237,0.4);border-radius:10px;padding:16px 20px;margin:12px 0;}}
@@ -29854,86 +29428,30 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
 </style></head><body><div class="wrap">
 
 <div class="hero">
-  <div class="hero-badge">🔬 CARA KERJA SCREENER</div>
-  <div class="hero-title">Algoritma SIGMA Score — Di Balik Layar</div>
+  <div class="hero-badge">📖 PANDUAN</div>
+  <div class="hero-title">Tentang SIGMA Terminal — Cara Kerja & Filosofi</div>
   <div class="hero-sub">
-    Panduan teknis cara SIGMA menghitung skor, memilih kandidat BSJP, dan menghasilkan trading plan.
-    Pahami ini agar bisa menggunakan SIGMA secara <strong style="color:#a78bfa;">lebih optimal, kritis, dan kontekstual</strong>.
+    Pahami bagaimana SIGMA bekerja di balik layar: algoritma scoring, proses pemilihan kandidat BSJP,
+    indikator yang digunakan, dan batas kemampuan sistem.
+    <strong style="color:#a78bfa;">Gunakan SIGMA lebih optimal, kritis, dan kontekstual.</strong>
   </div>
 </div>
 
-<div class="cap-label">📸 CONTOH TAMPILAN — SIGMA SCORE BREAKDOWN (INDIKATOR TEKNIKAL)</div>
-<div class="mockup">
-  <div class="mockup-bar">
-    <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
-    <span class="mock-title">SIGMA · BSJP CARD · SCORE BREAKDOWN — ADRO · 88/100</span>
-  </div>
-  <div class="mockup-body">
-    <div class="mock-card-row col2">
-      <div class="mcard" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;">
-        <div style="font-size:2.2rem;font-weight:800;color:#00E5BE;">88</div>
-        <div style="font-size:0.7rem;color:rgba(255,255,255,0.35);margin-top:4px;">/100 · STRONG BUY</div>
-      </div>
-      <div class="mcard">
-        <div class="mock-bar-row">
-          <div class="mock-bar-label"><span style="font-size:0.72rem;">Technical Analysis</span><span style="color:#00E5BE;">91</span></div>
-          <div class="mock-bar-track"><div class="mock-bar-fill" style="width:91%;background:#00E5BE;"></div></div>
-        </div>
-        <div class="mock-bar-row">
-          <div class="mock-bar-label"><span style="font-size:0.72rem;">Bandar Flow Score</span><span style="color:#a78bfa;">85</span></div>
-          <div class="mock-bar-track"><div class="mock-bar-fill" style="width:85%;background:#a78bfa;"></div></div>
-        </div>
-        <div class="mock-bar-row">
-          <div class="mock-bar-label"><span style="font-size:0.72rem;">Volume Analysis</span><span style="color:#60a5fa;">78</span></div>
-          <div class="mock-bar-track"><div class="mock-bar-fill" style="width:78%;background:#60a5fa;"></div></div>
-        </div>
-        <div class="mock-bar-row">
-          <div class="mock-bar-label"><span style="font-size:0.72rem;">Price Action</span><span style="color:#fbbf24;">88</span></div>
-          <div class="mock-bar-track"><div class="mock-bar-fill" style="width:88%;background:#fbbf24;"></div></div>
-        </div>
-      </div>
-    </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
-      <div class="mock-badge mb-g">RSI Bullish</div>
-      <div class="mock-badge mb-g">MACD Golden Cross</div>
-      <div class="mock-badge mb-g">Vol Spike 3.2x</div>
-      <div class="mock-badge mb-g">Closing Kuat 93%</div>
-      <div class="mock-badge mb-b">Asing Net Buy</div>
-      <div class="mock-badge mb-b">Breakout MA20</div>
-      <div class="mock-badge mb-p">Streak 3 Hari ↑</div>
-    </div>
-  </div>
+<div class="grid3">
+  <div class="gcard"><div class="gcard-lbl">Data Stack</div><div class="gcard-val">Multi-Source</div><div class="gcard-sub">yfinance → FMP → Finnhub → Alpha Vantage → manual calc</div></div>
+  <div class="gcard blue"><div class="gcard-lbl">AI Model</div><div class="gcard-val">Groq 70B</div><div class="gcard-sub">Primary · Gemini vision fallback · Groq 8B backup</div></div>
+  <div class="gcard green"><div class="gcard-lbl">SIGMA Score</div><div class="gcard-val">0–100 Poin</div><div class="gcard-sub">TA 40% · Bandar 25% · Volume 20% · Price Action 15%</div></div>
 </div>
 
-<div class="sec-head"><div class="sec-icon">🔢</div>
-<div><div class="sec-title">SIGMA SCORE — KOMPONEN & BOBOT</div>
-<div class="sec-desc">Multi-faktor scoring system yang menggabungkan analisa teknikal, volume, dan bandarmologi</div></div></div>
-
-<div class="formula-box">
-  <div style="font-size:0.78rem;color:#a78bfa;font-weight:700;letter-spacing:0.08em;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(124,58,237,0.25);">SIGMA SCORE = COMBINED SCORE (0 – 100 POIN)</div>
-  <div class="f-line">
-    <div><div class="f-name">📊 Technical Analysis Score (TA Score)</div><div class="f-desc">RSI · MACD · Bollinger Band · Moving Average Crossover · Candle Pattern strength</div></div>
-    <div class="f-weight">~40%</div>
-  </div>
-  <div class="f-line">
-    <div><div class="f-name">💹 Bandar Flow Score</div><div class="f-desc">Broker net buy/sell · Asing vs retail flow ratio · Konsistensi akumulasi multi-hari</div></div>
-    <div class="f-weight">~25%</div>
-  </div>
-  <div class="f-line">
-    <div><div class="f-name">📈 Volume Analysis</div><div class="f-desc">Volume spike ratio (vs MA10) · Konsistensi volume naik · Breakout volume confirmation</div></div>
-    <div class="f-weight">~20%</div>
-  </div>
-  <div class="f-line">
-    <div><div class="f-name">🕯 Price Action</div><div class="f-desc">Closing strength (posisi close di range harian) · Consecutive up streak · Candle body quality</div></div>
-    <div class="f-weight">~15%</div>
-  </div>
-</div>
+<div class="sec-head"><div class="sec-icon">🔬</div>
+<div><div class="sec-title">PROSES PEMILIHAN KANDIDAT BSJP — STEP BY STEP</div>
+<div class="sec-desc">Bagaimana SIGMA memilih saham dari ratusan emiten IDX setiap hari</div></div></div>
 
 <div class="feat">
-  <div class="feat-title">🔬 Proses Pemilihan Kandidat BSJP — Step by Step</div>
+  <div class="feat-title">🔬 Pipeline Screening Harian</div>
   <div class="step"><div class="snum">1</div><div class="stext"><b>Universe Scanning:</b> SIGMA scan seluruh saham IDX aktif setiap hari setelah market close (~16:00 WIB). Ratusan saham diproses sekaligus.</div></div>
   <div class="step"><div class="snum">2</div><div class="stext"><b>Filter Likuiditas:</b> Saham dengan nilai transaksi harian rata-rata &lt;500 juta langsung dibuang. Memastikan semua kandidat bisa di-enter dan exit dengan mudah tanpa slippage besar.</div></div>
-  <div class="step"><div class="snum">3</div><div class="stext"><b>Hitung SIGMA Score:</b> Setiap saham yang lolos filter diberi skor 0–100 berdasarkan 4 komponen di atas. Semua komponen dihitung otomatis dari data market hari itu.</div></div>
+  <div class="step"><div class="snum">3</div><div class="stext"><b>Hitung SIGMA Score:</b> Setiap saham yang lolos filter diberi skor 0–100 berdasarkan 4 komponen (TA, Bandar Flow, Volume, Price Action). Semua komponen dihitung otomatis dari data market hari itu.</div></div>
   <div class="step"><div class="snum">4</div><div class="stext"><b>Ranking & Klasifikasi:</b> Saham diranking dari tertinggi. Score ≥80 → <span class="ok">STRONG BUY</span>. Score 65–79 → <span class="ok">BUY</span>. Score 50–64 → <span class="yl">HOLD/WATCH</span>. &lt;50 → tidak ditampilkan.</div></div>
   <div class="step"><div class="snum">5</div><div class="stext"><b>AI Trading Plan Generation:</b> Top kandidat diproses AI (LLM) untuk generate entry zone, TP1, TP2, SL, R/R ratio, dan narasi insight otomatis berbasis data.</div></div>
 </div>
@@ -29973,7 +29491,7 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
 </div>
 
 </div></body></html>"""
-            components.html(_guide_html_screener, height=3400, scrolling=True)
+            components.html(_guide_html_5, height=3200, scrolling=True)
 
 # ─────────────────────────────────────────────
 else:
