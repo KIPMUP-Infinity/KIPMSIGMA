@@ -10640,6 +10640,48 @@ def _call_gemini_text(messages):
                 continue   # error lain → coba model berikutnya
     raise Exception(f"Gemini Text gagal semua model/key: {last_err}")
 
+# ─── _call_ai_reco — Global AI router untuk Fundamental Screener & lainnya ───
+def _call_ai_reco(prompt_text, max_tok=8000):
+    import time as _time_reco
+    prompt_text = _smart_truncate_prompt(prompt_text, max_tokens=20000)
+    try:
+        result, _ = _call_groq_primary(prompt_text, max_tokens=max_tok)
+        return result
+    except Exception:
+        _time_reco.sleep(1)
+    try:
+        result, _ = _call_cerebras(prompt_text, max_tokens=max_tok)
+        return result
+    except Exception:
+        _time_reco.sleep(1)
+    try:
+        result, _ = _call_gemini_text([{"role":"user","content":prompt_text}])
+        return result
+    except Exception:
+        _time_reco.sleep(1)
+    try:
+        _ant_key = st.secrets.get("ANTHROPIC_API_KEY", "")
+        if _ant_key:
+            import urllib.request as _ur, json as _uj
+            _payload = {
+                "model": "claude-haiku-4-5-20251001",
+                "max_tokens": min(max_tok, 4000),
+                "messages": [{"role": "user", "content": prompt_text}]
+            }
+            _req = _ur.Request(
+                "https://api.anthropic.com/v1/messages",
+                data=_uj.dumps(_payload).encode(),
+                headers={"Content-Type":"application/json","x-api-key":_ant_key,"anthropic-version":"2023-06-01"},
+                method="POST"
+            )
+            with _ur.urlopen(_req, timeout=60) as _r:
+                _d = _uj.loads(_r.read())
+            _txt = "".join(b.get("text","") for b in _d.get("content",[]) if b.get("type")=="text")
+            if _txt: return _txt
+    except Exception:
+        pass
+    return "⚠️ Semua AI engine sedang overload (rate limit). Tunggu 1-2 menit lalu coba lagi."
+
 # ─── PENGATURAN UI CSS KHUSUS (hanya jika sudah login) ───
 if st.session_state.get("user") is not None:
     st.markdown(f"""
@@ -23398,51 +23440,6 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             for t in threads: t.start()
             for t in threads: t.join(timeout=15)
             return result
-
-        def _call_ai_reco(prompt_text, max_tok=8000):
-            import time as _time_reco
-            # Smart truncation - budget 30k total, ~20k untuk prompt Terminal
-            prompt_text = _smart_truncate_prompt(prompt_text, max_tokens=20000)
-            # Layer 1: Groq (primary - cepat, rotate semua key otomatis)
-            try:
-                result, _ = _call_groq_primary(prompt_text, max_tokens=max_tok)
-                return result
-            except Exception as _e_groq:
-                _time_reco.sleep(1)  # cooldown sebelum fallback
-            # Layer 2: Cerebras (fallback - throughput tinggi saat Groq overload)
-            try:
-                result, _ = _call_cerebras(prompt_text, max_tokens=max_tok)
-                return result
-            except:
-                _time_reco.sleep(1)
-            # Layer 3: Gemini (rotate 6 key otomatis)
-            try:
-                result, _ = _call_gemini_text([{"role":"user","content":prompt_text}])
-                return result
-            except:
-                _time_reco.sleep(1)
-            # Layer 4: Anthropic Claude (last resort)
-            try:
-                _ant_key = st.secrets.get("ANTHROPIC_API_KEY", "")
-                if _ant_key:
-                    import urllib.request as _ur, json as _uj
-                    _payload = {
-                        "model": "claude-haiku-4-5-20251001",
-                        "max_tokens": min(max_tok, 4000),
-                        "messages": [{"role": "user", "content": prompt_text}]
-                    }
-                    _req = _ur.Request(
-                        "https://api.anthropic.com/v1/messages",
-                        data=_uj.dumps(_payload).encode(),
-                        headers={"Content-Type":"application/json","x-api-key":_ant_key,"anthropic-version":"2023-06-01"},
-                        method="POST"
-                    )
-                    with _ur.urlopen(_req, timeout=60) as _r:
-                        _d = _uj.loads(_r.read())
-                    _txt = "".join(b.get("text","") for b in _d.get("content",[]) if b.get("type")=="text")
-                    if _txt: return _txt
-            except Exception: pass
-            return "⚠️ Semua AI engine sedang overload (rate limit). Tunggu 1-2 menit lalu coba lagi."
 
         def _render_reco_cards(reco_text, accent="#a78bfa"):
             bg_card  = "rgba(30,35,50,0.7)" if is_dark else "#ffffff"
