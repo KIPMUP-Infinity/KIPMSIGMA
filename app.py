@@ -5504,7 +5504,7 @@ def init_session():
         # ── Dividend Tracker ──
         "ai_dividend_result": None,
         # ── Broker Summary ──
-        "sigma_bs30_screened": None,
+        "sigma_bs30_screened": [],
         "sigma_bs30_ts": "",
         "brosum_history": {},
         # ── Alpha Insight cache ──
@@ -7619,7 +7619,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                 st.session_state[_dp_auto_key] = True
                 try:
                     # Pastikan ada bs30 cache (pakai data apapun yg ada)
-                    _bs30_dp = st.session_state.get("sigma_bs30_screened", [])
+                    _bs30_dp = st.session_state.get("sigma_bs30_screened") or []
                     if not _bs30_dp:
                         # Coba ambil dari history
                         _bsh_dp = st.session_state.get("brosum_history", {})
@@ -7694,7 +7694,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
             if _slot_bsjp not in _bsjp_h:
                 st.session_state[_bsjp_auto_key] = True
                 try:
-                    _bs30_bsjp = st.session_state.get("sigma_bs30_screened", [])
+                    _bs30_bsjp = st.session_state.get("sigma_bs30_screened") or []
                     if not _bs30_bsjp:
                         _bsh_bsjp = st.session_state.get("brosum_history", {})
                         if _bsh_bsjp:
@@ -7910,7 +7910,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
             if _slot_wp not in _wph:
                 st.session_state[_wp_auto_key] = True
                 try:
-                    _bs30_wp = st.session_state.get("sigma_bs30_screened", [])
+                    _bs30_wp = st.session_state.get("sigma_bs30_screened") or []
                     if not _bs30_wp:
                         _bsh_wp = st.session_state.get("brosum_history", {})
                         if _bsh_wp:
@@ -25369,7 +25369,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
             _wd_ef    = _now_ef.weekday()
             if _wd_ef >= 5: return  # skip weekend
 
-            _bs_existing  = st.session_state.get("sigma_bs30_screened", [])
+            _bs_existing  = st.session_state.get("sigma_bs30_screened") or []
             _bs_ts        = st.session_state.get("sigma_bs30_ts", "")
             _today_str    = _now_ef.strftime("%Y-%m-%d")
 
@@ -25429,7 +25429,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 
 
             _now_d        = _wib_now()
-            _bs30_cache   = st.session_state.get("sigma_bs30_screened", [])
+            _bs30_cache   = st.session_state.get("sigma_bs30_screened") or []
             _bs30_count   = len(_bs30_cache)
             _bs30_history = st.session_state.get("sigma_bs30_history", {})
 
@@ -25869,7 +25869,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 
 
             _now_w        = _wib_now()
-            _bs30_cache_w = st.session_state.get("sigma_bs30_screened", [])
+            _bs30_cache_w = st.session_state.get("sigma_bs30_screened") or []
             _bs30_count_w = len(_bs30_cache_w)
 
             # ── Auto-generate Sabtu jam 12:00 WIB ──
@@ -26759,7 +26759,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
         # TAB 1 — BROKER SCREENING (30 saham + Broker Distribution)
         # ══════════════════════════════════════════════════════════
         with bs_tab_screening:
-            _bs30_existing = st.session_state.get("sigma_bs30_screened", [])
+            _bs30_existing = st.session_state.get("sigma_bs30_screened") or []
             _bs30_ts       = st.session_state.get("sigma_bs30_ts", "")
             _now_bss       = _wib_now()
             _h_bss, _m_bss = _now_bss.hour, _now_bss.minute
