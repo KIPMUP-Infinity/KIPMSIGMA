@@ -25422,12 +25422,13 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_txt};
 .acc-item{{border:1px solid {_border};border-radius:8px;margin-bottom:8px;overflow:hidden;}}
 .acc-header{{display:flex;align-items:center;justify-content:space-between;
   padding:10px 16px;cursor:pointer;background:rgba(124,58,237,0.06);
-  transition:background 0.15s;user-select:none;}}
+  transition:background 0.15s;user-select:none;gap:8px;min-width:0;}}
 .acc-header:hover{{background:rgba(124,58,237,0.14);}}
 .acc-header.open{{background:rgba(124,58,237,0.16);border-bottom:1px solid {_border};}}
-.acc-label{{font-size:0.82rem;font-weight:700;color:{accent};letter-spacing:0.06em;}}
-.acc-meta{{font-size:0.7rem;color:{_sub_c};margin-left:10px;font-weight:400;}}
-.acc-right{{display:flex;align-items:center;gap:10px;}}
+.acc-label{{font-size:0.82rem;font-weight:700;color:{accent};letter-spacing:0.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}}
+.acc-meta{{font-size:0.7rem;color:{_sub_c};margin-left:8px;font-weight:400;white-space:nowrap;flex-shrink:0;}}
+.acc-left{{display:flex;align-items:center;min-width:0;flex:1;overflow:hidden;}}
+.acc-right{{display:flex;align-items:center;gap:10px;flex-shrink:0;}}
 .acc-count{{font-size:0.68rem;color:{_sub_c};background:rgba(124,58,237,0.12);
   border-radius:10px;padding:2px 8px;white-space:nowrap;}}
 .acc-arrow{{font-size:0.9rem;color:{accent};transition:transform 0.2s;}}
@@ -25537,8 +25538,8 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
     var header = document.createElement('div');
     header.className = 'acc-header' + (i===0?' open':'');
     header.innerHTML =
-      '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;">' +
-        '<span class="acc-label"> ' + d.label + '</span>' +
+      '<div class="acc-left">' +
+        '<span class="acc-label">' + d.label + '</span>' +
         (d.generated_at ? '<span class="acc-meta">&middot; ' + d.generated_at + '</span>' : '') +
       '</div>' +
       '<div class="acc-right">' +
