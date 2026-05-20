@@ -10540,10 +10540,11 @@ def _get_gemini_keys():
     """
     key_names = (
         ["GEMINI_API_KEY"] +
-        [f"GEMINI_API_KEY{i}" for i in range(2, 7)] +   # GEMINI_API_KEY2 s/d GEMINI_API_KEY6
+        [f"GEMINI_API_KEY{i}" for i in range(2, 21)] +   # GEMINI_API_KEY2 s/d GEMINI_API_KEY20
         ["GEMINI_KEY"] +
-        [f"GEMINI_KEY{i}" for i in range(2, 7)] +        # GEMINI_KEY2 s/d GEMINI_KEY6
-        ["GOOGLE_API_KEY"]
+        [f"GEMINI_KEY{i}" for i in range(2, 21)] +        # GEMINI_KEY2 s/d GEMINI_KEY20
+        ["GOOGLE_API_KEY"] +
+        [f"GOOGLE_API_KEY{i}" for i in range(2, 11)]      # GOOGLE_API_KEY2 s/d GOOGLE_API_KEY10
     )
     keys = []
     for name in key_names:
@@ -14656,6 +14657,21 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
                 st.session_state.get("mb_daily_timestamp", ""),
                 "daily"
             )
+            _mb_d_col1, _mb_d_col2 = st.columns([3, 1])
+            with _mb_d_col2:
+                st.download_button(
+                    label="⬇️ Download Daily Brief (.txt)",
+                    data=(
+                        f"SIGMA — DAILY MARKET BRIEF\n"
+                        f"Waktu  : {st.session_state.get('mb_daily_timestamp', '')}\n"
+                        f"{'='*60}\n\n"
+                        + st.session_state["mb_daily_content"]
+                    ).encode("utf-8"),
+                    file_name=f"SIGMA_DailyBrief_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
+                    mime="text/plain",
+                    key="mb_daily_dl_btn",
+                    use_container_width=True,
+                )
 
         if st.session_state.get("mb_weekly_content"):
             _render_mb_block(
@@ -14663,6 +14679,21 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
                 st.session_state.get("mb_weekly_timestamp", ""),
                 "weekly"
             )
+            _mb_w_col1, _mb_w_col2 = st.columns([3, 1])
+            with _mb_w_col2:
+                st.download_button(
+                    label="⬇️ Download Weekly Brief (.txt)",
+                    data=(
+                        f"SIGMA — WEEKLY MARKET BRIEF\n"
+                        f"Waktu  : {st.session_state.get('mb_weekly_timestamp', '')}\n"
+                        f"{'='*60}\n\n"
+                        + st.session_state["mb_weekly_content"]
+                    ).encode("utf-8"),
+                    file_name=f"SIGMA_WeeklyBrief_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
+                    mime="text/plain",
+                    key="mb_weekly_dl_btn",
+                    use_container_width=True,
+                )
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         # ─────────────────────────────────────────────────────────
@@ -16272,6 +16303,22 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                     unsafe_allow_html=True
                 )
                 st.markdown(st.session_state["fs_ai_result"])
+                _fs_dl_col1, _fs_dl_col2 = st.columns([3, 1])
+                with _fs_dl_col2:
+                    st.download_button(
+                        label="⬇️ Download Hasil (.txt)",
+                        data=(
+                            f"SIGMA — FUNDAMENTAL SCREENER AI ANALYSIS\n"
+                            f"Sektor : {_ai_sektor}\n"
+                            f"Waktu  : {_ai_ts}\n"
+                            f"{'='*60}\n\n"
+                            + st.session_state["fs_ai_result"]
+                        ).encode("utf-8"),
+                        file_name=f"SIGMA_FundScreener_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
+                        mime="text/plain",
+                        key="fs_ai_download_btn",
+                        use_container_width=True,
+                    )
             elif not _btn_ai_screener and _has_screener_data:
                 st.caption("💡 Klik tombol di atas untuk memulai analisa AI dari hasil screener.")
 
@@ -16308,6 +16355,22 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                     unsafe_allow_html=True
                 )
                 st.markdown(st.session_state["fs_ai_tab_ans"])
+                _fsa2_dl_col1, _fsa2_dl_col2 = st.columns([3, 1])
+                with _fsa2_dl_col2:
+                    st.download_button(
+                        label="⬇️ Download Jawaban (.txt)",
+                        data=(
+                            f"SIGMA — TANYA SIGMA AI\n"
+                            f"Pertanyaan: {st.session_state.get('fs_ai_tab_q', '')}\n"
+                            f"Waktu     : {_wib_now().strftime('%d %b %Y %H:%M WIB')}\n"
+                            f"{'='*60}\n\n"
+                            + st.session_state["fs_ai_tab_ans"]
+                        ).encode("utf-8"),
+                        file_name=f"SIGMA_TanyaAI_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
+                        mime="text/plain",
+                        key="fsa2_download_btn",
+                        use_container_width=True,
+                    )
     st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True) 
 
 # ─────────────────────────────────────────────
@@ -19175,6 +19238,23 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             </div>
             """, unsafe_allow_html=True)
             st.markdown(_ec_ai_resp)
+            _ec_dl_col1, _ec_dl_col2 = st.columns([3, 1])
+            with _ec_dl_col2:
+                st.download_button(
+                    label="⬇️ Download Analisa (.txt)",
+                    data=(
+                        f"SIGMA — ECONOMIC CALENDAR AI ANALYSIS\n"
+                        f"Event  : {_sel_row.get('event', '')}\n"
+                        f"Actual : {_act_display}\n"
+                        f"Waktu  : {_wib_now().strftime('%d %b %Y %H:%M WIB')}\n"
+                        f"{'='*60}\n\n"
+                        + _ec_ai_resp
+                    ).encode("utf-8"),
+                    file_name=f"SIGMA_EC_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
+                    mime="text/plain",
+                    key="ec_fresh_dl_btn",
+                    use_container_width=True,
+                )
 
         # ── Re-render hasil EC AI dari session_state jika sudah pernah digenerate ──
         if not _ec_ai_btn and st.session_state.get("ec_ai_result"):
@@ -19200,6 +19280,23 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             </div>
             """, unsafe_allow_html=True)
             st.markdown(st.session_state["ec_ai_result"])
+            _ec_cache_dl_col1, _ec_cache_dl_col2 = st.columns([3, 1])
+            with _ec_cache_dl_col2:
+                st.download_button(
+                    label="⬇️ Download Analisa (.txt)",
+                    data=(
+                        f"SIGMA — ECONOMIC CALENDAR AI ANALYSIS\n"
+                        f"Event  : {_ec_cached_event}\n"
+                        f"Actual : {_ec_cached_actual}\n"
+                        f"Waktu  : {_ec_cached_ts}\n"
+                        f"{'='*60}\n\n"
+                        + st.session_state["ec_ai_result"]
+                    ).encode("utf-8"),
+                    file_name=f"SIGMA_EC_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
+                    mime="text/plain",
+                    key="ec_cache_dl_btn",
+                    use_container_width=True,
+                )
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
@@ -21697,11 +21794,78 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 
         with alpha_tab_insight:
 
-            st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin:0 0 20px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin:0 0 12px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; IHSG &middot; Komoditas Global &middot; Crypto &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
+
+            # ── ASSET TYPE SELECTOR ─────────────────────────────────────────
+            _ASSET_MAP = {
+                "IHSG (^JKSE)":       ("^JKSE",    "IHSG Composite",          "index",     "IDR", "Poin"),
+                "LQ45 (^JKLQ45)":    ("^JKLQ45",  "LQ45 Index",              "index",     "IDR", "Poin"),
+                "Gold XAU/USD":       ("GC=F",     "Gold Futures",            "commodity", "USD", "$/oz"),
+                "Silver XAG/USD":     ("SI=F",     "Silver Futures",          "commodity", "USD", "$/oz"),
+                "WTI Crude Oil":      ("CL=F",     "WTI Crude Oil Futures",   "commodity", "USD", "$/bbl"),
+                "Brent Crude Oil":    ("BZ=F",     "Brent Crude Futures",     "commodity", "USD", "$/bbl"),
+                "Natural Gas":        ("NG=F",     "Natural Gas Futures",     "commodity", "USD", "$/MMBtu"),
+                "Coal (ICE)":         ("MTF=F",    "Coal Futures",            "commodity", "USD", "$/ton"),
+                "Nickel":             ("NI=F",     "Nickel Futures LME",      "commodity", "USD", "$/ton"),
+                "Copper":             ("HG=F",     "Copper Futures",          "commodity", "USD", "$/lb"),
+                "CPO (Palm Oil)":     ("KO=F",     "Crude Palm Oil Futures",  "commodity", "MYR", "MYR/ton"),
+                "Corn":               ("ZC=F",     "Corn Futures",            "commodity", "USD", "$/bu"),
+                "Wheat":              ("ZW=F",     "Wheat Futures",           "commodity", "USD", "$/bu"),
+                "Soybean":            ("ZS=F",     "Soybean Futures",         "commodity", "USD", "$/bu"),
+                "Rubber (SGX)":       ("RB=F",     "Rubber Futures",          "commodity", "USD", "$/kg"),
+                "USD/IDR":            ("USDIDR=X", "US Dollar/Rupiah",        "forex",     "IDR", "IDR"),
+                "DXY Index":          ("DX-Y.NYB", "US Dollar Index (DXY)",   "forex",     "USD", "Poin"),
+                "Bitcoin (BTC/USD)":  ("BTC-USD",  "Bitcoin",                 "crypto",    "USD", "USD"),
+                "Ethereum (ETH/USD)": ("ETH-USD",  "Ethereum",                "crypto",    "USD", "USD"),
+                "Solana (SOL/USD)":   ("SOL-USD",  "Solana",                  "crypto",    "USD", "USD"),
+                "BNB (BNB/USD)":      ("BNB-USD",  "BNB Binance Coin",        "crypto",    "USD", "USD"),
+                "XRP (XRP/USD)":      ("XRP-USD",  "XRP Ripple",              "crypto",    "USD", "USD"),
+                "USDT/IDR":           ("USDTIDR=X","Tether/Rupiah",           "crypto",    "IDR", "IDR"),
+            }
+            _ASSET_CATEGORIES = {
+                "🏦 Saham IDX": [],
+                "📊 IHSG & Indeks": ["IHSG (^JKSE)", "LQ45 (^JKLQ45)"],
+                "🪙 Komoditas Global": ["Gold XAU/USD","Silver XAG/USD","WTI Crude Oil","Brent Crude Oil",
+                                         "Natural Gas","Coal (ICE)","Nickel","Copper","CPO (Palm Oil)",
+                                         "Corn","Wheat","Soybean","Rubber (SGX)"],
+                "💱 Forex": ["USD/IDR","DXY Index"],
+                "🔗 Crypto": ["Bitcoin (BTC/USD)","Ethereum (ETH/USD)","Solana (SOL/USD)","BNB (BNB/USD)","XRP (XRP/USD)","USDT/IDR"],
+            }
+
+            _asset_cat = st.selectbox(
+                "KATEGORI ASET:",
+                options=list(_ASSET_CATEGORIES.keys()),
+                index=0,
+                key="alpha_asset_category",
+                help="Pilih kategori: Saham IDX (ketik manual), IHSG & Indeks, Komoditas Global, Forex, atau Crypto"
+            )
 
             col_input, col_btn = st.columns([3, 1])
+            _is_idx_stock = (_asset_cat == "🏦 Saham IDX")
+
+            _yf_ticker   = ""
+            _asset_type  = "stock"
+            _asset_ccy   = "IDR"
+            _price_label = "Rp"
+            _display_name = ""
+            _selected_asset_label = None
+
             with col_input:
-                ticker_input = st.text_input("KODE SAHAM / TICKER IDX:", "BBCA", key="alpha_ticker_input").upper()
+                if _is_idx_stock:
+                    ticker_input = st.text_input("KODE SAHAM / TICKER IDX:", "BBCA", key="alpha_ticker_input").upper()
+                    _yf_ticker    = f"{ticker_input}.JK"
+                    _display_name = ticker_input
+                else:
+                    _asset_opts = _ASSET_CATEGORIES[_asset_cat]
+                    _selected_asset_label = st.selectbox(
+                        f"PILIH {_asset_cat}:",
+                        options=_asset_opts,
+                        key="alpha_asset_select",
+                    )
+                    ticker_input  = _selected_asset_label or ""
+                    if ticker_input and ticker_input in _ASSET_MAP:
+                        _meta = _ASSET_MAP[ticker_input]
+                        _yf_ticker, _display_name, _asset_type, _asset_ccy, _price_label = _meta
             with col_btn:
                 st.markdown("<br>", unsafe_allow_html=True)
                 run_analysis = st.button("▶ ANALYZE", use_container_width=True, key="alpha_run_btn")
@@ -21714,7 +21878,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 ai_text_verdict = ""
 
                 try:
-                    t = yf.Ticker(f"{ticker_input}.JK")
+                    t = yf.Ticker(_yf_ticker)
                     df_chart = t.history(period="6mo")
                 except Exception as e:
                     pass
@@ -21786,18 +21950,42 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                             )
                         else:
                             try:
-                                fund_context = build_fundamental_from_text(f"fundamental {ticker_input}")
+                                # ── Fundamental context (hanya untuk IDX stock) ──
+                                if _is_idx_stock:
+                                    fund_context = build_fundamental_from_text(f"fundamental {ticker_input}")
+                                else:
+                                    # Untuk IHSG/komoditas/crypto: beri konteks makro
+                                    _asset_labels = {
+                                        "index": f"IHSG/Indeks IDX - {_display_name}",
+                                        "commodity": f"Komoditas Global - {_display_name} ({_price_label})",
+                                        "forex": f"Forex/Kurs - {_display_name}",
+                                        "crypto": f"Cryptocurrency - {_display_name} (USD)",
+                                    }
+                                    fund_context = (
+                                        f"ASET: {_asset_labels.get(_asset_type, _display_name)}\n"
+                                        f"Tipe aset: {_asset_type.upper()}\n"
+                                        f"Ticker yfinance: {_yf_ticker}\n"
+                                        f"Mata uang: {_asset_ccy}\n"
+                                        f"Catatan: Ini bukan saham IDX. Analisa teknikal murni berdasarkan price action & volume. "
+                                        f"Sertakan konteks makro yang relevan (Fed, DXY, siklus komoditas, dll)."
+                                    )
 
                                 live_price_str = "N/A"
                                 if not df_chart.empty:
-                                    try: 
-                                        live_price_str = f"Rp {float(df_chart['Close'].iloc[-1]):,.0f}"
-                                    except Exception as e: 
+                                    try:
+                                        _lp = float(df_chart['Close'].iloc[-1])
+                                        if _asset_type == "stock":
+                                            live_price_str = f"Rp {_lp:,.0f}"
+                                        elif _asset_ccy == "IDR":
+                                            live_price_str = f"Rp {_lp:,.2f}"
+                                        else:
+                                            live_price_str = f"{_price_label} {_lp:,.4f}" if _lp < 1 else f"{_price_label} {_lp:,.2f}"
+                                    except Exception as e:
                                         pass
 
-                                # ── SIGMA SCORE CALCULATION ──
+                                # ── SIGMA SCORE CALCULATION (hanya untuk IDX stock) ──
                                 _sigma_result = None
-                                if _SIGMA_SCORE_AVAILABLE and not df_chart.empty:
+                                if _is_idx_stock and _SIGMA_SCORE_AVAILABLE and not df_chart.empty:
                                     try:
                                         import yfinance as _yf_ihsg
                                         _ihsg_hist = _yf_ihsg.Ticker("^JKSE").history(period="3mo")
@@ -21936,39 +22124,51 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                                         *[f"  {s}" for s in _zone_res_ai.zone_signals[:6]],
                                     ])
 
-                                dashboard_prompt = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional berbasis MnM Strategy+.
-        Buat analisa komprehensif dan JUJUR untuk saham {ticker_input}. KEJUJURAN ADALAH PRIORITAS UTAMA.
+                                # ── Build prompt sesuai tipe aset ──
+                                if _is_idx_stock:
+                                    _prompt_header = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional berbasis MnM Strategy+.
+        Buat analisa komprehensif dan JUJUR untuk saham {ticker_input}. KEJUJURAN ADALAH PRIORITAS UTAMA."""
+                                    _prompt_shareholder = f"\n        === DATA PEMEGANG SAHAM ===\n        {_sh_ctx if _sh_ctx else 'Data shareholder tidak tersedia untuk ticker ini.'}"
+                                else:
+                                    _atype_desc = {
+                                        "index": "indeks pasar saham",
+                                        "commodity": "komoditas global",
+                                        "forex": "forex/kurs",
+                                        "crypto": "cryptocurrency",
+                                    }.get(_asset_type, "aset global")
+                                    _prompt_header = f"""Kamu adalah SIGMA AI, analis pasar keuangan profesional.
+        Buat analisa komprehensif dan JUJUR untuk {_display_name} ({_atype_desc}). Ticker: {_yf_ticker}. KEJUJURAN ADALAH PRIORITAS UTAMA."""
+                                    _prompt_shareholder = ""
+
+                                dashboard_prompt = f"""{_prompt_header}
 
         === DATA HARGA & TEKNIKAL ===
         Harga Terakhir: {live_price_str}
         {vol_context}
     {_zone_context_str}
-        === DATA FUNDAMENTAL ===
+        === DATA FUNDAMENTAL / KONTEKS ASET ===
         {fund_context}
-
-        === DATA PEMEGANG SAHAM ===
-        {_sh_ctx if _sh_ctx else "Data shareholder tidak tersedia untuk ticker ini."}
+        {_prompt_shareholder}
 
         ------------------------------------------------
         ATURAN UTAMA - WAJIB DIPATUHI:
         ------------------------------------------------
 
-        (!) PENILAIAN KONDISI SAHAM (WAJIB LAKUKAN PERTAMA KALI, SEBELUM MENULIS ANALISA):
-        Nilai saham ini secara objektif berdasarkan semua data di atas. Tentukan kondisinya:
-       -LAYAK BELI: Teknikal bullish atau netral + fundamental sehat/wajar + tidak ada downtrend mayor
+        (!) PENILAIAN KONDISI ASET (WAJIB LAKUKAN PERTAMA KALI, SEBELUM MENULIS ANALISA):
+        Nilai aset ini secara objektif berdasarkan semua data di atas. Tentukan kondisinya:
+       -LAYAK BELI/LONG: Teknikal bullish atau netral + tidak ada downtrend mayor
        -WASPADA: Campuran sinyal, ada risiko nyata, perlu selektif
-       -HINDARI / BERBAHAYA: Downtrend kuat + distribusi + fundamental buruk + volume distribusi
+       -HINDARI / BERBAHAYA: Downtrend kuat + volume distribusi
 
         (!) ATURAN TRADE PLAN & RISK LEVEL:
-       -Jika kondisi saham HINDARI/BERBAHAYA atau BEARISH KUAT &rarr; JANGAN tampilkan trade plan sama sekali
+       -Jika kondisi HINDARI/BERBAHAYA atau BEARISH KUAT &rarr; JANGAN tampilkan trade plan sama sekali
        -Jika kondisi WASPADA dengan risiko tinggi &rarr; Tampilkan trade plan dengan warning ketat
-       -Jika kondisi LAYAK BELI &rarr; Tampilkan trade plan lengkap
+       -Jika kondisi LAYAK &rarr; Tampilkan trade plan lengkap
 
          SYARAT RISK LEVEL TRADE PLAN (WAJIB TENTUKAN):
-       -HIGH RISK   : Hanya teknikal yang memungkinkan (setup ada, tapi volume tidak konfirmasi atau fundamental lemah/tidak tersedia)
-       -MID RISK    : Teknikal bullish PLUS volume konfirmasi (volume di atas rata-rata, buy power > sell power, tidak ada distribusi)
-       -LOW RISK    : Teknikal bullish PLUS volume konfirmasi PLUS fundamental sehat (PBV wajar, ROE positif, EPS tumbuh, tidak ada red flag fundamental)
-       -IDX = LONG ONLY. Jangan paksakan trade jika kondisi buruk.
+       -HIGH RISK   : Hanya teknikal yang memungkinkan (setup ada, tapi volume tidak konfirmasi)
+       -MID RISK    : Teknikal bullish PLUS volume konfirmasi
+       -LOW RISK    : Teknikal bullish PLUS volume konfirmasi PLUS fundamental/makro mendukung
 
         ------------------------------------------------
         STRUKTUR OUTPUT WAJIB (ikuti persis urutan ini):
@@ -21982,58 +22182,59 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
           -EMA: posisi harga vs EMA 13/21/100/200 &rarr; arah trend
           -JUJUR: jika tren jelas turun, katakan downtrend dengan tegas
 
-        2.  NARASI FUNDAMENTAL
-          -Valuasi: murah / wajar / mahal (berdasarkan PBV, PER, ROE) - jujur jika overvalued
-          -Kinerja keuangan (EPS, margin, pertumbuhan revenue) - sebutkan jika memburuk
+        2.  NARASI FUNDAMENTAL / KONTEKS MAKRO
+          -Untuk saham IDX: valuasi PBV/PER, kinerja keuangan, katalis
+          -Untuk IHSG/Indeks: kondisi makro domestik, sentiment investor, aliran dana asing
+          -Untuk komoditas: supply-demand global, siklus harga, isu geopolitik yang relevan
+          -Untuk forex/kurs: kebijakan moneter, perbedaan suku bunga, DXY, cadangan devisa
+          -Untuk crypto: sentimen pasar, siklus halving, regulasi, adopsi institusional
           -Katalis positif/negatif ke depan - jangan sembunyikan risiko
-          -Posisi vs kompetitor sektor
 
-        3.  SINYAL PEMEGANG SAHAM
-          -Tren jumlah pemegang saham: akumulasi atau distribusi?
-          -Implikasi terhadap supply/demand
+        3.  SINYAL PEMEGANG SAHAM / FLOW DATA
+          -Untuk saham IDX: tren jumlah pemegang saham, akumulasi/distribusi
+          -Untuk aset lain: data COT (Commitment of Traders) / open interest / dominance (crypto), jika relevan
 
-        4.  OUTLOOK SEKTOR & MAKRO
-          -Kondisi sektor saat ini
-          -Faktor makro relevan (suku bunga BI, kurs IDR, kebijakan pemerintah)
+        4.  OUTLOOK SEKTORAL, GLOBAL & DAMPAK KE IDX/RUPIAH
+          -Kondisi global yang mempengaruhi aset ini
+          -Dampak ke IHSG, Rupiah, dan emiten terkait (jika relevan)
           -Risiko utama - JANGAN diremehkan
 
         5.  KESIMPULAN & VERDICT (JUJUR & TEGAS)
           -Bias tunggal: BULLISH / BEARISH / SIDEWAYS - satu pilihan, jelaskan alasan utama
-          -Rating: BELI / WASPADA / HINDARI
-          -Jika BEARISH/HINDARI: jelaskan dengan narasi JELAS mengapa saham ini tidak layak dibeli saat ini - sebutkan risiko konkret, downtrend, distribusi, fundamental buruk, dll. Gunakan bahasa tegas dan lugas agar trader tidak salah mengambil keputusan.
+          -Rating: BELI/LONG / WASPADA / HINDARI
+          -Jika BEARISH/HINDARI: jelaskan dengan narasi JELAS mengapa tidak layak saat ini
           -Level kunci yang wajib diperhatikan
 
         6.  TRADE PLAN
-           (!) HANYA TAMPILKAN BAGIAN INI JIKA KONDISI SAHAM = LAYAK BELI ATAU WASPADA (dengan warning)
-           (!) JIKA KONDISI = HINDARI/BERBAHAYA/DOWNTREND KUAT: Ganti seluruh bagian ini dengan narasi jelas:
-              "(!) TRADE PLAN TIDAK TERSEDIA - [jelaskan alasan konkret mengapa tidak ada setup yang layak: downtrend belum selesai, distribusi aktif, fundamental memburuk, dll. Berikan kondisi/trigger apa yang harus terpenuhi dulu sebelum trader boleh mempertimbangkan posisi di saham ini]"
+           (!) HANYA TAMPILKAN BAGIAN INI JIKA KONDISI = LAYAK BELI/LONG ATAU WASPADA (dengan warning)
+           (!) JIKA KONDISI = HINDARI/BERBAHAYA/DOWNTREND KUAT: Ganti dengan narasi mengapa tidak ada setup layak
 
            Jika LAYAK, WAJIB cantumkan Risk Level di baris pertama Trade Plan:
-          - HIGH RISK  &rarr; jika hanya teknikal yang memungkinkan (volume belum konfirmasi / fundamental tidak mendukung)
-          - MID RISK   &rarr; jika teknikal + volume sama-sama mendukung (buy power dominan, vol di atas MA)
-          - LOW RISK   &rarr; jika teknikal + volume + fundamental semuanya oke (trio konfirmasi lengkap)
+          - HIGH RISK  &rarr; jika hanya teknikal yang memungkinkan
+          - MID RISK   &rarr; jika teknikal + volume mendukung
+          - LOW RISK   &rarr; jika teknikal + volume + fundamental/makro mendukung
 
            Format baris pertama trade plan:  Risk Level: [ HIGH RISK /  MID RISK /  LOW RISK] - [alasan singkat 1 kalimat]
 
            Lanjutkan:
-          -Area Beli (BUY ZONE): Rp[X] &ndash; Rp[Y] &rarr; WAJIB berdasarkan zona teknikal: Demand Zone / IFVG Bull / FVG Bull / OB Bull yang terdeteksi. Sebutkan zona mana yang digunakan.
-          -Stop Loss: Rp[Z] &rarr; di bawah zona demand/support struktural. Minimal 1.5&times; ATR dari entry bawah. WAJIB di bawah BUY ZONE.
-          -TP1: Rp[A] &rarr; zona Supply / OB Bear / IFVG Bear terdekat di atas harga, atau resistance swing high (WAJIB diisi)
-          -TP2: Rp[B] &rarr; zona Supply / resistance mayor berikutnya (WAJIB diisi)
+          -Area Entry (BUY ZONE): {_price_label}[X] &ndash; {_price_label}[Y] &rarr; berdasarkan zona teknikal: Demand Zone / Support struktural / FVG Bull yang terdeteksi.
+          -Stop Loss: {_price_label}[Z] &rarr; di bawah zona support struktural. Minimal 1.5&times; ATR dari entry bawah. WAJIB di bawah BUY ZONE.
+          -TP1: {_price_label}[A] &rarr; zona Supply / resistance terdekat di atas harga (WAJIB diisi)
+          -TP2: {_price_label}[B] &rarr; zona Supply / resistance mayor berikutnya (WAJIB diisi)
           -Timeframe: perkiraan berapa hari/minggu
           -Trigger masuk: kondisi spesifik sebelum entry
 
         CATATAN CHART: Semua level (BUY ZONE, SL, TP1, TP2) AKAN digambar otomatis di chart. WAJIB konsisten: SL < entry_low < entry_high < TP1 < TP2. Level JSON di bawah HARUS SAMA PERSIS dengan angka yang kamu tulis di Trade Plan di atas.
 
-        Semua harga dalam Rupiah. Jawab dalam Bahasa Indonesia. Padat tapi detail. JANGAN ada kalimat pengantar JSON.
+        Jawab dalam Bahasa Indonesia. Padat tapi detail. JANGAN ada kalimat pengantar JSON.
 
         Di AKHIR JAWABAN (setelah semua analisa), tambahkan JSON koordinat chart:
         ```json
         {{"entry_low": 0, "entry_high": 0, "stop_loss": 0, "tp1": 0, "tp2": 0, "tp3": null, "risk_level": "HIGH"}}
         ```
-        PENTING: Jika kondisi saham HINDARI/BEARISH KUAT, isi semua nilai JSON dengan 0 (nol) - JANGAN gambar trade plan di chart.
+        PENTING: Jika kondisi HINDARI/BEARISH KUAT, isi semua nilai JSON dengan 0 (nol) - JANGAN gambar trade plan di chart.
         Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawah entry_low. tp1 di atas entry_high. Semua angka mendekati harga saat ini ({live_price_str}).
-        Untuk risk_level: isi "HIGH" jika hanya teknikal oke, "MID" jika teknikal+volume oke, "LOW" jika teknikal+volume+fundamental oke. Jika tidak ada trade plan, isi "NONE"."""
+        Untuk risk_level: isi "HIGH" jika hanya teknikal oke, "MID" jika teknikal+volume oke, "LOW" jika teknikal+volume+fundamental/makro oke. Jika tidak ada trade plan, isi "NONE"."""
 
                                 try:
                                     # temperature=0 → hasil deterministik untuk konsistensi analisa
@@ -22594,6 +22795,27 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 
                     st.markdown(html_str, unsafe_allow_html=True)
 
+                    # ── DOWNLOAD BUTTON: Alpha Stock Insight ──
+                    _insight_dl_col1, _insight_dl_col2 = st.columns([3, 1])
+                    with _insight_dl_col2:
+                        _insight_dl_name = _display_name if not _is_idx_stock else ticker_input
+                        st.download_button(
+                            label="⬇️ Download Analisa (.txt)",
+                            data=(
+                                f"SIGMA — ALPHA STOCK INSIGHT\n"
+                                f"Aset   : {_insight_dl_name}\n"
+                                f"Tipe   : {_asset_type.upper() if not _is_idx_stock else 'IDX STOCK'}\n"
+                                f"Harga  : {live_price_str}\n"
+                                f"Waktu  : {_wib_now().strftime('%d %b %Y %H:%M WIB')}\n"
+                                f"{'='*60}\n\n"
+                                + ai_text_verdict
+                            ).encode("utf-8"),
+                            file_name=f"SIGMA_Insight_{(_insight_dl_name).replace('/','_')}_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
+                            mime="text/plain",
+                            key="insight_download_btn",
+                            use_container_width=True,
+                        )
+
                 elif not run_analysis:
                     _persisted_data   = st.session_state.get("alpha_insight_last_data")
                     _persisted_ticker = (_persisted_data or {}).get("ticker", "")
@@ -22623,6 +22845,23 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
     {_pv_clean}
     </div>
     </div>""", unsafe_allow_html=True)
+                            # ── DOWNLOAD BUTTON: Persisted Insight ──
+                            _p_dl_col1, _p_dl_col2 = st.columns([3, 1])
+                            with _p_dl_col2:
+                                st.download_button(
+                                    label="⬇️ Download Analisa (.txt)",
+                                    data=(
+                                        f"SIGMA — ALPHA STOCK INSIGHT\n"
+                                        f"Ticker : {_persisted_ticker}\n"
+                                        f"Waktu  : {_pt}\n"
+                                        f"{'='*60}\n\n"
+                                        + _pv
+                                    ).encode("utf-8"),
+                                    file_name=f"SIGMA_Insight_{_persisted_ticker}_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
+                                    mime="text/plain",
+                                    key="insight_persisted_dl_btn",
+                                    use_container_width=True,
+                                )
                     else:
                         st.markdown(f"""
                         <div class="trm-card" style="text-align:center; padding:40px 20px; margin-top:20px;">
@@ -25690,6 +25929,33 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                 generated_at = _today_entry.get("generated_at",""),
                                 max_cards    = 10,
                             )
+                            # ── Download Daily Plan ──
+                            _dp_dl_lines = [
+                                "SIGMA — DAILY TRADE PLAN",
+                                f"Tanggal : {_today_entry.get('date','')}",
+                                f"Generate: {_today_entry.get('generated_at','')}",
+                                "="*60,
+                                f"OUTLOOK: {_today_entry.get('plan',{}).get('outlook','')}" if _today_entry.get('plan',{}).get('outlook') else "",
+                                "",
+                                "TOP 10 SAHAM DAILY PLAN:",
+                            ]
+                            for _dp_r in _top10_rows:
+                                _dp_dl_lines.append(
+                                    f"  {_dp_r.get('ticker','')}: Entry {_dp_r.get('entry_low',0)}-{_dp_r.get('entry_high',0)}"
+                                    f" | SL {_dp_r.get('stoploss',_dp_r.get('sl',0))}"
+                                    f" | TP1 {_dp_r.get('tp1',0)} | TP2 {_dp_r.get('tp2',0)}"
+                                    f" | Rating: {_dp_r.get('bias','BUY')}"
+                                )
+                            _dp_dl_col1, _dp_dl_col2 = st.columns([3, 1])
+                            with _dp_dl_col2:
+                                st.download_button(
+                                    label="⬇️ Download Daily Plan (.txt)",
+                                    data="\n".join(_dp_dl_lines).encode("utf-8"),
+                                    file_name=f"SIGMA_DailyPlan_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
+                                    mime="text/plain",
+                                    key="daily_plan_dl_btn",
+                                    use_container_width=True,
+                                )
 
                         # ── Simpan data ranking ke session_state agar bisa dirender di tab terpisah ──
                         st.session_state["_daily_ranked_20"]  = _ranked_20
@@ -26061,6 +26327,32 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                             generated_at = _week_entry.get("generated_at", ""),
                             max_cards    = 10,
                         )
+                        # ── Download Weekly Plan ──
+                        _wp_dl_lines = [
+                            "SIGMA — WEEKLY TRADE PLAN",
+                            f"Periode : {_week_entry.get('date','')}",
+                            f"Generate: {_week_entry.get('generated_at','')}",
+                            "="*60,
+                            "",
+                            "TOP 10 SAHAM WEEKLY PLAN:",
+                        ]
+                        for _wpr in _wrows[:10]:
+                            _wp_dl_lines.append(
+                                f"  {_wpr.get('ticker','')}: Entry {_wpr.get('entry_low',0)}-{_wpr.get('entry_high',0)}"
+                                f" | SL {_wpr.get('stoploss',_wpr.get('sl',0))}"
+                                f" | TP1 {_wpr.get('tp1',0)} | TP2 {_wpr.get('tp2',0)}"
+                                f" | Horizon: {_wpr.get('horizon','Swing')}"
+                            )
+                        _wp_dl_col1, _wp_dl_col2 = st.columns([3, 1])
+                        with _wp_dl_col2:
+                            st.download_button(
+                                label="⬇️ Download Weekly Plan (.txt)",
+                                data="\n".join(_wp_dl_lines).encode("utf-8"),
+                                file_name=f"SIGMA_WeeklyPlan_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
+                                mime="text/plain",
+                                key="weekly_plan_dl_btn",
+                                use_container_width=True,
+                            )
 
 
             # ============================================================
@@ -26233,6 +26525,33 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                             date_label   = _today_b_entry.get("date", ""),
                             generated_at = _today_b_entry.get("generated_at", ""),
                         )
+                        # ── Download BSJP Plan ──
+                        _bsjp_dl_lines = [
+                            f"SIGMA — BSJP TRADE PLAN",
+                            f"Tanggal : {_today_b_entry.get('date','')}",
+                            f"Generate: {_today_b_entry.get('generated_at','')}",
+                            "="*60,
+                            f"OUTLOOK: {_boutlook}" if _boutlook else "",
+                            "",
+                            "KANDIDAT BELI SORE JUAL PAGI:",
+                        ]
+                        for _br in _brows_buy[:10]:
+                            _bsjp_dl_lines.append(
+                                f"  {_br.get('ticker','')}: Entry {_br.get('entry_low',0)}-{_br.get('entry_high',0)}"
+                                f" | SL {_br.get('stoploss',_br.get('sl',0))}"
+                                f" | TP1 {_br.get('tp1',0)} | TP2 {_br.get('tp2',0)}"
+                                f" | Rating: {_br.get('bias','BUY')}"
+                            )
+                        _bsjp_dl_col1, _bsjp_dl_col2 = st.columns([3, 1])
+                        with _bsjp_dl_col2:
+                            st.download_button(
+                                label="⬇️ Download BSJP Plan (.txt)",
+                                data="\n".join(_bsjp_dl_lines).encode("utf-8"),
+                                file_name=f"SIGMA_BSJP_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
+                                mime="text/plain",
+                                key="bsjp_plan_dl_btn",
+                                use_container_width=True,
+                            )
 
                 else:
                     st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
@@ -29166,9 +29485,56 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
     <strong style="color:#a78bfa;">Daily & Weekly Plan</strong> (trading plan AI),
     <strong style="color:#a78bfa;">Broker Summary</strong> (bandarmologi),
     <strong style="color:#a78bfa;">Analisa IPO</strong>, dan <strong style="color:#a78bfa;">Track Record</strong>.
-    Semua dalam satu tab.
+    Semua dalam satu tab.<br><br>
+    <strong style="color:#00E5BE;">🆕 BARU:</strong> Alpha Stock Insight kini mendukung analisa
+    <strong style="color:#fbbf24;">IHSG & Indeks</strong>,
+    <strong style="color:#f59e0b;">Komoditas Global</strong> (Gold, Oil, Coal, Nickel, CPO, dll),
+    <strong style="color:#60a5fa;">Forex</strong> (USD/IDR, DXY), dan
+    <strong style="color:#a78bfa;">Crypto</strong> (BTC, ETH, SOL, BNB, XRP).
+    Pilih kategori dari dropdown sebelum klik Analyze.
+    Semua output bisa <strong style="color:#26a69a;">⬇️ Download</strong> sebagai file .txt.
   </div>
 </div>
+
+<div class="sec-head"><div class="sec-icon">🌍</div>
+<div><div class="sec-title">DAFTAR ASET YANG BISA DIANALISA (SELAIN SAHAM IDX)</div>
+<div class="sec-desc">Gunakan dropdown "Kategori Aset" di tab Alpha Stock Insight untuk memilih</div></div></div>
+
+<div class="feat blue">
+  <div class="feat-title">📊 IHSG & Indeks Indonesia</div>
+  <div style="font-size:0.8rem;color:rgba(255,255,255,0.7);line-height:1.8;">
+    <b style="color:#60a5fa;">IHSG (^JKSE)</b> — Jakarta Composite Index · Benchmark pasar saham Indonesia<br>
+    <b style="color:#60a5fa;">LQ45 (^JKLQ45)</b> — Indeks 45 saham liquid IDX terbesar
+  </div>
+</div>
+
+<div class="feat yellow">
+  <div class="feat-title">🪙 Komoditas Global</div>
+  <div style="font-size:0.8rem;color:rgba(255,255,255,0.7);line-height:1.8;">
+    <b style="color:#fbbf24;">Gold XAU/USD</b> · <b style="color:#fbbf24;">Silver XAG/USD</b> · <b style="color:#fbbf24;">WTI Crude Oil</b> · <b style="color:#fbbf24;">Brent Crude Oil</b> · <b style="color:#fbbf24;">Natural Gas</b><br>
+    <b style="color:#fbbf24;">Coal (ICE)</b> · <b style="color:#fbbf24;">Nickel</b> · <b style="color:#fbbf24;">Copper</b> · <b style="color:#fbbf24;">CPO/Palm Oil</b> · <b style="color:#fbbf24;">Corn</b> · <b style="color:#fbbf24;">Wheat</b> · <b style="color:#fbbf24;">Soybean</b> · <b style="color:#fbbf24;">Rubber</b><br>
+    <span style="color:rgba(255,255,255,0.45);font-size:0.72rem;">Semua data dari yfinance futures. Analisa mencakup price action + konteks supply-demand global + dampak ke IHSG & Rupiah.</span>
+  </div>
+</div>
+
+<div class="feat">
+  <div class="feat-title">💱 Forex</div>
+  <div style="font-size:0.8rem;color:rgba(255,255,255,0.7);line-height:1.8;">
+    <b style="color:#a78bfa;">USD/IDR</b> — Kurs Dolar AS terhadap Rupiah<br>
+    <b style="color:#a78bfa;">DXY Index</b> — US Dollar Index (bobot 6 mata uang mayor)<br>
+    <span style="color:rgba(255,255,255,0.45);font-size:0.72rem;">Analisa mencakup arah kurs, kebijakan moneter Fed/BI, dan dampak ke IHSG dan sektor komoditas Indonesia.</span>
+  </div>
+</div>
+
+<div class="feat green">
+  <div class="feat-title">🔗 Crypto</div>
+  <div style="font-size:0.8rem;color:rgba(255,255,255,0.7);line-height:1.8;">
+    <b style="color:#26a69a;">Bitcoin (BTC/USD)</b> · <b style="color:#26a69a;">Ethereum (ETH/USD)</b> · <b style="color:#26a69a;">Solana (SOL/USD)</b> · <b style="color:#26a69a;">BNB (BNB/USD)</b> · <b style="color:#26a69a;">XRP (XRP/USD)</b> · <b style="color:#26a69a;">USDT/IDR</b><br>
+    <span style="color:rgba(255,255,255,0.45);font-size:0.72rem;">Analisa teknikal murni + sentimen pasar crypto (siklus halving, dominance, regulasi). Bukan rekomendasi investasi.</span>
+  </div>
+</div>
+
+<div class="key" style="margin-top:8px;">🔑 <b>Cara Pakai:</b> Buka <b>Alpha Screener → tab Alpha Stock Insight</b>. Pilih <b>Kategori Aset</b> dari dropdown (default: Saham IDX). Untuk saham IDX, ketik kode ticker. Untuk aset lain, pilih dari dropdown kedua. Klik <b>▶ ANALYZE</b>. Download hasilnya dengan tombol <b>⬇️ Download Analisa</b> yang muncul di bawah output.</div>
 
 <div class="grid3">
   <div class="gcard"><div class="gcard-lbl">BSJP Screener</div><div class="gcard-val">Score 0–100</div><div class="gcard-sub">TA + Bandar Flow + Volume + Price Action scanning harian</div></div>
