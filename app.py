@@ -26092,13 +26092,14 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 
                 st.markdown("<br>", unsafe_allow_html=True)
 
-            # ── 4 sub-tab ──
-            _d_tab_plan, _d_tab_ranking, _d_tab_hist_plan, _d_tab_hist_sum, _d_tab_trackrecord = st.tabs([
+            # ── 5 sub-tab ──
+            _d_tab_plan, _d_tab_ranking, _d_tab_hist_plan, _d_tab_hist_sum, _d_tab_trackrecord, _d_tab_eval_ai = st.tabs([
                 "  📋 TRADE PLAN & SUMMARY  ",
                 "  🏅 RANKING BROKER SCORE  ",
                 "  🗂️ HISTORY TRADE PLAN  ",
                 "  📊 HISTORY SUMMARY  ",
                 "  ⚖️ VERDICT  ",
+                "  🧠 EVALUASI AI  ",
             ])
 
             # ════════════════════════════════════════════
@@ -26535,7 +26536,184 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
             # ════════════════════════════════════════════
             with _d_tab_trackrecord:
                 _render_auto_track_record(filter_type='Daily')
-        with reco_tab_weekly:
+
+            # ════════════════════════════════════════════
+            # DAILY TAB 6 — EVALUASI AI
+            # ════════════════════════════════════════════
+            with _d_tab_eval_ai:
+                _daily_eval_closed = [
+                    r for r in st.session_state.get("tr_records", [])
+                    if (r.get("type") or "").upper() in ("DAILY", "")
+                    and r.get("status") in {"CLOSED", "TP1", "TP2", "SL"}
+                ]
+                _daily_eval_all = [
+                    r for r in st.session_state.get("tr_records", [])
+                    if (r.get("type") or "").upper() in ("DAILY", "")
+                ]
+
+                st.markdown(
+                    f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;"
+                    f"letter-spacing:0.15em;text-transform:uppercase;font-weight:700;"
+                    f"color:#a78bfa;margin-bottom:6px;'>🧠 EVALUASI AI — DAILY PLAN ANALYSIS</div>"
+                    f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
+                    f"color:{text_sub};margin-bottom:18px;'>"
+                    f"AI menganalisis performa plan harian: saham yang konsisten masuk rekomendasi, "
+                    f"win rate, kualitas entry/exit, dan rekomendasi perbaikan strategi daily.</p>",
+                    unsafe_allow_html=True
+                )
+
+                if len(_daily_eval_closed) < 3:
+                    st.info("📭 Butuh minimal 3 trade Daily yang sudah closed untuk evaluasi AI.")
+                else:
+                    # Stats ringkas
+                    _de_wins   = [r for r in _daily_eval_closed if r.get("result") == "WIN"]
+                    _de_losses = [r for r in _daily_eval_closed if r.get("result") == "LOSS"]
+                    _de_wr     = round(len(_de_wins) / len(_daily_eval_closed) * 100, 1)
+                    _de_avg_w  = round(sum(r.get("pnl_pct", 0) for r in _de_wins) / len(_de_wins), 2) if _de_wins else 0
+                    _de_avg_l  = round(sum(r.get("pnl_pct", 0) for r in _de_losses) / len(_de_losses), 2) if _de_losses else 0
+
+                    # Mini stats bar
+                    _de_c1, _de_c2, _de_c3, _de_c4 = st.columns(4)
+                    _de_c1.metric("Total Closed", len(_daily_eval_closed))
+                    _de_c2.metric("Win Rate", f"{_de_wr}%", delta=f"+{_de_wr - 50:.1f}%" if _de_wr >= 50 else f"{_de_wr - 50:.1f}%")
+                    _de_c3.metric("Avg WIN", f"+{_de_avg_w}%")
+                    _de_c4.metric("Avg LOSS", f"{_de_avg_l}%")
+
+                    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+                    # Tombol
+                    _de_cached   = st.session_state.get("daily_eval_ai_result", "")
+                    _de_cached_n = st.session_state.get("daily_eval_ai_n", 0)
+                    _de_n_now    = len(_daily_eval_closed)
+
+                    if _de_cached and _de_cached_n == _de_n_now:
+                        st.markdown(
+                            f"<div style='background:rgba(167,139,250,0.05);border:1px solid rgba(167,139,250,0.2);"
+                            f"border-radius:10px;padding:16px 18px;font-size:0.82rem;line-height:1.8;"
+                            f"color:{text_main};white-space:pre-wrap;font-family:IBM Plex Mono,monospace;'>"
+                            f"{_de_cached}</div>",
+                            unsafe_allow_html=True
+                        )
+                        _de_btn_label = "↻ Evaluasi Ulang"
+                    else:
+                        _de_btn_label = "▶ Evaluasi Performa Daily Plan"
+
+                    _de_col, _ = st.columns([1.8, 2.2])
+                    with _de_col:
+                        if st.button(_de_btn_label, key="daily_eval_ai_btn", use_container_width=True):
+
+                            def _de_fmt_trades(lst):
+                                rows = []
+                                for r in lst[:25]:
+                                    rows.append(
+                                        f"{r.get('ticker','-')} | entry:{r.get('entry','-')} | "
+                                        f"tp1:{r.get('tp1','-')} | sl:{r.get('sl','-')} | "
+                                        f"exit:{r.get('exit_price','-')} | "
+                                        f"pnl:{r.get('pnl_pct',0)}% | "
+                                        f"spike:{r.get('vol_spike','-')} | "
+                                        f"result:{r.get('result','-')} | "
+                                        f"date:{r.get('date','-')}"
+                                    )
+                                return "\n".join(rows)
+
+                            # Kumpulkan history plan harian (saham yang paling sering direkomendasikan)
+                            _dh_all = st.session_state.get("auto_plan_history_daily", {})
+                            _ticker_freq = {}
+                            for _dhv in list(_dh_all.values())[-20:]:
+                                for _dhr in _dhv.get("plan", {}).get("daily", []):
+                                    _t = _dhr.get("ticker", "")
+                                    if _t:
+                                        _ticker_freq[_t] = _ticker_freq.get(_t, 0) + 1
+                            _top_reco = sorted(_ticker_freq.items(), key=lambda x: x[1], reverse=True)[:10]
+                            _top_reco_str = ", ".join(f"{t}({c}x)" for t, c in _top_reco) if _top_reco else "—"
+
+                            _de_prompt = f"""Kamu adalah quant analyst ahli strategi trading saham IDX Indonesia, spesialis Daily Plan (intraday/swing harian).
+
+DATA TRACK RECORD DAILY PLAN:
+- Total closed: {len(_daily_eval_closed)} trade  |  Win Rate: {_de_wr}%
+- Avg WIN: +{_de_avg_w}% | Avg LOSS: {_de_avg_l}%
+- Saham paling sering masuk rekomendasi (20 plan terakhir): {_top_reco_str}
+
+TRADE WIN ({len(_de_wins)} trade):
+{_de_fmt_trades(_de_wins)}
+
+TRADE LOSS ({len(_de_losses)} trade):
+{_de_fmt_trades(_de_losses)}
+
+Lakukan evaluasi menyeluruh berikut:
+
+## 1. KUALITAS REKOMENDASI
+Saham mana yang konsisten menghasilkan WIN? Mana yang sering LOSS walau sering direkomendasikan?
+
+## 2. POLA ENTRY & TIMING
+Kapan entry terbaik untuk Daily Plan? Ada pola waktu (jam/hari) yang berkorelasi dengan hasil?
+
+## 3. EFEKTIVITAS TP & SL
+Apakah TP dan SL yang dipasang sudah tepat untuk strategi harian? R/R ratio ideal?
+
+## 4. SAHAM YANG HARUS DIHAPUS DARI WATCHLIST
+Berdasarkan track record, saham mana yang merusak performa dan sebaiknya dihindari?
+
+## 5. REKOMENDASI UPGRADE STRATEGI
+3-5 perubahan konkret untuk meningkatkan win rate Daily Plan dari {_de_wr}% ke 60%+
+
+## 6. KESIMPULAN KUANTITATIF
+Spike minimum ideal, sektor terbaik, hari terbaik dalam seminggu untuk Daily Plan.
+
+Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan actionable."""
+
+                            _de_header = st.empty()
+                            _de_header.markdown(
+                                "<div style='display:flex;align-items:center;gap:8px;"
+                                "font-family:IBM Plex Mono,monospace;font-size:0.75rem;"
+                                f"color:{text_sub};margin-bottom:8px;'>"
+                                "<span style='animation:spin 1s linear infinite;display:inline-block;'>⟳</span>"
+                                " AI menganalisis performa Daily Plan...</div>"
+                                "<style>@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}</style>",
+                                unsafe_allow_html=True
+                            )
+
+                            _de_chunks = []
+                            _de_container = st.empty()
+
+                            try:
+                                for _chunk in _call_groq_streaming(_de_prompt, max_tokens=2000, temperature=0.4):
+                                    _de_chunks.append(_chunk)
+                                    _de_partial = "".join(_de_chunks)
+                                    _de_container.markdown(
+                                        f"<div style='background:rgba(167,139,250,0.05);"
+                                        f"border:1px solid rgba(167,139,250,0.2);"
+                                        f"border-radius:10px;padding:16px 18px;"
+                                        f"font-size:0.82rem;line-height:1.8;"
+                                        f"color:{text_main};white-space:pre-wrap;"
+                                        f"font-family:IBM Plex Mono,monospace;'>"
+                                        f"{_de_partial}▌</div>",
+                                        unsafe_allow_html=True
+                                    )
+
+                                _de_result = "".join(_de_chunks)
+                                _de_container.markdown(
+                                    f"<div style='background:rgba(167,139,250,0.05);"
+                                    f"border:1px solid rgba(167,139,250,0.2);"
+                                    f"border-radius:10px;padding:16px 18px;"
+                                    f"font-size:0.82rem;line-height:1.8;"
+                                    f"color:{text_main};white-space:pre-wrap;"
+                                    f"font-family:IBM Plex Mono,monospace;'>"
+                                    f"{_de_result}</div>",
+                                    unsafe_allow_html=True
+                                )
+                                st.session_state["daily_eval_ai_result"] = _de_result
+                                st.session_state["daily_eval_ai_n"]      = _de_n_now
+                                _de_header.markdown(
+                                    f"<p style='font-size:0.7rem;color:{text_sub};margin-top:6px;"
+                                    f"font-family:IBM Plex Mono,monospace;'>"
+                                    f"Model: Groq/Llama70B &middot; "
+                                    f"{_wib_now().strftime('%d %b %Y %H:%M')} WIB</p>",
+                                    unsafe_allow_html=True
+                                )
+                            except Exception as _de_e:
+                                _de_header.empty()
+                                st.error(f"Gagal evaluasi: {_de_e}")
 
 
             _now_w        = _wib_now()
@@ -26604,11 +26782,12 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                 st.error(f"Error: {_e_fw}")
                 st.markdown("<br>", unsafe_allow_html=True)
 
-            _w_tab_plan, _w_tab_hist_plan, _w_tab_hist_sum, _w_tab_trackrecord = st.tabs([
+            _w_tab_plan, _w_tab_hist_plan, _w_tab_hist_sum, _w_tab_trackrecord, _w_tab_eval_ai = st.tabs([
                 "  📋 TRADE PLAN & SUMMARY  ",
                 "  🗂️ HISTORY TRADE PLAN  ",
                 "  📊 HISTORY SUMMARY  ",
                 "  ⚖️ VERDICT  ",
+                "  🧠 EVALUASI AI  ",
             ])
 
             # ============================================================
@@ -26869,7 +27048,178 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
             # ============================================================
             with _w_tab_trackrecord:
                 _render_auto_track_record(filter_type='Weekly')
-        with reco_tab_bsjp:
+
+            # ============================================================
+            # WEEKLY TAB 5 — EVALUASI AI
+            # ============================================================
+            with _w_tab_eval_ai:
+                _weekly_eval_closed = [
+                    r for r in st.session_state.get("tr_records", [])
+                    if (r.get("type") or "").upper() == "WEEKLY"
+                    and r.get("status") in {"CLOSED", "TP1", "TP2", "SL"}
+                ]
+
+                st.markdown(
+                    f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;"
+                    f"letter-spacing:0.15em;text-transform:uppercase;font-weight:700;"
+                    f"color:#26a69a;margin-bottom:6px;'>🧠 EVALUASI AI — WEEKLY PLAN ANALYSIS</div>"
+                    f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
+                    f"color:{text_sub};margin-bottom:18px;'>"
+                    f"AI menganalisis performa swing trade mingguan: pola setup terbaik, "
+                    f"saham struktural terkuat, efektivitas TP/SL multi-hari, dan rekomendasi perbaikan.</p>",
+                    unsafe_allow_html=True
+                )
+
+                if len(_weekly_eval_closed) < 3:
+                    st.info("📭 Butuh minimal 3 trade Weekly yang sudah closed untuk evaluasi AI.")
+                else:
+                    _we_wins   = [r for r in _weekly_eval_closed if r.get("result") == "WIN"]
+                    _we_losses = [r for r in _weekly_eval_closed if r.get("result") == "LOSS"]
+                    _we_wr     = round(len(_we_wins) / len(_weekly_eval_closed) * 100, 1)
+                    _we_avg_w  = round(sum(r.get("pnl_pct", 0) for r in _we_wins) / len(_we_wins), 2) if _we_wins else 0
+                    _we_avg_l  = round(sum(r.get("pnl_pct", 0) for r in _we_losses) / len(_we_losses), 2) if _we_losses else 0
+
+                    # Mini stats
+                    _we_c1, _we_c2, _we_c3, _we_c4 = st.columns(4)
+                    _we_c1.metric("Total Closed", len(_weekly_eval_closed))
+                    _we_c2.metric("Win Rate", f"{_we_wr}%", delta=f"+{_we_wr - 50:.1f}%" if _we_wr >= 50 else f"{_we_wr - 50:.1f}%")
+                    _we_c3.metric("Avg WIN", f"+{_we_avg_w}%")
+                    _we_c4.metric("Avg LOSS", f"{_we_avg_l}%")
+
+                    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+                    _we_cached   = st.session_state.get("weekly_eval_ai_result", "")
+                    _we_cached_n = st.session_state.get("weekly_eval_ai_n", 0)
+                    _we_n_now    = len(_weekly_eval_closed)
+
+                    if _we_cached and _we_cached_n == _we_n_now:
+                        st.markdown(
+                            f"<div style='background:rgba(38,166,154,0.05);border:1px solid rgba(38,166,154,0.2);"
+                            f"border-radius:10px;padding:16px 18px;font-size:0.82rem;line-height:1.8;"
+                            f"color:{text_main};white-space:pre-wrap;font-family:IBM Plex Mono,monospace;'>"
+                            f"{_we_cached}</div>",
+                            unsafe_allow_html=True
+                        )
+                        _we_btn_label = "↻ Evaluasi Ulang"
+                    else:
+                        _we_btn_label = "▶ Evaluasi Performa Weekly Plan"
+
+                    _we_col, _ = st.columns([1.8, 2.2])
+                    with _we_col:
+                        if st.button(_we_btn_label, key="weekly_eval_ai_btn", use_container_width=True):
+
+                            def _we_fmt_trades(lst):
+                                rows = []
+                                for r in lst[:25]:
+                                    rows.append(
+                                        f"{r.get('ticker','-')} | entry:{r.get('entry','-')} | "
+                                        f"tp1:{r.get('tp1','-')} | sl:{r.get('sl','-')} | "
+                                        f"exit:{r.get('exit_price','-')} | "
+                                        f"pnl:{r.get('pnl_pct',0)}% | "
+                                        f"spike:{r.get('vol_spike','-')} | "
+                                        f"result:{r.get('result','-')} | "
+                                        f"date:{r.get('date','-')}"
+                                    )
+                                return "\n".join(rows)
+
+                            # Saham paling sering masuk weekly plan
+                            _wh_all = st.session_state.get("auto_plan_history_weekly", {})
+                            _we_ticker_freq = {}
+                            for _whv in list(_wh_all.values())[-12:]:
+                                for _whr in _whv.get("plan", {}).get("weekly", []):
+                                    _wt = _whr.get("ticker", "")
+                                    if _wt:
+                                        _we_ticker_freq[_wt] = _we_ticker_freq.get(_wt, 0) + 1
+                            _we_top_reco = sorted(_we_ticker_freq.items(), key=lambda x: x[1], reverse=True)[:10]
+                            _we_top_str  = ", ".join(f"{t}({c}x)" for t, c in _we_top_reco) if _we_top_reco else "—"
+
+                            _we_prompt = f"""Kamu adalah quant analyst ahli strategi swing trading saham IDX Indonesia, spesialis Weekly Plan (hold 3-5 hari).
+
+DATA TRACK RECORD WEEKLY PLAN:
+- Total closed: {len(_weekly_eval_closed)} trade  |  Win Rate: {_we_wr}%
+- Avg WIN: +{_we_avg_w}% | Avg LOSS: {_we_avg_l}%
+- Saham paling sering masuk rekomendasi (12 minggu terakhir): {_we_top_str}
+
+TRADE WIN ({len(_we_wins)} trade):
+{_we_fmt_trades(_we_wins)}
+
+TRADE LOSS ({len(_we_losses)} trade):
+{_we_fmt_trades(_we_losses)}
+
+Lakukan evaluasi menyeluruh berikut:
+
+## 1. SETUP TERBAIK UNTUK SWING WEEKLY
+Pola teknikal/fundamental apa yang konsisten menghasilkan WIN dalam timeframe mingguan?
+
+## 2. HOLDING PERIOD & EXIT OPTIMAL
+Berapa hari hold ideal? Apakah lebih baik exit di TP1, TP2, atau trailing? Analisis dari data.
+
+## 3. SAHAM STRUKTURAL TERKUAT
+Ticker mana yang paling konsisten menghasilkan profit di Weekly Plan? Mengapa?
+
+## 4. SAHAM YANG MERUSAK PERFORMA
+Ticker mana yang harus dikeluarkan dari watchlist weekly? Pola kegagalannya apa?
+
+## 5. MANAJEMEN RISIKO MINGGUAN
+SL% optimal untuk swing, posisi sizing, dan kondisi market yang harus dihindari.
+
+## 6. REKOMENDASI UPGRADE STRATEGI
+3-5 perubahan konkret untuk meningkatkan win rate Weekly Plan dari {_we_wr}% ke 60%+
+
+Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan actionable."""
+
+                            _we_header = st.empty()
+                            _we_header.markdown(
+                                "<div style='display:flex;align-items:center;gap:8px;"
+                                "font-family:IBM Plex Mono,monospace;font-size:0.75rem;"
+                                f"color:{text_sub};margin-bottom:8px;'>"
+                                "<span style='animation:spin2 1s linear infinite;display:inline-block;'>⟳</span>"
+                                " AI menganalisis performa Weekly Plan...</div>"
+                                "<style>@keyframes spin2{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}</style>",
+                                unsafe_allow_html=True
+                            )
+
+                            _we_chunks = []
+                            _we_container = st.empty()
+
+                            try:
+                                for _chunk in _call_groq_streaming(_we_prompt, max_tokens=2000, temperature=0.4):
+                                    _we_chunks.append(_chunk)
+                                    _we_partial = "".join(_we_chunks)
+                                    _we_container.markdown(
+                                        f"<div style='background:rgba(38,166,154,0.05);"
+                                        f"border:1px solid rgba(38,166,154,0.2);"
+                                        f"border-radius:10px;padding:16px 18px;"
+                                        f"font-size:0.82rem;line-height:1.8;"
+                                        f"color:{text_main};white-space:pre-wrap;"
+                                        f"font-family:IBM Plex Mono,monospace;'>"
+                                        f"{_we_partial}▌</div>",
+                                        unsafe_allow_html=True
+                                    )
+
+                                _we_result = "".join(_we_chunks)
+                                _we_container.markdown(
+                                    f"<div style='background:rgba(38,166,154,0.05);"
+                                    f"border:1px solid rgba(38,166,154,0.2);"
+                                    f"border-radius:10px;padding:16px 18px;"
+                                    f"font-size:0.82rem;line-height:1.8;"
+                                    f"color:{text_main};white-space:pre-wrap;"
+                                    f"font-family:IBM Plex Mono,monospace;'>"
+                                    f"{_we_result}</div>",
+                                    unsafe_allow_html=True
+                                )
+                                st.session_state["weekly_eval_ai_result"] = _we_result
+                                st.session_state["weekly_eval_ai_n"]      = _we_n_now
+                                _we_header.markdown(
+                                    f"<p style='font-size:0.7rem;color:{text_sub};margin-top:6px;"
+                                    f"font-family:IBM Plex Mono,monospace;'>"
+                                    f"Model: Groq/Llama70B &middot; "
+                                    f"{_wib_now().strftime('%d %b %Y %H:%M')} WIB</p>",
+                                    unsafe_allow_html=True
+                                )
+                            except Exception as _we_e:
+                                _we_header.empty()
+                                st.error(f"Gagal evaluasi: {_we_e}")
 
             _now_b = _wib_now()
             _wd_b  = _now_b.weekday()
