@@ -14245,7 +14245,7 @@ table{{margin-bottom:0!important;}}
                     _dv_yield_avg = round(sum(d["yield_pct"] for d in _dv_all) / len(_dv_all), 2) if _dv_all else 0
                     _dv_top5 = sorted(_dv_all, key=lambda x: x["yield_pct"], reverse=True)[:5]
                     _dv_top5_str = "\n".join([f"  - {d['ticker']} ({d['nama']}): yield {d['yield_pct']:.2f}%, DPS Rp{d['dps']:,}, Ex-Date {d['ex_date']}" for d in _dv_top5])
-                    _dv_bi_rate  = 4.75  # BI Rate current (Apr 2026)
+                    _dv_bi_rate  = 5.25  # BI Rate current (Mei 2026) — naik 50bps
                     _dv_prompt = f"""Kamu adalah SIGMA AI, analis investasi dividen pasar modal IDX.
 
     Analisa kondisi dividen emiten IDX 2026 berdasarkan data berikut:
@@ -18394,13 +18394,14 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 {"date": "Nov 2025", "rate": 5.00}, {"date": "Des 2025", "rate": 5.00},
                 {"date": "Jan 2026", "rate": 5.00}, {"date": "Feb 2026", "rate": 4.75},
                 {"date": "Mar 2026", "rate": 4.75}, {"date": "Apr 2026", "rate": 4.75},
-                {"date": "Mei 2026", "rate": 4.75},
+                {"date": "Mei 2026", "rate": 5.25},
             ]
             _rdg_schedule_2026 = [
                 {"date": "21–22 Jan 2026", "result": "Turun 25bps → 5.00%", "status": "done"},
                 {"date": "18–19 Feb 2026", "result": "Turun 25bps → 4.75%", "status": "done"},
                 {"date": "18–19 Mar 2026", "result": "Tetap 4.75%", "status": "done"},
                 {"date": "22–23 Apr 2026", "result": "Tetap 4.75%", "status": "done"},
+                {"date": "20–21 Mei 2026", "result": "Naik 50bps → 5.25%", "status": "done"},
                 {"date": "20–21 Mei 2026", "result": "Menunggu keputusan", "status": "upcoming"},
                 {"date": "17–18 Jun 2026", "result": "—", "status": "future"},
                 {"date": "15–16 Jul 2026", "result": "—", "status": "future"},
@@ -18416,7 +18417,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
             def _fetch_global_rates():
                 """Fetch SOFR, US 1Y Treasury sebagai proxy Fed Funds rate via yfinance."""
                 rates = {
-                    "BI Rate": {"value": 4.75, "change": -0.25, "source": "hardcoded", "label": "Bank Indonesia"},
+                    "BI Rate": {"value": 5.25, "change": +0.50, "source": "hardcoded", "label": "Bank Indonesia"},
                     "Fed Funds": {"value": 4.50, "change": 0.00, "source": "hardcoded", "label": "US Federal Reserve"},
                     "SOFR": {"value": 4.31, "change": -0.02, "source": "hardcoded", "label": "Secured Overnight Financing Rate"},
                     "US 10Y": {"value": 4.38, "change": 0.05, "source": "hardcoded", "label": "US Treasury 10Y Yield"},
@@ -18622,7 +18623,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     📌 KONTEKS BI RATE HISTORIS (24 bln terakhir):
     - Puncak tertinggi: 6.25% (Apr–Ags 2024)
     - Siklus pemotongan: Sep 2024 mulai turun bertahap
-    - Current: {_bi_current:.2f}% (target BI 2026: ~4.50%)
+    - Current: {_bi_current:.2f}% (baru naik 50bps Mei 2026 → 5.25%; siklus bunga kembali ketat)
 
     Buatlah analisa naratif yang mencakup:
     1. **Kondisi Saat Ini** — Apa yang sedang terjadi dengan suku bunga global & Indonesia?
@@ -18785,7 +18786,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
             {"neg":"US","tgl":"15 Mei 2026","jam":"19:30",  "event":"PPI Inflasi Produsen YoY",         "fc":"2.5%",   "prev":"2.7%",    "dampak":"MEDIUM","tip":"BLS: inflasi tingkat produsen. Leading indicator inflasi konsumen 1-2 bulan ke depan."},
             {"neg":"US","tgl":"15 Mei 2026","jam":"19:30",  "event":"Retail Sales m/m",                 "fc":"0.4%",   "prev":"—",       "dampak":"HIGH",  "tip":"Penjualan ritel Mei. Kekuatan konsumsi — komponen terbesar GDP AS."},
             {"neg":"ID","tgl":"20 Mei 2026","jam":"11:00",  "event":"Neraca Perdagangan Apr",           "fc":"$3.2B",  "prev":"$2.8B",   "dampak":"MEDIUM","tip":"BPS neraca dagang. Surplus = mendukung Rupiah dan capital inflow ke pasar saham."},
-            {"neg":"ID","tgl":"20 Mei 2026","jam":"10:00",  "event":"RDG BI Rate Mei",                  "fc":"4.75%",  "prev":"4.75%",   "dampak":"HIGH",  "tip":"🔔 RDG BI 20–21 Mei 2026. Konsensus: HOLD 4.75%. Tunggu sinyal Fed lebih jelas sebelum BI cut."},
+            {"neg":"ID","tgl":"20 Mei 2026","jam":"10:00",  "event":"RDG BI Rate Mei",                  "fc":"5.25%",  "prev":"4.75%",   "dampak":"HIGH",  "tip":"✅ ACTUAL: BI NAIK 50bps → 5.25% (20 Mei 2026). Kejutan hawkish — konsensus sebelumnya HOLD 4.75%. Respons terhadap tekanan Rupiah & inflasi. Dampak: Rupiah menguat sesaat, sektor perbankan tertekan NIM, cost of capital naik, valuasi saham growth/properti tertekan."},
             {"neg":"US","tgl":"29 Mei 2026","jam":"19:30",  "event":"GDP Q1 2026 (Revisi)",             "fc":"2.3%",   "prev":"2.4%",    "dampak":"MEDIUM","tip":"BEA: revisi GDP AS Q1. Lebih rendah dari flash = sinyal pelemahan ekonomi → dovish."},
             # ══ JUNI ═══════════════════════════════════════════════
             {"neg":"US","tgl":"05 Jun 2026","jam":"19:30",  "event":"Non-Farm Payrolls Mei",            "fc":"180K",   "prev":"195K",    "dampak":"HIGH",  "tip":"🔴 Data tenaga kerja Mei. Tren melambat = Fed lebih agresif potong rate = bullish aset global."},
