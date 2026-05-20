@@ -26715,6 +26715,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                 _de_header.empty()
                                 st.error(f"Gagal evaluasi: {_de_e}")
 
+        with reco_tab_weekly:
 
             _now_w        = _wib_now()
             _bs30_cache_w = st.session_state.get("sigma_bs30_screened") or []
@@ -27220,6 +27221,8 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                             except Exception as _we_e:
                                 _we_header.empty()
                                 st.error(f"Gagal evaluasi: {_we_e}")
+
+        with reco_tab_bsjp:
 
             _now_b = _wib_now()
             _wd_b  = _now_b.weekday()
