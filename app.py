@@ -7554,7 +7554,8 @@ def _sigma_run_global_scheduler():
     # ── Bersihkan guard key dari hari-hari lalu agar tidak menghambat generate hari baru ──
     _guard_prefixes = ["daily_plan_global_", "bsjp_plan_global_", "brosum_global_auto_",
                        "daily_review_auto_", "weekly_plan_global_", "tr_post_key_",
-                       "tr_post_bsjp_", "tr_update_open_"]
+                       "tr_post_bsjp_", "tr_update_open_", "_bsjp_bs_upgraded_", "_wp_bs_upgraded_",
+                       "tr_intra_", "tr_final_"]
     _keys_to_del = [
         k for k in list(st.session_state.keys())
         if any(k.startswith(p) for p in _guard_prefixes)
@@ -8227,39 +8228,57 @@ if st.session_state.get("user"):
 # bandingkan tiap rerun — kalau sudah lewat 5 menit → trigger rerun.
 def _auto_refresh_bursa():
     """
-    Trigger st.rerun() otomatis tiap 5 menit selama jam bursa.
-    Dipanggil di setiap page load. Tidak block UI karena hanya
-    membandingkan timestamp, bukan sleep().
+    Trigger st.rerun() otomatis:
+    - Jam bursa 09:00–16:05 WIB (interval 5 menit) → update harga realtime
+    - After-hours scheduler windows (interval 10 menit):
+        * 06:00–06:30 → daily review auto-generate
+        * 15:35–16:10 → BSJP auto-generate window
+        * 20:25–20:45 → brosum refresh
+        * 20:55–21:15 → daily plan auto-generate
     """
     import time as _time_ar
     try:
         from datetime import timezone as _tz_ar, timedelta as _td_ar
         _wib_ar  = _tz_ar(_td_ar(hours=7))
         _now_ar  = datetime.now(_wib_ar)
-        _wd_ar   = _now_ar.weekday()   # 0=Senin 6=Minggu
+        _wd_ar   = _now_ar.weekday()   # 0=Senin … 6=Minggu
         _h_ar    = _now_ar.hour
         _m_ar    = _now_ar.minute
 
-        # Hanya aktif hari kerja jam 09:00–16:05 WIB
+        _is_weekday_ar = _wd_ar < 5
+
+        # Window utama: jam bursa 09:00–16:05
         _is_bursa = (
-            _wd_ar < 5 and
-            ((_h_ar == 9 and _m_ar >= 0) or (_h_ar > 9 and _h_ar < 16) or
+            _is_weekday_ar and
+            ((_h_ar == 9) or (_h_ar > 9 and _h_ar < 16) or
              (_h_ar == 16 and _m_ar <= 5))
         )
-        if not _is_bursa:
+
+        # Window scheduler after-hours (hanya hari kerja kecuali daily review)
+        _is_daily_review_window = _is_weekday_ar and (_h_ar == 6 and _m_ar <= 30)
+        _is_bsjp_window         = _is_weekday_ar and ((_h_ar == 15 and _m_ar >= 35) or (_h_ar == 16 and _m_ar <= 10))
+        _is_brosum_window       = _is_weekday_ar and (_h_ar == 20 and 25 <= _m_ar <= 45)
+        _is_dailyplan_window    = _is_weekday_ar and ((_h_ar == 20 and _m_ar >= 55) or (_h_ar == 21 and _m_ar <= 15))
+
+        _is_active = _is_bursa or _is_daily_review_window or _is_bsjp_window or _is_brosum_window or _is_dailyplan_window
+
+        if not _is_active:
             return
 
-        _REFRESH_INTERVAL = 5 * 60  # 5 menit dalam detik
+        # Interval: 5 menit saat bursa, 10 menit saat after-hours
+        _REFRESH_INTERVAL = 5 * 60 if _is_bursa else 10 * 60
         _last_key = "_auto_refresh_last_ts"
         _last_ts  = st.session_state.get(_last_key, 0)
         _now_ts   = _time_ar.time()
 
         if _now_ts - _last_ts >= _REFRESH_INTERVAL:
             st.session_state[_last_key] = _now_ts
-            # Tampilkan toast kecil sebelum rerun
             _jam_str = _now_ar.strftime("%H:%M")
-            st.toast(f"🔄 Data diperbarui otomatis · {_jam_str} WIB", icon="📈")
-            st.rerun()  # toast is async, sleep not needed
+            if _is_bursa:
+                st.toast(f"🔄 Data diperbarui otomatis · {_jam_str} WIB", icon="📈")
+            else:
+                st.toast(f"⚙️ Scheduler check · {_jam_str} WIB", icon="🕐")
+            st.rerun()
     except Exception:
         pass  # auto-refresh gagal → tidak crash app
 
@@ -14493,7 +14512,12 @@ table{{margin-bottom:0!important;}}
                     _dv_yield_avg = round(sum(d["yield_pct"] for d in _dv_all) / len(_dv_all), 2) if _dv_all else 0
                     _dv_top5 = sorted(_dv_all, key=lambda x: x["yield_pct"], reverse=True)[:5]
                     _dv_top5_str = "\n".join([f"  - {d['ticker']} ({d['nama']}): yield {d['yield_pct']:.2f}%, DPS Rp{d['dps']:,}, Ex-Date {d['ex_date']}" for d in _dv_top5])
-                    _dv_bi_rate  = 5.25  # BI Rate current (Mei 2026) — naik 50bps
+                    _dv_bi_rate  = st.session_state.get("sigma_bi_rate_current",
+                                    (st.session_state.get("sigma_macro_rates", {}) or {}).get("BI Rate", {}).get("value", 5.25))
+                    # Fallback: ambil dari bi_rate_history yang dirender di chart makro
+                    if _dv_bi_rate == 5.25:
+                        _bi_hist_ss = [{"date":"Jul 2025","rate":5.25},{"date":"Ags 2025","rate":5.25},{"date":"Sep 2025","rate":5.25},{"date":"Okt 2025","rate":5.00},{"date":"Nov 2025","rate":5.00},{"date":"Des 2025","rate":5.00},{"date":"Jan 2026","rate":5.00},{"date":"Feb 2026","rate":5.00},{"date":"Mar 2026","rate":5.00},{"date":"Apr 2026","rate":5.00},{"date":"Mei 2026","rate":5.25}]
+                        _dv_bi_rate = _bi_hist_ss[-1]["rate"]
                     _dv_prompt = f"""Kamu adalah SIGMA AI, analis investasi dividen pasar modal IDX.
 
     Analisa kondisi dividen emiten IDX 2026 berdasarkan data berikut:
@@ -27240,11 +27264,12 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
 (!) Strategi overnight: sizing maks <b>5&ndash;10%</b> portofolio per posisi. Risiko gap-down dari berita semalam.
 </div>""", unsafe_allow_html=True)
 
-            # ── 3 sub-tab BSJP ──
-            _b_tab_plan, _b_tab_hist, _b_tab_trackrecord = st.tabs([
+            # ── 4 sub-tab BSJP ──
+            _b_tab_plan, _b_tab_hist, _b_tab_trackrecord, _b_tab_eval_ai = st.tabs([
                 "  🌙 TRADE PLAN  ",
                 "  🗂️ HISTORY TRADE PLAN  ",
                 "  ⚖️ VERDICT  ",
+                "  🧠 EVALUASI AI  ",
             ])
 
             # ════════════════════════════════════════════
@@ -27539,7 +27564,180 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                 _stream_header.empty()
                                 st.error(f"Gagal analisis: {_ve}")
 
-# PART 12B: BROKER SUMMARY - NET BUY/SELL + FOREIGN FLOW
+            # ════════════════════════════════════════════
+            # BSJP TAB 4 — EVALUASI AI
+            # ════════════════════════════════════════════
+            with _b_tab_eval_ai:
+                _bsjp_eval_closed = [
+                    r for r in st.session_state.get("tr_records", [])
+                    if (r.get("type") or "").upper() == "BSJP"
+                    and r.get("status") in {"CLOSED", "TP1", "TP2", "SL"}
+                ]
+
+                st.markdown(
+                    f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;"
+                    f"letter-spacing:0.15em;text-transform:uppercase;font-weight:700;"
+                    f"color:#f5a623;margin-bottom:6px;'>🧠 EVALUASI AI — BSJP PATTERN LEARNING</div>"
+                    f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
+                    f"color:{text_sub};margin-bottom:18px;'>"
+                    f"AI menganalisis pola overnight BSJP: spike minimum ideal, SL/TP optimal, "
+                    f"sektor terbaik, red flags, dan rekomendasi upgrade menuju win rate 65%+.</p>",
+                    unsafe_allow_html=True
+                )
+
+                if len(_bsjp_eval_closed) < 3:
+                    st.info("📭 Butuh minimal 3 trade BSJP yang sudah closed untuk evaluasi AI.")
+                else:
+                    _be_wins   = [r for r in _bsjp_eval_closed if r.get("result") == "WIN"]
+                    _be_losses = [r for r in _bsjp_eval_closed if r.get("result") == "LOSS"]
+                    _be_wr     = round(len(_be_wins) / len(_bsjp_eval_closed) * 100, 1)
+                    _be_avg_w  = round(sum(r.get("pnl_pct", 0) for r in _be_wins) / len(_be_wins), 2) if _be_wins else 0
+                    _be_avg_l  = round(sum(r.get("pnl_pct", 0) for r in _be_losses) / len(_be_losses), 2) if _be_losses else 0
+
+                    _be_c1, _be_c2, _be_c3, _be_c4 = st.columns(4)
+                    _be_c1.metric("Total Closed", len(_bsjp_eval_closed))
+                    _be_c2.metric("Win Rate", f"{_be_wr}%", delta=f"+{_be_wr-50:.1f}%" if _be_wr >= 50 else f"{_be_wr-50:.1f}%")
+                    _be_c3.metric("Avg WIN", f"+{_be_avg_w}%")
+                    _be_c4.metric("Avg LOSS", f"{_be_avg_l}%")
+
+                    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+                    _be_cached   = st.session_state.get("bsjp_eval_ai_result", "")
+                    _be_cached_n = st.session_state.get("bsjp_eval_ai_n", 0)
+                    _be_n_now    = len(_bsjp_eval_closed)
+
+                    if _be_cached and _be_cached_n == _be_n_now:
+                        st.markdown(
+                            f"<div style='background:rgba(245,166,35,0.05);border:1px solid rgba(245,166,35,0.25);"
+                            f"border-radius:10px;padding:16px 18px;font-size:0.82rem;line-height:1.8;"
+                            f"color:{text_main};white-space:pre-wrap;font-family:IBM Plex Mono,monospace;'>"
+                            f"{_be_cached}</div>",
+                            unsafe_allow_html=True
+                        )
+                        _be_btn_label = "↻ Evaluasi Ulang"
+                    else:
+                        _be_btn_label = "▶ Evaluasi Performa BSJP"
+
+                    _be_col, _ = st.columns([1.8, 2.2])
+                    with _be_col:
+                        if st.button(_be_btn_label, key="bsjp_eval_ai_btn", use_container_width=True):
+
+                            def _be_fmt_trades(lst):
+                                rows = []
+                                for r in lst[:25]:
+                                    rows.append(
+                                        f"{r.get('ticker','-')} | entry:{r.get('entry','-')} | "
+                                        f"tp1:{r.get('tp1','-')} | sl:{r.get('sl','-')} | "
+                                        f"exit:{r.get('exit_price','-')} | "
+                                        f"pnl:{r.get('pnl_pct',0)}% | "
+                                        f"spike:{r.get('vol_spike','-')} | "
+                                        f"result:{r.get('result','-')} | "
+                                        f"date:{r.get('date','-')}"
+                                    )
+                                return "\n".join(rows)
+
+                            # Saham yg paling sering masuk BSJP plan
+                            _bh_all = st.session_state.get("auto_plan_history_bsjp", {})
+                            _be_ticker_freq = {}
+                            for _bhv in list(_bh_all.values())[-20:]:
+                                for _bhr in _bhv.get("plan", {}).get("bsjp", []):
+                                    _bt = _bhr.get("ticker", "")
+                                    if _bt:
+                                        _be_ticker_freq[_bt] = _be_ticker_freq.get(_bt, 0) + 1
+                            _be_top = sorted(_be_ticker_freq.items(), key=lambda x: x[1], reverse=True)[:10]
+                            _be_top_str = ", ".join(f"{t}({c}x)" for t, c in _be_top) if _be_top else "—"
+
+                            _be_prompt = f"""Kamu adalah quant analyst ahli strategi BSJP (Beli Sore Jual Pagi) saham IDX Indonesia. Strategi ini beli di jam 15:00–15:50 (closing BEI), jual pre-opening atau pagi hari berikutnya, memanfaatkan momentum spike volume closing dan potensi gap-up.
+
+DATA TRACK RECORD BSJP:
+- Total closed: {len(_bsjp_eval_closed)} trade  |  Win Rate: {_be_wr}%
+- Avg WIN: +{_be_avg_w}% | Avg LOSS: {_be_avg_l}%
+- Saham paling sering masuk plan (20 hari terakhir): {_be_top_str}
+
+TRADE WIN ({len(_be_wins)} trade):
+{_be_fmt_trades(_be_wins)}
+
+TRADE LOSS ({len(_be_losses)} trade):
+{_be_fmt_trades(_be_losses)}
+
+Lakukan evaluasi menyeluruh:
+
+## 1. POLA KEMENANGAN
+Karakteristik konsisten trade WIN: level spike, sektor, price range, hari dalam seminggu?
+
+## 2. POLA KEGAGALAN
+Penyebab LOSS: spike palsu, gap-down fundamental, SL terlalu sempit, timing entry terlambat?
+
+## 3. PARAMETER OPTIMAL BSJP (angka konkret)
+- Volume spike minimum yang valid (bukan pump sesaat)
+- SL% ideal untuk overnight exposure
+- TP% realistis untuk H+1 pagi
+- Price range saham paling cocok BSJP (mid-cap? liquid?)
+
+## 4. SAHAM TERBAIK & TERBURUK UNTUK BSJP
+Berdasarkan track record: ticker mana yang konsisten WIN? Mana yang harus dihindari?
+
+## 5. RED FLAGS — HINDARI KONDISI INI
+Market condition, berita, atau setup yang secara historis menyebabkan LOSS overnight
+
+## 6. REKOMENDASI UPGRADE SISTEM
+3-5 perubahan konkret untuk meningkatkan win rate dari {_be_wr}% ke 65%+
+Fokus: filter spike, timing entry, position sizing, exit strategy H+1 pagi.
+
+Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan actionable."""
+
+                            _be_header = st.empty()
+                            _be_header.markdown(
+                                "<div style='display:flex;align-items:center;gap:8px;"
+                                "font-family:IBM Plex Mono,monospace;font-size:0.75rem;"
+                                f"color:{text_sub};margin-bottom:8px;'>"
+                                "<span style='animation:spin3 1s linear infinite;display:inline-block;'>⟳</span>"
+                                " AI menganalisis pola BSJP overnight...</div>"
+                                "<style>@keyframes spin3{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}</style>",
+                                unsafe_allow_html=True
+                            )
+
+                            _be_chunks = []
+                            _be_container = st.empty()
+
+                            try:
+                                for _chunk in _call_groq_streaming(_be_prompt, max_tokens=2000, temperature=0.4):
+                                    _be_chunks.append(_chunk)
+                                    _be_partial = "".join(_be_chunks)
+                                    _be_container.markdown(
+                                        f"<div style='background:rgba(245,166,35,0.05);"
+                                        f"border:1px solid rgba(245,166,35,0.25);"
+                                        f"border-radius:10px;padding:16px 18px;"
+                                        f"font-size:0.82rem;line-height:1.8;"
+                                        f"color:{text_main};white-space:pre-wrap;"
+                                        f"font-family:IBM Plex Mono,monospace;'>"
+                                        f"{_be_partial}▌</div>",
+                                        unsafe_allow_html=True
+                                    )
+
+                                _be_result = "".join(_be_chunks)
+                                _be_container.markdown(
+                                    f"<div style='background:rgba(245,166,35,0.05);"
+                                    f"border:1px solid rgba(245,166,35,0.25);"
+                                    f"border-radius:10px;padding:16px 18px;"
+                                    f"font-size:0.82rem;line-height:1.8;"
+                                    f"color:{text_main};white-space:pre-wrap;"
+                                    f"font-family:IBM Plex Mono,monospace;'>"
+                                    f"{_be_result}</div>",
+                                    unsafe_allow_html=True
+                                )
+                                st.session_state["bsjp_eval_ai_result"] = _be_result
+                                st.session_state["bsjp_eval_ai_n"]      = _be_n_now
+                                _be_header.markdown(
+                                    f"<p style='font-size:0.7rem;color:{text_sub};margin-top:6px;"
+                                    f"font-family:IBM Plex Mono,monospace;'>"
+                                    f"Model: Groq/Llama70B &middot; "
+                                    f"{_wib_now().strftime('%d %b %Y %H:%M')} WIB</p>",
+                                    unsafe_allow_html=True
+                                )
+                            except Exception as _be_e:
+                                _be_header.empty()
+                                st.error(f"Gagal evaluasi: {_be_e}")
 # ─────────────────────────────────────────────
     with alpha_tab_brosum:
 
