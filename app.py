@@ -7035,6 +7035,63 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000, tempera
     raise Exception(f"Semua Groq key kena rate limit & Gemini fallback gagal. Error terakhir: {last_err}")
 
 
+def _call_groq_streaming(full_prompt, max_tokens=2000, temperature=0.4):
+    """
+    Groq STREAMING - LLaMA 3.3 70B dengan key rotation.
+    Yield chunks teks satu per satu untuk st.write_stream.
+    Fallback ke Gemini jika semua key exhausted.
+    """
+    from groq import Groq
+
+    full_prompt = _smart_truncate_prompt(full_prompt, max_tokens=22000)
+    messages = [
+        {"role": "system", "content": GROQ_SYSTEM_PROMPT},
+        {"role": "user", "content": full_prompt},
+    ]
+
+    all_keys = _get_all_groq_keys()
+    if not all_keys:
+        raise Exception("Semua Groq API key tidak tersedia")
+
+    valid_keys = _get_available_groq_keys(all_keys)
+
+    last_err = None
+    for key_name, key in valid_keys:
+        if not _groq_key_available(key):
+            continue
+        try:
+            client = Groq(api_key=key)
+            stream = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                stream=True,
+            )
+            for chunk in stream:
+                delta = chunk.choices[0].delta.content
+                if delta:
+                    yield delta
+            return  # selesai normal
+        except Exception as e:
+            err_str = str(e).lower()
+            if "429" in err_str or "rate_limit" in err_str or "rate limit" in err_str or "too large" in err_str or "token" in err_str:
+                last_err = e
+                _mark_groq_key_ratelimited(key)
+                continue
+            raise e
+
+    # Semua Groq key exhausted → fallback Gemini (non-streaming, emit sekaligus)
+    try:
+        _gem_resp, _ = _call_gemini_text([{"role": "user", "content": full_prompt}])
+        yield _gem_resp
+        return
+    except Exception:
+        pass
+
+    raise Exception(f"Semua Groq key kena rate limit & Gemini fallback gagal. Error: {last_err}")
+
+
 def _call_groq_fallback(full_prompt):
     """
     Groq LAST RESORT - LLaMA 3.1 8B Instant.
@@ -25682,37 +25739,76 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_txt};overflow:hidden;}}
+html,body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_txt};
+  overflow-x:hidden;overflow-y:auto;width:100%;}}
+/* ── Stats grid ── */
 .stats-grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}}
 .stat-box{{background:{_tbl_bg};border:1px solid {_border};border-radius:8px;padding:12px 14px;}}
 .stat-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_sub_c};margin-bottom:4px;}}
 .stat-val{{font-size:1.4rem;font-weight:700;line-height:1.1;}}
 .stat-sub{{font-size:0.72rem;color:{_sub_c};margin-top:3px;}}
 .ts-note{{font-size:0.72rem;color:{_sub_c};margin-bottom:12px;}}
-.tbl-wrap{{background:{_tbl_bg};border:1px solid {_border};border-radius:10px;overflow:hidden;margin-bottom:28px;}}
-.scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}}
-table{{width:100%;border-collapse:collapse;min-width:820px;}}
-thead th{{background:{_hdr_bg};color:#26a69a;padding:8px 10px;
+/* ── Table wrapper — fix terpotong ── */
+.tbl-wrap{{background:{_tbl_bg};border:1px solid {_border};border-radius:10px;
+  overflow:hidden;margin-bottom:28px;width:100%;max-width:100%;}}
+.scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;}}
+table{{border-collapse:collapse;min-width:880px;table-layout:fixed;width:100%;}}
+thead th{{background:{_hdr_bg};color:#26a69a;padding:8px 8px;
   text-align:left;border-bottom:1px solid {_border};
-  font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;white-space:nowrap;}}
-tbody td{{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.04);
-  white-space:nowrap;color:{_txt};font-size:0.8rem;}}
+  font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
+th:nth-child(1){{width:36px;}}   /* # */
+th:nth-child(2){{width:80px;}}   /* DATE */
+th:nth-child(3){{width:68px;}}   /* TICKER */
+th:nth-child(4){{width:58px;}}   /* TYPE */
+th:nth-child(5){{width:74px;}}   /* ENTRY */
+th:nth-child(6){{width:74px;}}   /* TP1 */
+th:nth-child(7){{width:74px;}}   /* SL */
+th:nth-child(8){{width:74px;}}   /* EXIT */
+th:nth-child(9){{width:62px;}}   /* P&L */
+th:nth-child(10){{width:56px;}}  /* STATUS */
+th:nth-child(11){{width:auto;min-width:160px;}} /* NOTE */
+tbody td{{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,0.04);
+  color:{_txt};font-size:0.78rem;overflow:hidden;text-overflow:ellipsis;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
-.tk{{font-weight:700;color:#26a69a;font-size:0.875rem;}}
+.tk{{font-weight:700;color:#26a69a;font-size:0.84rem;}}
 .win{{color:{_G};font-weight:700;}}
 .loss{{color:{_R};font-weight:700;}}
 .open{{color:{_Y};font-weight:600;}}
-.badge{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.72rem;font-weight:700;}}
+.badge{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.7rem;font-weight:700;white-space:nowrap;}}
 .badge-win{{background:rgba(8,153,129,0.15);color:{_G};border:1px solid {_G}55;}}
 .badge-loss{{background:rgba(242,54,69,0.12);color:{_R};border:1px solid {_R}55;}}
 .badge-open{{background:rgba(245,166,35,0.12);color:{_Y};border:1px solid {_Y}55;}}
-.note-cell{{max-width:180px;white-space:normal;font-size:0.72rem;color:{_sub_c};line-height:1.4;}}
-.sec-hdr{{font-size:0.78rem;letter-spacing:0.15em;text-transform:uppercase;font-weight:700;
+.note-cell{{white-space:normal;font-size:0.7rem;color:{_sub_c};line-height:1.4;word-break:break-word;max-width:220px;}}
+.sec-hdr{{font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;
   color:#a78bfa;padding:10px 0 10px 0;margin-bottom:10px;
   border-bottom:2px solid rgba(167,139,250,0.3);display:flex;align-items:center;gap:8px;}}
-@media(max-width:900px){{.stats-grid{{grid-template-columns:repeat(3,1fr);}}}}
-@media(max-width:640px){{.stats-grid{{grid-template-columns:1fr 1fr;}}}}
+/* ── AI Verdict Analyzer ── */
+.ai-verdict-wrap{{background:{_tbl_bg};border:1px solid rgba(245,166,35,0.25);border-radius:12px;
+  padding:18px 18px 16px;margin-bottom:24px;width:100%;}}
+.ai-verdict-title{{font-size:0.78rem;letter-spacing:0.15em;text-transform:uppercase;font-weight:700;
+  color:#f5a623;margin-bottom:12px;display:flex;align-items:center;gap:8px;}}
+.ai-verdict-btn{{display:inline-flex;align-items:center;gap:6px;
+  background:linear-gradient(135deg,rgba(245,166,35,0.18),rgba(245,166,35,0.08));
+  border:1px solid rgba(245,166,35,0.45);border-radius:8px;
+  padding:8px 16px;font-size:0.78rem;font-family:'IBM Plex Mono',monospace;
+  color:#f5a623;cursor:pointer;letter-spacing:0.05em;font-weight:700;
+  transition:all 0.2s;outline:none;}}
+.ai-verdict-btn:hover{{background:rgba(245,166,35,0.25);border-color:#f5a623;}}
+.ai-verdict-btn:disabled{{opacity:0.5;cursor:not-allowed;}}
+.ai-verdict-output{{margin-top:14px;font-size:0.8rem;line-height:1.7;color:{_txt};
+  white-space:pre-wrap;word-break:break-word;min-height:0;display:none;}}
+.ai-verdict-output.visible{{display:block;}}
+.ai-loading{{display:none;align-items:center;gap:8px;margin-top:12px;font-size:0.78rem;color:{_sub_c};}}
+.ai-loading.visible{{display:flex;}}
+@keyframes spin{{to{{transform:rotate(360deg);}}}}
+.ai-spin{{width:14px;height:14px;border:2px solid rgba(245,166,35,0.3);border-top-color:#f5a623;
+  border-radius:50%;animation:spin 0.8s linear infinite;}}
+/* ── Responsive ── */
+@media(max-width:900px){{.stats-grid{{grid-template-columns:repeat(2,1fr);}}}}
+@media(max-width:640px){{.stats-grid{{grid-template-columns:1fr 1fr;}}
+  table{{min-width:700px;}}}}
 </style></head><body>
 <div class="ts-note">Auto-update setiap hari jam 20:30 WIB &nbsp;&middot;&nbsp; Terakhir cek: {_now_wib}</div>"""
 
@@ -25721,7 +25817,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                 _body_html = _build_tr_html(sorted_records, label=None)
                 _tr_html = _tr_css + _body_html + "</body></html>"
                 _n_recs = len(sorted_records)
-                _est_h  = max(700, 120 + 44 * _n_recs + 150)
+                _est_h  = max(800, 160 + 48 * _n_recs + 300)
                 components.html(_tr_html, height=_est_h, scrolling=True)
             else:
                 # ── filter_type=None → render 3 tabel terpisah (Daily / Weekly / BSJP) ──
@@ -25743,7 +25839,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 
                 _tr_html = _tr_css + _body_parts + "</body></html>"
                 _total_n  = len(all_records)
-                _est_h    = max(900, 200 + 44 * _total_n + 250)
+                _est_h    = max(1100, 260 + 52 * _total_n + 600)
                 components.html(_tr_html, height=_est_h, scrolling=True)
 
 
@@ -26939,6 +27035,155 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
             # ════════════════════════════════════════════
             with _b_tab_trackrecord:
                 _render_auto_track_record(filter_type='BSJP')
+
+                # ── AI VERDICT ANALYZER ─────────────────────────
+                _bsjp_closed_for_ai = [
+                    r for r in st.session_state.get("tr_records", [])
+                    if (r.get("type") or "").upper() == "BSJP"
+                    and r.get("status") in {"CLOSED", "TP1", "TP2", "SL"}
+                ]
+                if len(_bsjp_closed_for_ai) >= 3:
+                    st.markdown(
+                        f"<div style='height:1px;background:rgba(245,166,35,0.2);margin:24px 0 18px;'></div>"
+                        f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;"
+                        f"letter-spacing:0.15em;text-transform:uppercase;font-weight:700;"
+                        f"color:#f5a623;margin-bottom:14px;'>🤖 AI VERDICT ANALYZER — BSJP PATTERN LEARNING</div>",
+                        unsafe_allow_html=True
+                    )
+
+                    _ai_verdict_cached = st.session_state.get("bsjp_ai_verdict_result", "")
+                    _ai_verdict_n      = st.session_state.get("bsjp_ai_verdict_n", 0)
+                    _n_closed_now      = len(_bsjp_closed_for_ai)
+
+                    # Tampilkan hasil sebelumnya jika ada
+                    if _ai_verdict_cached and _ai_verdict_n == _n_closed_now:
+                        st.markdown(
+                            f"<div style='background:rgba(245,166,35,0.05);border:1px solid rgba(245,166,35,0.2);"
+                            f"border-radius:10px;padding:16px 18px;font-size:0.82rem;line-height:1.8;"
+                            f"color:{text_main};white-space:pre-wrap;font-family:IBM Plex Mono,monospace;'>"
+                            f"{_ai_verdict_cached}</div>",
+                            unsafe_allow_html=True
+                        )
+                        _btn_label_v = "↻ Analisis Ulang"
+                    else:
+                        _btn_label_v = "▶ Analisis Pola WIN/LOSS & Rekomendasi Perbaikan"
+
+                    _col_va, _ = st.columns([1.8, 2.2])
+                    with _col_va:
+                        if st.button(_btn_label_v, key="bsjp_ai_verdict_btn",
+                                     use_container_width=True):
+                            _wins_ai   = [r for r in _bsjp_closed_for_ai if r.get("result") == "WIN"]
+                            _losses_ai = [r for r in _bsjp_closed_for_ai if r.get("result") == "LOSS"]
+                            _wr_ai     = round(len(_wins_ai) / len(_bsjp_closed_for_ai) * 100, 1)
+
+                            def _fmt_trades(lst):
+                                rows = []
+                                for r in lst[:20]:
+                                    rows.append(
+                                        f"{r.get('ticker','-')} | entry:{r.get('entry','-')} | "
+                                        f"tp1:{r.get('tp1','-')} | sl:{r.get('sl','-')} | "
+                                        f"exit:{r.get('exit_price','-')} | "
+                                        f"pnl:{r.get('pnl_pct',0)}% | "
+                                        f"spike:{r.get('vol_spike','-')} | "
+                                        f"note:{(r.get('auto_note') or r.get('reason') or '-')[:60]}"
+                                    )
+                                return "\n".join(rows)
+
+                            _verdict_prompt = f"""Kamu adalah quant analyst ahli strategi BSJP (Beli Sore Jual Pagi) saham IDX Indonesia.
+
+DATA TRACK RECORD BSJP:
+- Total closed: {len(_bsjp_closed_for_ai)} trade  |  Win Rate saat ini: {_wr_ai}%
+- WIN ({len(_wins_ai)} trade):
+{_fmt_trades(_wins_ai)}
+
+- LOSS ({len(_losses_ai)} trade):
+{_fmt_trades(_losses_ai)}
+
+Lakukan analisis mendalam berikut:
+
+## 1. POLA KEMENANGAN
+Apa yang konsisten muncul di trade WIN? (jenis saham, spike berapa, rasio SL/TP, timing, sektor)
+
+## 2. POLA KEGAGALAN
+Apa penyebab utama LOSS? (spike palsu, SL terlalu jauh, sektor tertentu, entry terlambat)
+
+## 3. PARAMETER OPTIMAL (angka konkret)
+- Volume spike minimum ideal
+- SL% optimal
+- TP% realistis
+- Sektor terbaik dan terburuk untuk BSJP
+
+## 4. REKOMENDASI PERBAIKAN SISTEM
+3-5 perubahan spesifik untuk meningkatkan win rate dari {_wr_ai}% ke 65%+
+
+## 5. RED FLAGS
+Kondisi yang harus dihindari berdasarkan pola LOSS di atas
+
+Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan actionable."""
+
+                            # ── STREAMING OUTPUT ──────────────────────────────────────────
+                            # Header loading dengan spinner kecil
+                            _stream_header = st.empty()
+                            _stream_header.markdown(
+                                "<div style='display:flex;align-items:center;gap:8px;"
+                                "font-family:IBM Plex Mono,monospace;font-size:0.75rem;"
+                                f"color:{text_sub};margin-bottom:8px;'>"
+                                "<span style='animation:spin 1s linear infinite;display:inline-block;'>⟳</span>"
+                                " AI menganalisis pola WIN/LOSS BSJP...</div>"
+                                "<style>@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}</style>",
+                                unsafe_allow_html=True
+                            )
+
+                            _verdict_chunks = []
+                            _verdict_container = st.empty()
+                            _verdict_model_used = "Groq/Llama70B"
+
+                            try:
+                                for _chunk in _call_groq_streaming(
+                                    _verdict_prompt, max_tokens=2000, temperature=0.4
+                                ):
+                                    _verdict_chunks.append(_chunk)
+                                    _partial = "".join(_verdict_chunks)
+                                    _verdict_container.markdown(
+                                        f"<div style='background:rgba(245,166,35,0.05);"
+                                        f"border:1px solid rgba(245,166,35,0.2);"
+                                        f"border-radius:10px;padding:16px 18px;"
+                                        f"font-size:0.82rem;line-height:1.8;"
+                                        f"color:{text_main};white-space:pre-wrap;"
+                                        f"font-family:IBM Plex Mono,monospace;'>"
+                                        f"{_partial}▌</div>",
+                                        unsafe_allow_html=True
+                                    )
+
+                                # Final render (hapus kursor ▌)
+                                _verdict_result = "".join(_verdict_chunks)
+                                _verdict_container.markdown(
+                                    f"<div style='background:rgba(245,166,35,0.05);"
+                                    f"border:1px solid rgba(245,166,35,0.2);"
+                                    f"border-radius:10px;padding:16px 18px;"
+                                    f"font-size:0.82rem;line-height:1.8;"
+                                    f"color:{text_main};white-space:pre-wrap;"
+                                    f"font-family:IBM Plex Mono,monospace;'>"
+                                    f"{_verdict_result}</div>",
+                                    unsafe_allow_html=True
+                                )
+
+                                # Simpan ke session state → tombol berubah "↻ Analisis Ulang"
+                                st.session_state["bsjp_ai_verdict_result"] = _verdict_result
+                                st.session_state["bsjp_ai_verdict_n"]      = _n_closed_now
+
+                                # Model badge + timestamp
+                                _stream_header.markdown(
+                                    f"<p style='font-size:0.7rem;color:{text_sub};margin-top:6px;"
+                                    f"font-family:IBM Plex Mono,monospace;'>"
+                                    f"Model: {_verdict_model_used} &middot; "
+                                    f"{_wib_now().strftime('%d %b %Y %H:%M')} WIB</p>",
+                                    unsafe_allow_html=True
+                                )
+
+                            except Exception as _ve:
+                                _stream_header.empty()
+                                st.error(f"Gagal analisis: {_ve}")
 
 # PART 12B: BROKER SUMMARY - NET BUY/SELL + FOREIGN FLOW
 # ─────────────────────────────────────────────
