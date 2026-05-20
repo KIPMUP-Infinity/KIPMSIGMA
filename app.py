@@ -7322,11 +7322,154 @@ if st.session_state.user and not st.session_state.data_loaded:
 # SIGMA GLOBAL SCHEDULER — Dipanggil setiap page load (bukan hanya saat tab dibuka)
 # Jadwal:
 #   06:00 WIB  → Daily Review (Market Brief 24 jam) — auto-generate
-#   15:40 WIB  → BSJP Plan — auto-generate
-#   20:30 WIB  → Broker Summary Screening — auto-refresh
-#   21:00 WIB  → Daily Plan — auto-generate
-#   Sabtu 12:00 → Weekly Plan — auto-generate
+#   15:40 WIB  → BSJP Plan — auto-generate (langsung, TANPA tunggu broker summary)
+#   20:30 WIB  → Broker Summary Screening — auto-refresh (jika API tersedia)
+#              → Jika broker summary gagal/limit: re-screen Daily Plan & BSJP via fallback
+#   21:00 WIB  → Daily Plan — auto-generate (langsung, TANPA tunggu broker summary)
+#   Sabtu 07:00 → Fundamental Screener auto-refresh
+#   Sabtu 12:00 → Weekly Plan — auto-generate (langsung, TANPA tunggu broker summary)
+#
+# FALLBACK SCREENER: Jika sigma_bs30_screened kosong (broker summary limit/gagal),
+# scheduler otomatis menjalankan Independent Watchlist Screener berbasis yfinance
+# sebelum generate tiap trading plan. Tidak butuh GoAPI sama sekali.
 # ═══════════════════════════════════════════════════════════════════════════════
+
+# ── MASTER WATCHLIST untuk Independent Screener (tidak bergantung GoAPI) ──────
+_SCH_WATCHLIST_CORE = [
+    "BBCA","BBRI","BMRI","BBNI","BBTN","BRIS",
+    "TLKM","EXCL","ISAT","TOWR","TBIG",
+    "ADRO","PTBA","ITMG","HRUM","BYAN","BUMI","GEMS",
+    "ANTM","MDKA","INCO","NCKL","BRMS","AMMN","MBMA",
+    "ASII","UNTR","AUTO","SMSM",
+    "INDF","ICBP","MYOR","UNVR","KLBF","CPIN","HMSP","GGRM",
+    "SMGR","INTP","TPIA","BRPT","INKP","TKIM",
+    "BSDE","CTRA","SMRA","PWON","LPKR",
+    "GOTO","EMTK","MAPI","ACES","MCAS",
+    "HEAL","MIKA","SILO","KAEF","TSPC",
+    "PGAS","MEDC","AALI","LSIP","SIMP",
+    "TBIG","LINK","RAJA","FILM","MIDI","AMRT","RALS",
+    "BFIN","ADMF","PNBN","NISP","BNGA",
+    "PGEO","PTRO","CUAN","VKTR","BREN",
+    "SMDR","TMAS","BULL","BIRD","GIAA",
+]
+
+
+def _sch_independent_screener(min_spike: float = 1.5, max_tickers: int = 30) -> list:
+    """
+    Independent fallback screener — tidak membutuhkan GoAPI/broker summary.
+    Menggunakan yfinance untuk screening volume spike dari _SCH_WATCHLIST_CORE.
+    Return: list of dict (sama format dengan sigma_bs30_screened).
+    """
+    try:
+        import yfinance as _yf_ind
+        from datetime import date as _da_ind, timedelta as _tda_ind
+        _end_ind   = _da_ind.today()
+        _start_ind = _end_ind - _tda_ind(days=30)
+        _raw_ind = _yf_ind.download(
+            " ".join(f"{t}.JK" for t in _SCH_WATCHLIST_CORE),
+            start=str(_start_ind), end=str(_end_ind),
+            progress=False, auto_adjust=True, threads=True
+        )
+        _cl_ind = _raw_ind.get("Close", _raw_ind)
+        _vl_ind = _raw_ind.get("Volume", None)
+        _hi_ind = _raw_ind.get("High", None)
+        _lo_ind = _raw_ind.get("Low", None)
+        _result_ind = []
+        for _tk_ind in _SCH_WATCHLIST_CORE:
+            try:
+                _ck = f"{_tk_ind}.JK"
+                if _ck not in _cl_ind.columns: continue
+                _cs = _cl_ind[_ck].dropna()
+                _vs = _vl_ind[_ck].dropna() if _vl_ind is not None and _ck in _vl_ind.columns else None
+                if len(_cs) < 5: continue
+                _pr = float(_cs.iloc[-1])
+                if _pr <= 0 or _pr > 10000: continue
+                _spk = 1.0
+                if _vs is not None and len(_vs) >= 20:
+                    _avg20 = float(_vs.iloc[-21:-1].mean())
+                    _tvol  = float(_vs.iloc[-1])
+                    _spk   = round(_tvol / _avg20, 2) if _avg20 > 0 else 1.0
+                if _spk < min_spike: continue
+                _chg = round((_cs.iloc[-1] - _cs.iloc[-2]) / _cs.iloc[-2] * 100, 2) if len(_cs) >= 2 else 0.0
+                # Ambil 5 candle terakhir untuk chart
+                _n5  = min(5, len(_cs))
+                _c5  = [float(_cs.iloc[-(5-i)]) for i in range(_n5)]
+                _h5  = ([float(_hi_ind[_ck].dropna().iloc[-(5-i)]) for i in range(_n5)]
+                        if _hi_ind is not None and _ck in _hi_ind.columns else _c5)
+                _l5  = ([float(_lo_ind[_ck].dropna().iloc[-(5-i)]) for i in range(_n5)]
+                        if _lo_ind is not None and _ck in _lo_ind.columns else _c5)
+                _result_ind.append({
+                    "ticker": _tk_ind,
+                    "price":  _pr,
+                    "spike":  _spk,
+                    "chg1d":  _chg,
+                    "high_momentum": _spk >= 2.5,
+                    "momentum_days": 0,
+                    "verdict": "VOL_SPIKE" if _spk >= 2.0 else "WATCH",
+                    "pre_accum": _spk >= 1.5,
+                    "top_accum": [], "top_dist": [],
+                    "accum_days": 0,
+                    "goapi_confirmed": False,
+                    "closes5": _c5, "highs5": _h5, "lows5": _l5,
+                    "_source": "fallback_yfinance",
+                })
+            except Exception:
+                continue
+        _result_ind.sort(key=lambda x: x["spike"], reverse=True)
+        return _result_ind[:max_tickers]
+    except Exception:
+        return []
+
+
+def _sch_ensure_bs30(now_sch, today_s: str) -> list:
+    """
+    Pastikan sigma_bs30_screened tersedia.
+    Prioritas: (1) cache session, (2) brosum_history, (3) independent screener.
+    Return list yang siap dipakai — tidak pernah raise.
+    """
+    # Prioritas 1: sudah ada di session
+    _bs30 = st.session_state.get("sigma_bs30_screened") or []
+    if _bs30:
+        return _bs30
+
+    # Prioritas 2: dari brosum_history (hari lain)
+    _bsh = st.session_state.get("brosum_history", {})
+    if _bsh:
+        _last_key = sorted(_bsh.keys())[-1]
+        _bs30 = _bsh[_last_key].get("screened", [])
+        if _bs30:
+            return _bs30
+
+    # Prioritas 3: independent screener (fallback tanpa GoAPI)
+    try:
+        _fallback = _sch_independent_screener(min_spike=1.5, max_tickers=30)
+        if _fallback:
+            _ts_fb = now_sch.strftime("%d %b %Y, %H:%M WIB (Fallback Screener)")
+            st.session_state["sigma_bs30_screened"] = _fallback
+            st.session_state["sigma_bs30_ts"]       = _ts_fb
+            # Simpan ke brosum_history agar dipakai plan berikutnya
+            _bsh2 = st.session_state.get("brosum_history", {})
+            _bsh2[today_s] = {
+                "date": now_sch.strftime("%d %b %Y"),
+                "generated_at": _ts_fb,
+                "screened": _fallback,
+                "source": "fallback_yfinance",
+            }
+            st.session_state["brosum_history"] = _bsh2
+            try:
+                _ue_fb = st.session_state.get("user", {}).get("email", "")
+                if _ue_fb:
+                    save_field(_ue_fb, "sigma_bs30_screened", _fallback)
+                    save_field(_ue_fb, "sigma_bs30_ts",       _ts_fb)
+                    save_field(_ue_fb, "brosum_history",      _bsh2)
+            except Exception:
+                pass
+            return _fallback
+    except Exception:
+        pass
+    return []
+
+
 def _sigma_run_global_scheduler():
     """Master scheduler — dipanggil di setiap page rerun."""
     if not st.session_state.get("user"):
@@ -7350,6 +7493,20 @@ def _sigma_run_global_scheduler():
 
     def _is_weekday(): return _wd_sch < 5
     def _past(h, m=0): return _hour_s > h or (_hour_s == h and _min_s >= m)
+
+    # ── Bersihkan guard key dari hari-hari lalu agar tidak menghambat generate hari baru ──
+    _guard_prefixes = ["daily_plan_global_", "bsjp_plan_global_", "brosum_global_auto_",
+                       "daily_review_auto_", "weekly_plan_global_", "tr_post_key_",
+                       "tr_post_bsjp_", "tr_update_open_"]
+    _keys_to_del = [
+        k for k in list(st.session_state.keys())
+        if any(k.startswith(p) for p in _guard_prefixes)
+        and not k.endswith(_today_s)
+        and not k.endswith(_now_sch.strftime("%G-W%V"))
+    ]
+    for _gk in _keys_to_del:
+        try: del st.session_state[_gk]
+        except: pass
 
     # ── Restore data dari DB jika session baru ──────────────────────────────
     # Skip jika data_loaded=True — semua key sudah di-restore oleh blok utama
@@ -7529,8 +7686,9 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
     if _is_weekday() and _past(20, 30):
         _bs_auto_key = f"brosum_global_auto_{_today_s}"
         if not st.session_state.get(_bs_auto_key):
-            _bs_ts = st.session_state.get("sigma_bs30_ts","")
-            _already_bs = _today_s in _bs_ts if _bs_ts else False
+            # Cek apakah sudah ada di history hari ini (key = YYYY-MM-DD)
+            _bsh_chk = st.session_state.get("brosum_history", {})
+            _already_bs = _today_s in _bsh_chk
             if not _already_bs:
                 st.session_state[_bs_auto_key] = True
                 try:
@@ -7589,6 +7747,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                             "date": _now_sch.strftime("%d %b %Y"),
                             "generated_at": _ts_new,
                             "screened": _result_bs[:30],
+                            "source": "broker",
                         }
                         if len(_bsh_sch) > 30:
                             for _dk_sch in sorted(_bsh_sch.keys())[:-30]:
@@ -7609,29 +7768,37 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
 
     # ══════════════════════════════════════════════════════════════
     # [3] JAM 21:00 — DAILY PLAN AUTO-GENERATE
+    # Berjalan TANPA menunggu broker summary.
+    # Fallback otomatis ke independent screener jika bs30 kosong.
+    # Re-generate jika broker summary baru tersedia (upgrade plan).
     # ══════════════════════════════════════════════════════════════
     if _is_weekday() and _past(21):
         _dp_auto_key = f"daily_plan_global_{_today_s}"
         if not st.session_state.get(_dp_auto_key):
             _dph = st.session_state.get("auto_plan_history_daily", {})
             _slot_dp = f"{_today_s}_2100"
-            if _slot_dp not in _dph:
+            # Cek apakah broker summary real (bukan fallback) tersedia hari ini
+            _bsh_dp_chk   = st.session_state.get("brosum_history", {})
+            _bs_real_today = (_today_s in _bsh_dp_chk and
+                              _bsh_dp_chk[_today_s].get("source") != "fallback_yfinance")
+            _dp_upg_key   = f"_dp_bs_upgraded_{_today_s}"
+            _slot_dp_src  = _dph.get(_slot_dp, {}).get("source", "")
+            _slot_dp_exists = (_slot_dp in _dph and
+                               bool(_dph[_slot_dp].get("plan",{}).get("daily",[])))
+            # Paksa regenerate jika sebelumnya dari fallback tapi sekarang broker summary real tersedia
+            if _slot_dp_exists and _slot_dp_src == "fallback_yfinance" and _bs_real_today and not st.session_state.get(_dp_upg_key):
+                _slot_dp_exists = False
+                st.session_state[_dp_upg_key] = True
+            if not _slot_dp_exists:
                 st.session_state[_dp_auto_key] = True
                 try:
-                    # Pastikan ada bs30 cache (pakai data apapun yg ada)
-                    _bs30_dp = st.session_state.get("sigma_bs30_screened") or []
-                    if not _bs30_dp:
-                        # Coba ambil dari history
-                        _bsh_dp = st.session_state.get("brosum_history", {})
-                        if _bsh_dp:
-                            _last_dp = sorted(_bsh_dp.keys())[-1]
-                            _bs30_dp = _bsh_dp[_last_dp].get("screened", [])
+                    # _sch_ensure_bs30: session → history → independent screener (fallback)
+                    _bs30_dp = _sch_ensure_bs30(_now_sch, _today_s)
                     if _bs30_dp:
-                        import sys as _sys_dp
-                        # Ambil _WATCHLIST_RECO dari session atau fallback ke ticker dari bs30
-                        _tickers_dp = tuple(s["ticker"] for s in _bs30_dp if s.get("ticker"))
-                        # Fetch prices secara global (tidak butuh dalam context tab)
+                        _bs30_dp_src = (st.session_state.get("brosum_history", {})
+                                        .get(_today_s, {}).get("source", "broker"))
                         import yfinance as _yf_dp
+                        _tickers_dp = tuple(s["ticker"] for s in _bs30_dp if s.get("ticker"))
                         _pm_dp = {}
                         for _tk_dp in _tickers_dp[:30]:
                             try:
@@ -7646,8 +7813,8 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                                     }
                             except Exception: pass
                         if _pm_dp:
-                            # Gunakan fungsi scoring sederhana dari bs30 data
-                            _plan_dp = {"daily": [], "avoid": [], "outlook": "Auto-generated jam 21:00 WIB"}
+                            _src_note = "" if _bs30_dp_src != "fallback_yfinance" else " · Screened via fallback (broker API limit)"
+                            _plan_dp = {"daily": [], "avoid": [], "outlook": f"Auto-generated jam 21:00 WIB{_src_note}"}
                             for _s_dp in _bs30_dp[:20]:
                                 _tk2 = _s_dp.get("ticker","")
                                 if _tk2 not in _pm_dp: continue
@@ -7662,10 +7829,9 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                                         "sl": int(_cl2*0.97), "rr": "1:1.5",
                                         "horizon": "1-3 hari", "rating": "BUY",
                                         "vol_spike": f"{_spk:.1f}x",
-                                        "why_buy": f"Volume spike {_spk:.1f}x avg20 · Auto-screened 20:30",
+                                        "why_buy": f"Volume spike {_spk:.1f}x avg20 · Auto-screened 21:00",
                                     })
                             if _plan_dp["daily"]:
-                                # Simpan ke history
                                 _dph_cur = st.session_state.get("auto_plan_history_daily", {})
                                 _gen_at  = _now_sch.strftime("%d %b %Y, %H:%M WIB")
                                 _dph_cur[_slot_dp] = {
@@ -7673,9 +7839,9 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                                     "slot": "Sesi Malam (21:00)",
                                     "plan": _plan_dp,
                                     "generated_at": _gen_at,
+                                    "source": _bs30_dp_src,
                                 }
                                 st.session_state["auto_plan_history_daily"] = _dph_cur
-                                # Persist
                                 try:
                                     save_field(st.session_state.user["email"], "auto_plan_history_daily", _dph_cur)
                                 except Exception: pass
@@ -7685,73 +7851,85 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
 
     # ══════════════════════════════════════════════════════════════
     # [4] JAM 15:40 — BSJP PLAN AUTO-GENERATE
+    # Berjalan TANPA menunggu broker summary.
+    # Fallback otomatis ke independent screener jika bs30 kosong.
+    # Re-generate jika broker summary baru tersedia (upgrade plan).
     # ══════════════════════════════════════════════════════════════
     if _is_weekday() and _past(15, 40):
         _bsjp_auto_key = f"bsjp_plan_global_{_today_s}"
         if not st.session_state.get(_bsjp_auto_key):
             _bsjp_h = st.session_state.get("auto_plan_history_bsjp", {})
-            _slot_bsjp = f"{_today_s}_1540"  # format: YYYY-MM-DD_1540
-            if _slot_bsjp not in _bsjp_h:
+            _slot_bsjp = f"{_today_s}_1540"
+            _bsh_bsjp_chk = st.session_state.get("brosum_history", {})
+            _bs_real_bsjp = (_today_s in _bsh_bsjp_chk and
+                             _bsh_bsjp_chk[_today_s].get("source") != "fallback_yfinance")
+            _bsjp_upg_key = f"_bsjp_bs_upgraded_{_today_s}"
+            _slot_bsjp_src = _bsjp_h.get(_slot_bsjp, {}).get("source", "")
+            _slot_bsjp_exists = (_slot_bsjp in _bsjp_h and
+                                 bool(_bsjp_h[_slot_bsjp].get("plan",{}).get("bsjp",[])))
+            if _slot_bsjp_exists and _slot_bsjp_src == "fallback_yfinance" and _bs_real_bsjp and not st.session_state.get(_bsjp_upg_key):
+                _slot_bsjp_exists = False
+                st.session_state[_bsjp_upg_key] = True
+            if not _slot_bsjp_exists:
                 st.session_state[_bsjp_auto_key] = True
                 try:
-                    _bs30_bsjp = st.session_state.get("sigma_bs30_screened") or []
-                    if not _bs30_bsjp:
-                        _bsh_bsjp = st.session_state.get("brosum_history", {})
-                        if _bsh_bsjp:
-                            _last_bsjp = sorted(_bsh_bsjp.keys())[-1]
-                            _bs30_bsjp = _bsh_bsjp[_last_bsjp].get("screened", [])
-
-                    import yfinance as _yf_bsjp
-                    _pm_bsjp = {}
-                    _tickers_bsjp = [s["ticker"] for s in _bs30_bsjp if s.get("ticker")][:30]
-                    for _tk_bsjp in _tickers_bsjp:
-                        try:
-                            _h_bsjp = _yf_bsjp.Ticker(f"{_tk_bsjp}.JK").history(period="5d")
-                            if not _h_bsjp.empty:
-                                _pm_bsjp[_tk_bsjp] = {
-                                    "close": float(_h_bsjp["Close"].iloc[-1]),
-                                    "high":  float(_h_bsjp["High"].iloc[-1]),
-                                    "low":   float(_h_bsjp["Low"].iloc[-1]),
-                                    "volume":float(_h_bsjp["Volume"].iloc[-1]) if "Volume" in _h_bsjp else 0,
-                                    "prev_close": float(_h_bsjp["Close"].iloc[-2]) if len(_h_bsjp)>1 else float(_h_bsjp["Close"].iloc[-1]),
-                                }
-                        except Exception: pass
-
-                    if _pm_bsjp:
-                        _plan_bsjp = {"bsjp": [], "avoid": [], "outlook": "Auto-generated jam 15:40 WIB (Sesi Closing BEI)"}
-                        for _s_bsjp in _bs30_bsjp[:20]:
-                            _tk_b2 = _s_bsjp.get("ticker","")
-                            if _tk_b2 not in _pm_bsjp: continue
-                            _pd_b2 = _pm_bsjp[_tk_b2]
-                            _cl_b2 = _pd_b2["close"]
-                            _spk_b = _s_bsjp.get("spike",1.0)
-                            # BSJP: beli closing hari ini, jual besok pagi
-                            if _spk_b >= 1.8 and _pd_b2.get("close",0) > 0:
-                                _tp_b = round(_cl_b2 * 1.03)
-                                _sl_b = round(_cl_b2 * 0.98)
-                                _plan_bsjp["bsjp"].append({
-                                    "ticker": _tk_b2, "price": int(_cl_b2),
-                                    "entry_low": int(_cl_b2*0.998), "entry_high": int(_cl_b2*1.002),
-                                    "tp1": _tp_b, "tp2": round(_cl_b2*1.05),
-                                    "sl": _sl_b, "rr": "1:1.5",
-                                    "horizon": "H+1 pagi",
-                                    "rating": "BSJP",
-                                    "vol_spike": f"{_spk_b:.1f}x",
-                                    "why_buy": f"Spike {_spk_b:.1f}x closing · Target gap-up H+1",
-                                })
-                        if _plan_bsjp["bsjp"]:
-                            _bsjp_h_cur = st.session_state.get("auto_plan_history_bsjp", {})
-                            _gen_bsjp   = _now_sch.strftime("%d %b %Y, %H:%M WIB")
-                            _bsjp_h_cur[_slot_bsjp] = {
-                                "date": _now_sch.strftime("%d %b %Y"),
-                                "slot": "Sesi Closing (15:40)",
-                                "plan": _plan_bsjp,
-                                "generated_at": _gen_bsjp,
-                            }
-                            st.session_state["auto_plan_history_bsjp"] = _bsjp_h_cur
+                    # _sch_ensure_bs30: session → history → independent screener (fallback)
+                    _bs30_bsjp = _sch_ensure_bs30(_now_sch, _today_s)
+                    _bs30_bsjp_src = (st.session_state.get("brosum_history", {})
+                                      .get(_today_s, {}).get("source", "broker"))
+                    if _bs30_bsjp:
+                        import yfinance as _yf_bsjp
+                        _pm_bsjp = {}
+                        _tickers_bsjp = [s["ticker"] for s in _bs30_bsjp if s.get("ticker")][:30]
+                        for _tk_bsjp in _tickers_bsjp:
                             try:
-                                save_field(st.session_state.user["email"], "auto_plan_history_bsjp", _bsjp_h_cur)
+                                _h_bsjp = _yf_bsjp.Ticker(f"{_tk_bsjp}.JK").history(period="5d")
+                                if not _h_bsjp.empty:
+                                    _pm_bsjp[_tk_bsjp] = {
+                                        "close": float(_h_bsjp["Close"].iloc[-1]),
+                                        "high":  float(_h_bsjp["High"].iloc[-1]),
+                                        "low":   float(_h_bsjp["Low"].iloc[-1]),
+                                        "volume":float(_h_bsjp["Volume"].iloc[-1]) if "Volume" in _h_bsjp else 0,
+                                        "prev_close": float(_h_bsjp["Close"].iloc[-2]) if len(_h_bsjp)>1 else float(_h_bsjp["Close"].iloc[-1]),
+                                    }
                             except Exception: pass
+                        if _pm_bsjp:
+                            _src_note_b = "" if _bs30_bsjp_src != "fallback_yfinance" else " · Screened via fallback (broker API limit)"
+                            _plan_bsjp = {"bsjp": [], "avoid": [], "outlook": f"Auto-generated jam 15:40 WIB (Sesi Closing BEI){_src_note_b}"}
+                            for _s_bsjp in _bs30_bsjp[:20]:
+                                _tk_b2 = _s_bsjp.get("ticker","")
+                                if _tk_b2 not in _pm_bsjp: continue
+                                _pd_b2 = _pm_bsjp[_tk_b2]
+                                _cl_b2 = _pd_b2["close"]
+                                _spk_b = _s_bsjp.get("spike",1.0)
+                                # BSJP: beli closing hari ini, jual besok pagi
+                                if _spk_b >= 1.8 and _pd_b2.get("close",0) > 0:
+                                    _tp_b = round(_cl_b2 * 1.03)
+                                    _sl_b = round(_cl_b2 * 0.98)
+                                    _plan_bsjp["bsjp"].append({
+                                        "ticker": _tk_b2, "price": int(_cl_b2),
+                                        "entry_low": int(_cl_b2*0.998), "entry_high": int(_cl_b2*1.002),
+                                        "tp1": _tp_b, "tp2": round(_cl_b2*1.05),
+                                        "sl": _sl_b, "rr": "1:1.5",
+                                        "horizon": "H+1 pagi",
+                                        "rating": "BSJP",
+                                        "vol_spike": f"{_spk_b:.1f}x",
+                                        "why_buy": f"Spike {_spk_b:.1f}x closing · Target gap-up H+1",
+                                    })
+                            if _plan_bsjp["bsjp"]:
+                                _bsjp_h_cur = st.session_state.get("auto_plan_history_bsjp", {})
+                                _gen_bsjp   = _now_sch.strftime("%d %b %Y, %H:%M WIB")
+                                _bsjp_h_cur[_slot_bsjp] = {
+                                    "date": _now_sch.strftime("%d %b %Y"),
+                                    "slot": "Sesi Closing (15:40)",
+                                    "plan": _plan_bsjp,
+                                    "generated_at": _gen_bsjp,
+                                    "source": _bs30_bsjp_src,
+                                }
+                                st.session_state["auto_plan_history_bsjp"] = _bsjp_h_cur
+                                try:
+                                    save_field(st.session_state.user["email"], "auto_plan_history_bsjp", _bsjp_h_cur)
+                                except Exception: pass
                 except:
                     if _bsjp_auto_key in st.session_state:
                         del st.session_state[_bsjp_auto_key]
@@ -7907,63 +8085,76 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
         if not st.session_state.get(_wp_auto_key):
             _wph = st.session_state.get("auto_plan_history_weekly", {})
             _slot_wp = f"{_week_iso}_1200"
-            if _slot_wp not in _wph:
+            # Cek upgrade: jika sebelumnya dari fallback tapi broker summary real sudah ada
+            _bsh_wp_chk   = st.session_state.get("brosum_history", {})
+            _bs_real_wp   = any(
+                v.get("source") != "fallback_yfinance"
+                for v in _bsh_wp_chk.values()
+            ) if _bsh_wp_chk else False
+            _wp_upg_key   = f"_wp_bs_upgraded_{_week_iso}"
+            _slot_wp_src  = _wph.get(_slot_wp, {}).get("source", "")
+            _slot_wp_exists = _slot_wp in _wph and bool(_wph[_slot_wp].get("plan",{}).get("weekly",[]))
+            if _slot_wp_exists and _slot_wp_src == "fallback_yfinance" and _bs_real_wp and not st.session_state.get(_wp_upg_key):
+                _slot_wp_exists = False
+                st.session_state[_wp_upg_key] = True
+            if not _slot_wp_exists:
                 st.session_state[_wp_auto_key] = True
                 try:
-                    _bs30_wp = st.session_state.get("sigma_bs30_screened") or []
-                    if not _bs30_wp:
-                        _bsh_wp = st.session_state.get("brosum_history", {})
-                        if _bsh_wp:
-                            _last_wp = sorted(_bsh_wp.keys())[-1]
-                            _bs30_wp = _bsh_wp[_last_wp].get("screened", [])
-
-                    import yfinance as _yf_wp
-                    _pm_wp = {}
-                    for _tk_wp in [s["ticker"] for s in _bs30_wp if s.get("ticker")][:30]:
-                        try:
-                            _h_wp = _yf_wp.Ticker(f"{_tk_wp}.JK").history(period="10d")
-                            if not _h_wp.empty:
-                                _pm_wp[_tk_wp] = {
-                                    "close": float(_h_wp["Close"].iloc[-1]),
-                                    "high":  float(_h_wp["High"].max()),
-                                    "low":   float(_h_wp["Low"].min()),
-                                    "volume":float(_h_wp["Volume"].iloc[-1]) if "Volume" in _h_wp else 0,
-                                    "prev_close": float(_h_wp["Close"].iloc[-2]) if len(_h_wp)>1 else float(_h_wp["Close"].iloc[-1]),
-                                }
-                        except Exception: pass
-
-                    if _pm_wp:
-                        _plan_wp = {"weekly": [], "avoid": [], "outlook": "Auto-generated Sabtu 12:00 WIB — weekly swing plan"}
-                        for _s_wp in _bs30_wp[:20]:
-                            _tk_w2 = _s_wp.get("ticker","")
-                            if _tk_w2 not in _pm_wp: continue
-                            _pd_w2 = _pm_wp[_tk_w2]
-                            _cl_w2 = _pd_w2["close"]
-                            _spk_w = _s_wp.get("spike",1.0)
-                            if _spk_w >= 1.6:
-                                _plan_wp["weekly"].append({
-                                    "ticker": _tk_w2, "price": int(_cl_w2),
-                                    "entry_low": int(_cl_w2*0.99), "entry_high": int(_cl_w2*1.01),
-                                    "tp1": int(_cl_w2*1.07), "tp2": int(_cl_w2*1.12),
-                                    "sl": int(_cl_w2*0.96), "rr": "1:2",
-                                    "horizon": "3-5 hari",
-                                    "rating": "BUY",
-                                    "vol_spike": f"{_spk_w:.1f}x",
-                                    "why_buy": f"Swing kandidat · spike {_spk_w:.1f}x · weekly trend",
-                                })
-                        if _plan_wp["weekly"]:
-                            _wph_cur = st.session_state.get("auto_plan_history_weekly", {})
-                            _gen_wp  = _now_sch.strftime("%d %b %Y, %H:%M WIB")
-                            _wph_cur[_slot_wp] = {
-                                "date": _now_sch.strftime("%d %b %Y"),
-                                "slot": "Sabtu Siang (12:00)",
-                                "plan": _plan_wp,
-                                "generated_at": _gen_wp,
-                            }
-                            st.session_state["auto_plan_history_weekly"] = _wph_cur
+                    # _sch_ensure_bs30: fallback otomatis jika bs30 kosong
+                    _bs30_wp = _sch_ensure_bs30(_now_sch, _today_s)
+                    _bs30_wp_src = "broker"
+                    if _bsh_wp_chk:
+                        _last_wp_k = sorted(_bsh_wp_chk.keys())[-1]
+                        _bs30_wp_src = _bsh_wp_chk[_last_wp_k].get("source", "broker")
+                    if _bs30_wp:
+                        import yfinance as _yf_wp
+                        _pm_wp = {}
+                        for _tk_wp in [s["ticker"] for s in _bs30_wp if s.get("ticker")][:30]:
                             try:
-                                save_field(st.session_state.user["email"], "auto_plan_history_weekly", _wph_cur)
+                                _h_wp = _yf_wp.Ticker(f"{_tk_wp}.JK").history(period="10d")
+                                if not _h_wp.empty:
+                                    _pm_wp[_tk_wp] = {
+                                        "close": float(_h_wp["Close"].iloc[-1]),
+                                        "high":  float(_h_wp["High"].max()),
+                                        "low":   float(_h_wp["Low"].min()),
+                                        "volume":float(_h_wp["Volume"].iloc[-1]) if "Volume" in _h_wp else 0,
+                                        "prev_close": float(_h_wp["Close"].iloc[-2]) if len(_h_wp)>1 else float(_h_wp["Close"].iloc[-1]),
+                                    }
                             except Exception: pass
+                        if _pm_wp:
+                            _src_note_w = "" if _bs30_wp_src != "fallback_yfinance" else " · Screened via fallback (broker API limit)"
+                            _plan_wp = {"weekly": [], "avoid": [], "outlook": f"Auto-generated Sabtu 12:00 WIB — weekly swing plan{_src_note_w}"}
+                            for _s_wp in _bs30_wp[:20]:
+                                _tk_w2 = _s_wp.get("ticker","")
+                                if _tk_w2 not in _pm_wp: continue
+                                _pd_w2 = _pm_wp[_tk_w2]
+                                _cl_w2 = _pd_w2["close"]
+                                _spk_w = _s_wp.get("spike",1.0)
+                                if _spk_w >= 1.6:
+                                    _plan_wp["weekly"].append({
+                                        "ticker": _tk_w2, "price": int(_cl_w2),
+                                        "entry_low": int(_cl_w2*0.99), "entry_high": int(_cl_w2*1.01),
+                                        "tp1": int(_cl_w2*1.07), "tp2": int(_cl_w2*1.12),
+                                        "sl": int(_cl_w2*0.96), "rr": "1:2",
+                                        "horizon": "3-5 hari",
+                                        "rating": "BUY",
+                                        "vol_spike": f"{_spk_w:.1f}x",
+                                        "why_buy": f"Swing kandidat · spike {_spk_w:.1f}x · weekly trend",
+                                    })
+                            if _plan_wp["weekly"]:
+                                _wph_cur = st.session_state.get("auto_plan_history_weekly", {})
+                                _gen_wp  = _now_sch.strftime("%d %b %Y, %H:%M WIB")
+                                _wph_cur[_slot_wp] = {
+                                    "date": _now_sch.strftime("%d %b %Y"),
+                                    "slot": "Sabtu Siang (12:00)",
+                                    "plan": _plan_wp,
+                                    "generated_at": _gen_wp,
+                                    "source": _bs30_wp_src,
+                                }
+                                st.session_state["auto_plan_history_weekly"] = _wph_cur
+                                try:
+                                    save_field(st.session_state.user["email"], "auto_plan_history_weekly", _wph_cur)
+                                except Exception: pass
                 except:
                     if _wp_auto_key in st.session_state:
                         del st.session_state[_wp_auto_key]
@@ -18402,7 +18593,6 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 {"date": "18–19 Mar 2026", "result": "Tetap 4.75%", "status": "done"},
                 {"date": "22–23 Apr 2026", "result": "Tetap 4.75%", "status": "done"},
                 {"date": "20–21 Mei 2026", "result": "Naik 50bps → 5.25%", "status": "done"},
-                {"date": "20–21 Mei 2026", "result": "Menunggu keputusan", "status": "upcoming"},
                 {"date": "17–18 Jun 2026", "result": "—", "status": "future"},
                 {"date": "15–16 Jul 2026", "result": "—", "status": "future"},
                 {"date": "19–20 Ags 2026", "result": "—", "status": "future"},
@@ -25686,6 +25876,126 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         st.session_state[_daily_auto_key] = True
                 except Exception: pass
 
+            # ── FORCE REFRESH PANEL — tampil jika plan bukan hari ini ──
+            _daily_hist_chk = st.session_state.get("auto_plan_history_daily", {})
+            _today_key_chk  = _now_d.strftime("%Y-%m-%d")
+            _has_today_plan = any(k.startswith(_today_key_chk) for k in _daily_hist_chk)
+            if not _has_today_plan:
+                _fr_col1, _fr_col2, _fr_col3 = st.columns([3, 1.2, 1.2])
+                with _fr_col1:
+                    st.markdown(
+                        f"<div style='background:rgba(239,83,80,0.08);border:1px solid rgba(239,83,80,0.3);"
+                        f"border-radius:8px;padding:9px 14px;font-size:0.78rem;color:#ef5350;'>"
+                        f"⚠️ <b>Plan hari ini ({_now_d.strftime('%d %b %Y')}) belum ter-generate.</b> "
+                        f"Klik tombol untuk generate sekarang.</div>",
+                        unsafe_allow_html=True)
+                with _fr_col2:
+                    _force_daily = st.button("🔄 Generate Hari Ini", use_container_width=True, key="force_daily_now")
+                with _fr_col3:
+                    _force_brosum = st.button("📡 Refresh Broker Data", use_container_width=True, key="force_brosum_now")
+
+                if _force_brosum:
+                    with st.spinner("📡 Mengambil data broker terbaru..."):
+                        try:
+                            import yfinance as _yf_fr
+                            from datetime import date as _da_fr, timedelta as _tda_fr
+                            _BS30_FR = [
+                                "TLKM","ASII","BBCA","BBRI","BBNI","BMRI","BRIS","UNVR","ICBP","INDF",
+                                "KLBF","GGRM","HMSP","MYOR","CPIN","ADRO","ITMG","PTBA","ANTM","INCO",
+                                "MDKA","NCKL","MBMA","BRMS","AMMN","SMGR","INTP","BSDE","CTRA","SMRA",
+                                "PWON","GOTO","EMTK","MAPI","ACES","HEAL","MIKA","SILO","KAEF","TSPC",
+                                "PGAS","MEDC","AALI","LSIP","SIMP","TBIG","TOWR","LINK","TPIA","BRPT",
+                                "UNTR","BFIN","ADMF","TMAS","SMDR","PGEO","PTRO","CUAN","VKTR","RAJA",
+                            ]
+                            _end_fr   = _da_fr.today()
+                            _start_fr = _end_fr - _tda_fr(days=30)
+                            _raw_fr   = _yf_fr.download(
+                                " ".join(f"{t}.JK" for t in _BS30_FR),
+                                start=str(_start_fr), end=str(_end_fr),
+                                progress=False, auto_adjust=True, threads=True
+                            )
+                            _cl_fr = _raw_fr.get("Close", _raw_fr)
+                            _vl_fr = _raw_fr.get("Volume", None)
+                            _result_fr = []
+                            for _tk_fr in _BS30_FR:
+                                try:
+                                    _ck_fr = f"{_tk_fr}.JK"
+                                    if _ck_fr not in _cl_fr.columns: continue
+                                    _cs_fr = _cl_fr[_ck_fr].dropna()
+                                    _vs_fr = _vl_fr[_ck_fr].dropna() if _vl_fr is not None and _ck_fr in _vl_fr.columns else None
+                                    if len(_cs_fr) < 5: continue
+                                    _pr_fr = float(_cs_fr.iloc[-1])
+                                    if _pr_fr > 8000: continue
+                                    _spk_fr = 1.0
+                                    if _vs_fr is not None and len(_vs_fr) >= 20:
+                                        _avg20_fr = float(_vs_fr.iloc[-21:-1].mean())
+                                        _tvol_fr  = float(_vs_fr.iloc[-1])
+                                        _spk_fr   = round(_tvol_fr / _avg20_fr, 2) if _avg20_fr > 0 else 1.0
+                                    if _spk_fr < 1.5: continue
+                                    _chg_fr = round((_cs_fr.iloc[-1]-_cs_fr.iloc[-2])/_cs_fr.iloc[-2]*100,2) if len(_cs_fr)>=2 else 0
+                                    _result_fr.append({
+                                        "ticker": _tk_fr, "price": _pr_fr, "spike": _spk_fr, "chg1d": _chg_fr,
+                                        "high_momentum": False, "momentum_days": 0, "verdict": "",
+                                        "pre_accum": _spk_fr >= 1.5, "top_accum": [], "top_dist": [],
+                                        "accum_days": 0, "goapi_confirmed": False
+                                    })
+                                except: continue
+                            if _result_fr:
+                                _result_fr.sort(key=lambda x: x["spike"], reverse=True)
+                                _ts_fr = _now_d.strftime("%d %b %Y, %H:%M WIB (Force Refresh)")
+                                st.session_state["sigma_bs30_screened"] = _result_fr[:30]
+                                st.session_state["sigma_bs30_ts"]       = _ts_fr
+                                _bsh_fr = st.session_state.get("brosum_history", {})
+                                _bsh_fr[_today_key_chk] = {
+                                    "date": _now_d.strftime("%d %b %Y"),
+                                    "generated_at": _ts_fr,
+                                    "screened": _result_fr[:30],
+                                }
+                                st.session_state["brosum_history"] = _bsh_fr
+                                try:
+                                    save_field(st.session_state.user["email"], "sigma_bs30_screened", _result_fr[:30])
+                                    save_field(st.session_state.user["email"], "sigma_bs30_ts", _ts_fr)
+                                    save_field(st.session_state.user["email"], "brosum_history", _bsh_fr)
+                                except Exception: pass
+                                st.success(f"✅ Data broker diperbarui — {len(_result_fr)} saham ditemukan")
+                                st.rerun()
+                            else:
+                                st.warning("Tidak ada saham yang memenuhi filter. Coba lagi.")
+                        except Exception as _e_fr:
+                            st.error(f"Gagal refresh: {_e_fr}")
+
+                if _force_daily:
+                    _bs30_force = st.session_state.get("sigma_bs30_screened") or []
+                    if not _bs30_force:
+                        st.warning("⚠️ Klik 'Refresh Broker Data' dulu sebelum generate plan.")
+                    else:
+                        with st.spinner("⚡ Generate Daily Plan hari ini..."):
+                            try:
+                                _pm_force = _reco_fetch_prices(tuple(s["ticker"] for s in _bs30_force if s.get("ticker")))
+                                if _pm_force:
+                                    _plan_force = _rule_based_plan_v2(_pm_force, _bs30_force, "daily")
+                                    _slot_force = f"{_today_key_chk}_manual"
+                                    _dph_force  = st.session_state.get("auto_plan_history_daily", {})
+                                    _gen_force  = _now_d.strftime("%d %b %Y, %H:%M WIB")
+                                    _dph_force[_slot_force] = {
+                                        "date": _now_d.strftime("%d %b %Y"),
+                                        "slot": "Generate Manual",
+                                        "plan": _plan_force,
+                                        "generated_at": _gen_force,
+                                    }
+                                    st.session_state["auto_plan_history_daily"] = _dph_force
+                                    try:
+                                        save_field(st.session_state.user["email"], "auto_plan_history_daily", _dph_force)
+                                    except Exception: pass
+                                    st.success("✅ Daily Plan hari ini berhasil di-generate!")
+                                    st.rerun()
+                                else:
+                                    st.error("Gagal mengambil data harga. Coba lagi.")
+                            except Exception as _e_fd:
+                                st.error(f"Error: {_e_fd}")
+
+                st.markdown("<br>", unsafe_allow_html=True)
+
             # ── 4 sub-tab ──
             _d_tab_plan, _d_tab_ranking, _d_tab_hist_plan, _d_tab_hist_sum, _d_tab_trackrecord = st.tabs([
                 "  📋 TRADE PLAN & SUMMARY  ",
@@ -26152,6 +26462,52 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         st.session_state[_weekly_auto_key] = True
                 except Exception: pass
 
+            # ── Force generate untuk Weekly jika belum ada minggu ini ──
+            _wph_chk    = st.session_state.get("auto_plan_history_weekly", {})
+            _this_wk_chk = _now_w.strftime("%G-W%V")
+            _has_week_plan = any(k.startswith(_this_wk_chk) for k in _wph_chk)
+            if not _has_week_plan:
+                _wfr_col1, _wfr_col2 = st.columns([3, 1])
+                with _wfr_col1:
+                    st.markdown(
+                        f"<div style='background:rgba(239,83,80,0.08);border:1px solid rgba(239,83,80,0.3);"
+                        f"border-radius:8px;padding:9px 14px;font-size:0.78rem;color:#ef5350;margin-bottom:8px;'>"
+                        f"⚠️ <b>Weekly Plan minggu ini ({_this_wk_chk}) belum tersedia.</b> "
+                        f"Klik untuk generate sekarang.</div>",
+                        unsafe_allow_html=True)
+                with _wfr_col2:
+                    _force_weekly = st.button("🔄 Generate Weekly", use_container_width=True, key="force_weekly_now")
+                if _force_weekly:
+                    _bs30_fw = st.session_state.get("sigma_bs30_screened") or []
+                    if not _bs30_fw:
+                        st.warning("⚠️ Refresh Broker Data di tab Daily Plan dulu.")
+                    else:
+                        with st.spinner("⚡ Generate Weekly Plan..."):
+                            try:
+                                _pm_fw = _reco_fetch_prices(tuple(s["ticker"] for s in _bs30_fw if s.get("ticker")))
+                                if _pm_fw:
+                                    _plan_fw   = _rule_based_plan_v2(_pm_fw, _bs30_fw, "weekly")
+                                    _slot_fw   = f"{_this_wk_chk}_manual"
+                                    _wph_fw    = st.session_state.get("auto_plan_history_weekly", {})
+                                    _gen_fw    = _now_w.strftime("%d %b %Y, %H:%M WIB")
+                                    _wph_fw[_slot_fw] = {
+                                        "date": _now_w.strftime("%d %b %Y"),
+                                        "slot": "Generate Manual",
+                                        "plan": _plan_fw,
+                                        "generated_at": _gen_fw,
+                                    }
+                                    st.session_state["auto_plan_history_weekly"] = _wph_fw
+                                    try:
+                                        save_field(st.session_state.user["email"], "auto_plan_history_weekly", _wph_fw)
+                                    except Exception: pass
+                                    st.success("✅ Weekly Plan berhasil di-generate!")
+                                    st.rerun()
+                                else:
+                                    st.error("Gagal mengambil data harga.")
+                            except Exception as _e_fw:
+                                st.error(f"Error: {_e_fw}")
+                st.markdown("<br>", unsafe_allow_html=True)
+
             _w_tab_plan, _w_tab_hist_plan, _w_tab_hist_sum, _w_tab_trackrecord = st.tabs([
                 "  📋 TRADE PLAN & SUMMARY  ",
                 "  🗂️ HISTORY TRADE PLAN  ",
@@ -26469,7 +26825,17 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         "Klik <b>▶ GENERATE BSJP</b> untuk membuat plan hari ini.</div>",
                         unsafe_allow_html=True)
 
-                # Tombol generate manual
+                # Tombol generate manual + status hari ini
+                _bsjp_hist_chk  = st.session_state.get("auto_plan_history_bsjp", {})
+                _today_b_chk    = _now_b.strftime("%Y-%m-%d")
+                _has_today_bsjp = any(k.startswith(_today_b_chk) for k in _bsjp_hist_chk)
+                if not _has_today_bsjp:
+                    st.markdown(
+                        f"<div style='background:rgba(239,83,80,0.08);border:1px solid rgba(239,83,80,0.3);"
+                        f"border-radius:8px;padding:9px 14px;font-size:0.78rem;color:#ef5350;margin-bottom:10px;'>"
+                        f"⚠️ <b>BSJP hari ini ({_now_b.strftime('%d %b %Y')}) belum ter-generate.</b> "
+                        f"Klik ▶ GENERATE BSJP untuk membuat sekarang.</div>",
+                        unsafe_allow_html=True)
                 _bcol1, _bcol2 = st.columns([4, 1])
                 with _bcol2:
                     run_bsjp = st.button("▶ GENERATE BSJP", use_container_width=True, key="btn_bsjp")
