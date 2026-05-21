@@ -11246,21 +11246,33 @@ current_view = st.session_state.get("current_view", "chat")
 # menyebabkan Python membuat function object baru setiap kali → cache miss.
 # ═════════════════════════════════════════════════════════════════════════════
 
-@st.cache_data(ttl=86400, show_spinner=False)
+@st.cache_data(ttl=1800, show_spinner=False)  # 30 menit
 def _tl_fetch_ticker_tape(items_tuple, slot_key: str = ""):
     import yfinance as _yf
-    results = []
-    for _name, _tk in items_tuple:
+    from concurrent.futures import ThreadPoolExecutor, as_completed as _tape_asc
+    results_dict = {}
+
+    def _fetch_one_tape(name, tk):
         try:
-            _h = _yf.Ticker(_tk).history(period="2d")
+            _h = _yf.Ticker(tk).history(period="2d", timeout=10)
             if len(_h) >= 2:
                 _p  = float(_h['Close'].iloc[-1])
                 _pc = float(_h['Close'].iloc[-2])
                 _chg = (_p - _pc) / _pc * 100
-                results.append((_name, _p, _chg))
+                return (name, _p, _chg)
         except Exception:
             pass
-    return results
+        return None
+
+    with ThreadPoolExecutor(max_workers=min(len(items_tuple), 12)) as ex:
+        futs = {ex.submit(_fetch_one_tape, n, tk): (n, tk) for n, tk in items_tuple}
+        for f in _tape_asc(futs):
+            r = f.result()
+            if r:
+                results_dict[r[0]] = r
+
+    # Preserve original order
+    return [results_dict[n] for n, _ in items_tuple if n in results_dict]
 
 @st.cache_data(ttl=604800, show_spinner=False)
 def _tl_fetch_market_data(names_tuple, tickers_tuple, weekly_slot: str = ""):
@@ -12012,7 +12024,7 @@ if current_view == "dashboard":
                     letter-spacing: 0.12em;
                     text-transform: uppercase;
                     margin-top: 2px;
-                ">KIPM &middot; MnM Strategy+</div>
+                ">KIPM UP x MOONSIDE</div>
             </div>
         </div>
         <div style="display:flex; align-items:center; gap:10px;">
@@ -12110,17 +12122,14 @@ if current_view == "dashboard":
         ("Palm Oil", "MYP=F"),
         ("Nickel",   "ALI=F"),
     ]
-    # Hitung slot tape (sama dengan globe slot: 12:30 & 19:00 WIB)
+    # Slot tape: per-30-menit (jam trading/US), per-jam (lainnya)
     _tape_wib = datetime.now(timezone(timedelta(hours=7)))
     _th, _tm = _tape_wib.hour, _tape_wib.minute
-    if (_th > 12 or (_th == 12 and _tm >= 30)) and _th < 19:
-        _tape_slot = _tape_wib.strftime("%Y%m%d") + "_1230"
-    elif _th >= 19:
-        _tape_slot = _tape_wib.strftime("%Y%m%d") + "_1900"
-    else:
-        _tape_slot = _tape_wib.strftime("%Y%m%d") + "_0000"
+    _tape_trading = (9 <= _th < 12) or (13 <= _th < 16) or _th >= 20 or _th < 5
+    _tape_slot_min = 0 if _tm < 30 else 30
+    _tape_slot = _tape_wib.strftime("%Y%m%d_%H") + f"_{_tape_slot_min:02d}" if _tape_trading else _tape_wib.strftime("%Y%m%d_%H") + "_00"
 
-    @st.cache_data(ttl=86400, show_spinner=False)
+    @st.cache_data(ttl=1800, show_spinner=False)  # 30 menit
     def _fetch_ticker_tape(items_tuple, slot_key: str = ""):
         import yfinance as _yf
         results = []
@@ -12234,7 +12243,7 @@ if current_view == "dashboard":
 
 
     # ── GLOBE LIVE DATA FETCH (hourly TTL) ────────────────────────────────
-    @st.cache_data(ttl=86400, show_spinner=False)  # TTL panjang — refresh dikontrol oleh slot key
+    @st.cache_data(ttl=1800, show_spinner=False)  # 30 menit
     def _fetch_globe_live_data(slot_key: str = ""):
         """Fetch live price, chg%, volume, market cap untuk semua saham globe.
         Cache 24 jam (auto-refresh tiap hari). Fallback ke data statis jika gagal."""
@@ -12503,25 +12512,27 @@ if current_view == "dashboard":
             pass
         return prices
 
+    # ── Globe & Konglo: lazily fetched inside tab, slot computed here ─────────
     if st.session_state.get("_konglo_slot", "") != _konglo_slot:
         try: _fetch_globe_konglo_prices.clear()
         except Exception: pass
         st.session_state["_konglo_slot"] = _konglo_slot
-    _konglo_prices = _fetch_globe_konglo_prices(_konglo_slot)
+        st.session_state.pop("_konglo_prices_cached", None)  # invalidate cached value
+
     _now_wib_g = datetime.now(timezone(timedelta(hours=7)))
     _gh, _gm = _now_wib_g.hour, _now_wib_g.minute
-    if (_gh > 12 or (_gh == 12 and _gm >= 30)) and _gh < 19:
-        _globe_slot = _now_wib_g.strftime("%Y%m%d") + "_1230"
-    elif _gh >= 19:
-        _globe_slot = _now_wib_g.strftime("%Y%m%d") + "_1900"
-    else:
-        _globe_slot = _now_wib_g.strftime("%Y%m%d") + "_0000"  # sebelum 12:30, pakai data hari ini pagi
+    _globe_trading = (9 <= _gh < 12) or (13 <= _gh < 16) or _gh >= 20 or _gh < 5
+    _globe_slot_min = 0 if _gm < 30 else 30
+    _globe_slot = _now_wib_g.strftime("%Y%m%d_%H") + f"_{_globe_slot_min:02d}" if _globe_trading else _now_wib_g.strftime("%Y%m%d_%H") + "_00"
 
     if st.session_state.get("_globe_prev_slot", "") != _globe_slot:
         try: _fetch_globe_live_data.clear()
         except Exception: pass
         st.session_state["_globe_prev_slot"] = _globe_slot
-    _globe_live = _fetch_globe_live_data(_globe_slot)
+        st.session_state.pop("_globe_live_cached", None)  # invalidate cached value
+
+    # _konglo_prices dan _globe_live akan di-fetch LAZY di dalam tab_idxmap
+    # agar tidak memblokir render halaman saat refresh
     # ─────────────────────────────────────────────────────────────────────
     # MARKET MAP tab dihapus — blok di bawah masuk ke _DeadTab (tidak dirender)
 
@@ -12542,6 +12553,18 @@ if current_view == "dashboard":
         # 1. MARKET MAP GLOBE — didefinisikan dulu (variabel),
         #    di-render SETELAH heatmap (di bawah)
         # ════════════════════════════════════════════════════════
+
+        # ── Lazy fetch: hanya dijalankan saat tab ini dibuka ──────────────
+        if "_globe_live" not in st.session_state or st.session_state.get("_globe_prev_slot_loaded") != _globe_slot:
+            with st.spinner("Memuat IDX Globe..."):
+                _globe_live = _fetch_globe_live_data(_globe_slot)
+                _konglo_prices = _fetch_globe_konglo_prices(_konglo_slot)
+            st.session_state["_globe_live"] = _globe_live
+            st.session_state["_konglo_prices"] = _konglo_prices
+            st.session_state["_globe_prev_slot_loaded"] = _globe_slot
+        else:
+            _globe_live = st.session_state["_globe_live"]
+            _konglo_prices = st.session_state.get("_konglo_prices", {})
 
         import json as _globe_json
         # ── DISCLAIMER: Harga di static meta adalah snapshot untuk initial render IDX Map ──
@@ -13341,17 +13364,17 @@ window.addEventListener('resize',()=>{
         # ── LIVE MARKET ─────────────────────────────────────────────────────────
 
         # ── Groq Key Status Badge ──────────────────────────────────────────────
-        _gk_info = st.session_state.get("_groq_key_status", {})
-        if _gk_info:
-            _gk_c = _gk_info.get("color","#6c757d")
-            _gk_l = _gk_info.get("label","—")
-            st.markdown(
-                f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.65rem;"
-                f"color:{_gk_c};margin-bottom:4px;letter-spacing:0.05em;'"
-                f">⚡ GROQ {_gk_l} active</div>",
-                unsafe_allow_html=True
-            )
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        # [UI hidden] _gk_info = st.session_state.get("_groq_key_status", {})
+        # [UI hidden] if _gk_info:
+        # [UI hidden] _gk_c = _gk_info.get("color","#6c757d")
+        # [UI hidden] _gk_l = _gk_info.get("label","—")
+        # [UI hidden] st.markdown(
+        # [UI hidden] f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.65rem;"
+        # [UI hidden] f"color:{_gk_c};margin-bottom:4px;letter-spacing:0.05em;'"
+        # [UI hidden] f">⚡ GROQ {_gk_l} active</div>",
+        # [UI hidden] unsafe_allow_html=True
+        # [UI hidden] )
+        # [UI hidden] st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
         # ── Definisi ticker ─────────────────────────────────────────────────
         _IDX_TICKERS = [
@@ -13388,33 +13411,43 @@ window.addEventListener('resize',()=>{
             ("ETH/USD",        "ETH-USD",    "\U0001f48e", "USD",       "crypto"),
         ]
 
-        # ── Slot Live Market: update 12:30 & 19:00 WIB ─────────────────────────
+        # ── Slot Live Market: update setiap 30 menit (jam trading) / 60 menit (lainnya) ──
         _lm_wib = datetime.now(timezone(timedelta(hours=7)))
         _lmh, _lmm = _lm_wib.hour, _lm_wib.minute
-        if (_lmh > 12 or (_lmh == 12 and _lmm >= 30)) and _lmh < 19:
-            _lm_slot = _lm_wib.strftime("%Y%m%d") + "_1230"
-        elif _lmh >= 19:
-            _lm_slot = _lm_wib.strftime("%Y%m%d") + "_1900"
+        # Jam trading IDX: 09:00-11:30 & 13:30-16:00 → slot per-30-menit
+        _is_trading_slot = (9 <= _lmh < 12) or (_lmh == 11 and _lmm <= 30) or (13 <= _lmh < 16) or (_lmh == 13 and _lmm >= 30)
+        # US market buka: 20:30-05:00 WIB → slot per-30-menit
+        _is_us_slot = _lmh >= 20 or _lmh < 5
+        if _is_trading_slot or _is_us_slot:
+            _slot_min = 0 if _lmm < 30 else 30  # per-30-menit
         else:
-            _lm_slot = _lm_wib.strftime("%Y%m%d") + "_0000"
+            _slot_min = 0  # per-jam
+        _lm_slot = _lm_wib.strftime("%Y%m%d_%H") + f"_{_slot_min:02d}"
 
-        @st.cache_data(ttl=86400, show_spinner=False)
+        @st.cache_data(ttl=1800, show_spinner=False)  # TTL 30 menit — cache invalidate otomatis
         def _fetch_tickers_v3(ticker_key, slot_key: str = ""):
             import yfinance as yf
+            from concurrent.futures import ThreadPoolExecutor, as_completed as _v3_asc
             result = {}
-            for name, tk in ticker_key:
+
+            def _fetch_one_v3(name, tk):
                 try:
-                    h = yf.Ticker(tk).history(period="5d", auto_adjust=True, timeout=15)
+                    h = yf.Ticker(tk).history(period="5d", auto_adjust=True, timeout=10)
                     if h is not None and len(h) >= 2:
                         last = float(h["Close"].iloc[-1])
                         prev = float(h["Close"].iloc[-2])
-                        result[name] = {"price": last, "pct": round((last - prev) / prev * 100, 2)}
+                        return name, {"price": last, "pct": round((last - prev) / prev * 100, 2)}
                     elif h is not None and len(h) == 1:
-                        result[name] = {"price": float(h["Close"].iloc[-1]), "pct": 0.0}
-                    else:
-                        result[name] = {"price": 0, "pct": 0.0}
+                        return name, {"price": float(h["Close"].iloc[-1]), "pct": 0.0}
                 except Exception:
-                    result[name] = {"price": 0, "pct": 0.0}
+                    pass
+                return name, {"price": 0, "pct": 0.0}
+
+            with ThreadPoolExecutor(max_workers=min(len(ticker_key), 10)) as ex:
+                futs = {ex.submit(_fetch_one_v3, n, tk): n for n, tk in ticker_key}
+                for f in _v3_asc(futs):
+                    name, val = f.result()
+                    result[name] = val
             return result
 
         _idx_tk_key = tuple((n, tk) for n, tk, *_ in _IDX_TICKERS)
@@ -13432,7 +13465,8 @@ window.addEventListener('resize',()=>{
         _is_trading_hours = (9 <= _mkt_wib_hour < 12) or (13 <= _mkt_wib_hour < 16)
         _ts_color = "#10b981" if _is_trading_hours else "#f59e0b"
         _ts_label = "LIVE" if _is_trading_hours else "CLOSED"
-        _lm_next = "19:00 WIB" if _lm_slot.endswith("_1230") else ("12:30 WIB besok" if _lm_slot.endswith("_1900") else "12:30 WIB")
+        # Next update: 30 menit dari slot sekarang
+        _lm_next = "+30 menit"
         st.markdown(
             f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;"
             f"color:{_ts_color};margin-bottom:6px;letter-spacing:0.05em;'>"
@@ -16058,7 +16092,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
       </div>
     </div>
     <style>@keyframes sigma-scroll-fs{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}</style>""", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin-bottom:16px;'>Screening saham IDX berbasis kualitas fundamental - ROE, DER, Net Margin, Current Ratio, PBV, EPS. Urutkan berdasarkan framework: Buffett Score, Graham MoS, PEG Ratio, EPS Growth, Dividend Yield. Data live via yfinance multi-layer.</p>", unsafe_allow_html=True)
+        # [UI statement removed]
 
             _fs_accent = "#26a69a"
 
@@ -21352,7 +21386,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         st.session_state["alpha_screener_unlocked"] = True
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily Plan &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
+        # [UI statement removed]
 
         alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_brosum, alpha_tab_ipo, alpha_tab_trackrecord = st.tabs([
             "  ⚡ ALPHA STOCK INSIGHT  ",
@@ -21379,18 +21413,18 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             )
 
             # ── 1. BEDAH PROSPEKTUS ─────────────────────────────────────────
-            st.markdown(
-                "<div class='trm-section'><div class='trm-section-line'></div>"
-                "<span class='trm-section-label'>1. 📋 ANALISA IPO — BEDAH PROSPEKTUS</span>"
-                "<div class='trm-section-line'></div></div>",
-                unsafe_allow_html=True
-            )
-            st.markdown(
-                f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
-                f"letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;'>"
-                "Upload PDF Prospektus e-IPO → SIGMA akan membedah: valuasi harga/nominal, "
-                "manajemen risiko lot, underwriter track record, tujuan dana, dan jadwal lengkap.</p>",
-                unsafe_allow_html=True
+            # [UI statement removed]
+            # [UI statement removed]
+            # [UI statement removed]
+            # [UI statement removed]
+            # [UI statement removed]
+            # [UI statement removed]
+            # [UI statement removed]
+            # [UI statement removed]
+            # [UI statement removed]
+            # [UI statement removed]
+            # [UI statement removed]
+            # [UI statement removed]
             )
 
             # ── Info cards ─────────────────────────────────────────────────
@@ -22228,7 +22262,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 
         with alpha_tab_insight:
 
-            st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin:0 0 12px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; IHSG &middot; Komoditas Global &middot; Crypto &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
+        # [UI statement removed]
 
             # ── ASSET TYPE SELECTOR ─────────────────────────────────────────
             _ASSET_MAP = {
@@ -26250,14 +26284,14 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         # SECTION B: PRESS 20 → 10 PAKAI GoAPI BROKER SCORE
                         # Ranking ulang berdasarkan akumulasi broker score dari GoAPI
                         # ─────────────────────────────────────────────────────────────
-                        st.markdown(
-                            "<div style='font-size:0.71rem;font-weight:700;letter-spacing:0.14em;"
-                            "text-transform:uppercase;color:#00E5BE;margin:18px 0 4px;'>"
-                            "🔬 PRESS 20 → 10 · FINAL SELECTION VIA GoAPI BROKER ANALYSIS</div>"
-                            "<div style='font-size:0.7rem;color:#888;margin-bottom:12px;'>"
-                            "GoAPI broker summary menentukan 10 saham terbaik dari 20. Kriteria: "
-                            "akumulasi broker ≥ distribusi, BPR tinggi, goapi_confirmed, streak akumulasi.</div>",
-                            unsafe_allow_html=True)
+                        # [UI statement removed]
+                        # [UI statement removed]
+                        # [UI statement removed]
+                        # [UI statement removed]
+                        # [UI statement removed]
+                        # [UI statement removed]
+                        # [UI statement removed]
+                        # [UI statement removed]
 
                         # Scoring ulang pakai GoAPI broker data (bukan technical score)
                         def _broker_press_score(row, bs_cache):
@@ -27516,7 +27550,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
 # ─────────────────────────────────────────────
     with alpha_tab_brosum:
 
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>Screening aktivitas broker &middot; Akumulasi &amp; Distribusi &middot; Net Buy Foreign &middot; Deteksi Smart Money</p>", unsafe_allow_html=True)
+        # [UI statement removed]
 
         bs_tab_screening, bs_tab_history = st.tabs([
             "  🔍 BROKER SCREENING  ",
