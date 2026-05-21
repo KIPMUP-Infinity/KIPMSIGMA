@@ -14342,12 +14342,16 @@ table{{margin-bottom:0!important;}}
                     {"ticker":"SIDO","nama":"Sido Muncul","cum_date":"2025-05-22","ex_date":"2025-05-23","pay_date":"2025-06-10","dps":30,"yield_pct":5.17,"freq":"Final","tahun":2025},
                     {"ticker":"SIDO","nama":"Sido Muncul","cum_date":"2026-05-21","ex_date":"2026-05-22","pay_date":"2026-06-09","dps":32,"yield_pct":5.52,"freq":"Final","tahun":2026},
                     # ── ENERGI & KOMODITAS ─────────────────────────────────────────
-                    {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2025-05-15","ex_date":"2025-05-16","pay_date":"2025-06-02","dps":510,"yield_pct":17.35,"freq":"Final","tahun":2025},
-                    {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2025-10-16","ex_date":"2025-10-17","pay_date":"2025-11-03","dps":180,"yield_pct":6.12,"freq":"Interim","tahun":2025},
-                    {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2026-05-14","ex_date":"2026-05-15","pay_date":"2026-06-01","dps":430,"yield_pct":14.63,"freq":"Final","tahun":2026},
-                    {"ticker":"ITMG","nama":"Indo Tambangraya Megah","cum_date":"2025-05-22","ex_date":"2025-05-23","pay_date":"2025-06-09","dps":3850,"yield_pct":15.71,"freq":"Final","tahun":2025},
-                    {"ticker":"ITMG","nama":"Indo Tambangraya Megah","cum_date":"2025-10-23","ex_date":"2025-10-24","pay_date":"2025-11-10","dps":1200,"yield_pct":4.89,"freq":"Interim","tahun":2025},
-                    {"ticker":"ADRO","nama":"Adaro Energy Indonesia","cum_date":"2025-05-08","ex_date":"2025-05-09","pay_date":"2025-05-26","dps":152,"yield_pct":6.91,"freq":"Final","tahun":2025},
+                    # PTBA 2025 Final — DPS Rp332 (sumber: RUPST 12 Jun 2025, IDX resmi, Kontan, Bisnis.com)
+                    {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2025-06-20","ex_date":"2025-06-23","pay_date":"2025-07-11","dps":332,"yield_pct":11.07,"freq":"Final","tahun":2025},
+                    # PTBA 2026 Final — estimasi belum RUPST resmi per Mei 2026, tandai dengan *
+                    {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2026-06-19","ex_date":"2026-06-23","pay_date":"2026-07-10","dps":332,"yield_pct":11.07,"freq":"Final*","tahun":2026},
+                    # ITMG 2025 Final — DPS Rp2245 (sumber: RUPST 9 Apr 2025, Ajaib, CNBC Indonesia)
+                    {"ticker":"ITMG","nama":"Indo Tambangraya Megah","cum_date":"2025-04-17","ex_date":"2025-04-18","pay_date":"2025-05-07","dps":2245,"yield_pct":9.16,"freq":"Final","tahun":2025},
+                    # ITMG 2025 Interim — DPS Rp738 (sumber: Keterbukaan IDX 5 Nov 2025)
+                    {"ticker":"ITMG","nama":"Indo Tambangraya Megah","cum_date":"2025-11-12","ex_date":"2025-11-13","pay_date":"2025-11-26","dps":738,"yield_pct":3.14,"freq":"Interim","tahun":2025},
+                    # ADRO 2025 Interim — DPS ~Rp145 (sumber: Keterbukaan IDX Des 2025; nama emiten: Alamtri Resources Indonesia)
+                    {"ticker":"ADRO","nama":"Alamtri Resources Indonesia","cum_date":"2025-12-29","ex_date":"2025-12-30","pay_date":"2026-01-15","dps":145,"yield_pct":7.45,"freq":"Interim","tahun":2025},
                     {"ticker":"HRUM","nama":"Harum Energy","cum_date":"2025-05-29","ex_date":"2025-05-30","pay_date":"2025-06-16","dps":120,"yield_pct":10.00,"freq":"Final","tahun":2025},
                     {"ticker":"PGAS","nama":"Perusahaan Gas Negara","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":64,"yield_pct":4.44,"freq":"Final","tahun":2025},
                     {"ticker":"AALI","nama":"Astra Agro Lestari","cum_date":"2025-06-12","ex_date":"2025-06-13","pay_date":"2025-06-30","dps":425,"yield_pct":5.74,"freq":"Final","tahun":2025},
@@ -14382,7 +14386,10 @@ table{{margin-bottom:0!important;}}
                     {"ticker":"PNLF","nama":"Panin Financial","cum_date":"2025-07-10","ex_date":"2025-07-11","pay_date":"2025-07-28","dps":8,"yield_pct":4.76,"freq":"Final","tahun":2025},
                     # ── HIGH YIELD SPECIALS ────────────────────────────────────────
                     {"ticker":"ESSA","nama":"Surya Esa Perkasa","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":180,"yield_pct":11.11,"freq":"Final","tahun":2025},
-                    {"ticker":"RAJA","nama":"Rukun Raharja","cum_date":"2025-07-03","ex_date":"2025-07-04","pay_date":"2025-07-21","dps":560,"yield_pct":14.43,"freq":"Final","tahun":2025},
+                    # RAJA 2025 Final — DPS Rp60 (sumber: RUPST 30 Apr 2025, Bisnis.com/CNBC; bukan Rp560)
+                    {"ticker":"RAJA","nama":"Rukun Raharja","cum_date":"2025-05-08","ex_date":"2025-05-09","pay_date":"2025-06-04","dps":60,"yield_pct":1.73,"freq":"Final","tahun":2025},
+                    # RAJA 2025 Interim — DPS Rp25 (sumber: Keterbukaan IDX 30 Des 2025; dividen interim pertama RAJA)
+                    {"ticker":"RAJA","nama":"Rukun Raharja","cum_date":"2026-01-08","ex_date":"2026-01-09","pay_date":"2026-01-28","dps":25,"yield_pct":0.40,"freq":"Interim","tahun":2025},
                     {"ticker":"DMAS","nama":"Puradelta Lestari","cum_date":"2025-07-10","ex_date":"2025-07-11","pay_date":"2025-07-28","dps":14,"yield_pct":7.14,"freq":"Final","tahun":2025},
                     {"ticker":"MLBI","nama":"Multi Bintang Indonesia","cum_date":"2025-04-10","ex_date":"2025-04-11","pay_date":"2025-04-28","dps":1050,"yield_pct":10.71,"freq":"Final","tahun":2025},
                     {"ticker":"MBSS","nama":"Mitrabahtera Segara Sejati","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-07","dps":68,"yield_pct":9.19,"freq":"Final","tahun":2025},
@@ -14400,8 +14407,10 @@ table{{margin-bottom:0!important;}}
                     {"ticker":"INDY","nama":"Indika Energy","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":126,"yield_pct":6.92,"freq":"Final","tahun":2025},
                     # ── 2026 Additions ────────────────────────────────────────────
                     {"ticker":"UNTR","nama":"United Tractors","cum_date":"2026-05-14","ex_date":"2026-05-15","pay_date":"2026-06-01","dps":2850,"yield_pct":11.63,"freq":"Final","tahun":2026},
-                    {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2026-10-15","ex_date":"2026-10-16","pay_date":"2026-11-02","dps":160,"yield_pct":5.44,"freq":"Interim","tahun":2026},
-                    {"ticker":"ITMG","nama":"Indo Tambangraya Megah","cum_date":"2026-05-21","ex_date":"2026-05-22","pay_date":"2026-06-08","dps":3200,"yield_pct":13.06,"freq":"Final","tahun":2026},
+                    # PTBA 2026 Interim — belum ada pengumuman resmi per Mei 2026, HAPUS sampai ada data valid
+                    # {"ticker":"PTBA",...} — dihapus sementara karena tidak ada dasar data
+                    # ITMG 2026 Final — DPS Rp2245 (sumber: stockevents.app, ex-date 21 Apr 2026, Pay 7 Mei 2026)
+                    {"ticker":"ITMG","nama":"Indo Tambangraya Megah","cum_date":"2026-04-17","ex_date":"2026-04-21","pay_date":"2026-05-07","dps":2245,"yield_pct":9.16,"freq":"Final","tahun":2026},
                     {"ticker":"ADMF","nama":"Adira Dinamika Multi Finance","cum_date":"2026-04-09","ex_date":"2026-04-10","pay_date":"2026-04-27","dps":620,"yield_pct":7.38,"freq":"Final","tahun":2026},
                     {"ticker":"MLBI","nama":"Multi Bintang Indonesia","cum_date":"2026-04-09","ex_date":"2026-04-10","pay_date":"2026-04-27","dps":980,"yield_pct":10.00,"freq":"Final","tahun":2026},
                     {"ticker":"ESSA","nama":"Surya Esa Perkasa","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":190,"yield_pct":11.73,"freq":"Final","tahun":2026},
@@ -14427,9 +14436,11 @@ table{{margin-bottom:0!important;}}
                     {"ticker":"PWON","nama":"Pakuwon Jati","cum_date":"2026-07-02","ex_date":"2026-07-03","pay_date":"2026-07-20","dps":13,"yield_pct":2.97,"freq":"Final","tahun":2026},
                     {"ticker":"AALI","nama":"Astra Agro Lestari","cum_date":"2026-06-11","ex_date":"2026-06-12","pay_date":"2026-06-29","dps":440,"yield_pct":5.95,"freq":"Final","tahun":2026},
                     {"ticker":"LSIP","nama":"PP London Sumatra","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":84,"yield_pct":6.27,"freq":"Final","tahun":2026},
-                    {"ticker":"ADRO","nama":"Adaro Energy Indonesia","cum_date":"2026-05-07","ex_date":"2026-05-08","pay_date":"2026-05-25","dps":145,"yield_pct":6.59,"freq":"Final","tahun":2026},
+                    # ADRO 2026 Final — DPS Rp118 (sumber: RUPST 17 Apr 2026, Kontan/Investor.id; kurs BI 29 Apr 2026)
+                    {"ticker":"ADRO","nama":"Alamtri Resources Indonesia","cum_date":"2026-04-27","ex_date":"2026-04-28","pay_date":"2026-05-08","dps":118,"yield_pct":4.71,"freq":"Final","tahun":2026},
                     {"ticker":"HRUM","nama":"Harum Energy","cum_date":"2026-05-28","ex_date":"2026-05-29","pay_date":"2026-06-15","dps":115,"yield_pct":9.58,"freq":"Final","tahun":2026},
-                    {"ticker":"RAJA","nama":"Rukun Raharja","cum_date":"2026-07-02","ex_date":"2026-07-03","pay_date":"2026-07-20","dps":580,"yield_pct":14.95,"freq":"Final","tahun":2026},
+                    # RAJA 2026 Final — belum ada RUPST resmi, estimasi pola historis (bertanda *)
+                    {"ticker":"RAJA","nama":"Rukun Raharja","cum_date":"2026-05-07","ex_date":"2026-05-08","pay_date":"2026-06-04","dps":65,"yield_pct":1.80,"freq":"Final*","tahun":2026},
                     {"ticker":"TAPG","nama":"Triputra Agro Persada","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":102,"yield_pct":8.95,"freq":"Final","tahun":2026},
                     {"ticker":"TOWR","nama":"Sarana Menara Nusantara","cum_date":"2026-09-10","ex_date":"2026-09-11","pay_date":"2026-09-28","dps":26,"yield_pct":3.17,"freq":"Interim","tahun":2026},
                     {"ticker":"JSMR","nama":"Jasa Marga","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":162,"yield_pct":3.86,"freq":"Final","tahun":2026},
