@@ -21425,7 +21425,6 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             # [UI statement removed]
             # [UI statement removed]
             # [UI statement removed]
-            )
 
             # ── Info cards ─────────────────────────────────────────────────
             _ipo_c1, _ipo_c2, _ipo_c3 = st.columns(3)
