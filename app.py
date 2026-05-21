@@ -11010,6 +11010,17 @@ div[data-testid="stDecoration"] {{ display: none !important; height: 0 !importan
     font-size: 0.72rem !important;
     color: #64748b !important;
 }}
+/* Additional selectors for different Streamlit versions */
+[data-testid="stFileUploaderDropzone"] > div > div > span:first-child {{
+    display: none !important;
+}}
+section[data-testid="stFileUploaderDropzone"] small {{
+    font-size: 0.7rem !important;
+}}
+/* Hide the "upload" text label that appears above browse button */
+[data-testid="stFileUploader"] label {{
+    display: none !important;
+}}
 </style>
 """, unsafe_allow_html=True)
 _hist_items = ""
@@ -21742,6 +21753,156 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 components.html(_risk_html_full, height=420, scrolling=False)
             # ── END RISK PROFILE ─────────────────────────────────────────────────
 
+        # ── _auto_update_track_record — defined here so Track Record tab can call it ──
+        def _auto_update_track_record():
+            """
+            Update track record otomatis:
+            - BSJP/DAILY: mulai jam 15:45 WIB (intraday high/low 1m)
+            - WEEKLY: mulai jam 20:30 WIB (close 5 hari — no false stop)
+            - Final pass: jam 20:30 untuk semua tipe
+            """
+            now = _wib_now()
+            wd  = now.weekday()
+            if wd >= 5:
+                return
+
+            _is_intraday_window = (now.hour == 15 and now.minute >= 45) or \
+                                  (16 <= now.hour < 20) or \
+                                  (now.hour == 20 and now.minute < 30)
+            _is_final_window    = now.hour > 20 or (now.hour == 20 and now.minute >= 30)
+
+            # Manual trigger (dari tombol): paksa jalan walau di luar window
+            _is_manual = st.session_state.get("_tr_manual_trigger", False)
+            if _is_manual:
+                _is_final_window = True
+                st.session_state["_tr_manual_trigger"] = False
+
+            if not _is_intraday_window and not _is_final_window:
+                return
+
+            if _is_intraday_window:
+                _slot = f"{now.hour}_{now.minute // 15}"
+                tr_update_key = f"tr_intra_{now.strftime('%Y-%m-%d')}_{_slot}"
+            else:
+                tr_update_key = f"tr_final_{now.strftime('%Y-%m-%d_%H')}"
+
+            if st.session_state.get(tr_update_key) and not _is_manual:
+                return
+
+            records = st.session_state.get("tr_records", [])
+            open_records = [r for r in records if r.get("status") == "OPEN"]
+            if not open_records:
+                return
+
+            if _is_intraday_window and not _is_final_window:
+                open_records = [r for r in open_records
+                                if r.get("type","").upper() in ("BSJP","DAILY")
+                                or r.get("plan_type","").upper() in ("BSJP","DAILY")]
+
+            if not open_records:
+                st.session_state[tr_update_key] = True
+                return
+
+            open_tickers = list(set(r["ticker"] for r in open_records))
+
+            try:
+                import threading as _thr_tr
+                _prices_tr = {}
+                _lock_tr = _thr_tr.Lock()
+
+                def _fetch_tr(tk):
+                    try:
+                        if _is_intraday_window and not _is_final_window:
+                            import yfinance as _yf_intra
+                            h1 = _yf_intra.Ticker(f"{tk}.JK").history(period="1d", interval="1m")
+                            if not h1.empty:
+                                hi = float(h1["High"].max())
+                                lo = float(h1["Low"].min())
+                                cl = float(h1["Close"].iloc[-1])
+                                with _lock_tr:
+                                    _prices_tr[tk] = {"high": hi, "low": lo, "close": cl}
+                                return
+                        h = yf.Ticker(f"{tk}.JK").history(period="5d")
+                        if not h.empty:
+                            with _lock_tr:
+                                _prices_tr[tk] = {
+                                    "high":  float(h["High"].iloc[-1]),
+                                    "low":   float(h["Low"].iloc[-1]),
+                                    "close": float(h["Close"].iloc[-1]),
+                                    "high_5d": float(h["High"].max()),
+                                    "low_5d":  float(h["Low"].min()),
+                                    "close_prev": float(h["Close"].iloc[-2]) if len(h) >= 2 else float(h["Close"].iloc[-1]),
+                                }
+                    except Exception: pass
+
+                _thr_list = [_thr_tr.Thread(target=_fetch_tr, args=(tk,)) for tk in open_tickers]
+                for t in _thr_list: t.start()
+                for t in _thr_list: t.join(timeout=15)
+
+                changed = False
+                for r in records:
+                    if r.get("status") != "OPEN": continue
+                    tk = r["ticker"]
+                    if tk not in _prices_tr: continue
+                    hi = _prices_tr[tk]["high"]
+                    lo = _prices_tr[tk]["low"]
+                    cl = _prices_tr[tk]["close"]
+
+                    _e_lo  = r.get("entry_low",  r.get("entry", 0)) or 0
+                    _e_hi  = r.get("entry_high", _e_lo) or _e_lo
+                    entry  = (_e_lo + _e_hi) // 2 if _e_lo and _e_hi else r.get("entry", 0)
+                    if not entry: entry = r.get("entry", 0)
+
+                    tp1 = r.get("tp1", 0) or 0
+                    tp2 = r.get("tp2", 0) or 0
+                    sl  = r.get("sl",  0) or 0
+
+                    _is_weekly = r.get("type","").upper() == "WEEKLY" or r.get("plan_type","").upper() == "WEEKLY"
+
+                    if _is_weekly:
+                        _hi_use   = _prices_tr[tk].get("high_5d", hi)
+                        _sl_price = cl
+                    else:
+                        _hi_use   = hi
+                        _sl_price = lo
+
+                    if entry <= 0: continue
+
+                    hit_tp2 = tp2 > 0 and _hi_use >= tp2
+                    hit_tp1 = tp1 > 0 and _hi_use >= tp1
+                    hit_sl  = sl  > 0 and _sl_price <= sl
+
+                    if hit_tp2:
+                        r["status"] = "TP2"; r["exit_price"] = tp2; r["result"] = "WIN"
+                        r["pnl_pct"] = round((tp2 - entry) / entry * 100, 2) if entry else 0
+                        r["exit_date"] = now.strftime("%Y-%m-%d")
+                        r["auto_note"] = f"🎯 TP2 Rp{tp2:,} tersentuh (auto {now.strftime('%d %b %Y %H:%M WIB')})"
+                        changed = True
+                    elif hit_tp1:
+                        r["status"] = "TP1"; r["exit_price"] = tp1; r["result"] = "WIN"
+                        r["pnl_pct"] = round((tp1 - entry) / entry * 100, 2) if entry else 0
+                        r["exit_date"] = now.strftime("%Y-%m-%d")
+                        r["auto_note"] = f"✅ TP1 Rp{tp1:,} tersentuh (auto {now.strftime('%d %b %Y %H:%M WIB')})"
+                        changed = True
+                    elif hit_sl:
+                        r["status"] = "SL"; r["exit_price"] = sl; r["result"] = "LOSS"
+                        r["pnl_pct"] = round((sl - entry) / entry * 100, 2) if entry else 0
+                        r["exit_date"] = now.strftime("%Y-%m-%d")
+                        r["auto_note"] = f"🛑 SL Rp{sl:,} tersentuh (auto {now.strftime('%d %b %Y %H:%M WIB')})"
+                        changed = True
+                    else:
+                        r["current_price"]   = round(cl, 0)
+                        r["unrealized_pnl"] = round((cl - entry) / entry * 100, 2)
+
+                if changed:
+                    st.session_state["tr_records"] = records
+                    if st.session_state.get("user"):
+                        try: save_field(st.session_state.user["email"], "tr_records", records)
+                        except Exception: pass
+
+                st.session_state[tr_update_key] = True
+            except Exception: pass
+
         with alpha_tab_trackrecord:
             # ════════════════════════════════════════════════════════════════
             # TAB TRACK RECORD PUSAT — BSJP + DAILY + WEEKLY
@@ -21860,6 +22021,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 for _k in list(st.session_state.keys()):
                     if _k.startswith("tr_intra_") or _k.startswith("tr_final_"):
                         del st.session_state[_k]
+                st.session_state["_tr_manual_trigger"] = True
                 _auto_update_track_record()
                 st.session_state["tr_last_manual_update"] = datetime.now().strftime("%d %b %Y %H:%M WIB") if not callable(locals().get("_wib_now")) else _wib_now().strftime("%d %b %Y %H:%M WIB")
                 st.success("✅ Status track record berhasil di-update!", icon="✅")
@@ -25204,178 +25366,6 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
             except Exception:
                 return False
 
-        def _auto_update_track_record():
-            """
-            Update track record otomatis:
-            - BSJP/DAILY: mulai jam 15:45 WIB (15 menit setelah BSJP generate)
-              pakai high/low hari ini (1d) — intraday detection
-            - WEEKLY: mulai jam 20:30 WIB, pakai close 5 hari — tidak false stop
-            - Final pass: jam 20:30 untuk semua tipe
-            """
-            now = _wib_now()
-            wd  = now.weekday()
-            if wd >= 5:
-                return
-
-            # Tentukan mode berdasarkan jam:
-            # 15:45–20:29 → hanya update BSJP + DAILY (pakai data intraday)
-            # 20:30+ → update semua tipe (BSJP, DAILY, WEEKLY)
-            _is_intraday_window = (now.hour == 15 and now.minute >= 45) or                                   (16 <= now.hour < 20) or                                   (now.hour == 20 and now.minute < 30)
-            _is_final_window    = now.hour > 20 or (now.hour == 20 and now.minute >= 30)
-
-            if not _is_intraday_window and not _is_final_window:
-                return
-
-            # Anti-spam: intraday update tiap 15 menit, final update tiap jam
-            if _is_intraday_window:
-                _slot = f"{now.hour}_{now.minute // 15}"  # 4 slot per jam
-                tr_update_key = f"tr_intra_{now.strftime('%Y-%m-%d')}_{_slot}"
-            else:
-                tr_update_key = f"tr_final_{now.strftime('%Y-%m-%d_%H')}"
-
-            if st.session_state.get(tr_update_key):
-                return
-
-            records = st.session_state.get("tr_records", [])
-            open_records = [r for r in records if r.get("status") == "OPEN"]
-            if not open_records:
-                return
-
-            # Filter berdasarkan window
-            if _is_intraday_window and not _is_final_window:
-                # Hanya proses BSJP dan DAILY — WEEKLY skip dulu
-                open_records = [r for r in open_records
-                                if r.get("type","").upper() in ("BSJP","DAILY")
-                                or r.get("plan_type","").upper() in ("BSJP","DAILY")]
-
-            if not open_records:
-                st.session_state[tr_update_key] = True
-                return
-
-            open_tickers = list(set(r["ticker"] for r in open_records))
-
-            try:
-                import threading as _thr_tr
-                _prices_tr = {}
-                _lock_tr = _thr_tr.Lock()
-
-                def _fetch_tr(tk):
-                    try:
-                        # Ambil data: intraday window → 1d interval 1m untuk high/low akurat
-                        # Final window → 5d harian cukup
-                        if _is_intraday_window and not _is_final_window:
-                            # Ambil data hari ini (interval 1m, period 1d)
-                            import yfinance as _yf_intra
-                            h1 = _yf_intra.Ticker(f"{tk}.JK").history(period="1d", interval="1m")
-                            if not h1.empty:
-                                hi = float(h1["High"].max())
-                                lo = float(h1["Low"].min())
-                                cl = float(h1["Close"].iloc[-1])
-                                with _lock_tr:
-                                    _prices_tr[tk] = {"high": hi, "low": lo, "close": cl}
-                                return
-                        # Fallback: daily bar
-                        h = yf.Ticker(f"{tk}.JK").history(period="5d")
-                        if not h.empty:
-                            # BUG 6 FIX: untuk weekly, ambil multi-day range
-                            with _lock_tr:
-                                _prices_tr[tk] = {
-                                    "high":  float(h["High"].iloc[-1]),
-                                    "low":   float(h["Low"].iloc[-1]),
-                                    "close": float(h["Close"].iloc[-1]),
-                                    # high/low sejak plan dibuat (max 5 hari)
-                                    "high_5d": float(h["High"].max()),
-                                    "low_5d":  float(h["Low"].min()),
-                                    "close_prev": float(h["Close"].iloc[-2]) if len(h) >= 2 else float(h["Close"].iloc[-1]),
-                                }
-                    except Exception: pass
-
-                _thr_list = [_thr_tr.Thread(target=_fetch_tr, args=(tk,)) for tk in open_tickers]
-                for t in _thr_list: t.start()
-                for t in _thr_list: t.join(timeout=15)
-
-                changed = False
-                for r in records:
-                    if r.get("status") != "OPEN": continue
-                    tk = r["ticker"]
-                    if tk not in _prices_tr: continue
-                    hi = _prices_tr[tk]["high"]
-                    lo = _prices_tr[tk]["low"]
-                    cl = _prices_tr[tk]["close"]
-
-                    # Gunakan entry_low/entry_high kalau ada (lebih akurat)
-                    # entry = midpoint zona, bukan hanya entry_low
-                    _e_lo  = r.get("entry_low",  r.get("entry", 0)) or 0
-                    _e_hi  = r.get("entry_high", _e_lo) or _e_lo
-                    entry  = (_e_lo + _e_hi) // 2 if _e_lo and _e_hi else r.get("entry", 0)
-                    if not entry: entry = r.get("entry", 0)
-
-                    tp1 = r.get("tp1", 0) or 0
-                    tp2 = r.get("tp2", 0) or 0
-                    sl  = r.get("sl",  0) or 0
-
-                    # BUG 6 FIX: Weekly pakai range harga 5 hari (high_5d/low_5d)
-                    # bukan hanya high/low hari ini — menghindari false stop-out
-                    _is_weekly = r.get("type","").upper() == "WEEKLY" or r.get("plan_type","").upper() == "WEEKLY"
-
-                    if _is_weekly:
-                        # TP: pakai high 5 hari (bisa hit kapanpun dalam minggu ini)
-                        # SL: pakai CLOSE hari ini saja — intraday low bisa spike lalu recover
-                        _hi_use = _prices_tr[tk].get("high_5d", hi)
-                        _lo_use = lo  # tetap pakai low 1d untuk check (tapi SL cek dari close)
-                        _sl_price = cl  # weekly SL hanya valid kalau close di bawah SL
-                    else:
-                        # BSJP/DAILY: pakai high/low hari ini (intraday detection)
-                        _hi_use   = hi
-                        _lo_use   = lo
-                        _sl_price = lo  # intraday: low menyentuh SL = kena
-
-                    if entry <= 0: continue
-
-                    # Cek TP2 dulu (prioritas tertinggi)
-                    hit_tp2 = tp2 > 0 and _hi_use >= tp2
-                    hit_tp1 = tp1 > 0 and _hi_use >= tp1
-                    hit_sl  = sl  > 0 and _sl_price <= sl
-
-                    if hit_tp2:
-                        r["status"]     = "TP2"
-                        r["exit_price"] = tp2
-                        r["result"]     = "WIN"
-                        r["pnl_pct"]    = round((tp2 - entry) / entry * 100, 2) if entry else 0
-                        r["exit_date"]  = now.strftime("%Y-%m-%d")
-                        r["auto_note"]  = f"🎯 TP2 Rp{tp2:,} tersentuh (auto-update {now.strftime('%d %b %Y, %H:%M WIB')})"
-                        changed = True
-                    elif hit_tp1:
-                        r["status"]     = "TP1"
-                        r["exit_price"] = tp1
-                        r["result"]     = "WIN"
-                        r["pnl_pct"]    = round((tp1 - entry) / entry * 100, 2) if entry else 0
-                        r["exit_date"]  = now.strftime("%Y-%m-%d")
-                        r["auto_note"]  = f"✅ TP1 Rp{tp1:,} tersentuh (auto-update {now.strftime('%d %b %Y, %H:%M WIB')})"
-                        changed = True
-                    elif hit_sl:
-                        r["status"]     = "SL"
-                        r["exit_price"] = sl
-                        r["result"]     = "LOSS"
-                        r["pnl_pct"]    = round((sl - entry) / entry * 100, 2) if entry else 0
-                        r["exit_date"]  = now.strftime("%Y-%m-%d")
-                        r["auto_note"]  = f"🛑 SL Rp{sl:,} tersentuh (auto-update {now.strftime('%d %b %Y, %H:%M WIB')})"
-                        changed = True
-                    else:
-                        # Update current P&L unrealized
-                        r["current_price"] = round(cl, 0)
-                        r["unrealized_pnl"] = round((cl - entry) / entry * 100, 2)
-
-                if changed:
-                    st.session_state["tr_records"] = records
-                    if st.session_state.get("user"):
-                        try:
-                            save_field(st.session_state.user["email"], "tr_records", records)
-                        except Exception: pass
-
-                st.session_state[tr_update_key] = True
-            except Exception: pass
-
         def _render_auto_history(plan_type="daily"):
             """Render tabel history plan yang sudah tersimpan."""
             history_key = f"auto_plan_history_{plan_type}"
@@ -26118,11 +26108,9 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                 st.markdown("<br>", unsafe_allow_html=True)
 
             # ── 5 sub-tab ──
-            _d_tab_plan, _d_tab_ranking, _d_tab_hist_plan, _d_tab_hist_sum, _d_tab_trackrecord, _d_tab_eval_ai = st.tabs([
+            _d_tab_plan, _d_tab_hist_plan, _d_tab_trackrecord, _d_tab_eval_ai = st.tabs([
                 "  📋 TRADE PLAN & SUMMARY  ",
-                "  🏅 RANKING BROKER SCORE  ",
                 "  🗂️ HISTORY TRADE PLAN  ",
-                "  📊 HISTORY SUMMARY  ",
                 "  ⚖️ VERDICT  ",
                 "  🧠 EVALUASI AI  ",
             ])
@@ -26395,168 +26383,6 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         st.session_state["_daily_bs30_cache"] = _bs30_cache
 
             # ════════════════════════════════════════════
-            # TAB 2 — RANKING BROKER SCORE (GoAPI press 20→10)
-            # ════════════════════════════════════════════
-            with _d_tab_ranking:
-                _ranked_20_disp  = st.session_state.get("_daily_ranked_20", [])
-                _bs30_cache_disp = st.session_state.get("_daily_bs30_cache", [])
-
-                st.markdown(
-                    "<div style='font-family:Space Mono,IBM Plex Mono,monospace;"
-                    "font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;"
-                    "color:#00E5BE;margin:4px 0 2px;font-weight:700;'>🏅 RANKING BROKER SCORE</div>"
-                    "<div style='font-size:0.7rem;color:rgba(255,255,255,0.35);margin-bottom:14px;'>"
-                    "Top 20 saham diseleksi → 10 terbaik masuk Trade Plan hari ini</div>",
-                    unsafe_allow_html=True,
-                )
-
-                if not _ranked_20_disp:
-                    st.info("📭 Data ranking belum tersedia. Generate Trade Plan terlebih dahulu untuk melihat ranking.")
-                else:
-                    # ── Legend ──
-                    st.markdown(
-                        "<div style='display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap;'>"
-                        "<span style='font-size:0.7rem;color:#00E5BE;font-weight:600;'>✅ MASUK = Top 10</span>"
-                        "<span style='font-size:0.7rem;color:#555;font-weight:600;'>❌ DROP = Rank 11-20</span>"
-                        "<span style='font-size:0.7rem;color:rgba(255,255,255,0.3);'>BPR = Broker Participation Rate</span>"
-                        "</div>",
-                        unsafe_allow_html=True,
-                    )
-
-                    # ── Build tabel ──
-                    _rank_hdr = ["RANK","TICKER","BROKER SCORE","AKUMULASI","BPR","DISTRIBUSI","STATUS","FINAL"]
-                    _rank_th  = "".join(
-                        f"<th style='padding:8px 12px;white-space:nowrap;font-size:0.66rem;"
-                        f"letter-spacing:0.09em;text-transform:uppercase;color:#00E5BE;"
-                        f"border-bottom:1px solid rgba(0,229,190,0.25);text-align:left;"
-                        f"font-family:Space Mono,monospace;'>{h}</th>"
-                        for h in _rank_hdr)
-
-                    _rank_trs = ""
-                    for _ri, (_bsc, _rrow) in enumerate(_ranked_20_disp, 1):
-                        _tk   = _rrow.get("ticker","")
-                        _bsd  = next((s for s in _bs30_cache_disp if s.get("ticker")==_tk), {})
-                        _bpr  = f"{float(_bsd.get('bpr',0) or 0):.0f}%"
-                        _accum = " · ".join(_bsd.get("top_accum",[])[:4]) or "—"
-                        _dist  = " · ".join(_bsd.get("top_dist", [])[:3]) or "—"
-                        _verd  = _bsd.get("verdict","—")
-                        _vc    = "#00E5BE" if "AKUMULASI" in _verd else ("#ff5c5c" if "DIST" in _verd else "#888")
-                        _is10  = _ri <= 10
-                        _final = "✅ MASUK" if _is10 else "❌ DROP"
-                        _fc    = "#00E5BE" if _is10 else "#555"
-                        _bg    = "rgba(0,229,190,0.05)" if _is10 else "transparent"
-                        _border_bottom = "border-bottom:1px solid rgba(255,255,255,0.04);"
-                        # Separator line antara rank 10 dan 11
-                        _sep = ""
-                        if _ri == 10:
-                            _sep = f"<tr><td colspan='8' style='padding:0;border-top:1px dashed rgba(0,229,190,0.35);'></td></tr>"
-
-                        _rank_trs += (
-                            f"<tr style='background:{_bg};{_border_bottom}'>"
-                            f"<td style='padding:7px 12px;color:{'#00E5BE' if _is10 else '#444'};font-size:0.78rem;"
-                            f"text-align:center;font-weight:700;font-family:Space Mono,monospace;'>{_ri}</td>"
-                            f"<td style='padding:7px 12px;font-weight:700;color:#a78bfa;"
-                            f"font-family:IBM Plex Mono,monospace;font-size:0.85rem;white-space:nowrap;'>{_tk}</td>"
-                            f"<td style='padding:7px 12px;font-weight:700;color:#00E5BE;"
-                            f"font-size:0.85rem;text-align:center;'>{_bsc}</td>"
-                            f"<td style='padding:7px 12px;font-size:0.72rem;white-space:nowrap;color:#2dd4a0;'>{_accum}</td>"
-                            f"<td style='padding:7px 12px;font-size:0.82rem;white-space:nowrap;"
-                            f"text-align:center;color:rgba(255,255,255,0.6);'>{_bpr}</td>"
-                            f"<td style='padding:7px 12px;font-size:0.72rem;white-space:nowrap;color:#ff5c5c;'>{_dist}</td>"
-                            f"<td style='padding:7px 12px;font-size:0.72rem;white-space:nowrap;"
-                            f"color:{_vc};font-weight:600;'>{_verd}</td>"
-                            f"<td style='padding:7px 12px;font-size:0.78rem;font-weight:700;"
-                            f"color:{_fc};white-space:nowrap;letter-spacing:0.04em;'>{_final}</td>"
-                            "</tr>"
-                        ) + _sep
-
-                    st.markdown(
-                        "<div style='width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;"
-                        "border-radius:10px;border:1px solid rgba(0,229,190,0.18);"
-                        "background:rgba(0,0,0,0.25);'>"
-                        "<table style='border-collapse:collapse;min-width:700px;width:100%;'>"
-                        f"<thead><tr style='background:rgba(0,229,190,0.07);'>{_rank_th}</tr></thead>"
-                        f"<tbody>{_rank_trs}</tbody>"
-                        "</table></div>",
-                        unsafe_allow_html=True,
-                    )
-
-                    # ── Summary stats ──
-                    _n_masuk  = sum(1 for i, _ in enumerate(_ranked_20_disp, 1) if i <= 10)
-                    _avg_bsc  = round(sum(b for b, _ in _ranked_20_disp[:10]) / max(_n_masuk, 1), 1)
-                    _n_accum  = sum(
-                        1 for _, r in _ranked_20_disp[:10]
-                        if "AKUMULASI" in next(
-                            (s.get("verdict","") for s in _bs30_cache_disp if s.get("ticker")==r.get("ticker","")), ""
-                        )
-                    )
-                    st.markdown(
-                        f"<div style='margin-top:12px;display:flex;gap:20px;flex-wrap:wrap;'>"
-                        f"<div style='font-size:0.7rem;color:rgba(255,255,255,0.4);'>"
-                        f"Top 10 avg broker score: <span style='color:#00E5BE;font-weight:700;'>{_avg_bsc}</span></div>"
-                        f"<div style='font-size:0.7rem;color:rgba(255,255,255,0.4);'>"
-                        f"Sinyal akumulasi di top10: <span style='color:#00E5BE;font-weight:700;'>{_n_accum}/10</span></div>"
-                        f"</div>",
-                        unsafe_allow_html=True,
-                    )
-
-            # ════════════════════════════════════════════
-            # TAB 3 — HISTORY TRADE PLAN
-            # ════════════════════════════════════════════
-            with _d_tab_hist_plan:
-                _render_auto_history("daily")
-
-            # ════════════════════════════════════════════
-            # TAB 3 — HISTORY SUMMARY (card per hari)
-            # ════════════════════════════════════════════
-            with _d_tab_hist_sum:
-                _daily_hist_all = st.session_state.get("auto_plan_history_daily", {})
-                if not _daily_hist_all:
-                    st.info("📭 Belum ada History Summary. Data akan muncul setelah plan pertama dibuat.")
-                else:
-                    _today_iso = _now_d.strftime("%Y-%m-%d")
-                    for _hk in sorted(_daily_hist_all.keys(), reverse=True)[:30]:
-                        _he      = _daily_hist_all[_hk]
-                        _hplan   = _he.get("plan", {})
-                        _hrows   = _hplan.get("daily", [])
-                        _hdate   = _he.get("date", _hk[:10])
-                        _hts     = _he.get("generated_at","—")
-                        _hout    = _hplan.get("outlook","")
-                        _is_today= _hk.startswith(_today_iso)
-                        _badge   = "  🟢 HARI INI" if _is_today else ""
-                        _label   = f"📊 {_hdate} — {_he.get('slot','—')} · {len(_hrows)} saham{_badge}"
-                        with st.expander(_label, expanded=_is_today):
-                            st.caption(f"Generated {_hts}")
-                            if _hout:
-                                st.markdown(
-                                    f"<div style='padding:8px 12px;border-left:3px solid #a78bfa;"
-                                    f"background:rgba(167,139,250,0.06);border-radius:0 6px 6px 0;"
-                                    f"font-size:0.8rem;margin-bottom:12px;line-height:1.6;'>"
-                                    f"💡 {_hout}</div>", unsafe_allow_html=True)
-                            for _hi, _hr in enumerate(_hrows[:10], 1):
-                                _htk = _hr.get("ticker","")
-                                with st.container(border=True):
-                                    _hhc, _hsc = st.columns([4,1])
-                                    with _hhc:
-                                        st.markdown(
-                                            f"**#{_hi} {_htk}** &nbsp;"
-                                            f"<span style='color:#888;font-size:12px'>{_hr.get('name','')}</span> &nbsp;"
-                                            f"<span style='font-size:12px'>Rp {_hr.get('price',0):,}</span>",
-                                            unsafe_allow_html=True)
-                                    with _hsc:
-                                        st.markdown(
-                                            f"<div style='text-align:right'>"
-                                            f"<span style='font-size:20px;font-weight:700;color:#a78bfa'>{_hr.get('combined','—')}</span>"
-                                            f"<br><span style='font-size:9px;color:#666'>SCORE</span>"
-                                            f"</div>", unsafe_allow_html=True)
-                                    _hc1,_hc2,_hc3,_hc4 = st.columns(4)
-                                    _hc1.metric("TA",  _hr.get("ta_score","—"))
-                                    _hc2.metric("Vol", _hr.get("vol_spike","—"))
-                                    _hc3.metric("RSI", _hr.get("rsi","—"))
-                                    _hc4.metric("Wyckoff", _hr.get("wyckoff","—"))
-                                    st.caption(f"📌 {_hr.get('why_buy','—')}")
-
-            # ════════════════════════════════════════════
             # TAB 4 — TRACK RECORD (Daily only)
             # ════════════════════════════════════════════
             with _d_tab_trackrecord:
@@ -26808,10 +26634,9 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                 st.error(f"Error: {_e_fw}")
                 st.markdown("<br>", unsafe_allow_html=True)
 
-            _w_tab_plan, _w_tab_hist_plan, _w_tab_hist_sum, _w_tab_trackrecord, _w_tab_eval_ai = st.tabs([
+            _w_tab_plan, _w_tab_hist_plan, _w_tab_trackrecord, _w_tab_eval_ai = st.tabs([
                 "  📋 TRADE PLAN & SUMMARY  ",
                 "  🗂️ HISTORY TRADE PLAN  ",
-                "  📊 HISTORY SUMMARY  ",
                 "  ⚖️ VERDICT  ",
                 "  🧠 EVALUASI AI  ",
             ])
@@ -27018,56 +26843,6 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
             # ============================================================
             with _w_tab_hist_plan:
                 _render_auto_history("weekly")
-
-            # ============================================================
-            # WEEKLY TAB 3 — HISTORY SUMMARY
-            # ============================================================
-            with _w_tab_hist_sum:
-                _weekly_hist_all = st.session_state.get("auto_plan_history_weekly", {})
-                if not _weekly_hist_all:
-                    st.info("📭 Belum ada History Summary Weekly. Data muncul setelah plan pertama dibuat setiap Sabtu.")
-                else:
-                    _this_week_iso = _now_w.strftime("%G-W%V")
-                    for _whk in sorted(_weekly_hist_all.keys(), reverse=True)[:20]:
-                        _whe    = _weekly_hist_all[_whk]
-                        _whplan = _whe.get("plan", {})
-                        _whrows = _whplan.get("weekly", _whplan.get("daily", []))
-                        _whdate = _whe.get("date", _whk[:10])
-                        _whts   = _whe.get("generated_at","—")
-                        _whout  = _whplan.get("outlook","")
-                        _is_this_week = _whk.startswith(_this_week_iso[:8])
-                        _wbadge = "  🟢 MINGGU INI" if _is_this_week else ""
-                        _wlabel = f"📊 {_whdate} — {_whe.get('slot','—')} · {len(_whrows)} saham{_wbadge}"
-                        with st.expander(_wlabel, expanded=_is_this_week):
-                            st.caption(f"Generated {_whts}")
-                            if _whout:
-                                st.markdown(
-                                    f"<div style='padding:8px 12px;border-left:3px solid #26a69a;"
-                                    f"background:rgba(38,166,154,0.06);border-radius:0 6px 6px 0;"
-                                    f"font-size:0.8rem;margin-bottom:12px;line-height:1.6;'>"
-                                    f"📊 {_whout}</div>", unsafe_allow_html=True)
-                            for _whi, _whr in enumerate(_whrows[:7], 1):
-                                _whtk = _whr.get("ticker","")
-                                with st.container(border=True):
-                                    _whhc, _whsc = st.columns([4,1])
-                                    with _whhc:
-                                        st.markdown(
-                                            f"**#{_whi} {_whtk}** &nbsp;"
-                                            f"<span style='color:#888;font-size:12px'>{_whr.get('name','')}</span> &nbsp;"
-                                            f"<span style='font-size:12px'>Rp {_whr.get('price',0):,}</span>",
-                                            unsafe_allow_html=True)
-                                    with _whsc:
-                                        st.markdown(
-                                            f"<div style='text-align:right'>"
-                                            f"<span style='font-size:20px;font-weight:700;color:#26a69a'>{_whr.get('combined','—')}</span>"
-                                            f"<br><span style='font-size:9px;color:#666'>SCORE</span>"
-                                            f"</div>", unsafe_allow_html=True)
-                                    _whc1,_whc2,_whc3,_whc4 = st.columns(4)
-                                    _whc1.metric("TA",      _whr.get("ta_score","—"))
-                                    _whc2.metric("Vol",     _whr.get("vol_spike","—"))
-                                    _whc3.metric("Horizon", _whr.get("horizon","—"))
-                                    _whc4.metric("Wyckoff", _whr.get("wyckoff","—"))
-                                    st.caption(f"📌 {_whr.get('why_buy','—')}")
 
             # ============================================================
             # WEEKLY TAB 4 — TRACK RECORD (Weekly only)
