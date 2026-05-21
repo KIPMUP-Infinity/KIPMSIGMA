@@ -8051,6 +8051,16 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                         sl  = r.get("sl",  0) or 0
                         if entry <= 0: continue
                         _now_s = _now_sch.strftime("%d %b %Y, %H:%M WIB")
+                        # ── VALIDASI: harga hari ini harus menyentuh area entry dulu ──
+                        # LOW harus ≤ entry_high agar bisa dianggap terbeli di zona
+                        _entry_touched = lo <= (_e_hi if _e_hi else entry)
+                        if not _entry_touched:
+                            # Harga tidak pernah masuk zona buy — skip, tandai sebagai NOT_TRIGGERED
+                            r["auto_note"] = f"⏭️ Entry tidak tersentuh (Low={int(lo):,} > EntryHi={int(_e_hi if _e_hi else entry):,}) — tidak terbeli ({_now_s})"
+                            r["not_triggered"] = True
+                            _changed_post = True
+                            continue
+                        r.pop("not_triggered", None)
                         if tp2 > 0 and hi >= tp2:
                             r.update({"status": "TP2", "exit_price": tp2, "result": "WIN",
                                       "pnl_pct": round((tp2-entry)/entry*100, 2),
@@ -21901,6 +21911,21 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 
                     if entry <= 0: continue
 
+                    # ── VALIDASI ENTRY: LOW hari ini harus ≤ entry_high agar dianggap terbeli ──
+                    # Untuk Weekly, gunakan low periode; untuk Daily/BSJP, gunakan low hari ini
+                    _lo_check = _prices_tr[tk].get("low_5d", lo) if _is_weekly else lo
+                    _entry_hi_check = _e_hi if _e_hi else entry
+                    _entry_touched = _lo_check <= _entry_hi_check
+                    if not _entry_touched:
+                        # Harga tidak masuk zona entry — tidak terbeli, skip TP/SL check
+                        r["current_price"]  = round(cl, 0)
+                        r["unrealized_pnl"] = round((cl - entry) / entry * 100, 2)
+                        r["auto_note"] = f"⏭️ Belum terbeli — Low={int(_lo_check):,} masih di atas EntryZone {int(_e_lo):,}–{int(_entry_hi_check):,}"
+                        continue
+
+                    # Entry tersentuh — lanjut cek TP/SL
+                    r.pop("auto_note", None)  # hapus note "belum terbeli" jika sudah masuk zona
+
                     hit_tp2 = tp2 > 0 and _hi_use >= tp2
                     hit_tp1 = tp1 > 0 and _hi_use >= tp1
                     hit_sl  = sl  > 0 and _sl_price <= sl
@@ -25738,7 +25763,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
                     "<div class=\"tbl-wrap\"><div class=\"scroll\"><table>"
                     "<thead><tr>"
                     "<th>#</th><th>DATE</th><th>TICKER</th><th>TYPE</th>"
-                    "<th>ENTRY</th><th>TP1</th><th>SL</th>"
+                    "<th>ENTRY ZONE</th><th>TP1</th><th>TP2</th><th>SL</th>"
                     "<th>EXIT</th><th>P&amp;L</th><th>STATUS</th><th>NOTE</th>"
                     "</tr></thead>"
                     "<tbody id=\"tr-tb-" + _safe_id + "\"></tbody>"
@@ -25750,9 +25775,16 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
                     "var REC=JSON.parse('" + _rj2 + "');"
                     "var tb=document.getElementById('tr-tb-" + _safe_id + "');"
                     "function fmt(n){return n&&n>0?'Rp'+parseInt(n).toLocaleString('id-ID'):'-';}"
+                    "function fmtEntry(r){"
+                    "  var lo=r.entry_low||0, hi=r.entry_high||0, mid=r.entry||0;"
+                    "  if(lo>0&&hi>0&&hi!==lo) return fmt(lo)+'&ndash;'+fmt(hi);"
+                    "  if(lo>0) return fmt(lo);"
+                    "  if(mid>0) return fmt(mid);"
+                    "  return '-';"
+                    "}"
                     "REC.forEach(function(r,i){"
                     "var badgeCls=r.result==='WIN'?'badge-win':r.result==='LOSS'?'badge-loss':'badge-open';"
-                    "var st_lbl=r.result==='WIN'?'WIN':r.result==='LOSS'?'LOSS':'OPEN';"
+                    "var st_lbl=r.status==='TP2'?'TP2':r.status==='TP1'?'TP1':r.result==='WIN'?'WIN':r.result==='LOSS'?'LOSS':'OPEN';"
                     "var pnl=r.pnl_pct||r.unrealized_pnl||0;"
                     "var pnlStr=pnl?'<span class=\"'+(pnl>=0?'win':'loss')+'\">'+(pnl>=0?'+':'')+pnl+'%</span>':'-';"
                     "var note=r.auto_note||r.reason||'-';"
@@ -25763,8 +25795,9 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
                     "+'<td style=\"color:#64748b;font-size:0.75rem;\">'+(r.date||'-')+'</td>'"
                     "+'<td><span class=\"tk\">'+r.ticker+'</span></td>'"
                     "+'<td><span style=\"color:'+typeColor+';font-weight:700;font-size:0.72rem;background:'+typeColor+'22;padding:2px 6px;border-radius:4px;\">'+(r.type||'-')+'</span></td>'"
-                    "+'<td>'+fmt(r.entry)+'</td>'"
+                    "+'<td style=\"color:#a78bfa;font-size:0.78rem;\">'+fmtEntry(r)+'</td>'"
                     "+'<td style=\"color:#26a69a;font-weight:600;\">'+fmt(r.tp1)+'</td>'"
+                    "+'<td style=\"color:#3b82f6;font-weight:600;\">'+(r.tp2>0?fmt(r.tp2):'-')+'</td>'"
                     "+'<td style=\"color:#f23645;font-weight:700;\">'+fmt(r.sl)+'</td>'"
                     "+'<td style=\"font-weight:700;\">'+fmt(r.exit_price)+'</td>'"
                     "+'<td>'+pnlStr+'</td>'"
@@ -26414,6 +26447,21 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         # ── Simpan data ranking ke session_state agar bisa dirender di tab terpisah ──
                         st.session_state["_daily_ranked_20"]  = _ranked_20
                         st.session_state["_daily_bs30_cache"] = _bs30_cache
+
+            # ════════════════════════════════════════════
+            # TAB 2 — HISTORY TRADE PLAN (Daily)
+            # ════════════════════════════════════════════
+            with _d_tab_hist_plan:
+                st.markdown(
+                    "<div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;"
+                    "letter-spacing:0.15em;text-transform:uppercase;font-weight:700;"
+                    "color:#a78bfa;margin-bottom:6px;'>🗂️ HISTORY TRADE PLAN — DAILY</div>"
+                    "<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
+                    f"color:{text_sub};margin-bottom:14px;'>"
+                    "Semua daily plan yang pernah ter-generate. Entry zone, TP1, TP2, SL, dan alasan.</p>",
+                    unsafe_allow_html=True
+                )
+                _render_auto_history("daily")
 
             # ════════════════════════════════════════════
             # TAB 4 — TRACK RECORD (Daily only)
