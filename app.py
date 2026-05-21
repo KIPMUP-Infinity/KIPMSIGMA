@@ -25833,24 +25833,13 @@ html,body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_
 .tbl-wrap{{background:{_tbl_bg};border:1px solid {_border};border-radius:10px;
   overflow:hidden;margin-bottom:28px;width:100%;max-width:100%;}}
 .scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;}}
-table{{border-collapse:collapse;min-width:880px;table-layout:fixed;width:100%;}}
-thead th{{background:{_hdr_bg};color:#26a69a;padding:8px 8px;
+table{{border-collapse:collapse;min-width:1000px;table-layout:auto;width:max-content;}}
+thead th{{background:{_hdr_bg};color:#26a69a;padding:8px 10px;
   text-align:left;border-bottom:1px solid {_border};
   font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
-th:nth-child(1){{width:36px;}}   /* # */
-th:nth-child(2){{width:80px;}}   /* DATE */
-th:nth-child(3){{width:68px;}}   /* TICKER */
-th:nth-child(4){{width:58px;}}   /* TYPE */
-th:nth-child(5){{width:74px;}}   /* ENTRY */
-th:nth-child(6){{width:74px;}}   /* TP1 */
-th:nth-child(7){{width:74px;}}   /* SL */
-th:nth-child(8){{width:74px;}}   /* EXIT */
-th:nth-child(9){{width:62px;}}   /* P&L */
-th:nth-child(10){{width:56px;}}  /* STATUS */
-th:nth-child(11){{width:auto;min-width:160px;}} /* NOTE */
-tbody td{{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,0.04);
-  color:{_txt};font-size:0.78rem;overflow:hidden;text-overflow:ellipsis;}}
+  white-space:nowrap;}}
+tbody td{{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,0.04);
+  color:{_txt};font-size:0.78rem;white-space:nowrap;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 .tk{{font-weight:700;color:#26a69a;font-size:0.84rem;}}
@@ -25898,7 +25887,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                 _body_html = _build_tr_html(sorted_records, label=None)
                 _tr_html = _tr_css + _body_html + "</body></html>"
                 _n_recs = len(sorted_records)
-                _est_h  = max(800, 160 + 48 * _n_recs + 300)
+                _est_h  = max(900, 200 + 52 * _n_recs + 350)
                 components.html(_tr_html, height=_est_h, scrolling=True)
             else:
                 # ── filter_type=None → render 3 tabel terpisah (Daily / Weekly / BSJP) ──
