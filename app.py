@@ -14315,16 +14315,26 @@ table{{margin-bottom:0!important;}}
                 _DIV_DB = [
                     # Format: ticker, nama, cum_date, ex_date, pay_date, dps (Rp), yield_pct, freq, tahun
                     # ── PERBANKAN ─────────────────────────────────────────────────────
-                    {"ticker":"BBCA","nama":"Bank Central Asia","cum_date":"2025-03-27","ex_date":"2025-03-28","pay_date":"2025-04-14","dps":144,"yield_pct":1.55,"freq":"Interim","tahun":2025},
-                    {"ticker":"BBCA","nama":"Bank Central Asia","cum_date":"2025-08-21","ex_date":"2025-08-22","pay_date":"2025-09-09","dps":215,"yield_pct":2.28,"freq":"Final","tahun":2025},
-                    {"ticker":"BBCA","nama":"Bank Central Asia","cum_date":"2026-03-26","ex_date":"2026-03-27","pay_date":"2026-04-13","dps":155,"yield_pct":1.68,"freq":"Interim","tahun":2026},
-                    {"ticker":"BBRI","nama":"Bank Rakyat Indonesia","cum_date":"2025-04-10","ex_date":"2025-04-11","pay_date":"2025-04-28","dps":174,"yield_pct":4.02,"freq":"Final","tahun":2025},
-                    {"ticker":"BBRI","nama":"Bank Rakyat Indonesia","cum_date":"2025-09-18","ex_date":"2025-09-19","pay_date":"2025-10-06","dps":98,"yield_pct":2.27,"freq":"Interim","tahun":2025},
-                    {"ticker":"BBRI","nama":"Bank Rakyat Indonesia","cum_date":"2026-04-09","ex_date":"2026-04-10","pay_date":"2026-04-28","dps":165,"yield_pct":3.79,"freq":"Final","tahun":2026},
-                    {"ticker":"BMRI","nama":"Bank Mandiri","cum_date":"2025-04-16","ex_date":"2025-04-17","pay_date":"2025-05-05","dps":354,"yield_pct":5.22,"freq":"Final","tahun":2025},
-                    {"ticker":"BMRI","nama":"Bank Mandiri","cum_date":"2026-04-15","ex_date":"2026-04-16","pay_date":"2026-05-02","dps":320,"yield_pct":4.71,"freq":"Final","tahun":2026},
-                    {"ticker":"BBNI","nama":"Bank Negara Indonesia","cum_date":"2025-04-23","ex_date":"2025-04-24","pay_date":"2025-05-12","dps":270,"yield_pct":5.70,"freq":"Final","tahun":2025},
-                    {"ticker":"BBNI","nama":"Bank Negara Indonesia","cum_date":"2026-04-22","ex_date":"2026-04-23","pay_date":"2026-05-08","dps":255,"yield_pct":5.38,"freq":"Final","tahun":2026},
+                    # BBCA 2024 Final (dibayar 2025) — DPS Rp144 sumber: RUPST Mar 2025, cum 27 Mar 2025
+                    {"ticker":"BBCA","nama":"Bank Central Asia","cum_date":"2025-03-27","ex_date":"2025-03-28","pay_date":"2025-04-14","dps":144,"yield_pct":1.55,"freq":"Final","tahun":2024},
+                    # BBCA 2025 Interim — DPS Rp55 (sumber: Keterbukaan IDX Nov 2025, Cum 2 Des 2025)
+                    {"ticker":"BBCA","nama":"Bank Central Asia","cum_date":"2025-12-02","ex_date":"2025-12-03","pay_date":"2025-12-22","dps":55,"yield_pct":0.65,"freq":"Interim","tahun":2025},
+                    # BBCA 2025 Final (dibayar 2026) — DPS Rp281 final saja (total 336-55=281), Cum 27 Mar 2026
+                    {"ticker":"BBCA","nama":"Bank Central Asia","cum_date":"2026-03-27","ex_date":"2026-03-30","pay_date":"2026-04-08","dps":281,"yield_pct":3.31,"freq":"Final","tahun":2026},
+                    # BBRI 2024 Final (dibayar 2025) — DPS Rp208 (total 343=interim 135+final 208), Cum 10 Apr 2025
+                    {"ticker":"BBRI","nama":"Bank Rakyat Indonesia","cum_date":"2025-04-10","ex_date":"2025-04-11","pay_date":"2025-04-28","dps":208,"yield_pct":4.81,"freq":"Final","tahun":2024},
+                    # BBRI 2025 Interim — DPS Rp137 (sumber: Keterbukaan IDX 17 Des 2025, Cum 29 Des 2025)
+                    {"ticker":"BBRI","nama":"Bank Rakyat Indonesia","cum_date":"2025-12-29","ex_date":"2025-12-30","pay_date":"2026-01-15","dps":137,"yield_pct":3.26,"freq":"Interim","tahun":2025},
+                    # BBRI 2025 Final (dibayar 2026) — DPS ~Rp346 estimasi, belum RUPST resmi (bertanda *)
+                    {"ticker":"BBRI","nama":"Bank Rakyat Indonesia","cum_date":"2026-04-09","ex_date":"2026-04-10","pay_date":"2026-04-28","dps":346,"yield_pct":7.99,"freq":"Final*","tahun":2026},
+                    # BMRI 2024 Final — DPS Rp466 (sumber: RUPST 25 Mar 2025, Bareksa/CNBC; bukan Rp354)
+                    {"ticker":"BMRI","nama":"Bank Mandiri","cum_date":"2025-04-16","ex_date":"2025-04-17","pay_date":"2025-05-05","dps":466,"yield_pct":6.89,"freq":"Final","tahun":2024},
+                    # BMRI 2025 Final — DPS ~Rp477 (sumber: Warta Garut/Ajaib Mar 2026 estimasi, bertanda *)
+                    {"ticker":"BMRI","nama":"Bank Mandiri","cum_date":"2026-04-15","ex_date":"2026-04-16","pay_date":"2026-05-02","dps":477,"yield_pct":7.05,"freq":"Final*","tahun":2026},
+                    # BBNI 2024 Final — DPS Rp374 (sumber: RUPST 26 Mar 2025, Bareksa; bukan Rp270)
+                    {"ticker":"BBNI","nama":"Bank Negara Indonesia","cum_date":"2025-04-23","ex_date":"2025-04-24","pay_date":"2025-05-12","dps":374,"yield_pct":7.89,"freq":"Final","tahun":2024},
+                    # BBNI 2025 Final — DPS Rp349 (sumber: Readers.id/Bloomberg Technoz Mar 2026, Cum 17 Mar 2026)
+                    {"ticker":"BBNI","nama":"Bank Negara Indonesia","cum_date":"2026-03-17","ex_date":"2026-03-18","pay_date":"2026-04-07","dps":349,"yield_pct":7.36,"freq":"Final","tahun":2026},
                     {"ticker":"BBTN","nama":"Bank Tabungan Negara","cum_date":"2025-05-08","ex_date":"2025-05-09","pay_date":"2025-05-27","dps":48,"yield_pct":3.38,"freq":"Final","tahun":2025},
                     {"ticker":"BRIS","nama":"Bank Syariah Indonesia","cum_date":"2025-04-29","ex_date":"2025-04-30","pay_date":"2025-05-19","dps":56,"yield_pct":2.47,"freq":"Final","tahun":2025},
                     {"ticker":"BRIS","nama":"Bank Syariah Indonesia","cum_date":"2026-04-28","ex_date":"2026-04-29","pay_date":"2026-05-15","dps":62,"yield_pct":2.74,"freq":"Final","tahun":2026},
@@ -14422,9 +14432,7 @@ table{{margin-bottom:0!important;}}
                     {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-07","dps":78,"yield_pct":3.00,"freq":"Q2","tahun":2026},
                     {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2026-09-17","ex_date":"2026-09-18","pay_date":"2026-10-06","dps":78,"yield_pct":3.00,"freq":"Q3","tahun":2026},
                     {"ticker":"ASII","nama":"Astra International","cum_date":"2026-11-05","ex_date":"2026-11-06","pay_date":"2026-11-23","dps":115,"yield_pct":2.35,"freq":"Interim","tahun":2026},
-                    {"ticker":"ICBP","nama":"Indofood CBP Sukses Makmur","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-23","dps":460,"yield_pct":4.92,"freq":"Final","tahun":2026},
                     {"ticker":"MYOR","nama":"Mayora Indah","cum_date":"2026-06-11","ex_date":"2026-06-12","pay_date":"2026-06-29","dps":100,"yield_pct":4.65,"freq":"Final","tahun":2026},
-                    {"ticker":"KLBF","nama":"Kalbe Farma","cum_date":"2026-05-28","ex_date":"2026-05-29","pay_date":"2026-06-16","dps":38,"yield_pct":2.43,"freq":"Final","tahun":2026},
                     {"ticker":"SMGR","nama":"Semen Indonesia","cum_date":"2026-06-25","ex_date":"2026-06-26","pay_date":"2026-07-13","dps":90,"yield_pct":1.65,"freq":"Final","tahun":2026},
                     {"ticker":"INTP","nama":"Indocement Tunggal Perkasa","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":340,"yield_pct":6.18,"freq":"Final","tahun":2026},
                     {"ticker":"CPIN","nama":"Charoen Pokphand Indonesia","cum_date":"2026-06-11","ex_date":"2026-06-12","pay_date":"2026-06-29","dps":115,"yield_pct":2.40,"freq":"Final","tahun":2026},
@@ -14444,7 +14452,6 @@ table{{margin-bottom:0!important;}}
                     {"ticker":"TAPG","nama":"Triputra Agro Persada","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":102,"yield_pct":8.95,"freq":"Final","tahun":2026},
                     {"ticker":"TOWR","nama":"Sarana Menara Nusantara","cum_date":"2026-09-10","ex_date":"2026-09-11","pay_date":"2026-09-28","dps":26,"yield_pct":3.17,"freq":"Interim","tahun":2026},
                     {"ticker":"JSMR","nama":"Jasa Marga","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":162,"yield_pct":3.86,"freq":"Final","tahun":2026},
-                    {"ticker":"TLKM","nama":"Telkom Indonesia","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":175,"yield_pct":4.47,"freq":"Final","tahun":2026},
                     {"ticker":"INKP","nama":"Indah Kiat Pulp & Paper","cum_date":"2026-06-25","ex_date":"2026-06-26","pay_date":"2026-07-13","dps":390,"yield_pct":4.76,"freq":"Final","tahun":2026},
                     {"ticker":"TPIA","nama":"Chandra Asri","cum_date":"2026-07-23","ex_date":"2026-07-24","pay_date":"2026-08-10","dps":230,"yield_pct":2.80,"freq":"Final","tahun":2026},
                     {"ticker":"BREN","nama":"Barito Renewables Energy","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":85,"yield_pct":1.01,"freq":"Final","tahun":2026},
