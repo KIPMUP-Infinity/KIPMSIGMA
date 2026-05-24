@@ -6959,6 +6959,81 @@ Format TRADE PLAN wajib seperti ini (setiap poin di baris baru):
 
 
 # ─────────────────────────────────────────────
+# API HEALTH CHECK — admin only
+# ─────────────────────────────────────────────
+def _get_api_health_summary() -> dict:
+    """
+    Cek status semua API SIGMA secara cepat.
+    Return dict dengan status per API.
+    Dipanggil hanya dari panel admin — JANGAN panggil di setiap rerun.
+    """
+    health = {}
+
+    # ── Groq: cek key availability ──
+    _all_keys = _get_all_groq_keys()
+    _avail    = _get_available_groq_keys(_all_keys)
+    health["groq"] = {
+        "status": "ok" if len(_avail) >= 3 else ("warn" if len(_avail) > 0 else "down"),
+        "detail": f"{len(_avail)}/{len(_all_keys)} keys tersedia",
+        "icon": "✅" if len(_avail) >= 3 else ("⚠️" if len(_avail) > 0 else "❌")
+    }
+
+    # ── Gemini: cek key availability ──
+    try:
+        _gem_keys  = _get_gemini_keys()
+        _gem_avail = _get_available_gemini_keys(_gem_keys)
+        health["gemini"] = {
+            "status": "ok" if len(_gem_avail) > 0 else "down",
+            "detail": f"{len(_gem_avail)}/{len(_gem_keys)} keys tersedia",
+            "icon": "✅" if len(_gem_avail) > 0 else "❌"
+        }
+    except Exception as _ge_err:
+        health["gemini"] = {"status": "error", "detail": str(_ge_err)[:60], "icon": "⚠️"}
+
+    # ── GoAPI: ping endpoint ──
+    try:
+        _goapi_ok = _goapi_available()
+        health["goapi"] = {
+            "status": "ok" if _goapi_ok else "down",
+            "detail": "Endpoint aktif" if _goapi_ok else "Tidak dapat dijangkau",
+            "icon": "✅" if _goapi_ok else "❌"
+        }
+    except Exception as _ge:
+        health["goapi"] = {"status": "error", "detail": str(_ge)[:60], "icon": "⚠️"}
+
+    # ── Cerebras: cek key existence ──
+    _cbr_key = st.secrets.get("CEREBRAS_API_KEY", "")
+    health["cerebras"] = {
+        "status": "ok" if len(_cbr_key) > 10 else "missing",
+        "detail": "Key terkonfigurasi" if len(_cbr_key) > 10 else "CEREBRAS_API_KEY tidak ada di Secrets",
+        "icon": "✅" if len(_cbr_key) > 10 else "⚠️"
+    }
+
+    # ── Google Sheets: cek koneksi ──
+    try:
+        _gc = _get_gspread_client()
+        health["gsheets"] = {"status": "ok", "detail": "Service account aktif", "icon": "✅"}
+    except Exception as _ge2:
+        health["gsheets"] = {"status": "error", "detail": str(_ge2)[:60], "icon": "❌"}
+
+    # ── yfinance: quick ping BBCA.JK ──
+    try:
+        import yfinance as _yf_h
+        _test  = _yf_h.Ticker("BBCA.JK").fast_info
+        _price = _test.get("lastPrice", 0)
+        health["yfinance"] = {
+            "status": "ok" if _price > 0 else "warn",
+            "detail": f"BBCA.JK = {_price}" if _price > 0 else "Data tidak tersedia",
+            "icon": "✅" if _price > 0 else "⚠️"
+        }
+    except Exception as _yfe:
+        health["yfinance"] = {"status": "error", "detail": str(_yfe)[:60], "icon": "❌"}
+
+    health["_checked_at"] = _wib_now().strftime("%H:%M:%S WIB")
+    return health
+
+
+# ─────────────────────────────────────────────
 # GROQ KEY ROTATION - AUTO SCAN KEY 1-13
 # ─────────────────────────────────────────────
 def _get_all_groq_keys():
@@ -31640,6 +31715,28 @@ try:
     st.session_state["_groq_key_status"] = {"avail": _gk_avail, "total": _gk_total, "color": _gk_color, "label": _gk_label}
 except Exception:
     pass
+
+# ── API HEALTH PANEL (admin only) ────────────────────────────────────────────
+_user_email_health = st.session_state.get("user", {}).get("email", "")
+_admin_emails = ALLOWED_EMAILS[:3]  # 3 email pertama = admin tier
+if _user_email_health in _admin_emails:
+    if st.button("🔍 Cek Status Semua API", key="api_health_btn"):
+        with st.spinner("Mengecek semua API..."):
+            _health_result = _get_api_health_summary()
+        _health_cols = st.columns(3)
+        _health_items = [(k, v) for k, v in _health_result.items() if k != "_checked_at"]
+        for _hi, (_hk, _hv) in enumerate(_health_items):
+            with _health_cols[_hi % 3]:
+                _hcolor = {"ok": "#10b981", "warn": "#f59e0b", "down": "#ef4444",
+                           "error": "#ef4444", "missing": "#f59e0b"}.get(_hv["status"], "#888")
+                st.markdown(f"""
+                <div style='background:rgba(255,255,255,0.03);border:1px solid {_hcolor}44;
+                border-radius:8px;padding:10px 12px;margin-bottom:8px;'>
+                <div style='font-size:0.7rem;color:#888;text-transform:uppercase;'>{_hk}</div>
+                <div style='font-size:1.1rem;font-weight:700;color:{_hcolor};'>{_hv["icon"]} {_hv["status"].upper()}</div>
+                <div style='font-size:0.68rem;color:#64748b;margin-top:3px;'>{_hv["detail"]}</div>
+                </div>""", unsafe_allow_html=True)
+        st.caption(f"📡 Dicek pada: {_health_result.get('_checked_at', '—')}")
 
 # ── USER BUBBLE JS INJECTOR ──
 _bubble_css = """
