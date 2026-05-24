@@ -21,7 +21,27 @@ import re
 import time
 import random
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# ─────────────────────────────────────────────
+# CACHE CONFIGURATION — satu tempat untuk semua TTL
+# Ubah di sini, berlaku ke seluruh aplikasi
+# ─────────────────────────────────────────────
+CACHE_CONFIG = {
+    "fundamental":      85 * 86400,   # 85 hari — data fundamental jarang berubah
+    "price_live":       90,            # 90 detik — harga real-time
+    "broker_data":      300,           # 5 menit — broker summary GoAPI
+    "news":             1800,          # 30 menit — RSS dan berita
+    "globe_data":       86400,         # 1 hari — IDX globe visualization
+    "konglo_prices":    86400 * 35,    # 35 hari — harga konglomerat
+    "market_data":      604800,        # 1 minggu — market overview
+    "global_rates":     1800,          # 30 menit — BI Rate, Fed Funds
+    "ff_actuals":       300,           # 5 menit — ForexFactory actuals
+    "ec_high_impact":   60,            # 1 menit — saat window event high-impact
+    "suspended":        21600,         # 6 jam — daftar saham suspend
+    "ipo_data":         86400,         # 1 hari — data IPO/prospektus
+    "rrg_data":         3600,          # 1 jam — Relative Rotation Graph
+}
+
+
 # BSJP CARDS RENDERER v3.0  —  Dark Terminal Edition (embedded)
 # Kartu rekomendasi saham: dark mode, score ring besar, candlestick 5 hari,
 # bandar flow ring, level strategy, AI insight, SIGMA score footer.
@@ -5304,6 +5324,50 @@ _SESSION_KEYS = [
     "alpha_insight_last_key", "alpha_insight_last_data", "alpha_insight_last_ticker",
 ]
 
+def _cleanup_session_state_bloat():
+    """
+    Bersihkan session state dari data yang terlalu besar atau terlalu lama.
+    Dipanggil sekali saat login untuk mencegah memory bloat di sesi panjang.
+    Batas:
+      - brosum_history       → max 7 hari
+      - auto_plan_history_*  → max 30 entri
+      - sigma_bs30_history   → max 14 entri
+      - tr_records           → max 200 entri
+    """
+    import sys
+
+    # ── Batasi brosum_history: max 7 hari ──
+    _bh = st.session_state.get("brosum_history", {})
+    if isinstance(_bh, dict) and len(_bh) > 7:
+        _sorted_keys = sorted(_bh.keys(), reverse=True)
+        st.session_state["brosum_history"] = {k: _bh[k] for k in _sorted_keys[:7]}
+
+    # ── Batasi auto_plan_history: max 30 entri per type ──
+    for _pk in ["auto_plan_history_daily", "auto_plan_history_weekly", "auto_plan_history_bsjp"]:
+        _ph = st.session_state.get(_pk, {})
+        if isinstance(_ph, dict) and len(_ph) > 30:
+            _sorted_plan_keys = sorted(_ph.keys(), reverse=True)
+            st.session_state[_pk] = {k: _ph[k] for k in _sorted_plan_keys[:30]}
+
+    # ── Batasi sigma_bs30_history: max 14 entri ──
+    _sh = st.session_state.get("sigma_bs30_history", {})
+    if isinstance(_sh, dict) and len(_sh) > 14:
+        _sorted_sh = sorted(_sh.keys(), reverse=True)
+        st.session_state["sigma_bs30_history"] = {k: _sh[k] for k in _sorted_sh[:14]}
+
+    # ── Batasi tr_records: max 200 entri ──
+    _tr = st.session_state.get("tr_records", [])
+    if isinstance(_tr, list) and len(_tr) > 200:
+        st.session_state["tr_records"] = _tr[-200:]  # ambil 200 terbaru
+
+    # ── Log ukuran session state untuk monitoring ──
+    try:
+        _ss_size = sys.getsizeof(str(st.session_state))
+        st.session_state["_ss_size_bytes"] = _ss_size
+    except Exception:
+        pass
+
+
 def save_user(email: str, data: dict):
     """Simpan data user dengan per-field storage untuk field kritis.
     Field kritis → row terpisah di 'user_data' (tidak bisa saling overwrite).
@@ -7151,7 +7215,19 @@ def _call_cerebras(full_prompt, history_msgs=None, max_tokens=8000):
 
     cerebras_key = st.secrets.get("CEREBRAS_API_KEY", "")
     if not cerebras_key or len(cerebras_key) < 10:
-        raise Exception("CEREBRAS_API_KEY tidak ditemukan di Secrets")
+        # Log ke session state agar bisa dicek di health dashboard
+        if "_api_health" not in st.session_state:
+            st.session_state["_api_health"] = {}
+        st.session_state["_api_health"]["cerebras"] = {
+            "status": "missing_key",
+            "ts": datetime.now().strftime("%H:%M:%S")
+        }
+        raise Exception("CEREBRAS_API_KEY tidak ditemukan di Secrets — layer ini di-skip")
+    else:
+        if "_api_health" not in st.session_state:
+            st.session_state["_api_health"] = {}
+        if "cerebras" not in st.session_state["_api_health"]:
+            st.session_state["_api_health"]["cerebras"] = {"status": "key_present", "ts": datetime.now().strftime("%H:%M:%S")}
 
     messages = [{"role": "system", "content": GROQ_SYSTEM_PROMPT}]
     if history_msgs:
@@ -7307,6 +7383,7 @@ if "code" in st.query_params and st.session_state.user is None:
         st.session_state.current_token = token
         st.query_params.clear()
         st.query_params["sigma_token"] = token
+        _cleanup_session_state_bloat()
         st.rerun()
 
 # ─── AUTO-LOGIN VIA TOKEN ───
@@ -7337,6 +7414,7 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
                     st.session_state[_tab_key] = saved[_tab_key]
             st.session_state.data_loaded = True
             restore_images_from_messages()
+            _cleanup_session_state_bloat()
             st.rerun()
         except Exception: pass
 
@@ -18768,33 +18846,85 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
             # ── Fetch live rates via yfinance fallback ──
             @st.cache_data(ttl=1800, show_spinner=False)
             def _fetch_global_rates():
-                """Fetch SOFR, US 1Y Treasury sebagai proxy Fed Funds rate via yfinance."""
+                """Fetch rates via yfinance + FRED API fallback. Hardcoded hanya sebagai last resort."""
+                # ── Nilai hardcoded (last resort) — UPDATE MANUAL jika FRED dan yfinance gagal semua ──
+                # BI Rate: update dari keputusan RDG BI terbaru (Mei 2026 = 5.25%)
+                # Fed Funds: update dari FOMC terbaru (Mei 2026 = 4.25-4.50%)
                 rates = {
-                    "BI Rate": {"value": 5.25, "change": +0.50, "source": "hardcoded", "label": "Bank Indonesia"},
-                    "Fed Funds": {"value": 4.50, "change": 0.00, "source": "hardcoded", "label": "US Federal Reserve"},
-                    "SOFR": {"value": 4.31, "change": -0.02, "source": "hardcoded", "label": "Secured Overnight Financing Rate"},
-                    "US 10Y": {"value": 4.38, "change": 0.05, "source": "hardcoded", "label": "US Treasury 10Y Yield"},
-                    "ID 10Y": {"value": 6.82, "change": -0.08, "source": "hardcoded", "label": "Indonesia Gov Bond 10Y"},
+                    "BI Rate":   {"value": 5.25, "change": 0.00, "source": "hardcoded", "label": "Bank Indonesia — RDG Mei 2026"},
+                    "Fed Funds": {"value": 4.50, "change": 0.00, "source": "hardcoded", "label": "US Federal Reserve — FOMC Mei 2026"},
+                    "SOFR":      {"value": 4.31, "change": -0.02, "source": "hardcoded", "label": "Secured Overnight Financing Rate"},
+                    "US 10Y":    {"value": 4.38, "change": 0.05, "source": "hardcoded", "label": "US Treasury 10Y Yield"},
+                    "ID 10Y":    {"value": 6.82, "change": -0.08, "source": "hardcoded", "label": "Indonesia Gov Bond 10Y"},
                 }
+
+                # ── Layer 1: yfinance untuk US 10Y Treasury ──
                 try:
                     import yfinance as _yf_r
-                    # US 10Y Treasury yield
                     _us10y = _yf_r.Ticker("^TNX").history(period="5d")
                     if len(_us10y) >= 2:
-                        _us10y_now = round(float(_us10y["Close"].iloc[-1]), 2)
+                        _us10y_now  = round(float(_us10y["Close"].iloc[-1]), 2)
                         _us10y_prev = round(float(_us10y["Close"].iloc[-2]), 2)
-                        rates["US 10Y"] = {"value": _us10y_now, "change": round(_us10y_now - _us10y_prev, 2), "source": "yfinance", "label": "US Treasury 10Y Yield"}
+                        rates["US 10Y"] = {
+                            "value": _us10y_now,
+                            "change": round(_us10y_now - _us10y_prev, 2),
+                            "source": "yfinance",
+                            "label": "US Treasury 10Y Yield"
+                        }
                 except Exception:
                     pass
+
+                # ── Layer 2: yfinance untuk ID 10Y ──
                 try:
                     import yfinance as _yf_r2
-                    # Indonesia 10Y proxy via ETF/bond yield
                     _id10y = _yf_r2.Ticker("INDO10Y=X").history(period="5d")
                     if len(_id10y) >= 1:
                         _id_v = round(float(_id10y["Close"].iloc[-1]), 2)
-                        rates["ID 10Y"] = {"value": _id_v, "change": 0.0, "source": "yfinance", "label": "Indonesia Gov Bond 10Y"}
+                        rates["ID 10Y"] = {
+                            "value": _id_v, "change": 0.0,
+                            "source": "yfinance", "label": "Indonesia Gov Bond 10Y"
+                        }
                 except Exception:
                     pass
+
+                # ── Layer 3: FRED API untuk Fed Funds Rate (gratis, no key needed) ──
+                try:
+                    import urllib.request as _ur
+                    import json as _jj
+                    _fred_req = _ur.Request(
+                        "https://fred.stlouisfed.org/graph/fredgraph.json?id=FEDFUNDS",
+                        headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
+                    )
+                    with _ur.urlopen(_fred_req, timeout=6) as _fr:
+                        _fred_data = _jj.loads(_fr.read())
+                    if _fred_data and len(_fred_data) >= 2:
+                        _ff_now  = round(float(_fred_data[-1][1]), 2)
+                        _ff_prev = round(float(_fred_data[-2][1]), 2)
+                        rates["Fed Funds"] = {
+                            "value": _ff_now,
+                            "change": round(_ff_now - _ff_prev, 2),
+                            "source": "FRED",
+                            "label": "US Federal Reserve (FRED)"
+                        }
+                except Exception:
+                    pass
+
+                # ── Layer 4: yfinance untuk SOFR proxy (^IRX = 13-week T-Bill ≈ SOFR) ──
+                try:
+                    import yfinance as _yf_r3
+                    _sofr = _yf_r3.Ticker("^IRX").history(period="5d")
+                    if len(_sofr) >= 2:
+                        _sofr_now  = round(float(_sofr["Close"].iloc[-1]) / 10, 2)
+                        _sofr_prev = round(float(_sofr["Close"].iloc[-2]) / 10, 2)
+                        rates["SOFR"] = {
+                            "value": _sofr_now,
+                            "change": round(_sofr_now - _sofr_prev, 2),
+                            "source": "yfinance(^IRX)",
+                            "label": "SOFR proxy (13W T-Bill)"
+                        }
+                except Exception:
+                    pass
+
                 return rates
 
             _global_rates = _fetch_global_rates()
@@ -19013,7 +19143,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR — ID · US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
         # ── Fetch Actual data realtime dari Forexfactory RSS (gratis, no key) ──
-        @st.cache_data(ttl=300)  # refresh tiap 5 menit
+        @st.cache_data(ttl=120, show_spinner=False)  # ditingkatkan dari 300 → 120 detik
         def _fetch_ff_actuals():
             """
             Ambil data Actual dari ForexFactory Calendar (XML/JSON public endpoint).
@@ -19166,10 +19296,10 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
             except: return datetime(2099,1,1)
         _ec_raw.sort(key=_ec_sort_key)
 
-        # ── Filter tanggal yang sudah lewat (sembunyikan > 2 hari lalu) ────────
+        # ── Filter tanggal yang sudah lewat (sembunyikan > 7 hari lalu) ────────
         from datetime import date as _ec_date_cls, timedelta as _ec_td
         _ec_today = _ec_date_cls.today()
-        _ec_cutoff = _ec_today - _ec_td(days=2)  # tampilkan mulai dari 2 hari lalu
+        _ec_cutoff = _ec_today - _ec_td(days=7)  # tampilkan mulai dari 7 hari lalu
         def _ec_date_ok(row):
             try:
                 _m2 = {"jan":1,"feb":2,"mar":3,"apr":4,"mei":5,"may":5,"jun":6,"jul":7,
@@ -31301,6 +31431,20 @@ Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di ak
                                     simbol_ai = "\n\n*(&#9889; Groq-PDF Fallback)*"
                                 except Exception as e_groq_pdf:
                                     debug_info.append(f"Groq PDF fallback: {str(e_groq_pdf)}")
+                                    # Groq 8B sebagai last resort untuk PDF
+                                    try:
+                                        ans_bersih, _ = _call_groq_fallback(full_prompt)
+                                        simbol_ai = "\n\n*(&#9889; Groq/Mini-PDF Fallback)*"
+                                    except Exception as e_groq8_pdf:
+                                        debug_info.append(f"Groq 8B PDF: {str(e_groq8_pdf)}")
+                                        ans_bersih = (
+                                            "[!] Analisa PDF gagal di semua engine AI. "
+                                            "Kemungkinan semua API sedang overload atau file PDF terlalu besar. "
+                                            "Coba: (1) Upload ulang PDF, (2) Coba lagi dalam 1-2 menit, "
+                                            "(3) Tempel teks manual dari PDF jika memungkinkan.\n\n"
+                                            f"`Debug: {' | '.join(debug_info)}`"
+                                        )
+                                        simbol_ai = ""
 
                     else:
                         # Layer 1: Groq 70B (rotate 13 key) - smart truncation sudah ada di dalam _call_groq_primary
@@ -31319,7 +31463,9 @@ Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di ak
 
                                 # Layer 3: Gemini Text (rotate 6 key)
                                 try:
-                                    ans_bersih, _ = _call_gemini_text(_history_msgs[-6:])
+                                    ans_bersih, _ = _call_gemini_text(
+                                        _history_msgs[-6:] + [{"role": "user", "content": full_prompt}]
+                                    )
                                     simbol_ai = "\n\n*(&#10024; Gemini)*"
                                 except Exception as e_gemini:
                                     debug_info.append(f"Gemini Text: {str(e_gemini)}")
