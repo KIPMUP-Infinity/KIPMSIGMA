@@ -10836,7 +10836,7 @@ def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
     all_keys = _get_gemini_keys()
     if not all_keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
     keys = _get_available_gemini_keys(all_keys)
-    models = ["gemini-2.5-flash", "gemini-2.0-flash"]
+    models = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"]
     last_err = ""
     for api_key in keys:
         if not _gemini_key_available(api_key):
@@ -10878,7 +10878,7 @@ def _call_gemini_text(messages):
     if not all_keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
     # Prioritaskan key yang tidak sedang cooldown
     keys = _get_available_gemini_keys(all_keys)
-    models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+    models = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"]
     last_err = ""
     for api_key in keys:
         # Skip key yang sedang cooldown (double-check)
