@@ -4364,7 +4364,7 @@ def build_global_context(prompt):
 
     result = [{}]
     def fetch():
-        lines = [f"=== DATA GLOBAL ({datetime.now().strftime('%d %b %Y %H:%M WIB')}) ==="]
+        lines = [f"=== DATA GLOBAL ({_wib_now().strftime('%d %b %Y %H:%M WIB')}) ==="]
         try:
             commodities = _fetch_commodities()
             if commodities:
@@ -4473,8 +4473,8 @@ def build_context(prompt):
     ])
 
     data = _fetch_all_data(tickers)
-    current_year = datetime.now().year
-    lines = [f"Tanggal: {datetime.now().strftime('%d %B %Y %H:%M WIB')} | Tahun: {current_year}"]
+    current_year = _wib_now().year
+    lines = [f"Tanggal: {_wib_now().strftime('%d %B %Y %H:%M WIB')} | Tahun: {current_year}"]
 
     for tk, d in data["prices"].items():
         arah = "▲" if d["chg"]>=0 else "▼"
@@ -5130,7 +5130,7 @@ def enrich_pdf_context(pdf_text):
         lines.append(f"ROE (TTM)      : {price_data['roe']*100:.2f}%")
     if price_data.get("roa"):
         lines.append(f"ROA (TTM)      : {price_data['roa']*100:.2f}%")
-    current_year = datetime.now().year
+    current_year = _wib_now().year
     # Rumus kalkulasi yang tersedia jika data kurang
     lines.append(f"\n── Rumus Hitung Manual ──")
     lines.append(f"PER  = Harga (Rp{price_data.get('price','?'):,}) ÷ EPS laporan")
@@ -5262,7 +5262,7 @@ def _db_write(sheet_name: str, key: str, value) -> bool:
         return False
     try:
         value_str = json.dumps(value, ensure_ascii=False)
-        now_str   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        now_str   = _wib_now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Pastikan data cache ter-load supaya row_index akurat
         _db_load_sheet(sheet_name)
@@ -7295,14 +7295,14 @@ def _call_cerebras(full_prompt, history_msgs=None, max_tokens=8000):
             st.session_state["_api_health"] = {}
         st.session_state["_api_health"]["cerebras"] = {
             "status": "missing_key",
-            "ts": datetime.now().strftime("%H:%M:%S")
+            "ts": _wib_now().strftime("%H:%M:%S")
         }
         raise Exception("CEREBRAS_API_KEY tidak ditemukan di Secrets — layer ini di-skip")
     else:
         if "_api_health" not in st.session_state:
             st.session_state["_api_health"] = {}
         if "cerebras" not in st.session_state["_api_health"]:
-            st.session_state["_api_health"]["cerebras"] = {"status": "key_present", "ts": datetime.now().strftime("%H:%M:%S")}
+            st.session_state["_api_health"]["cerebras"] = {"status": "key_present", "ts": _wib_now().strftime("%H:%M:%S")}
 
     messages = [{"role": "system", "content": GROQ_SYSTEM_PROMPT}]
     if history_msgs:
@@ -7342,7 +7342,7 @@ def _call_cerebras(full_prompt, history_msgs=None, max_tokens=8000):
 # PART 7: SESSION HANDLERS, AUTH & UI (CSS/LOGIN)
 # ─────────────────────────────────────────────
 def new_session():
-    return {"id": str(uuid.uuid4())[:8], "title": "Obrolan Baru", "messages": [SYSTEM_PROMPT], "created": datetime.now().strftime("%d/%m %H:%M")}
+    return {"id": str(uuid.uuid4())[:8], "title": "Obrolan Baru", "messages": [SYSTEM_PROMPT], "created": _wib_now().strftime("%d/%m %H:%M")}
 
 def init_chat():
     if not st.session_state.sessions:
@@ -8265,7 +8265,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                     for t in _fs_ths: t.start()
                     for t in _fs_ths: t.join(timeout=25)
                     if _fs_auto_results:
-                        _fs_auto_ts = datetime.now().strftime("%d %b %Y, %H:%M WIB")
+                        _fs_auto_ts = _wib_now().strftime("%d %b %Y, %H:%M WIB")
                         st.session_state["fs_results"] = _fs_auto_results
                         st.session_state["fs_ts"]      = _fs_auto_ts
                         st.session_state["fs_sektor"]  = "Semua Sektor"
@@ -10004,7 +10004,7 @@ if "do" in st.query_params:
         st.session_state.theme = "light"
     elif _do == "newchat":
         st.session_state.current_view = "chat"
-        ns = {"id": str(uuid.uuid4())[:8], "title": "Obrolan Baru", "created": datetime.now().isoformat(), "messages": [{"role": "system", "content": SYSTEM_PROMPT["content"]}]}
+        ns = {"id": str(uuid.uuid4())[:8], "title": "Obrolan Baru", "created": _wib_now().isoformat(), "messages": [{"role": "system", "content": SYSTEM_PROMPT["content"]}]}
         st.session_state.sessions.insert(0, ns)
         st.session_state.active_id = ns["id"]
     elif _do.startswith("sel_"):
@@ -11250,7 +11250,7 @@ if "do" in st.query_params:
         st.query_params.pop("do", None); st.rerun()
     elif _do == "newchat":
         st.session_state.current_view = "chat"
-        ns = {"id": str(uuid.uuid4()), "title": "Obrolan Baru", "created": datetime.now().isoformat(), "messages": [{"role": "system", "content": SYSTEM_PROMPT["content"]}]}
+        ns = {"id": str(uuid.uuid4()), "title": "Obrolan Baru", "created": _wib_now().isoformat(), "messages": [{"role": "system", "content": SYSTEM_PROMPT["content"]}]}
         st.session_state.sessions.insert(0, ns); st.session_state.active_id = ns["id"]; st.query_params.pop("do", None); st.rerun()
     elif _do.startswith("sel_"):
         st.session_state.current_view = "chat"; _sid = _do[4:]; st.session_state.active_id = _sid; st.query_params.pop("do", None); st.rerun()
@@ -13659,7 +13659,7 @@ window.addEventListener('resize',()=>{
             _com_rows.append(row)
         _com_json = _mkt_json.dumps(_com_rows, ensure_ascii=True)
 
-        _now_wib  = datetime.now().strftime("%d %b %Y \u00b7 %H:%M WIB")
+        _now_wib  = _wib_now().strftime("%d %b %Y \u00b7 %H:%M WIB")
         _idx_h    = max(38 + len(_idx_rows) * 30 + 10, 200)
         _com_h    = max(38 + len(_com_rows) * 30 + 10, 160)
         _total_h  = _idx_h + _com_h + 8
@@ -14850,7 +14850,7 @@ table{{margin-bottom:0!important;}}
 
                 # ── FETCH HARGA REAL-TIME - diinjeksikan ke prompt sebagai FAKTA ──
                 # Ini KRITIS: tanpa ini, Groq akan karang harga dari training data (LAMA)
-                _today = datetime.now().strftime("%d %B %Y, %H:%M WIB")
+                _today = _wib_now().strftime("%d %B %Y, %H:%M WIB")
                 _rt_data = {}
 
                 def _fetch_realtime_prices():
@@ -16004,7 +16004,7 @@ tbody td{{padding:7px 10px;color:{text_main};vertical-align:middle;font-size:0.7
         with ca_filter_col3:
             ca_refresh = st.button("🔄 Refresh", use_container_width=True, key="ca_refresh_btn")
         if ca_refresh:
-            st.session_state["ca_last_refresh"] = datetime.now().strftime("%d %b %Y %H:%M WIB")
+            st.session_state["ca_last_refresh"] = _wib_now().strftime("%d %b %Y %H:%M WIB")
         _ca_ts_disp = st.session_state.get("ca_last_refresh", "Auto (buka pertama hari ini)")
         st.caption(f"🕐 Refresh terakhir: {_ca_ts_disp} · Auto-refresh setiap hari pertama buka tab")
 
@@ -16012,7 +16012,7 @@ tbody td{{padding:7px 10px;color:{text_main};vertical-align:middle;font-size:0.7
             st.cache_data.clear()
 
         # ── Auto-refresh harian: pertama kali buka tab setiap hari baru ──
-        _ca_auto_key = f"ca_auto_loaded_{datetime.now().strftime('%Y%m%d')}"
+        _ca_auto_key = f"ca_auto_loaded_{_wib_now().strftime('%Y%m%d')}"
         if not st.session_state.get(_ca_auto_key):
             st.cache_data.clear()
             st.session_state[_ca_auto_key] = True
@@ -16396,7 +16396,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                         _fs_data = _fetch_fundamental_batch(tuple(_fs_tickers))
                         if not _fs_data:
                             st.warning("⚠️ Tidak ada data yang berhasil diambil. yfinance kemungkinan rate-limited. Coba lagi dalam beberapa menit.")
-                        _fs_ts_now = datetime.now().strftime("%d %b %Y, %H:%M WIB")
+                        _fs_ts_now = _wib_now().strftime("%d %b %Y, %H:%M WIB")
                         st.session_state["fs_results"]  = _fs_data
                         st.session_state["fs_ts"]       = _fs_ts_now
                         st.session_state["fs_sort_key"] = _fs_sort
@@ -18413,7 +18413,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
             import json as _json
             _fed_json = _json.dumps(_fed_meetings)
             _is_dark_js = "true" if is_dark else "false"
-            _updated_str = datetime.now().strftime("%b %d, %Y %I:%M%p") + " WIB"
+            _updated_str = _wib_now().strftime("%b %d, %Y %I:%M%p") + " WIB"
 
             # ── Render via components.html - BYPASS Streamlit markdown sanitizer ──
             components.html(f"""
@@ -19730,7 +19730,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             st.session_state["ec_ai_actual"]    = _act_display
             st.session_state["ec_ai_beat_miss"] = _beat_miss
             st.session_state["ec_ai_model"]     = _ec_ai_model
-            st.session_state["ec_ai_timestamp"] = datetime.now().strftime("%d %b %Y, %H:%M WIB")
+            st.session_state["ec_ai_timestamp"] = _wib_now().strftime("%d %b %Y, %H:%M WIB")
             if st.session_state.get("user"):
                 _sv = load_user(st.session_state.user["email"]) or {}
                 _sv["ec_ai_result"]    = _ec_ai_resp
@@ -20092,7 +20092,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 return _result, _mktcap
 
             # ── Jalankan screening (cached 24 jam) ──────────────────────────
-            _screening_key = f"rrg_screen_{datetime.now().strftime('%Y%m%d')}"
+            _screening_key = f"rrg_screen_{_wib_now().strftime('%Y%m%d')}"
             _rrg_screened, _all_mktcap = _screen_top500_by_mktcap()
             _screen_total = len(_all_mktcap)
 
@@ -22302,7 +22302,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         del st.session_state[_k]
                 st.session_state["_tr_manual_trigger"] = True
                 _auto_update_track_record()
-                st.session_state["tr_last_manual_update"] = datetime.now().strftime("%d %b %Y %H:%M WIB") if not callable(locals().get("_wib_now")) else _wib_now().strftime("%d %b %Y %H:%M WIB")
+                st.session_state["tr_last_manual_update"] = _wib_now().strftime("%d %b %Y %H:%M WIB") if not callable(locals().get("_wib_now")) else _wib_now().strftime("%d %b %Y %H:%M WIB")
                 st.success("✅ Status track record berhasil di-update!", icon="✅")
                 st.rerun()
 
@@ -23138,7 +23138,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                                                 'vol_context':     vol_context if 'vol_context' in locals() else '',
                                                 'sigma_result':    _sr_serializable,
                                                 'ticker':          ticker_input,
-                                                'timestamp':       datetime.now().strftime("%d %b %Y, %H:%M WIB"),
+                                                'timestamp':       _wib_now().strftime("%d %b %Y, %H:%M WIB"),
                                             }
                                             st.session_state[_insight_cache_key] = _cache_payload
                                             # ── Persist ke database agar tidak hilang saat rerun ──
@@ -25422,7 +25422,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
             if avg_chg > 1 and n_confluence >= 2:
                 outlook = f"🟢 Pasar {plan_type} BULLISH — {n_confluence} saham multi-screener confluence. Fokus BigAccum + ForeignFlow."
             elif avg_chg > 0:
-                outlook = f"🟡 Pasar {plan_type} moderat positif ({avg_chg:+.1f}% avg). Selektif di screener terkonfirmasi GoAPI."
+                outlook = f"🟡 Pasar {plan_type} moderat positif ({avg_chg:+.1f}% avg)."
             elif avg_chg < -1:
                 outlook = f"🔴 Bias {plan_type} mixed-bearish. Tunggu konfirmasi volume + Foreign Flow sebelum entry."
             else:
@@ -25956,7 +25956,15 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
                         entry.get("tickers", entry.get("saham_list", []))
                     )
                     if not isinstance(rows, list): continue
-                    _date_str = entry.get("date", slot_key[:10])
+                    # Normalize slot_key → YYYY-MM-DD (handle legacy YYYYMMDD_x format)
+                    _sk_date_raw = slot_key.split("_")[0]
+                    if len(_sk_date_raw) == 8 and _sk_date_raw.isdigit():
+                        _sk_date_norm = f"{_sk_date_raw[:4]}-{_sk_date_raw[4:6]}-{_sk_date_raw[6:8]}"
+                    else:
+                        _sk_date_norm = _sk_date_raw[:10]
+                    _date_str = entry.get("date", _sk_date_norm)
+                    if isinstance(_date_str, str) and len(_date_str) == 8 and _date_str.isdigit():
+                        _date_str = f"{_date_str[:4]}-{_date_str[4:6]}-{_date_str[6:8]}"
                     _type_str = _map_type[_plan_key]
                     for t in rows:
                         if not isinstance(t, dict) or not t.get("ticker"): continue
@@ -25964,7 +25972,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
                             "ticker":     t.get("ticker",""),
                             "type":       _type_str,
                             "plan_type":  _plan_key.upper(),
-                            "plan_date":  slot_key[:10],
+                            "plan_date":  _sk_date_norm,
                             "date":       _date_str,
                             "entry":      t.get("entry_low", t.get("entry",0)),
                             "entry_low":  t.get("entry_low", t.get("entry",0)),
@@ -26096,6 +26104,14 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
                     "  if(mid>0) return fmt(mid);"
                     "  return '-';"
                     "}"
+                    "var _MN=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];"
+                    "function fmtDate(s){"
+                    "  if(!s||s==='-') return '-';"
+                    "  var raw=String(s).replace(/_.*$/,'').trim();"
+                    "  var m=raw.match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);"
+                    "  if(m) return parseInt(m[3])+' '+_MN[parseInt(m[2])-1]+' '+m[1];"
+                    "  return raw.slice(0,10);"
+                    "}"
                     "REC.forEach(function(r,i){"
                     "var badgeCls=r.result==='WIN'?'badge-win':r.result==='LOSS'?'badge-loss':'badge-open';"
                     "var st_lbl=r.status==='TP2'?'TP2':r.status==='TP1'?'TP1':r.result==='WIN'?'WIN':r.result==='LOSS'?'LOSS':'OPEN';"
@@ -26106,7 +26122,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
                     "var rowBg=r.result==='WIN'?'rgba(8,153,129,0.04)':r.result==='LOSS'?'rgba(242,54,69,0.04)':'transparent';"
                     "tb.innerHTML+='<tr style=\"background:'+rowBg+'\">'"
                     "+'<td style=\"color:#64748b;font-size:0.72rem;\">'+r.id+'</td>'"
-                    "+'<td style=\"color:#64748b;font-size:0.75rem;\">'+(r.date||'-')+'</td>'"
+                    "+'<td style=\"color:#64748b;font-size:0.75rem;\">'+fmtDate(r.date||r.plan_date)+'</td>'"
                     "+'<td><span class=\"tk\">'+r.ticker+'</span></td>'"
                     "+'<td><span style=\"color:'+typeColor+';font-weight:700;font-size:0.72rem;background:'+typeColor+'22;padding:2px 6px;border-radius:4px;\">'+(r.type||'-')+'</span></td>'"
                     "+'<td style=\"color:#a78bfa;font-size:0.78rem;\">'+fmtEntry(r)+'</td>'"
@@ -28551,27 +28567,11 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
 
 
 
-                # ── GoAPI status indicator + test button ──
+                # ── GoAPI test button ──
                 _goapi_key_ok = _goapi_available()
                 _goapi_last_err = st.session_state.get("_goapi_last_error", "")
                 _goapi_srv_down = st.session_state.get("_goapi_server_down", False)
-                _goapi_status_c = "#26a69a" if _goapi_key_ok else "#f23645"
-                _goapi_status_lbl = "✅ Key Aktif" if _goapi_key_ok else "❌ Key Tidak Ada"
-                if _goapi_srv_down:
-                    _goapi_status_c   = "#f59e0b"
-                    _goapi_status_lbl = "⚠️ Server GoAPI Down (523/5xx) — coba lagi nanti"
                 _gapi_col1, _gapi_col2, _gapi_col3 = st.columns([2, 1, 1])
-                with _gapi_col1:
-                    _goapi_err_html = (
-                        f"&nbsp;&nbsp;&middot;&nbsp;&nbsp;<span style='color:#f59e0b;'>{_goapi_last_err[:60]}...</span>"
-                        if _goapi_last_err and not _goapi_srv_down else ""
-                    )
-                    st.markdown(
-                        f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
-                        f"color:{_goapi_status_c};padding:6px 0;'>"
-                        f"🔗 GoAPI: <b>{_goapi_status_lbl}</b>{_goapi_err_html}"
-                        f"</div>",
-                        unsafe_allow_html=True)
                 with _gapi_col2:
                     if st.button("🔍 Test GoAPI", key="btn_test_goapi",
                                  use_container_width=True,
@@ -29307,11 +29307,11 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                             s["momentum_days"] = _streak
 
                         st.session_state["sigma_bs30_screened"] = _top30
-                        _ts_now = datetime.now().strftime("%d %b %Y, %H:%M WIB")
+                        _ts_now = _wib_now().strftime("%d %b %Y, %H:%M WIB")
                         st.session_state["sigma_bs30_ts"] = _ts_now
                         # Simpan ke history
                         _bsh2 = st.session_state.get("brosum_history", {})
-                        _bsh2[_today_key_s30] = {"date": datetime.now().strftime("%d %b %Y"),
+                        _bsh2[_today_key_s30] = {"date": _wib_now().strftime("%d %b %Y"),
                                                   "generated_at": _ts_now, "screened": _top30}
                         if len(_bsh2) > 30:
                             for _dk in sorted(_bsh2.keys())[:-30]: del _bsh2[_dk]
@@ -31625,7 +31625,7 @@ else:
                     fund_text = build_fundamental_from_text(f"fundamental {emiten_target}")
                 except:
                     fund_text = "Data live gagal ditarik, gunakan estimasi dari knowledge base."
-                tahun_sekarang = datetime.now().year
+                tahun_sekarang = _wib_now().year
                 full_prompt = f"""Kamu adalah SIGMA AI - analis ekuitas institusional yang menguasai teori valuasi dari Aswath Damodaran, filosofi investasi Benjamin Graham & Peter Lynch, serta teknik akuntansi forensik Howard Schilit. Lakukan analisa fundamental mendalam terhadap saham {emiten_target}.
 
 [DATA LIVE {emiten_target}]:
@@ -31664,7 +31664,7 @@ Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di ak
             emiten_target = emiten_match.group(0).upper()
             is_bank = emiten_target in BANK_TICKERS
             chosen_template = TEMPLATE_BANK if is_bank else TEMPLATE_NON_BANK
-            tahun_sekarang = datetime.now().year
+            tahun_sekarang = _wib_now().year
 
             with st.spinner(f"Kalkulasi & Tarik Data Multi-Sumber {emiten_target}..."):
                 try:
