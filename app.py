@@ -8008,41 +8008,22 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                     if _bs30_dp:
                         _bs30_dp_src = (st.session_state.get("brosum_history", {})
                                         .get(_today_s, {}).get("source", "broker"))
-                        import yfinance as _yf_dp
                         _tickers_dp = tuple(s["ticker"] for s in _bs30_dp if s.get("ticker"))
-                        _pm_dp = {}
-                        for _tk_dp in _tickers_dp[:30]:
-                            try:
-                                _h_dp = _yf_dp.Ticker(f"{_tk_dp}.JK").history(period="5d")
-                                if not _h_dp.empty:
-                                    _pm_dp[_tk_dp] = {
-                                        "close": float(_h_dp["Close"].iloc[-1]),
-                                        "high":  float(_h_dp["High"].iloc[-1]),
-                                        "low":   float(_h_dp["Low"].iloc[-1]),
-                                        "volume":float(_h_dp["Volume"].iloc[-1]) if "Volume" in _h_dp else 0,
-                                        "prev_close": float(_h_dp["Close"].iloc[-2]) if len(_h_dp)>1 else float(_h_dp["Close"].iloc[-1]),
-                                    }
-                            except Exception: pass
+                        # Bug #4 fix: gunakan _reco_fetch_prices + _rule_based_plan_v2
+                        # (bukan hardcoded entry/tp/sl persentase kasar)
+                        try:
+                            _pm_dp = _reco_fetch_prices(_tickers_dp)
+                        except Exception:
+                            _pm_dp = {}
                         if _pm_dp:
                             _src_note = "" if _bs30_dp_src != "fallback_yfinance" else " · Screened via fallback (broker API limit)"
-                            _plan_dp = {"daily": [], "avoid": [], "outlook": f"Auto-generated jam 21:00 WIB{_src_note}"}
-                            for _s_dp in _bs30_dp[:20]:
-                                _tk2 = _s_dp.get("ticker","")
-                                if _tk2 not in _pm_dp: continue
-                                _pd2 = _pm_dp[_tk2]
-                                _cl2 = _pd2["close"]
-                                _spk = _s_dp.get("spike",1.0)
-                                if _spk >= 2.0:
-                                    _plan_dp["daily"].append({
-                                        "ticker": _tk2, "price": int(_cl2),
-                                        "entry_low": int(_cl2*0.99), "entry_high": int(_cl2*1.01),
-                                        "tp1": int(_cl2*1.04), "tp2": int(_cl2*1.07),
-                                        "sl": int(_cl2*0.97), "rr": "1:1.5",
-                                        "horizon": "1-3 hari", "rating": "BUY",
-                                        "vol_spike": f"{_spk:.1f}x",
-                                        "why_buy": f"Volume spike {_spk:.1f}x avg20 · Auto-screened 21:00",
-                                    })
-                            if _plan_dp["daily"]:
+                            try:
+                                _plan_dp = _rule_based_plan_v2(_pm_dp, _bs30_dp, "daily")
+                                if _plan_dp:
+                                    _plan_dp["outlook"] = (_plan_dp.get("outlook") or "") + f" · Auto-generated jam 21:00 WIB{_src_note}"
+                            except Exception:
+                                _plan_dp = None
+                            if _plan_dp and _plan_dp.get("daily"):
                                 _dph_cur = st.session_state.get("auto_plan_history_daily", {})
                                 _gen_at  = _now_sch.strftime("%d %b %Y, %H:%M WIB")
                                 _dph_cur[_slot_dp] = {
@@ -8328,41 +8309,21 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                         _last_wp_k = sorted(_bsh_wp_chk.keys())[-1]
                         _bs30_wp_src = _bsh_wp_chk[_last_wp_k].get("source", "broker")
                     if _bs30_wp:
-                        import yfinance as _yf_wp
-                        _pm_wp = {}
-                        for _tk_wp in [s["ticker"] for s in _bs30_wp if s.get("ticker")][:30]:
-                            try:
-                                _h_wp = _yf_wp.Ticker(f"{_tk_wp}.JK").history(period="10d")
-                                if not _h_wp.empty:
-                                    _pm_wp[_tk_wp] = {
-                                        "close": float(_h_wp["Close"].iloc[-1]),
-                                        "high":  float(_h_wp["High"].max()),
-                                        "low":   float(_h_wp["Low"].min()),
-                                        "volume":float(_h_wp["Volume"].iloc[-1]) if "Volume" in _h_wp else 0,
-                                        "prev_close": float(_h_wp["Close"].iloc[-2]) if len(_h_wp)>1 else float(_h_wp["Close"].iloc[-1]),
-                                    }
-                            except Exception: pass
+                        _tickers_wp = tuple(s["ticker"] for s in _bs30_wp if s.get("ticker"))
+                        # Bug #4 fix: gunakan _reco_fetch_prices + _rule_based_plan_v2 untuk weekly
+                        try:
+                            _pm_wp = _reco_fetch_prices(_tickers_wp)
+                        except Exception:
+                            _pm_wp = {}
                         if _pm_wp:
                             _src_note_w = "" if _bs30_wp_src != "fallback_yfinance" else " · Screened via fallback (broker API limit)"
-                            _plan_wp = {"weekly": [], "avoid": [], "outlook": f"Auto-generated Sabtu 12:00 WIB — weekly swing plan{_src_note_w}"}
-                            for _s_wp in _bs30_wp[:20]:
-                                _tk_w2 = _s_wp.get("ticker","")
-                                if _tk_w2 not in _pm_wp: continue
-                                _pd_w2 = _pm_wp[_tk_w2]
-                                _cl_w2 = _pd_w2["close"]
-                                _spk_w = _s_wp.get("spike",1.0)
-                                if _spk_w >= 1.6:
-                                    _plan_wp["weekly"].append({
-                                        "ticker": _tk_w2, "price": int(_cl_w2),
-                                        "entry_low": int(_cl_w2*0.99), "entry_high": int(_cl_w2*1.01),
-                                        "tp1": int(_cl_w2*1.07), "tp2": int(_cl_w2*1.12),
-                                        "sl": int(_cl_w2*0.96), "rr": "1:2",
-                                        "horizon": "3-5 hari",
-                                        "rating": "BUY",
-                                        "vol_spike": f"{_spk_w:.1f}x",
-                                        "why_buy": f"Swing kandidat · spike {_spk_w:.1f}x · weekly trend",
-                                    })
-                            if _plan_wp["weekly"]:
+                            try:
+                                _plan_wp = _rule_based_plan_v2(_pm_wp, _bs30_wp, "weekly")
+                                if _plan_wp:
+                                    _plan_wp["outlook"] = (_plan_wp.get("outlook") or "") + f" · Auto-generated Sabtu 12:00 WIB{_src_note_w}"
+                            except Exception:
+                                _plan_wp = None
+                            if _plan_wp and _plan_wp.get("weekly"):
                                 _wph_cur = st.session_state.get("auto_plan_history_weekly", {})
                                 _gen_wp  = _now_sch.strftime("%d %b %Y, %H:%M WIB")
                                 _wph_cur[_slot_wp] = {
@@ -22439,6 +22400,37 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 
                     if _edit_changed:
                         st.session_state["tr_records"] = _tr_records_live
+                        # Bug #8 fix: juga update auto_plan_history_* agar status tidak hilang setelah rerun
+                        for _hist_key, _hist_ptype in [
+                            ("auto_plan_history_bsjp",   "BSJP"),
+                            ("auto_plan_history_daily",  "DAILY"),
+                            ("auto_plan_history_weekly", "WEEKLY"),
+                        ]:
+                            _hist_data = st.session_state.get(_hist_key, {})
+                            _hist_changed = False
+                            for _hk, _hentry in _hist_data.items():
+                                if not isinstance(_hentry, dict): continue
+                                for _tlist_key in ["tickers", "saham_list"]:
+                                    for _ht in _hentry.get(_tlist_key, []):
+                                        if not isinstance(_ht, dict): continue
+                                        _ht_key = (_ht.get("ticker",""), _hist_ptype, str(_hk)[:10])
+                                        # Cari apakah record ini di-edit di mode edit
+                                        for _lr in _tr_records_live:
+                                            _lr_key = (
+                                                str(_lr.get("ticker","")),
+                                                str(_lr.get("plan_type", _lr.get("mode",""))),
+                                                str(_lr.get("plan_date",""))[:10]
+                                            )
+                                            if _lr_key == _ht_key:
+                                                _ht["status"]     = _lr.get("status", _ht.get("status","OPEN"))
+                                                _ht["result_pct"] = _lr.get("result_pct", _ht.get("result_pct",0))
+                                                _hist_changed = True
+                            if _hist_changed:
+                                st.session_state[_hist_key] = _hist_data
+                                if st.session_state.get("user"):
+                                    try:
+                                        save_field(st.session_state.user["email"], _hist_key, _hist_data)
+                                    except Exception: pass
                         if st.session_state.get("user"):
                             try:
                                 save_field(st.session_state.user["email"], "tr_records", _tr_records_live)
@@ -22622,45 +22614,37 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 _use_cached_insight = False
                 _ai_cache_hit       = False
 
-                # ── PERBAIKAN: Restore ai_data dari cache TANPA harus klik Analyze ──
-                # Ini memastikan TP/SL box di bawah chart tetap tampil setelah analisa sebelumnya
-                if not df_chart.empty:
-                    try:
-                        _last_close = float(df_chart['Close'].iloc[-1])
-                        _last_date  = df_chart.index[-1].strftime('%Y%m%d')
-                        _insight_cache_key = f"sigma_insight_{ticker_input}_{_last_date}_{int(_last_close)}"
-                        _cached_prev = st.session_state.get(_insight_cache_key)
-                        if _cached_prev and not run_analysis:
-                            # Tanpa klik Analyze → restore ai_data dari cache agar TP/SL tetap tampil
-                            _prev_price    = _cached_prev.get('price', 0)
-                            _prev_diff_pct = abs(_last_close - _prev_price) / _prev_price if _prev_price > 0 else 1
-                            # Cache key sudah mengandung tanggal (_last_date) — auto-expire by date.
-                            # 2% threshold: toleransi intraday noise saja (bukan cross-day).
-                            if _prev_diff_pct < 0.02:   # dalam 2% intraday → masih relevan
-                                ai_data         = _cached_prev.get('ai_data')
-                                ai_text_verdict = _cached_prev.get('ai_text_verdict', '')
-                    except Exception:
-                        pass
-
+                # ── Bug #3 fix: Hitung _insight_cache_key SATU KALI, pakai untuk restore dan cache-hit check ──
                 if not df_chart.empty:
                     try:
                         _last_close = float(df_chart['Close'].iloc[-1])
                         _last_date  = df_chart.index[-1].strftime('%Y%m%d')
                         _insight_cache_key = f"sigma_insight_{ticker_input}_{_last_date}_{int(_last_close)}"
                         _cached = st.session_state.get(_insight_cache_key)
-                        if _cached and run_analysis:
+                        if _cached:
                             _cached_price   = _cached.get('price', 0)
                             _price_diff_pct = abs(_last_close - _cached_price) / _cached_price if _cached_price > 0 else 1
-                            # Cache key sudah date-keyed → cross-day otomatis invalid.
-                            # 0.5% intraday threshold: cukup untuk saham mid-large cap.
-                            if _price_diff_pct < 0.005:   # <0.5% intraday → pakai cache
+                            if not run_analysis and _price_diff_pct < 0.02:
+                                # Restore TP/SL tanpa klik Analyze
+                                ai_data         = _cached.get('ai_data')
+                                ai_text_verdict = _cached.get('ai_text_verdict', '')
+                            if run_analysis and _price_diff_pct < 0.005:
+                                # Cache hit saat Analyze diklik
                                 _use_cached_insight = True
                                 _ai_cache_hit       = True
                                 ai_raw_result       = _cached['ai_raw_result']
                                 ai_data             = _cached['ai_data']
                                 ai_text_verdict     = _cached['ai_text_verdict']
                                 vol_context         = _cached.get('vol_context', '')
-                                _sigma_result       = _cached.get('sigma_result', None)
+                                _sr_cached = _cached.get('sigma_result', None)
+                                # Bug #2 fix: rebuild SigmaScoreResult object dari dict (disimpan sebagai dict)
+                                if isinstance(_sr_cached, dict):
+                                    try:
+                                        _sigma_result = SigmaScoreResult(**_sr_cached)
+                                    except Exception:
+                                        _sigma_result = None
+                                else:
+                                    _sigma_result = _sr_cached
                     except Exception:
                         _insight_cache_key = None
 
@@ -23105,13 +23089,26 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                                     # ── SIMPAN KE CACHE ─────────────────────────
                                     if _insight_cache_key and ai_text_verdict:
                                         try:
+                                            # Bug #2 fix: convert _sigma_result dataclass → dict agar JSON-serializable
+                                            _sr_raw = _sigma_result if '_sigma_result' in locals() else None
+                                            if _sr_raw is not None:
+                                                try:
+                                                    from dataclasses import asdict as _asdict
+                                                    _sr_serializable = _asdict(_sr_raw)
+                                                except Exception:
+                                                    try:
+                                                        _sr_serializable = vars(_sr_raw)
+                                                    except Exception:
+                                                        _sr_serializable = None
+                                            else:
+                                                _sr_serializable = None
                                             _cache_payload = {
                                                 'price':           float(df_chart['Close'].iloc[-1]) if not df_chart.empty else 0,
                                                 'ai_raw_result':   ai_raw_result,
                                                 'ai_data':         ai_data,
                                                 'ai_text_verdict': ai_text_verdict,
-                                                'vol_context':     vol_context if 'vol_context' in dir() else '',
-                                                'sigma_result':    _sigma_result if '_sigma_result' in dir() else None,
+                                                'vol_context':     vol_context if 'vol_context' in locals() else '',
+                                                'sigma_result':    _sr_serializable,
                                                 'ticker':          ticker_input,
                                                 'timestamp':       datetime.now().strftime("%d %b %Y, %H:%M WIB"),
                                             }
@@ -24827,7 +24824,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
 
                 if is_bsjp:
                     # BSJP: filter harga, minimal sinyal bullish, tidak boleh terlalu turun
-                    if price <= 0 or price > 8000:
+                    if price <= 0 or price > 50000:  # Bug #7 fix: 8000→50000
                         continue
                     if spike < 1.2 or d.get("chg", 0) < -5:
                         continue
@@ -24860,7 +24857,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
             avoid_cands = []
             for tk, d in price_data_map.items():
                 price = d.get("price", 0)
-                if is_bsjp and price > 8000:
+                if is_bsjp and price > 50000:  # Bug #7 fix: 8000→50000
                     continue
                 brs   = d.get("bearish_score", 0)
                 spike = d.get("spike", 1)
@@ -26323,7 +26320,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                     _vs_fr = _vl_fr[_ck_fr].dropna() if _vl_fr is not None and _ck_fr in _vl_fr.columns else None
                                     if len(_cs_fr) < 5: continue
                                     _pr_fr = float(_cs_fr.iloc[-1])
-                                    if _pr_fr > 8000: continue
+                                    if _pr_fr > 50000: continue  # Bug #7 fix: 8000→50000, agar BBCA/TLKM/UNTR tidak terbuang
                                     _spk_fr = 1.0
                                     if _vs_fr is not None and len(_vs_fr) >= 20:
                                         _avg20_fr = float(_vs_fr.iloc[-21:-1].mean())
@@ -26441,20 +26438,40 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         </div>
                     </div>""", unsafe_allow_html=True)
                 elif not _today_entry and _bs30_count > 0:
-                    # Belum jam 21:00 atau belum auto-generate
-                    # PENTING: langsung SIMPAN ke history (bukan sekedar preview)
-                    # Supaya plan masuk History Trade Plan, History Summary, dan Track Record
+                    # Bug #5 fix: Belum ada plan hari ini — tampilkan preview SAJA, TIDAK auto-persist.
+                    # Plan baru masuk history jika user klik tombol "Generate Plan" secara eksplisit.
                     _preview_map = _reco_fetch_prices(tuple(s["ticker"] for s in _bs30_cache if s.get("ticker")))
                     if _preview_map:
                         _preview_plan = _rule_based_plan_v2(_preview_map, _bs30_cache, "daily")
-                        _preview_slot = f"{_today_key}_manual"
-                        # Cek apakah slot manual hari ini sudah ada (hindari double-save)
-                        _dh_check = st.session_state.get("auto_plan_history_daily", {})
-                        if _preview_slot not in _dh_check:
-                            _save_auto_plan_to_history("daily", _preview_plan, _preview_slot,
-                                                       _now_d.strftime("%d %b %Y"), "Generate Manual")
+                        # Hanya render preview di UI, TIDAK simpan ke session_state/Sheets
+                        _preview_rows_buy  = (_preview_plan or {}).get("daily", [])
+                        _preview_rows_avoid= (_preview_plan or {}).get("avoid", [])
+                        _preview_outlook   = (_preview_plan or {}).get("outlook", "")
+                        if _preview_rows_buy:
+                            st.info(
+                                "⚡ **Preview Plan** — Data broker sudah tersedia. "
+                                "Klik **Generate Plan** di bawah untuk menyimpan ke history.",
+                                icon="ℹ️"
+                            )
+                            # Tampilkan preview sebagai _today_entry sementara (hanya in-memory, tidak persist)
+                            _today_entry = {
+                                "plan": _preview_plan,
+                                "generated_at": f"Preview · {_now_d.strftime('%d %b %Y, %H:%M WIB')}",
+                                "date": _now_d.strftime("%d %b %Y"),
+                                "slot": "Preview (belum disimpan)",
+                                "_is_preview": True,
+                            }
+
+                if _today_entry and _today_entry.get("_is_preview"):
+                    # Tombol Generate Plan — hanya ini yang menyimpan ke history
+                    if st.button("💾 Generate & Simpan Plan Hari Ini", key="daily_save_preview_btn", use_container_width=True, type="primary"):
+                        _save_slot = f"{_today_key}_manual"
+                        _save_auto_plan_to_history("daily", _preview_plan, _save_slot,
+                                                   _now_d.strftime("%d %b %Y"), "Generate Manual")
                         _daily_hist  = st.session_state.get("auto_plan_history_daily", {})
-                        _today_entry = _daily_hist.get(_preview_slot)
+                        _today_entry = _daily_hist.get(_save_slot)
+                        st.success("✅ Plan berhasil disimpan ke history!")
+                        st.rerun()
 
                 if _today_entry:
                     _plan_data = _today_entry.get("plan", {})
@@ -26865,8 +26882,39 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                     unsafe_allow_html=True
                                 )
                             except Exception as _de_e:
-                                _de_header.empty()
-                                st.error(f"Gagal evaluasi: {_de_e}")
+                                # Bug #9 fix: fallback ke Gemini lalu Cerebras jika Groq rate limit/gagal
+                                _de_fallback_result = None
+                                _de_fallback_model  = ""
+                                try:
+                                    _de_fallback_result, _de_fallback_model = _call_gemini_text([{"role": "user", "content": _de_prompt}])
+                                except Exception:
+                                    try:
+                                        _de_fallback_result, _de_fallback_model = _call_cerebras(_de_prompt, max_tokens=2000)
+                                    except Exception:
+                                        _de_fallback_result = None
+                                if _de_fallback_result:
+                                    _de_container.markdown(
+                                        f"<div style='background:rgba(167,139,250,0.05);"
+                                        f"border:1px solid rgba(167,139,250,0.2);"
+                                        f"border-radius:10px;padding:16px 18px;"
+                                        f"font-size:0.82rem;line-height:1.8;"
+                                        f"color:{text_main};white-space:pre-wrap;"
+                                        f"font-family:IBM Plex Mono,monospace;'>"
+                                        f"{_de_fallback_result}</div>",
+                                        unsafe_allow_html=True
+                                    )
+                                    st.session_state["daily_eval_ai_result"] = _de_fallback_result
+                                    st.session_state["daily_eval_ai_n"]      = _de_n_now
+                                    _de_header.markdown(
+                                        f"<p style='font-size:0.7rem;color:{text_sub};margin-top:6px;"
+                                        f"font-family:IBM Plex Mono,monospace;'>"
+                                        f"Model: {_de_fallback_model} (fallback) &middot; "
+                                        f"{_wib_now().strftime('%d %b %Y %H:%M')} WIB</p>",
+                                        unsafe_allow_html=True
+                                    )
+                                else:
+                                    _de_header.empty()
+                                    st.error(f"Gagal evaluasi (Groq + Gemini + Cerebras): {_de_e}")
 
         with reco_tab_weekly:
 
@@ -27321,8 +27369,39 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                     unsafe_allow_html=True
                                 )
                             except Exception as _we_e:
-                                _we_header.empty()
-                                st.error(f"Gagal evaluasi: {_we_e}")
+                                # Bug #9 fix: fallback ke Gemini lalu Cerebras jika Groq rate limit/gagal
+                                _we_fallback_result = None
+                                _we_fallback_model  = ""
+                                try:
+                                    _we_fallback_result, _we_fallback_model = _call_gemini_text([{"role": "user", "content": _we_prompt}])
+                                except Exception:
+                                    try:
+                                        _we_fallback_result, _we_fallback_model = _call_cerebras(_we_prompt, max_tokens=2000)
+                                    except Exception:
+                                        _we_fallback_result = None
+                                if _we_fallback_result:
+                                    _we_container.markdown(
+                                        f"<div style='background:rgba(38,166,154,0.05);"
+                                        f"border:1px solid rgba(38,166,154,0.2);"
+                                        f"border-radius:10px;padding:16px 18px;"
+                                        f"font-size:0.82rem;line-height:1.8;"
+                                        f"color:{text_main};white-space:pre-wrap;"
+                                        f"font-family:IBM Plex Mono,monospace;'>"
+                                        f"{_we_fallback_result}</div>",
+                                        unsafe_allow_html=True
+                                    )
+                                    st.session_state["weekly_eval_ai_result"] = _we_fallback_result
+                                    st.session_state["weekly_eval_ai_n"]      = _we_n_now
+                                    _we_header.markdown(
+                                        f"<p style='font-size:0.7rem;color:{text_sub};margin-top:6px;"
+                                        f"font-family:IBM Plex Mono,monospace;'>"
+                                        f"Model: {_we_fallback_model} (fallback) &middot; "
+                                        f"{_wib_now().strftime('%d %b %Y %H:%M')} WIB</p>",
+                                        unsafe_allow_html=True
+                                    )
+                                else:
+                                    _we_header.empty()
+                                    st.error(f"Gagal evaluasi (Groq + Gemini + Cerebras): {_we_e}")
 
         with reco_tab_bsjp:
 
@@ -27813,9 +27892,41 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                     unsafe_allow_html=True
                                 )
                             except Exception as _be_e:
-                                _be_header.empty()
-                                st.error(f"Gagal evaluasi: {_be_e}")
+                                # Bug #9 fix: fallback ke Gemini lalu Cerebras jika Groq rate limit/gagal
+                                _be_fallback_result = None
+                                _be_fallback_model  = ""
+                                try:
+                                    _be_fallback_result, _be_fallback_model = _call_gemini_text([{"role": "user", "content": _be_prompt}])
+                                except Exception:
+                                    try:
+                                        _be_fallback_result, _be_fallback_model = _call_cerebras(_be_prompt, max_tokens=2000)
+                                    except Exception:
+                                        _be_fallback_result = None
+                                if _be_fallback_result:
+                                    _be_container.markdown(
+                                        f"<div style='background:rgba(245,166,35,0.05);"
+                                        f"border:1px solid rgba(245,166,35,0.25);"
+                                        f"border-radius:10px;padding:16px 18px;"
+                                        f"font-size:0.82rem;line-height:1.8;"
+                                        f"color:{text_main};white-space:pre-wrap;"
+                                        f"font-family:IBM Plex Mono,monospace;'>"
+                                        f"{_be_fallback_result}</div>",
+                                        unsafe_allow_html=True
+                                    )
+                                    st.session_state["bsjp_eval_ai_result"] = _be_fallback_result
+                                    st.session_state["bsjp_eval_ai_n"]      = _be_n_now
+                                    _be_header.markdown(
+                                        f"<p style='font-size:0.7rem;color:{text_sub};margin-top:6px;"
+                                        f"font-family:IBM Plex Mono,monospace;'>"
+                                        f"Model: {_be_fallback_model} (fallback) &middot; "
+                                        f"{_wib_now().strftime('%d %b %Y %H:%M')} WIB</p>",
+                                        unsafe_allow_html=True
+                                    )
+                                else:
+                                    _be_header.empty()
+                                    st.error(f"Gagal evaluasi (Groq + Gemini + Cerebras): {_be_e}")
 # ─────────────────────────────────────────────
+
     with alpha_tab_brosum:
 
         # [UI statement removed]
@@ -27929,28 +28040,41 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
             "DM": ("Masindo Artha Sekuritas",          "LOKAL",   "0"),
         }
 
-        @st.cache_data(ttl=300, show_spinner=False)
         def _fetch_idx_broker_summary(ticker, period="daily"):
-            """Fetch broker summary: GoAPI primary → IDX API fallback."""
-            import urllib.request, json as _j
-            from datetime import date as _td, timedelta
-
+            # Bug #6 fix: gunakan st.session_state sebagai manual TTL cache (300 detik)
+            # @st.cache_data di dalam nested block di-reset setiap render — tidak efektif.
+            import urllib.request, json as _jbs
+            from datetime import date as _td_bs, timedelta as _tdelta_bs
+            import time as _time_bs
+            _cache_key = f"_brosum_cache_{ticker}_{period}"
+            _cache_ts_key = f"_brosum_cache_ts_{ticker}_{period}"
+            _now_ts = _time_bs.time()
+            _cached_val = st.session_state.get(_cache_key)
+            _cached_ts  = st.session_state.get(_cache_ts_key, 0)
+            if _cached_val is not None and (_now_ts - _cached_ts) < 300:
+                return _cached_val
+            # Fetch fresh data
+            result = []
             if _goapi_available():
                 for delta in [0, 1, 2, 3]:
-                    _date_str = str(_td.today() - timedelta(days=delta))
+                    _date_str = str(_td_bs.today() - _tdelta_bs(days=delta))
                     rows = goapi_get_broker_summary(ticker, _date_str)
                     if rows:
-                        return rows
-
-            try:
-                url = f"https://www.idx.co.id/umbraco/Surface/StockData/GetBrokerSummary?code={ticker}&type={period}"
-                req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0","Referer":"https://www.idx.co.id/"})
-                with urllib.request.urlopen(req, timeout=8) as r:
-                    data = _j.loads(r.read())
-                if data and isinstance(data, list) and len(data) > 0:
-                    return data
-            except Exception: pass
-            return []
+                        result = rows
+                        break
+            if not result:
+                try:
+                    url = f"https://www.idx.co.id/umbraco/Surface/StockData/GetBrokerSummary?code={ticker}&type={period}"
+                    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://www.idx.co.id/"})
+                    with urllib.request.urlopen(req, timeout=8) as r:
+                        data = _jbs.loads(r.read())
+                    if data and isinstance(data, list) and len(data) > 0:
+                        result = data
+                except Exception:
+                    pass
+            st.session_state[_cache_key]    = result
+            st.session_state[_cache_ts_key] = _now_ts
+            return result
 
         def _parse_brosum_rows(bs_data, all_brokers):
             """Parse raw broker data → sorted net_map list."""
@@ -28988,7 +29112,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                                 len(_foreign_accum) >= 1 and
                                 _net_foreign_val > 1_000_000_000 and   # threshold 1M IDR net foreign
                                 len(_foreign_dist) == 0 and            # tidak ada broker asing yang distribusi
-                                _si.get("price", 0) <= 8000            # konfirmasi universe
+                                _si.get("price", 0) <= 50000            # Bug #7 fix: 8000→50000 konfirmasi universe
                             )
                             if _foreign_net_dominant:
                                 _sc_hits.append("1M-Foreign")
