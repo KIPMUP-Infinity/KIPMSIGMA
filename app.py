@@ -22191,64 +22191,92 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 # 2. Dari auto_plan_history_bsjp
                 for key, entry in st.session_state.get("auto_plan_history_bsjp", {}).items():
                     if not isinstance(entry, dict): continue
-                    tickers = entry.get("tickers", entry.get("saham_list", []))
-                    if not isinstance(tickers, list): continue
-                    for t in tickers:
+                    # Support both old format (tickers/saham_list) and new format (plan.bsjp)
+                    _bsjp_rows = (
+                        entry.get("plan", {}).get("bsjp", []) or
+                        entry.get("tickers", entry.get("saham_list", []))
+                    )
+                    if not isinstance(_bsjp_rows, list): continue
+                    _plan_date_bsjp = entry.get("date", key[:10])
+                    for t in _bsjp_rows:
                         if not isinstance(t, dict) or not t.get("ticker"): continue
                         _add({
                             "ticker":     t.get("ticker",""),
+                            "type":       "BSJP",
                             "plan_type":  "BSJP",
                             "plan_date":  key[:10],
-                            "bias":       t.get("bias","BUY"),
+                            "date":       _plan_date_bsjp,
+                            "bias":       t.get("bias", t.get("rating","BUY")),
                             "entry_low":  t.get("entry_low", t.get("entry",0)),
                             "entry_high": t.get("entry_high", t.get("entry",0)),
                             "stoploss":   t.get("stoploss", t.get("sl",0)),
                             "tp1":        t.get("tp1",0),
                             "tp2":        t.get("tp2",0),
                             "status":     t.get("status","OPEN"),
-                            "result_pct": t.get("result_pct",0),
+                            "result":     t.get("result",""),
+                            "pnl_pct":    t.get("pnl_pct", t.get("result_pct",0)),
+                            "vol_spike":  t.get("vol_spike","—"),
+                            "why_buy":    t.get("why_buy",""),
                         })
 
                 # 3. Dari auto_plan_history_daily
                 for key, entry in st.session_state.get("auto_plan_history_daily", {}).items():
                     if not isinstance(entry, dict): continue
-                    tickers = entry.get("tickers", entry.get("saham_list", []))
-                    if not isinstance(tickers, list): continue
-                    for t in tickers:
+                    _daily_rows = (
+                        entry.get("plan", {}).get("daily", []) or
+                        entry.get("tickers", entry.get("saham_list", []))
+                    )
+                    if not isinstance(_daily_rows, list): continue
+                    _plan_date_daily = entry.get("date", key[:10])
+                    for t in _daily_rows:
                         if not isinstance(t, dict) or not t.get("ticker"): continue
                         _add({
                             "ticker":     t.get("ticker",""),
+                            "type":       "Daily",
                             "plan_type":  "DAILY",
                             "plan_date":  key[:10],
-                            "bias":       t.get("bias","BUY"),
+                            "date":       _plan_date_daily,
+                            "bias":       t.get("bias", t.get("rating","BUY")),
                             "entry_low":  t.get("entry_low", t.get("entry",0)),
                             "entry_high": t.get("entry_high", t.get("entry",0)),
                             "stoploss":   t.get("stoploss", t.get("sl",0)),
                             "tp1":        t.get("tp1",0),
                             "tp2":        t.get("tp2",0),
                             "status":     t.get("status","OPEN"),
-                            "result_pct": t.get("result_pct",0),
+                            "result":     t.get("result",""),
+                            "pnl_pct":    t.get("pnl_pct", t.get("result_pct",0)),
+                            "vol_spike":  t.get("vol_spike","—"),
+                            "why_buy":    t.get("why_buy",""),
                         })
 
                 # 4. Dari auto_plan_history_weekly
                 for key, entry in st.session_state.get("auto_plan_history_weekly", {}).items():
                     if not isinstance(entry, dict): continue
-                    tickers = entry.get("tickers", entry.get("saham_list", []))
-                    if not isinstance(tickers, list): continue
-                    for t in tickers:
+                    _weekly_rows = (
+                        entry.get("plan", {}).get("weekly", []) or
+                        entry.get("tickers", entry.get("saham_list", []))
+                    )
+                    if not isinstance(_weekly_rows, list): continue
+                    _plan_date_weekly = entry.get("date", key[:10])
+                    for t in _weekly_rows:
                         if not isinstance(t, dict) or not t.get("ticker"): continue
                         _add({
                             "ticker":     t.get("ticker",""),
+                            "type":       "Weekly",
                             "plan_type":  "WEEKLY",
                             "plan_date":  key[:10],
-                            "bias":       t.get("bias","BUY"),
+                            "date":       _plan_date_weekly,
+                            "bias":       t.get("bias", t.get("rating","BUY")),
                             "entry_low":  t.get("entry_low", t.get("entry",0)),
                             "entry_high": t.get("entry_high", t.get("entry",0)),
                             "stoploss":   t.get("stoploss", t.get("sl",0)),
                             "tp1":        t.get("tp1",0),
                             "tp2":        t.get("tp2",0),
                             "status":     t.get("status","OPEN"),
-                            "result_pct": t.get("result_pct",0),
+                            "result":     t.get("result",""),
+                            "pnl_pct":    t.get("pnl_pct", t.get("result_pct",0)),
+                            "vol_spike":  t.get("vol_spike","—"),
+                            "why_buy":    t.get("why_buy",""),
                         })
 
                 # Sort by date desc, lalu ticker
@@ -25892,13 +25920,72 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
 
         def _render_auto_track_record(filter_type=None):
             """Render track record yang ter-update otomatis.
-            filter_type: None = semua (tabel terpisah per type), atau 'Daily'/'Weekly'/'BSJP'.
+            filter_type: None = semua, atau 'Daily'/'Weekly'/'BSJP'.
+            Membaca dari tr_records (prioritas) DAN auto_plan_history_* (fallback/merge).
             """
-            all_records = st.session_state.get("tr_records", [])
+            import json as _jtr
+
+            # ── Kumpulkan semua record dari tr_records + auto_plan_history ──
+            _seen_keys = set()
+            all_records = []
+
+            def _add_rec(r):
+                k = (r.get("ticker",""), r.get("type",""), str(r.get("plan_date","") or r.get("date",""))[:10])
+                if k in _seen_keys: return
+                _seen_keys.add(k)
+                all_records.append(r)
+
+            # 1. tr_records — prioritas tertinggi (bisa ada update status manual)
+            for rec in st.session_state.get("tr_records", []):
+                r = dict(rec)
+                if "type" not in r:
+                    r["type"] = r.get("plan_type", r.get("mode", "BSJP"))
+                _add_rec(r)
+
+            # 2. auto_plan_history_daily
+            _map_type = {"daily": "Daily", "weekly": "Weekly", "bsjp": "BSJP"}
+            for _hist_key, _plan_key in [
+                ("auto_plan_history_daily",  "daily"),
+                ("auto_plan_history_weekly", "weekly"),
+                ("auto_plan_history_bsjp",   "bsjp"),
+            ]:
+                for slot_key, entry in st.session_state.get(_hist_key, {}).items():
+                    if not isinstance(entry, dict): continue
+                    rows = (
+                        entry.get("plan", {}).get(_plan_key, []) or
+                        entry.get("tickers", entry.get("saham_list", []))
+                    )
+                    if not isinstance(rows, list): continue
+                    _date_str = entry.get("date", slot_key[:10])
+                    _type_str = _map_type[_plan_key]
+                    for t in rows:
+                        if not isinstance(t, dict) or not t.get("ticker"): continue
+                        _add_rec({
+                            "ticker":     t.get("ticker",""),
+                            "type":       _type_str,
+                            "plan_type":  _plan_key.upper(),
+                            "plan_date":  slot_key[:10],
+                            "date":       _date_str,
+                            "entry":      t.get("entry_low", t.get("entry",0)),
+                            "entry_low":  t.get("entry_low", t.get("entry",0)),
+                            "entry_high": t.get("entry_high", t.get("entry",0)),
+                            "sl":         t.get("sl", t.get("stoploss",0)),
+                            "tp1":        t.get("tp1",0),
+                            "tp2":        t.get("tp2",0),
+                            "status":     t.get("status","OPEN"),
+                            "result":     t.get("result",""),
+                            "pnl_pct":    t.get("pnl_pct", t.get("result_pct",0)),
+                            "exit_price": t.get("exit_price",0),
+                            "vol_spike":  t.get("vol_spike","—"),
+                            "auto_note":  t.get("why_buy", t.get("auto_note","")),
+                        })
+
+            # Filter by type
             if filter_type:
-                records = [r for r in all_records if (r.get("type") or "").upper() == filter_type.upper()]
+                records = [r for r in all_records if (r.get("type") or r.get("plan_type","")).upper() == filter_type.upper()]
             else:
                 records = all_records
+
             if not records:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;"></div>
@@ -25906,8 +25993,6 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
                         Track record kosong. Plan yang masuk otomatis akan tercatat di sini.</p>
                 </div>""", unsafe_allow_html=True)
                 return
-
-            import json as _jtr
 
             _tbl_bg  = "rgba(8,12,22,0.95)" if is_dark else "#ffffff"
             _hdr_bg  = "rgba(38,166,154,0.08)" if is_dark else "#f8fafc"
@@ -26361,11 +26446,14 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 
                 if _force_daily:
                     _bs30_force = st.session_state.get("sigma_bs30_screened") or []
-                    if not _bs30_force:
-                        st.warning("⚠️ Klik 'Refresh Broker Data' dulu sebelum generate plan.")
-                    else:
-                        with st.spinner("⚡ Generate Daily Plan hari ini..."):
-                            try:
+                    with st.spinner("⚡ Generate Daily Plan hari ini..."):
+                        try:
+                            # Jika bs30 kosong, langsung pakai independent screener (fallback)
+                            if not _bs30_force:
+                                _bs30_force = _sch_ensure_bs30(_wib_now(), _today_key_chk) or []
+                            if not _bs30_force:
+                                st.warning("⚠️ Data universe kosong. Coba Refresh Broker Data dulu.")
+                            else:
                                 _pm_force = _reco_fetch_prices(tuple(s["ticker"] for s in _bs30_force if s.get("ticker")))
                                 if _pm_force:
                                     _plan_force = _rule_based_plan_v2(_pm_force, _bs30_force, "daily")
@@ -26377,6 +26465,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                         "slot": "Generate Manual",
                                         "plan": _plan_force,
                                         "generated_at": _gen_force,
+                                        "source": "manual",
                                     }
                                     st.session_state["auto_plan_history_daily"] = _dph_force
                                     try:
@@ -26386,8 +26475,8 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                     st.rerun()
                                 else:
                                     st.error("Gagal mengambil data harga. Coba lagi.")
-                            except Exception as _e_fd:
-                                st.error(f"Error: {_e_fd}")
+                        except Exception as _e_fd:
+                            st.error(f"Error: {_e_fd}")
 
                 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -26502,10 +26591,14 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         # SECTION A: SUMMARY TABLE — 20 saham hasil screening
                         # (semua ditampilkan agar user bisa lihat universe penuh)
                         # ─────────────────────────────────────────────────────────────
+                        # Tanggal header: gunakan tanggal hari ini, bukan tanggal plan lama
+                        _universe_date_lbl = _now_d.strftime("%d %b %Y")
+                        if not _is_latest_daily and _today_entry.get("date"):
+                            _universe_date_lbl = _today_entry.get("date","")
                         st.markdown(
                             f"<div style='font-size:0.71rem;font-weight:700;letter-spacing:0.14em;"
                             f"text-transform:uppercase;color:#a78bfa;margin:10px 0 6px;'>"
-                            f"📊 UNIVERSE 20 SAHAM — HASIL SCREENING — {_today_entry.get('date','')}</div>"
+                            f"📊 UNIVERSE 20 SAHAM — HASIL SCREENING — {_universe_date_lbl}</div>"
                             f"<div style='font-size:0.7rem;color:#888;margin-bottom:8px;'>"
                             f"Kandidat dari pipeline 200→100→20. Akan di-press ke 10 terbaik menggunakan GoAPI broker data.</div>",
                             unsafe_allow_html=True)
@@ -26955,11 +27048,13 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                     _force_weekly = st.button("🔄 Generate Weekly", use_container_width=True, key="force_weekly_now")
                 if _force_weekly:
                     _bs30_fw = st.session_state.get("sigma_bs30_screened") or []
-                    if not _bs30_fw:
-                        st.warning("⚠️ Refresh Broker Data di tab Daily Plan dulu.")
-                    else:
-                        with st.spinner("⚡ Generate Weekly Plan..."):
-                            try:
+                    with st.spinner("⚡ Generate Weekly Plan..."):
+                        try:
+                            if not _bs30_fw:
+                                _bs30_fw = _sch_ensure_bs30(_wib_now(), _now_w.strftime("%Y-%m-%d")) or []
+                            if not _bs30_fw:
+                                st.warning("⚠️ Data universe kosong. Coba Refresh Broker Data di tab Daily Plan.")
+                            else:
                                 _pm_fw = _reco_fetch_prices(tuple(s["ticker"] for s in _bs30_fw if s.get("ticker")))
                                 if _pm_fw:
                                     _plan_fw   = _rule_based_plan_v2(_pm_fw, _bs30_fw, "weekly")
@@ -26971,6 +27066,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                         "slot": "Generate Manual",
                                         "plan": _plan_fw,
                                         "generated_at": _gen_fw,
+                                        "source": "manual",
                                     }
                                     st.session_state["auto_plan_history_weekly"] = _wph_fw
                                     try:
@@ -26980,8 +27076,8 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                     st.rerun()
                                 else:
                                     st.error("Gagal mengambil data harga.")
-                            except Exception as _e_fw:
-                                st.error(f"Error: {_e_fw}")
+                        except Exception as _e_fw:
+                            st.error(f"Error: {_e_fw}")
                 st.markdown("<br>", unsafe_allow_html=True)
 
             _w_tab_plan, _w_tab_hist_plan, _w_tab_trackrecord, _w_tab_eval_ai = st.tabs([
