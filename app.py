@@ -14089,27 +14089,122 @@ table{{margin-bottom:0!important;}}
 </div>""", unsafe_allow_html=True)
 
             # ── Chart Inflasi Indonesia (Chart.js via components.html) ──
-            _inf_labels_js = str([r["period"] for r in reversed(_inf_id_data)]).replace("'",'"')
+            _inf_labels_js = str([r["period"] for r in reversed(_inf_id_data)]).replace("'", '"')
             _inf_yoy_js    = str([r["yoy"]    for r in reversed(_inf_id_data)])
             _inf_core_js   = str([r["core"]   for r in reversed(_inf_id_data)])
-            components.html(f"""<!DOCTYPE html><html><head>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-</head><body style="background:transparent;margin:0;padding:0;">
-<div style="background:{"rgba(20,20,40,0.9)" if is_dark else "#fff"};border-radius:10px;padding:12px;margin-bottom:8px;">
-<div style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;color:#6366f1;margin-bottom:6px;">📉 TREN INFLASI INDONESIA (CPI YoY vs Core)</div>
-<canvas id="infChart" style="height:160px!important;"></canvas></div>
-<script>
-new Chart(document.getElementById("infChart"),{{
-  type:"line",
-  data:{{labels:{_inf_labels_js},datasets:[
-    {{label:"CPI YoY (%)",data:{_inf_yoy_js},borderColor:"#6366f1",backgroundColor:"rgba(99,102,241,0.1)",borderWidth:2,pointRadius:4,fill:true,tension:0.4}},
-    {{label:"Core Inflation (%)",data:{_inf_core_js},borderColor:"#00E5BE",backgroundColor:"transparent",borderWidth:2,pointRadius:3,borderDash:[4,4],tension:0.4}}
-  ]}},
-  options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{labels:{{color:"{"#ccc" if is_dark else "#333"}",font:{{size:10}}}}}}}},
-  scales:{{x:{{ticks:{{color:"{"#aaa" if is_dark else "#666"}",maxRotation:30,font:{{size:9}}}},grid:{{color:"rgba(255,255,255,0.05)"}}}},
-           y:{{ticks:{{color:"{"#aaa" if is_dark else "#666"}",font:{{size:9}},callback:function(v){{return v+"%"}}}},grid:{{color:"rgba(255,255,255,0.05)"}}}}}}}}
-}});
-</script></body></html>""", height=200)
+            _inf_chart_html = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+                  <style>
+                    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+                    html, body {{ width: 100%; height: 100%; background: transparent; }}
+                    .chart-wrap {{
+                      background: rgba(255,255,255,0.03);
+                      border: 1px solid rgba(255,255,255,0.09);
+                      border-radius: 8px;
+                      padding: 14px 16px 10px;
+                      width: 100%;
+                      height: 230px;
+                    }}
+                    .chart-title {{
+                      font-family: 'IBM Plex Mono', monospace;
+                      font-size: 11px;
+                      color: #888;
+                      margin-bottom: 10px;
+                      display: flex;
+                      justify-content: space-between;
+                      flex-wrap: wrap;
+                      gap: 4px;
+                    }}
+                    .chart-title span {{ color: #6366f1; font-weight: 600; }}
+                    canvas {{ display: block; width: 100% !important; }}
+                  </style>
+                </head>
+                <body>
+                  <div class="chart-wrap">
+                    <div class="chart-title">
+                      📉 TREN INFLASI INDONESIA (CPI YoY vs Core)
+                      <span>CPI = Ungu · Core = Cyan</span>
+                    </div>
+                    <canvas id="inf_md_chart" style="height:190px !important;"></canvas>
+                  </div>
+                  <script>
+                  (function() {{
+                    var ctx = document.getElementById('inf_md_chart').getContext('2d');
+                    new Chart(ctx, {{
+                      type: 'line',
+                      data: {{
+                        labels: {_inf_labels_js},
+                        datasets: [
+                          {{
+                            label: 'CPI YoY (%)',
+                            data: {_inf_yoy_js},
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99,102,241,0.10)',
+                            tension: 0.3,
+                            fill: true,
+                            pointRadius: 4,
+                            pointHoverRadius: 7,
+                            borderWidth: 2.5,
+                          }},
+                          {{
+                            label: 'Core Inflation (%)',
+                            data: {_inf_core_js},
+                            borderColor: '#00E5BE',
+                            backgroundColor: 'transparent',
+                            tension: 0.3,
+                            fill: false,
+                            pointRadius: 3,
+                            pointHoverRadius: 6,
+                            borderWidth: 2,
+                            borderDash: [4, 4],
+                          }}
+                        ]
+                      }},
+                      options: {{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        plugins: {{
+                          legend: {{
+                            display: true,
+                            labels: {{ color: '#aaa', font: {{ size: 10 }} }}
+                          }},
+                          tooltip: {{
+                            backgroundColor: '#1a1a2e',
+                            titleColor: '#888',
+                            bodyColor: '#ccc',
+                            callbacks: {{ label: function(c) {{ return ' ' + c.dataset.label + ': ' + c.parsed.y.toFixed(2) + '%'; }} }}
+                          }}
+                        }},
+                        interaction: {{ mode: 'index', intersect: false }},
+                        scales: {{
+                          x: {{
+                            ticks: {{
+                              color: '#888',
+                              font: {{ size: 9 }},
+                              maxRotation: 30,
+                              autoSkip: true,
+                              maxTicksLimit: 12
+                            }},
+                            grid: {{ color: 'rgba(255,255,255,0.04)' }}
+                          }},
+                          y: {{
+                            ticks: {{ color: '#888', font: {{ size: 9 }}, callback: function(v) {{ return v.toFixed(1) + '%'; }} }},
+                            grid: {{ color: 'rgba(255,255,255,0.05)' }}
+                          }}
+                        }}
+                      }}
+                    }});
+                  }})();
+                  </script>
+                </body>
+                </html>
+            """
+            components.html(_inf_chart_html, height=255, scrolling=False)
 
             st.markdown("<hr class=\'fancy-divider\'>", unsafe_allow_html=True)
 
@@ -14210,28 +14305,114 @@ Jawab dalam Bahasa Indonesia, tajam dan analitis. Maksimal 450 kata."""
 </div>""", unsafe_allow_html=True)
 
             # ── Chart IHSG ──────────────────────────────────────────────
-            _ih_labels = str([r["month"] for r in _ihsg_monthly]).replace("'",'"')
+            _ih_labels = str([r["month"] for r in _ihsg_monthly]).replace("'", '"')
             _ih_closes = str([r["close"] for r in _ihsg_monthly])
-            components.html(f"""<!DOCTYPE html><html><head>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-</head><body style="background:transparent;margin:0;padding:0;">
-<div style="background:{"rgba(20,20,40,0.9)" if is_dark else "#fff"};border-radius:10px;padding:12px;margin-bottom:8px;">
-<div style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;color:#00E5BE;margin-bottom:6px;">📈 IHSG — TREN CLOSING AKHIR BULAN</div>
-<canvas id="ihsgChart" style="height:180px!important;"></canvas></div>
-<script>
-new Chart(document.getElementById("ihsgChart"),{{
-  type:"line",
-  data:{{labels:{_ih_labels},datasets:[{{
-    label:"IHSG Closing",data:{_ih_closes},
-    borderColor:"#00E5BE",backgroundColor:"rgba(0,229,190,0.08)",
-    borderWidth:2,pointRadius:3,fill:true,tension:0.4
-  }}]}},
-  options:{{responsive:true,maintainAspectRatio:false,
-    plugins:{{legend:{{display:false}}}},
-    scales:{{x:{{ticks:{{color:"{"#aaa" if is_dark else "#666"}",maxRotation:45,font:{{size:8}}}},grid:{{display:false}}}},
-             y:{{ticks:{{color:"{"#aaa" if is_dark else "#666"}",font:{{size:9}},callback:function(v){{return v.toLocaleString()}}}},grid:{{color:"rgba(255,255,255,0.05)"}}}}}}}}
-}});
-</script></body></html>""", height=210)
+            _ih_latest = _ihsg_monthly[-1]["close"]
+            _ih_chart_html = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+                  <style>
+                    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+                    html, body {{ width: 100%; height: 100%; background: transparent; }}
+                    .chart-wrap {{
+                      background: rgba(255,255,255,0.03);
+                      border: 1px solid rgba(255,255,255,0.09);
+                      border-radius: 8px;
+                      padding: 14px 16px 10px;
+                      width: 100%;
+                      height: 230px;
+                    }}
+                    .chart-title {{
+                      font-family: 'IBM Plex Mono', monospace;
+                      font-size: 11px;
+                      color: #888;
+                      margin-bottom: 10px;
+                      display: flex;
+                      justify-content: space-between;
+                      flex-wrap: wrap;
+                      gap: 4px;
+                    }}
+                    .chart-title span {{ color: #00E5BE; font-weight: 600; }}
+                    canvas {{ display: block; width: 100% !important; }}
+                  </style>
+                </head>
+                <body>
+                  <div class="chart-wrap">
+                    <div class="chart-title">
+                      📈 IHSG — TREN CLOSING AKHIR BULAN
+                      <span>Last: {{_ih_latest:,.2f}}</span>
+                    </div>
+                    <canvas id="ihsg_md_chart" style="height:190px !important;"></canvas>
+                  </div>
+                  <script>
+                  (function() {{
+                    var ctx = document.getElementById('ihsg_md_chart').getContext('2d');
+                    var labels = {_ih_labels};
+                    var vals   = {_ih_closes};
+                    var ptColors = vals.map(function(v,i) {{
+                      if (i === 0) return '#00E5BE';
+                      return v > vals[i-1] ? '#00E5BE' : '#ef5350';
+                    }});
+                    new Chart(ctx, {{
+                      type: 'line',
+                      data: {{
+                        labels: labels,
+                        datasets: [{{
+                          label: 'IHSG Closing',
+                          data: vals,
+                          borderColor: '#00E5BE',
+                          backgroundColor: 'rgba(0,229,190,0.10)',
+                          tension: 0.3,
+                          fill: true,
+                          pointRadius: 3,
+                          pointHoverRadius: 6,
+                          borderWidth: 2.5,
+                          pointBackgroundColor: ptColors,
+                          pointBorderColor: ptColors,
+                        }}]
+                      }},
+                      options: {{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        plugins: {{
+                          legend: {{ display: false }},
+                          tooltip: {{
+                            backgroundColor: '#1a1a2e',
+                            titleColor: '#888',
+                            bodyColor: '#00E5BE',
+                            callbacks: {{ label: function(c) {{ return ' ' + c.parsed.y.toLocaleString('id-ID', {{minimumFractionDigits:2}}); }} }}
+                          }}
+                        }},
+                        interaction: {{ mode: 'index', intersect: false }},
+                        scales: {{
+                          x: {{
+                            ticks: {{
+                              color: '#888',
+                              font: {{ size: 9 }},
+                              maxRotation: 45,
+                              minRotation: 0,
+                              autoSkip: true,
+                              maxTicksLimit: 18
+                            }},
+                            grid: {{ color: 'rgba(255,255,255,0.04)' }}
+                          }},
+                          y: {{
+                            ticks: {{ color: '#888', font: {{ size: 9 }}, callback: function(v) {{ return v.toLocaleString(); }} }},
+                            grid: {{ color: 'rgba(255,255,255,0.05)' }}
+                          }}
+                        }}
+                      }}
+                    }});
+                  }})();
+                  </script>
+                </body>
+                </html>
+            """
+            components.html(_ih_chart_html, height=255, scrolling=False)
 
             st.markdown("<hr class=\'fancy-divider\'>", unsafe_allow_html=True)
 
@@ -14334,28 +14515,114 @@ Jawab dalam Bahasa Indonesia, tajam dan profesional. Maksimal 500 kata."""
 </div>""", unsafe_allow_html=True)
 
             # ── Chart Kurs ───────────────────────────────────────────────
-            _kurs_labels = str([r["month"] for r in _kurs_monthly]).replace("'",'"')
+            _kurs_labels = str([r["month"] for r in _kurs_monthly]).replace("'", '"')
             _kurs_rates  = str([r["rate"]  for r in _kurs_monthly])
-            components.html(f"""<!DOCTYPE html><html><head>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-</head><body style="background:transparent;margin:0;padding:0;">
-<div style="background:{"rgba(20,20,40,0.9)" if is_dark else "#fff"};border-radius:10px;padding:12px;margin-bottom:8px;">
-<div style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;color:#F0A500;margin-bottom:6px;">💱 USD/IDR — TREN KURS TENGAH BI</div>
-<canvas id="kursChart" style="height:180px!important;"></canvas></div>
-<script>
-new Chart(document.getElementById("kursChart"),{{
-  type:"line",
-  data:{{labels:{_kurs_labels},datasets:[{{
-    label:"USD/IDR",data:{_kurs_rates},
-    borderColor:"#F0A500",backgroundColor:"rgba(240,165,0,0.08)",
-    borderWidth:2,pointRadius:3,fill:true,tension:0.4
-  }}]}},
-  options:{{responsive:true,maintainAspectRatio:false,
-    plugins:{{legend:{{display:false}}}},
-    scales:{{x:{{ticks:{{color:"{"#aaa" if is_dark else "#666"}",maxRotation:45,font:{{size:8}}}},grid:{{display:false}}}},
-             y:{{ticks:{{color:"{"#aaa" if is_dark else "#666"}",font:{{size:9}},callback:function(v){{return "Rp "+v.toLocaleString()}}}},grid:{{color:"rgba(255,255,255,0.05)"}}}}}}}}
-}});
-</script></body></html>""", height=210)
+            _krs_current = _kurs_monthly[-1]["rate"]
+            _kurs_chart_html = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+                  <style>
+                    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+                    html, body {{ width: 100%; height: 100%; background: transparent; }}
+                    .chart-wrap {{
+                      background: rgba(255,255,255,0.03);
+                      border: 1px solid rgba(255,255,255,0.09);
+                      border-radius: 8px;
+                      padding: 14px 16px 10px;
+                      width: 100%;
+                      height: 230px;
+                    }}
+                    .chart-title {{
+                      font-family: 'IBM Plex Mono', monospace;
+                      font-size: 11px;
+                      color: #888;
+                      margin-bottom: 10px;
+                      display: flex;
+                      justify-content: space-between;
+                      flex-wrap: wrap;
+                      gap: 4px;
+                    }}
+                    .chart-title span {{ color: #F0A500; font-weight: 600; }}
+                    canvas {{ display: block; width: 100% !important; }}
+                  </style>
+                </head>
+                <body>
+                  <div class="chart-wrap">
+                    <div class="chart-title">
+                      💱 USD/IDR — TREN KURS TENGAH BI
+                      <span>Last: Rp {{_krs_current:,}}</span>
+                    </div>
+                    <canvas id="kurs_md_chart" style="height:190px !important;"></canvas>
+                  </div>
+                  <script>
+                  (function() {{
+                    var ctx = document.getElementById('kurs_md_chart').getContext('2d');
+                    var labels = {_kurs_labels};
+                    var vals   = {_kurs_rates};
+                    var ptColors = vals.map(function(v,i) {{
+                      if (i === 0) return '#F0A500';
+                      return v > vals[i-1] ? '#ef5350' : '#00E5BE';
+                    }});
+                    new Chart(ctx, {{
+                      type: 'line',
+                      data: {{
+                        labels: labels,
+                        datasets: [{{
+                          label: 'USD/IDR',
+                          data: vals,
+                          borderColor: '#F0A500',
+                          backgroundColor: 'rgba(240,165,0,0.10)',
+                          tension: 0.3,
+                          fill: true,
+                          pointRadius: 3,
+                          pointHoverRadius: 6,
+                          borderWidth: 2.5,
+                          pointBackgroundColor: ptColors,
+                          pointBorderColor: ptColors,
+                        }}]
+                      }},
+                      options: {{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        plugins: {{
+                          legend: {{ display: false }},
+                          tooltip: {{
+                            backgroundColor: '#1a1a2e',
+                            titleColor: '#888',
+                            bodyColor: '#F0A500',
+                            callbacks: {{ label: function(c) {{ return ' Rp ' + c.parsed.y.toLocaleString(); }} }}
+                          }}
+                        }},
+                        interaction: {{ mode: 'index', intersect: false }},
+                        scales: {{
+                          x: {{
+                            ticks: {{
+                              color: '#888',
+                              font: {{ size: 9 }},
+                              maxRotation: 45,
+                              minRotation: 0,
+                              autoSkip: true,
+                              maxTicksLimit: 18
+                            }},
+                            grid: {{ color: 'rgba(255,255,255,0.04)' }}
+                          }},
+                          y: {{
+                            ticks: {{ color: '#888', font: {{ size: 9 }}, callback: function(v) {{ return 'Rp ' + v.toLocaleString(); }} }},
+                            grid: {{ color: 'rgba(255,255,255,0.05)' }}
+                          }}
+                        }}
+                      }}
+                    }});
+                  }})();
+                  </script>
+                </body>
+                </html>
+            """
+            components.html(_kurs_chart_html, height=255, scrolling=False)
 
             # ── Key Metrics ─────────────────────────────────────────────
             _krs_latest  = _kurs_monthly[-1]["rate"]
@@ -17785,27 +18052,122 @@ Jawab dalam Bahasa Indonesia, padat dan profesional. Maksimal 400 kata."""
 </div>""", unsafe_allow_html=True)
 
             # ── Chart Inflasi Indonesia (Chart.js via components.html) ──
-            _inf_labels_js = str([r["period"] for r in reversed(_inf_id_data)]).replace("'",'"')
+            _inf_labels_js = str([r["period"] for r in reversed(_inf_id_data)]).replace("'", '"')
             _inf_yoy_js    = str([r["yoy"]    for r in reversed(_inf_id_data)])
             _inf_core_js   = str([r["core"]   for r in reversed(_inf_id_data)])
-            components.html(f"""<!DOCTYPE html><html><head>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-</head><body style="background:transparent;margin:0;padding:0;">
-<div style="background:{"rgba(20,20,40,0.9)" if is_dark else "#fff"};border-radius:10px;padding:12px;margin-bottom:8px;">
-<div style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;color:#6366f1;margin-bottom:6px;">📉 TREN INFLASI INDONESIA (CPI YoY vs Core)</div>
-<canvas id="infChart" style="height:160px!important;"></canvas></div>
-<script>
-new Chart(document.getElementById("infChart"),{{
-  type:"line",
-  data:{{labels:{_inf_labels_js},datasets:[
-    {{label:"CPI YoY (%)",data:{_inf_yoy_js},borderColor:"#6366f1",backgroundColor:"rgba(99,102,241,0.1)",borderWidth:2,pointRadius:4,fill:true,tension:0.4}},
-    {{label:"Core Inflation (%)",data:{_inf_core_js},borderColor:"#00E5BE",backgroundColor:"transparent",borderWidth:2,pointRadius:3,borderDash:[4,4],tension:0.4}}
-  ]}},
-  options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{labels:{{color:"{"#ccc" if is_dark else "#333"}",font:{{size:10}}}}}}}},
-  scales:{{x:{{ticks:{{color:"{"#aaa" if is_dark else "#666"}",maxRotation:30,font:{{size:9}}}},grid:{{color:"rgba(255,255,255,0.05)"}}}},
-           y:{{ticks:{{color:"{"#aaa" if is_dark else "#666"}",font:{{size:9}},callback:function(v){{return v+"%"}}}},grid:{{color:"rgba(255,255,255,0.05)"}}}}}}}}
-}});
-</script></body></html>""", height=200)
+            _inf_chart_html = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+                  <style>
+                    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+                    html, body {{ width: 100%; height: 100%; background: transparent; }}
+                    .chart-wrap {{
+                      background: rgba(255,255,255,0.03);
+                      border: 1px solid rgba(255,255,255,0.09);
+                      border-radius: 8px;
+                      padding: 14px 16px 10px;
+                      width: 100%;
+                      height: 230px;
+                    }}
+                    .chart-title {{
+                      font-family: 'IBM Plex Mono', monospace;
+                      font-size: 11px;
+                      color: #888;
+                      margin-bottom: 10px;
+                      display: flex;
+                      justify-content: space-between;
+                      flex-wrap: wrap;
+                      gap: 4px;
+                    }}
+                    .chart-title span {{ color: #6366f1; font-weight: 600; }}
+                    canvas {{ display: block; width: 100% !important; }}
+                  </style>
+                </head>
+                <body>
+                  <div class="chart-wrap">
+                    <div class="chart-title">
+                      📉 TREN INFLASI INDONESIA (CPI YoY vs Core)
+                      <span>CPI = Ungu · Core = Cyan</span>
+                    </div>
+                    <canvas id="inf_md_chart" style="height:190px !important;"></canvas>
+                  </div>
+                  <script>
+                  (function() {{
+                    var ctx = document.getElementById('inf_md_chart').getContext('2d');
+                    new Chart(ctx, {{
+                      type: 'line',
+                      data: {{
+                        labels: {_inf_labels_js},
+                        datasets: [
+                          {{
+                            label: 'CPI YoY (%)',
+                            data: {_inf_yoy_js},
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99,102,241,0.10)',
+                            tension: 0.3,
+                            fill: true,
+                            pointRadius: 4,
+                            pointHoverRadius: 7,
+                            borderWidth: 2.5,
+                          }},
+                          {{
+                            label: 'Core Inflation (%)',
+                            data: {_inf_core_js},
+                            borderColor: '#00E5BE',
+                            backgroundColor: 'transparent',
+                            tension: 0.3,
+                            fill: false,
+                            pointRadius: 3,
+                            pointHoverRadius: 6,
+                            borderWidth: 2,
+                            borderDash: [4, 4],
+                          }}
+                        ]
+                      }},
+                      options: {{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        plugins: {{
+                          legend: {{
+                            display: true,
+                            labels: {{ color: '#aaa', font: {{ size: 10 }} }}
+                          }},
+                          tooltip: {{
+                            backgroundColor: '#1a1a2e',
+                            titleColor: '#888',
+                            bodyColor: '#ccc',
+                            callbacks: {{ label: function(c) {{ return ' ' + c.dataset.label + ': ' + c.parsed.y.toFixed(2) + '%'; }} }}
+                          }}
+                        }},
+                        interaction: {{ mode: 'index', intersect: false }},
+                        scales: {{
+                          x: {{
+                            ticks: {{
+                              color: '#888',
+                              font: {{ size: 9 }},
+                              maxRotation: 30,
+                              autoSkip: true,
+                              maxTicksLimit: 12
+                            }},
+                            grid: {{ color: 'rgba(255,255,255,0.04)' }}
+                          }},
+                          y: {{
+                            ticks: {{ color: '#888', font: {{ size: 9 }}, callback: function(v) {{ return v.toFixed(1) + '%'; }} }},
+                            grid: {{ color: 'rgba(255,255,255,0.05)' }}
+                          }}
+                        }}
+                      }}
+                    }});
+                  }})();
+                  </script>
+                </body>
+                </html>
+            """
+            components.html(_inf_chart_html, height=255, scrolling=False)
 
             st.markdown("<hr class=\'fancy-divider\'>", unsafe_allow_html=True)
 
@@ -17906,28 +18268,114 @@ Jawab dalam Bahasa Indonesia, tajam dan analitis. Maksimal 450 kata."""
 </div>""", unsafe_allow_html=True)
 
             # ── Chart IHSG ──────────────────────────────────────────────
-            _ih_labels = str([r["month"] for r in _ihsg_monthly]).replace("'",'"')
+            _ih_labels = str([r["month"] for r in _ihsg_monthly]).replace("'", '"')
             _ih_closes = str([r["close"] for r in _ihsg_monthly])
-            components.html(f"""<!DOCTYPE html><html><head>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-</head><body style="background:transparent;margin:0;padding:0;">
-<div style="background:{"rgba(20,20,40,0.9)" if is_dark else "#fff"};border-radius:10px;padding:12px;margin-bottom:8px;">
-<div style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;color:#00E5BE;margin-bottom:6px;">📈 IHSG — TREN CLOSING AKHIR BULAN</div>
-<canvas id="ihsgChart" style="height:180px!important;"></canvas></div>
-<script>
-new Chart(document.getElementById("ihsgChart"),{{
-  type:"line",
-  data:{{labels:{_ih_labels},datasets:[{{
-    label:"IHSG Closing",data:{_ih_closes},
-    borderColor:"#00E5BE",backgroundColor:"rgba(0,229,190,0.08)",
-    borderWidth:2,pointRadius:3,fill:true,tension:0.4
-  }}]}},
-  options:{{responsive:true,maintainAspectRatio:false,
-    plugins:{{legend:{{display:false}}}},
-    scales:{{x:{{ticks:{{color:"{"#aaa" if is_dark else "#666"}",maxRotation:45,font:{{size:8}}}},grid:{{display:false}}}},
-             y:{{ticks:{{color:"{"#aaa" if is_dark else "#666"}",font:{{size:9}},callback:function(v){{return v.toLocaleString()}}}},grid:{{color:"rgba(255,255,255,0.05)"}}}}}}}}
-}});
-</script></body></html>""", height=210)
+            _ih_latest = _ihsg_monthly[-1]["close"]
+            _ih_chart_html = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+                  <style>
+                    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+                    html, body {{ width: 100%; height: 100%; background: transparent; }}
+                    .chart-wrap {{
+                      background: rgba(255,255,255,0.03);
+                      border: 1px solid rgba(255,255,255,0.09);
+                      border-radius: 8px;
+                      padding: 14px 16px 10px;
+                      width: 100%;
+                      height: 230px;
+                    }}
+                    .chart-title {{
+                      font-family: 'IBM Plex Mono', monospace;
+                      font-size: 11px;
+                      color: #888;
+                      margin-bottom: 10px;
+                      display: flex;
+                      justify-content: space-between;
+                      flex-wrap: wrap;
+                      gap: 4px;
+                    }}
+                    .chart-title span {{ color: #00E5BE; font-weight: 600; }}
+                    canvas {{ display: block; width: 100% !important; }}
+                  </style>
+                </head>
+                <body>
+                  <div class="chart-wrap">
+                    <div class="chart-title">
+                      📈 IHSG — TREN CLOSING AKHIR BULAN
+                      <span>Last: {{_ih_latest:,.2f}}</span>
+                    </div>
+                    <canvas id="ihsg_md_chart" style="height:190px !important;"></canvas>
+                  </div>
+                  <script>
+                  (function() {{
+                    var ctx = document.getElementById('ihsg_md_chart').getContext('2d');
+                    var labels = {_ih_labels};
+                    var vals   = {_ih_closes};
+                    var ptColors = vals.map(function(v,i) {{
+                      if (i === 0) return '#00E5BE';
+                      return v > vals[i-1] ? '#00E5BE' : '#ef5350';
+                    }});
+                    new Chart(ctx, {{
+                      type: 'line',
+                      data: {{
+                        labels: labels,
+                        datasets: [{{
+                          label: 'IHSG Closing',
+                          data: vals,
+                          borderColor: '#00E5BE',
+                          backgroundColor: 'rgba(0,229,190,0.10)',
+                          tension: 0.3,
+                          fill: true,
+                          pointRadius: 3,
+                          pointHoverRadius: 6,
+                          borderWidth: 2.5,
+                          pointBackgroundColor: ptColors,
+                          pointBorderColor: ptColors,
+                        }}]
+                      }},
+                      options: {{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        plugins: {{
+                          legend: {{ display: false }},
+                          tooltip: {{
+                            backgroundColor: '#1a1a2e',
+                            titleColor: '#888',
+                            bodyColor: '#00E5BE',
+                            callbacks: {{ label: function(c) {{ return ' ' + c.parsed.y.toLocaleString('id-ID', {{minimumFractionDigits:2}}); }} }}
+                          }}
+                        }},
+                        interaction: {{ mode: 'index', intersect: false }},
+                        scales: {{
+                          x: {{
+                            ticks: {{
+                              color: '#888',
+                              font: {{ size: 9 }},
+                              maxRotation: 45,
+                              minRotation: 0,
+                              autoSkip: true,
+                              maxTicksLimit: 18
+                            }},
+                            grid: {{ color: 'rgba(255,255,255,0.04)' }}
+                          }},
+                          y: {{
+                            ticks: {{ color: '#888', font: {{ size: 9 }}, callback: function(v) {{ return v.toLocaleString(); }} }},
+                            grid: {{ color: 'rgba(255,255,255,0.05)' }}
+                          }}
+                        }}
+                      }}
+                    }});
+                  }})();
+                  </script>
+                </body>
+                </html>
+            """
+            components.html(_ih_chart_html, height=255, scrolling=False)
 
             st.markdown("<hr class=\'fancy-divider\'>", unsafe_allow_html=True)
 
@@ -18030,28 +18478,114 @@ Jawab dalam Bahasa Indonesia, tajam dan profesional. Maksimal 500 kata."""
 </div>""", unsafe_allow_html=True)
 
             # ── Chart Kurs ───────────────────────────────────────────────
-            _kurs_labels = str([r["month"] for r in _kurs_monthly]).replace("'",'"')
+            _kurs_labels = str([r["month"] for r in _kurs_monthly]).replace("'", '"')
             _kurs_rates  = str([r["rate"]  for r in _kurs_monthly])
-            components.html(f"""<!DOCTYPE html><html><head>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-</head><body style="background:transparent;margin:0;padding:0;">
-<div style="background:{"rgba(20,20,40,0.9)" if is_dark else "#fff"};border-radius:10px;padding:12px;margin-bottom:8px;">
-<div style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;color:#F0A500;margin-bottom:6px;">💱 USD/IDR — TREN KURS TENGAH BI</div>
-<canvas id="kursChart" style="height:180px!important;"></canvas></div>
-<script>
-new Chart(document.getElementById("kursChart"),{{
-  type:"line",
-  data:{{labels:{_kurs_labels},datasets:[{{
-    label:"USD/IDR",data:{_kurs_rates},
-    borderColor:"#F0A500",backgroundColor:"rgba(240,165,0,0.08)",
-    borderWidth:2,pointRadius:3,fill:true,tension:0.4
-  }}]}},
-  options:{{responsive:true,maintainAspectRatio:false,
-    plugins:{{legend:{{display:false}}}},
-    scales:{{x:{{ticks:{{color:"{"#aaa" if is_dark else "#666"}",maxRotation:45,font:{{size:8}}}},grid:{{display:false}}}},
-             y:{{ticks:{{color:"{"#aaa" if is_dark else "#666"}",font:{{size:9}},callback:function(v){{return "Rp "+v.toLocaleString()}}}},grid:{{color:"rgba(255,255,255,0.05)"}}}}}}}}
-}});
-</script></body></html>""", height=210)
+            _krs_current = _kurs_monthly[-1]["rate"]
+            _kurs_chart_html = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+                  <style>
+                    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+                    html, body {{ width: 100%; height: 100%; background: transparent; }}
+                    .chart-wrap {{
+                      background: rgba(255,255,255,0.03);
+                      border: 1px solid rgba(255,255,255,0.09);
+                      border-radius: 8px;
+                      padding: 14px 16px 10px;
+                      width: 100%;
+                      height: 230px;
+                    }}
+                    .chart-title {{
+                      font-family: 'IBM Plex Mono', monospace;
+                      font-size: 11px;
+                      color: #888;
+                      margin-bottom: 10px;
+                      display: flex;
+                      justify-content: space-between;
+                      flex-wrap: wrap;
+                      gap: 4px;
+                    }}
+                    .chart-title span {{ color: #F0A500; font-weight: 600; }}
+                    canvas {{ display: block; width: 100% !important; }}
+                  </style>
+                </head>
+                <body>
+                  <div class="chart-wrap">
+                    <div class="chart-title">
+                      💱 USD/IDR — TREN KURS TENGAH BI
+                      <span>Last: Rp {{_krs_current:,}}</span>
+                    </div>
+                    <canvas id="kurs_md_chart" style="height:190px !important;"></canvas>
+                  </div>
+                  <script>
+                  (function() {{
+                    var ctx = document.getElementById('kurs_md_chart').getContext('2d');
+                    var labels = {_kurs_labels};
+                    var vals   = {_kurs_rates};
+                    var ptColors = vals.map(function(v,i) {{
+                      if (i === 0) return '#F0A500';
+                      return v > vals[i-1] ? '#ef5350' : '#00E5BE';
+                    }});
+                    new Chart(ctx, {{
+                      type: 'line',
+                      data: {{
+                        labels: labels,
+                        datasets: [{{
+                          label: 'USD/IDR',
+                          data: vals,
+                          borderColor: '#F0A500',
+                          backgroundColor: 'rgba(240,165,0,0.10)',
+                          tension: 0.3,
+                          fill: true,
+                          pointRadius: 3,
+                          pointHoverRadius: 6,
+                          borderWidth: 2.5,
+                          pointBackgroundColor: ptColors,
+                          pointBorderColor: ptColors,
+                        }}]
+                      }},
+                      options: {{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        plugins: {{
+                          legend: {{ display: false }},
+                          tooltip: {{
+                            backgroundColor: '#1a1a2e',
+                            titleColor: '#888',
+                            bodyColor: '#F0A500',
+                            callbacks: {{ label: function(c) {{ return ' Rp ' + c.parsed.y.toLocaleString(); }} }}
+                          }}
+                        }},
+                        interaction: {{ mode: 'index', intersect: false }},
+                        scales: {{
+                          x: {{
+                            ticks: {{
+                              color: '#888',
+                              font: {{ size: 9 }},
+                              maxRotation: 45,
+                              minRotation: 0,
+                              autoSkip: true,
+                              maxTicksLimit: 18
+                            }},
+                            grid: {{ color: 'rgba(255,255,255,0.04)' }}
+                          }},
+                          y: {{
+                            ticks: {{ color: '#888', font: {{ size: 9 }}, callback: function(v) {{ return 'Rp ' + v.toLocaleString(); }} }},
+                            grid: {{ color: 'rgba(255,255,255,0.05)' }}
+                          }}
+                        }}
+                      }}
+                    }});
+                  }})();
+                  </script>
+                </body>
+                </html>
+            """
+            components.html(_kurs_chart_html, height=255, scrolling=False)
 
             # ── Key Metrics ─────────────────────────────────────────────
             _krs_latest  = _kurs_monthly[-1]["rate"]
