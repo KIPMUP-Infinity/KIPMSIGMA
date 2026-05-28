@@ -16336,6 +16336,8 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
         components.html(ca_html_widget, height=_ca_total_h + 8, scrolling=False)
 
+    with tab_rotation:
+
         def highlight_status(val):
             if val == 'NEW ENTRY': return 'background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; font-weight: bold;'
             elif val == 'DOWNGRADED': return 'background-color: rgba(241, 196, 15, 0.2); color: #f1c40f;'
@@ -20784,10 +20786,10 @@ Jawab dalam Bahasa Indonesia, tajam dan analitis. Maksimal 500 kata."""
                                     # 2. Label dikunci di x=1.0 (batas tembok kanan)
                                     fig.add_annotation(
                                         xref='paper', yref='y',
-                                        x=1.0, y=y_val,
+                                        x=1.005, y=y_val,
                                         text=f"<b>{label_text} {y_val:,.0f}</b>",
                                         showarrow=False,
-                                        xanchor='right', yanchor='middle',
+                                        xanchor='left', yanchor='middle',
                                         font=dict(color=text_color, size=10, family='IBM Plex Mono, monospace'),
                                         bgcolor=bg_color,
                                         bordercolor=line_color,
@@ -20829,10 +20831,10 @@ Jawab dalam Bahasa Indonesia, tajam dan analitis. Maksimal 500 kata."""
                                     # Label BUY di kanan
                                     fig.add_annotation(
                                         xref='paper', yref='y',
-                                        x=1.0, y=mid_y,
+                                        x=1.005, y=mid_y,
                                         text=f"<b>BUY {min(el_val, eh_val):,.0f}-{max(el_val, eh_val):,.0f}</b>",
                                         showarrow=False,
-                                        xanchor='right', yanchor='middle',
+                                        xanchor='left', yanchor='middle',
                                         font=dict(color='#089981', size=10, family='IBM Plex Mono, monospace'),
                                         bgcolor=tv_bg_color,
                                         bordercolor='#089981',
@@ -20965,7 +20967,7 @@ Jawab dalam Bahasa Indonesia, tajam dan analitis. Maksimal 500 kata."""
                             height=980,
                             showlegend=False,
                             barmode="stack",
-                            margin=dict(l=0, r=120, t=10, b=40),
+                            margin=dict(l=0, r=145, t=10, b=40),
                             xaxis =dict(**ax_x, rangeslider=dict(visible=False),
                                         range=[-0.5, n_total-0.5], tickvals=tickvals),
                             xaxis2=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
@@ -33855,203 +33857,75 @@ components.html("""
 (function() {
     if (window.__sigmaTabLockRunning) return;
     window.__sigmaTabLockRunning = true;
-
     var pd = window.parent.document;
-
-    // Inject modal CSS once
     if (!pd.getElementById('sigma-lock-css')) {
         var css = pd.createElement('style');
         css.id = 'sigma-lock-css';
         css.textContent = `
-            #sigma-lock-overlay {
-                display: none;
-                position: fixed;
-                inset: 0;
-                background: rgba(0,0,0,0.72);
-                z-index: 9999999;
-                align-items: center;
-                justify-content: center;
-            }
-            #sigma-lock-overlay.active { display: flex; }
-            #sigma-lock-box {
-                background: #1a1a2e;
-                border: 1px solid rgba(255,255,255,0.12);
-                border-radius: 16px;
-                padding: 32px 28px 28px;
-                width: 320px;
-                max-width: 90vw;
-                box-shadow: 0 8px 40px rgba(0,0,0,0.6);
-                font-family: 'IBM Plex Mono', 'Courier New', monospace;
-                text-align: center;
-                transition: transform 0.08s ease;
-            }
-            #sigma-lock-icon { font-size: 2rem; margin-bottom: 10px; }
-            #sigma-lock-title {
-                color: #ffffff;
-                font-size: 0.95rem;
-                font-weight: 700;
-                letter-spacing: 0.08em;
-                text-transform: uppercase;
-                margin-bottom: 6px;
-            }
-            #sigma-lock-subtitle {
-                color: rgba(255,255,255,0.45);
-                font-size: 0.7rem;
-                margin-bottom: 20px;
-                letter-spacing: 0.05em;
-            }
-            #sigma-lock-input {
-                width: 100%;
-                background: rgba(255,255,255,0.07);
-                border: 1px solid rgba(255,255,255,0.15);
-                border-radius: 8px;
-                padding: 10px 14px;
-                color: #ffffff;
-                font-family: 'IBM Plex Mono', monospace;
-                font-size: 1.1rem;
-                letter-spacing: 0.2em;
-                text-align: center;
-                outline: none;
-                box-sizing: border-box;
-                margin-bottom: 14px;
-            }
-            #sigma-lock-input:focus { border-color: rgba(0,229,190,0.5); }
-            #sigma-lock-btn {
-                width: 100%;
-                background: #00E5BE;
-                color: #0a0a1a;
-                border: none;
-                border-radius: 8px;
-                padding: 10px;
-                font-family: 'IBM Plex Mono', monospace;
-                font-size: 0.85rem;
-                font-weight: 700;
-                letter-spacing: 0.1em;
-                cursor: pointer;
-                margin-bottom: 10px;
-            }
-            #sigma-lock-btn:hover { background: #00c9a7; }
-            #sigma-lock-cancel {
-                color: rgba(255,255,255,0.35);
-                font-size: 0.7rem;
-                cursor: pointer;
-                letter-spacing: 0.05em;
-                text-decoration: underline;
-            }
-            #sigma-lock-cancel:hover { color: rgba(255,255,255,0.6); }
-            #sigma-lock-error {
-                color: #E24B4A;
-                font-size: 0.72rem;
-                margin-bottom: 10px;
-                min-height: 16px;
-                letter-spacing: 0.04em;
-            }
+            #sigma-lock-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.72); z-index:9999999; align-items:center; justify-content:center; }
+            #sigma-lock-overlay.active { display:flex; }
+            #sigma-lock-box { background:#1a1a2e; border:1px solid rgba(255,255,255,0.12); border-radius:16px; padding:32px 28px 28px; width:320px; max-width:90vw; box-shadow:0 8px 40px rgba(0,0,0,0.6); font-family:'IBM Plex Mono','Courier New',monospace; text-align:center; transition:transform 0.08s ease; }
+            #sigma-lock-icon { font-size:2rem; margin-bottom:10px; }
+            #sigma-lock-title { color:#ffffff; font-size:0.95rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px; }
+            #sigma-lock-subtitle { color:rgba(255,255,255,0.45); font-size:0.7rem; margin-bottom:20px; letter-spacing:0.05em; }
+            #sigma-lock-input { width:100%; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:10px 14px; color:#ffffff; font-family:'IBM Plex Mono',monospace; font-size:1.1rem; letter-spacing:0.2em; text-align:center; outline:none; box-sizing:border-box; margin-bottom:14px; }
+            #sigma-lock-input:focus { border-color:rgba(0,229,190,0.5); }
+            #sigma-lock-btn { width:100%; background:#00E5BE; color:#0a0a1a; border:none; border-radius:8px; padding:10px; font-family:'IBM Plex Mono',monospace; font-size:0.85rem; font-weight:700; letter-spacing:0.1em; cursor:pointer; margin-bottom:10px; }
+            #sigma-lock-btn:hover { background:#00c9a7; }
+            #sigma-lock-cancel { color:rgba(255,255,255,0.35); font-size:0.7rem; cursor:pointer; letter-spacing:0.05em; text-decoration:underline; }
+            #sigma-lock-cancel:hover { color:rgba(255,255,255,0.6); }
+            #sigma-lock-error { color:#E24B4A; font-size:0.72rem; margin-bottom:10px; min-height:16px; letter-spacing:0.04em; }
         `;
         pd.head.appendChild(css);
     }
-
-    // Inject modal HTML once
     if (!pd.getElementById('sigma-lock-overlay')) {
         var ov = pd.createElement('div');
         ov.id = 'sigma-lock-overlay';
-        ov.innerHTML =
-            '<div id="sigma-lock-box">' +
-                '<div id="sigma-lock-icon">\\uD83D\\uDD10</div>' +
-                '<div id="sigma-lock-title">AKSES TERKUNCI</div>' +
-                '<div id="sigma-lock-subtitle">Masukkan kode akses untuk membuka</div>' +
-                '<input id="sigma-lock-input" type="password" maxlength="12" placeholder="\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022" autocomplete="off" />' +
-                '<div id="sigma-lock-error"></div>' +
-                '<button id="sigma-lock-btn">BUKA AKSES</button>' +
-                '<span id="sigma-lock-cancel">Batal</span>' +
-            '</div>';
+        ov.innerHTML = '<div id="sigma-lock-box"><div id="sigma-lock-icon">\uD83D\uDD10</div><div id="sigma-lock-title">AKSES TERKUNCI</div><div id="sigma-lock-subtitle">Masukkan kode akses untuk membuka</div><input id="sigma-lock-input" type="password" maxlength="12" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022" autocomplete="off" /><div id="sigma-lock-error"></div><button id="sigma-lock-btn">BUKA AKSES</button><span id="sigma-lock-cancel">Batal</span></div>';
         pd.body.appendChild(ov);
-
-        // Events
         pd.getElementById('sigma-lock-btn').addEventListener('click', submitPassword);
         pd.getElementById('sigma-lock-cancel').addEventListener('click', hideModal);
-        pd.getElementById('sigma-lock-input').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') submitPassword();
-            if (e.key === 'Escape') hideModal();
-        });
-        pd.getElementById('sigma-lock-overlay').addEventListener('click', function(e) {
-            if (e.target === this) hideModal();
-        });
+        pd.getElementById('sigma-lock-input').addEventListener('keydown', function(e) { if(e.key==='Enter') submitPassword(); if(e.key==='Escape') hideModal(); });
+        pd.getElementById('sigma-lock-overlay').addEventListener('click', function(e) { if(e.target===this) hideModal(); });
     }
-
-    // State
-    var _pendingTab  = null;
-    var _pendingCode = null;
-    var _unlocked    = {};
-
-    // Tab lock config — key: substring label (lowercase), value: kode
-    var TAB_LOCKS = {
-        'market forecast': '929292',
-        'alpha plan':      '171717'
-    };
-
+    var _pendingTab=null, _pendingCode=null, _unlocked={};
+    var TAB_LOCKS = { 'market forecast':'929292', 'alpha plan':'171717' };
     function getLockInfo(tabEl) {
-        var txt = (tabEl.textContent || '').toLowerCase().trim();
-        for (var key in TAB_LOCKS) {
-            if (txt.indexOf(key) !== -1) return { key: key, code: TAB_LOCKS[key] };
-        }
+        var txt=(tabEl.textContent||'').toLowerCase().trim();
+        for(var key in TAB_LOCKS) { if(txt.indexOf(key)!==-1) return {key:key,code:TAB_LOCKS[key]}; }
         return null;
     }
-
-    function showModal(tabEl, lockKey, lockCode) {
-        _pendingTab  = tabEl;
-        _pendingCode = lockCode;
-        pd.getElementById('sigma-lock-input').value = '';
-        pd.getElementById('sigma-lock-error').textContent = '';
+    function showModal(tabEl,lockKey,lockCode) {
+        _pendingTab=tabEl; _pendingCode=lockCode;
+        pd.getElementById('sigma-lock-input').value='';
+        pd.getElementById('sigma-lock-error').textContent='';
         pd.getElementById('sigma-lock-overlay').classList.add('active');
-        setTimeout(function() { pd.getElementById('sigma-lock-input').focus(); }, 80);
+        setTimeout(function(){pd.getElementById('sigma-lock-input').focus();},80);
     }
-
-    function hideModal() {
-        pd.getElementById('sigma-lock-overlay').classList.remove('active');
-        _pendingTab  = null;
-        _pendingCode = null;
-    }
-
+    function hideModal() { pd.getElementById('sigma-lock-overlay').classList.remove('active'); _pendingTab=null; _pendingCode=null; }
     function submitPassword() {
-        var inp = pd.getElementById('sigma-lock-input');
-        var err = pd.getElementById('sigma-lock-error');
-        var val = inp.value.trim();
-        if (val === _pendingCode) {
-            for (var key in TAB_LOCKS) {
-                if (TAB_LOCKS[key] === _pendingCode) { _unlocked[key] = true; }
-            }
-            var tab = _pendingTab;
-            hideModal();
-            if (tab) { tab.click(); }
+        var inp=pd.getElementById('sigma-lock-input'), err=pd.getElementById('sigma-lock-error'), val=inp.value.trim();
+        if(val===_pendingCode) {
+            for(var key in TAB_LOCKS){if(TAB_LOCKS[key]===_pendingCode){_unlocked[key]=true;}}
+            var tab=_pendingTab; hideModal(); if(tab){tab.click();}
         } else {
-            err.textContent = '\\u2717 Kode salah, coba lagi';
-            inp.value = '';
-            inp.focus();
-            var box = pd.getElementById('sigma-lock-box');
-            box.style.transform = 'translateX(-6px)';
-            setTimeout(function() { box.style.transform = 'translateX(6px)'; }, 80);
-            setTimeout(function() { box.style.transform = 'translateX(0)'; }, 160);
+            err.textContent='\u2717 Kode salah, coba lagi'; inp.value=''; inp.focus();
+            var box=pd.getElementById('sigma-lock-box');
+            box.style.transform='translateX(-6px)';
+            setTimeout(function(){box.style.transform='translateX(6px)';},80);
+            setTimeout(function(){box.style.transform='translateX(0)';},160);
         }
     }
-
     function interceptTabs() {
-        var tabs = pd.querySelectorAll('[data-baseweb="tab"], button[role="tab"]');
+        var tabs=pd.querySelectorAll('[data-baseweb="tab"],button[role="tab"]');
         tabs.forEach(function(tab) {
-            if (tab.__sigmaLockBound) return;
-            var lock = getLockInfo(tab);
-            if (!lock) return;
-            tab.__sigmaLockBound = true;
-            tab.addEventListener('click', function(e) {
-                if (_unlocked[lock.key]) return;
-                e.preventDefault();
-                e.stopPropagation();
-                showModal(tab, lock.key, lock.code);
-            }, true);
+            if(tab.__sigmaLockBound) return;
+            var lock=getLockInfo(tab); if(!lock) return;
+            tab.__sigmaLockBound=true;
+            tab.addEventListener('click',function(e){ if(_unlocked[lock.key]) return; e.preventDefault(); e.stopPropagation(); showModal(tab,lock.key,lock.code); },true);
         });
     }
-
-    setInterval(interceptTabs, 400);
-    interceptTabs();
+    setInterval(interceptTabs,400); interceptTabs();
 })();
 </script>
 """, height=0)
