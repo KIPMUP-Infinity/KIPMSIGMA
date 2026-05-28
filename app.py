@@ -1089,6 +1089,11 @@ _groq_cooldown: dict = {}
 _GROQ_BACKOFF_BASE_SEC = 30
 _GROQ_BACKOFF_MAX_SEC  = 300
 
+# ── SIGMA MIMO RATE LIMIT MANAGER ──
+_mimo_cooldown: dict = {}
+_MIMO_BACKOFF_BASE_SEC = 20
+_MIMO_BACKOFF_MAX_SEC  = 240
+
 def _mark_groq_key_ratelimited(key: str) -> None:
     """Tandai key Groq sebagai rate-limited dengan exponential backoff + jitter."""
     h = hashlib.md5(key.encode()).hexdigest()[:10]
@@ -1107,6 +1112,22 @@ def _groq_key_available(key: str) -> bool:
 def _get_available_groq_keys(all_keys: list) -> list:
     available = [(n, k) for n, k in all_keys if _groq_key_available(k)]
     return available if available else all_keys
+
+# ── SIGMA MIMO RATE LIMIT FUNCTIONS ──
+def _mark_mimo_key_ratelimited(key: str) -> None:
+    """Tandai MiMo key sebagai rate-limited dengan exponential backoff + jitter."""
+    h = hashlib.md5(key.encode()).hexdigest()[:10]
+    now = time.time()
+    prev_until = _mimo_cooldown.get(h, 0)
+    if prev_until > now:
+        wait = min((prev_until - now) * 2 + random.uniform(3, 10), _MIMO_BACKOFF_MAX_SEC)
+    else:
+        wait = _MIMO_BACKOFF_BASE_SEC + random.uniform(1, 12)
+    _mimo_cooldown[h] = now + wait
+
+def _mimo_key_available(key: str) -> bool:
+    h = hashlib.md5(key.encode()).hexdigest()[:10]
+    return time.time() >= _mimo_cooldown.get(h, 0)
 
 def _friendly_ratelimit_message() -> str:
     now = time.time()
@@ -7009,6 +7030,16 @@ def _get_api_health_summary() -> dict:
         "icon": "✅" if len(_cbr_key) > 10 else "⚠️"
     }
 
+    # ── MiMo: cek key existence & cooldown status ──
+    _mimo_key_val = st.secrets.get("MIMO_API_KEY", "")
+    _mimo_in_cd   = not _mimo_key_available(_mimo_key_val) if len(_mimo_key_val) > 10 else False
+    if len(_mimo_key_val) < 10:
+        health["mimo"] = {"status": "missing", "detail": "MIMO_API_KEY tidak ada di Secrets", "icon": "⚠️"}
+    elif _mimo_in_cd:
+        health["mimo"] = {"status": "cooldown", "detail": "Key sedang cooldown (rate-limited)", "icon": "⏳"}
+    else:
+        health["mimo"] = {"status": "ok", "detail": "Key terkonfigurasi — context 1M token", "icon": "✅"}
+
     # ── Google Sheets: cek koneksi ──
     try:
         _gc = _get_gspread_client()
@@ -7103,10 +7134,20 @@ def _smart_truncate_prompt(text, max_tokens=22000):
 
 def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000, temperature=0.7):
     """
-    Groq PRIMARY - LLaMA 3.3 70B dengan GROQ_SYSTEM_PROMPT.
-    Key rotation otomatis saat 429 rate limit - coba semua key sebelum menyerah.
-    Smart truncation: total konteks dijaga ≤ 30.000 token.
+    SIGMA PRIMARY CHAIN — urutan prioritas:
+      1. MiMo v2.5-Pro  (1M token context, NO truncation)
+      2. Groq LLaMA 3.3 70B (key rotation, smart truncation)
+      3. Gemini (fallback terakhir)
     """
+    # ── LAYER 1: MiMo (coba duluan — context window terbesar, prompt masuk utuh) ──
+    try:
+        _mimo_resp, _mimo_mdl = _call_mimo_primary(full_prompt, history_msgs=history_msgs, max_tokens=max_tokens)
+        return _mimo_resp, _mimo_mdl
+    except Exception as _mimo_e:
+        # MiMo gagal/rate-limit/key missing → lanjut ke Groq
+        pass
+
+    # ── LAYER 2: Groq LLaMA 3.3 70B dengan key rotation ──
     from groq import Groq
 
     # ── Budget token: 30.000 total context window ──
@@ -7118,8 +7159,8 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000, tempera
     PROMPT_BUDGET = TOTAL_BUDGET-SYSTEM_TOKEN_EST-HISTORY_TOKEN_BUDGET-OUTPUT_BUDGET
     PROMPT_BUDGET = max(PROMPT_BUDGET, 8000)  # minimal 8000 token untuk prompt
 
-    # Truncate prompt jika melebihi budget
-    full_prompt = _smart_truncate_prompt(full_prompt, max_tokens=PROMPT_BUDGET)
+    # Truncate prompt jika melebihi budget (Groq butuh ini, MiMo tidak)
+    groq_prompt = _smart_truncate_prompt(full_prompt, max_tokens=PROMPT_BUDGET)
 
     messages = [{"role": "system", "content": GROQ_SYSTEM_PROMPT}]
 
@@ -7135,7 +7176,7 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000, tempera
             hist_clean = hist_clean[:-1]
         messages.extend(hist_clean)
 
-    messages.append({"role": "user", "content": full_prompt})
+    messages.append({"role": "user", "content": groq_prompt})
 
     all_keys = _get_all_groq_keys()
     if not all_keys:
@@ -7164,14 +7205,14 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000, tempera
                 continue
             raise e
 
-    # ── Semua Groq 70B key exhausted → fallback ke Gemini ──────────────────────
+    # ── LAYER 3: Gemini (fallback terakhir) ──
     try:
         _gem_resp, _gem_mdl = _call_gemini_text([{"role": "user", "content": full_prompt}])
         return _gem_resp, f"Gemini(fallback-dari-Groq70B)"
     except Exception as _gem_e:
         pass  # Gemini juga gagal → lanjut ke raise
 
-    raise Exception(f"Semua Groq key kena rate limit & Gemini fallback gagal. Error terakhir: {last_err}")
+    raise Exception(f"Semua layer AI gagal (MiMo + Groq + Gemini). Groq error terakhir: {last_err}")
 
 
 def _call_groq_streaming(full_prompt, max_tokens=2000, temperature=0.4):
@@ -7338,8 +7379,95 @@ def _call_cerebras(full_prompt, history_msgs=None, max_tokens=8000):
     return content_text, "Cerebras/Llama70B"
 
 
-# ─────────────────────────────────────────────
-# PART 7: SESSION HANDLERS, AUTH & UI (CSS/LOGIN)
+def _call_mimo_primary(full_prompt, history_msgs=None, max_tokens=16000):
+    """
+    MiMo PRIMARY — XiaomiMiMo v2.5-Pro via OpenAI-compatible API.
+    Context window: 1.000.000 token → TIDAK ada smart_truncate, prompt masuk utuh.
+    Key: st.secrets["MIMO_API_KEY"], single key (no rotation needed untuk saat ini).
+    Base URL: https://api.mimoai.io/v1 (OpenAI-compatible endpoint resmi MiMo).
+    """
+    try:
+        from openai import OpenAI as _OpenAI
+    except ImportError:
+        raise Exception("Library 'openai' tidak terinstall. Tambahkan ke requirements.txt: openai>=1.0.0")
+
+    mimo_key = st.secrets.get("MIMO_API_KEY", "")
+    if not mimo_key or len(mimo_key) < 10:
+        if "_api_health" not in st.session_state:
+            st.session_state["_api_health"] = {}
+        st.session_state["_api_health"]["mimo"] = {
+            "status": "missing_key",
+            "ts": _wib_now().strftime("%H:%M:%S")
+        }
+        raise Exception("MIMO_API_KEY tidak ditemukan di Secrets — layer ini di-skip")
+
+    if not _mimo_key_available(mimo_key):
+        raise Exception("MiMo key sedang dalam cooldown rate-limit — layer ini di-skip sementara")
+
+    # ── Update health dashboard ──
+    if "_api_health" not in st.session_state:
+        st.session_state["_api_health"] = {}
+    if "mimo" not in st.session_state["_api_health"]:
+        st.session_state["_api_health"]["mimo"] = {
+            "status": "key_present",
+            "ts": _wib_now().strftime("%H:%M:%S")
+        }
+
+    # ── Build messages (NO truncation — MiMo 1M token context) ──
+    messages = [{"role": "system", "content": GROQ_SYSTEM_PROMPT}]
+
+    if history_msgs:
+        # History dimasukkan penuh — tidak ada char limit karena context 1M token
+        hist_clean = [
+            {"role": m["role"], "content": (m.get("content") or "")}
+            for m in history_msgs
+            if m.get("role") in ("user", "assistant")
+        ][-12:]  # ambil 12 pesan terakhir (lebih banyak dari Groq karena context jauh lebih besar)
+        if hist_clean and hist_clean[-1]["role"] == "user":
+            hist_clean = hist_clean[:-1]
+        messages.extend(hist_clean)
+
+    messages.append({"role": "user", "content": full_prompt})
+
+    try:
+        client = _OpenAI(
+            api_key=mimo_key,
+            base_url="https://api.mimoai.io/v1",
+        )
+        response = client.chat.completions.create(
+            model="mimo-v2.5-pro",
+            messages=messages,
+            temperature=0.7,
+            max_tokens=max_tokens,
+        )
+        content = response.choices[0].message.content
+        if not content:
+            raise Exception("MiMo mengembalikan respons kosong")
+
+        # Update health status sukses
+        st.session_state["_api_health"]["mimo"] = {
+            "status": "ok",
+            "ts": _wib_now().strftime("%H:%M:%S")
+        }
+        return content, "MiMo/mimo-v2.5-pro"
+
+    except Exception as e:
+        err_str = str(e).lower()
+        if "429" in err_str or "rate_limit" in err_str or "rate limit" in err_str or "quota" in err_str:
+            _mark_mimo_key_ratelimited(mimo_key)
+            if "_api_health" in st.session_state:
+                st.session_state["_api_health"]["mimo"] = {
+                    "status": "rate_limited",
+                    "ts": _wib_now().strftime("%H:%M:%S")
+                }
+            raise Exception(f"MiMo rate-limited (429): {e}")
+        # Error lain (auth, network, dll) — langsung raise agar fallback chain berjalan
+        if "_api_health" in st.session_state:
+            st.session_state["_api_health"]["mimo"] = {
+                "status": f"error: {str(e)[:60]}",
+                "ts": _wib_now().strftime("%H:%M:%S")
+            }
+        raise e
 # ─────────────────────────────────────────────
 def new_session():
     return {"id": str(uuid.uuid4())[:8], "title": "Obrolan Baru", "messages": [SYSTEM_PROMPT], "created": _wib_now().strftime("%d/%m %H:%M")}
