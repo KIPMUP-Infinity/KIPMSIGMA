@@ -17339,11 +17339,11 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
         # ── ALPHA PLAN (tab terpisah) mengandung: Daily, Weekly, BSJP, Track Record ──
         # Alpha Screener hanya berisi: Insight, Fundamental, IPO, Broker Summary
-        alpha_tab_insight, alpha_tab_brosum, alpha_tab_ipo, alpha_tab_fundamental2 = st.tabs([
+        alpha_tab_insight, alpha_tab_fundamental2, alpha_tab_ipo, alpha_tab_brosum = st.tabs([
             "  ⚡ ALPHA STOCK INSIGHT  ",
-            "  🏦 BROKER SUMMARY  ",
-            "  📋 ANALISA IPO  ",
             "  📊 FUNDAMENTAL SCREENER  ",
+            "  📋 ANALISA IPO  ",
+            "  🏦 BROKER SUMMARY  ",
         ])
         # Alias agar blok lama yang referensi tab_daily/weekly/bsjp/trackrecord tetap berjalan
         # (akan dirender di tab_alpha_plan di bawah)
@@ -18372,12 +18372,29 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 ai_data = None
                 ai_text_verdict = ""
 
+                # ── CACHED PRICE FETCH — hindari re-download saat rerun ──────
+                @st.cache_data(ttl=90, show_spinner=False)
+                def _cached_yf_history(yf_ticker: str, period: str = "6mo"):
+                    try:
+                        import yfinance as _yf_ins
+                        return _yf_ins.Ticker(yf_ticker).history(period=period)
+                    except Exception:
+                        import pandas as _pd_ins
+                        return _pd_ins.DataFrame()
+
                 try:
-                    t = yf.Ticker(_yf_ticker)
-                    df_chart = t.history(period="6mo")
-                except Exception as e:
+                    df_chart = _cached_yf_history(_yf_ticker, "6mo")
+                except Exception:
                     pass
 
+                # ── SILENT PRE-WARM: mulai fetch fundamental saat user baru ketik ticker ──
+                # Ini mempercepat Analyze karena data sudah di-cache sebelum tombol diklik
+                if _is_idx_stock and ticker_input and not st.session_state.get(f"_prefetch_done_{ticker_input}"):
+                    try:
+                        fetch_fundamental_with_cache(ticker_input)
+                        st.session_state[f"_prefetch_done_{ticker_input}"] = True
+                    except Exception:
+                        pass
 
                 # ── PRICE-BASED CACHE — konsistensi analisa ─────────────────
                 # Selama harga tidak berubah >0.5% dalam hari yang sama,
@@ -18428,7 +18445,15 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                         _insight_cache_key = None
 
                 if run_analysis:
-                    with _sigma_spinner("SIGMA sedang mengumpulkan data, menganalisis, dan menggambar chart..."):
+                    # ── Pre-warm fundamental cache jika belum ada (jalan paralel sebelum AI call) ──
+                    if _is_idx_stock:
+                        try:
+                            if not st.session_state.get(f"_prefetch_done_{ticker_input}"):
+                                fetch_fundamental_with_cache(ticker_input)
+                                st.session_state[f"_prefetch_done_{ticker_input}"] = True
+                        except Exception:
+                            pass
+                    with _sigma_spinner("SIGMA sedang menganalisis dan menggambar chart..."):
                         if _use_cached_insight:
                             st.info(
                                 "⚡ **Analisa dikembalikan dari cache** — harga tidak berubah signifikan dari analisa sebelumnya. "
@@ -18474,8 +18499,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                                 _sigma_result = None
                                 if _is_idx_stock and _SIGMA_SCORE_AVAILABLE and not df_chart.empty:
                                     try:
-                                        import yfinance as _yf_ihsg
-                                        _ihsg_hist = _yf_ihsg.Ticker("^JKSE").history(period="3mo")
+                                        _ihsg_hist = _cached_yf_history("^JKSE", "3mo")
                                         _pd_obj = price_data_from_yf(df_chart, _ihsg_hist if not _ihsg_hist.empty else None)
                                         _fd_raw = fetch_fundamental_with_cache(ticker_input)
                                         _fd_obj = fundamental_data_from_dict(_fd_raw) if _fd_raw else None
@@ -18932,6 +18956,10 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                         df_chart = df_chart.copy()
                         df_chart.index = pd.to_datetime(df_chart.index)
                         df_chart = df_chart[df_chart.index.dayofweek < 5].dropna(subset=['Open','High','Low','Close'])
+                        # ── OPTIMASI PERFORMA: batasi maks 120 candle (≈6 bulan trading) ──
+                        # Lebih sedikit data = chart lebih ringan tapi tetap informatif
+                        if len(df_chart) > 120:
+                            df_chart = df_chart.iloc[-120:]
 
                         # ── EMAs ──────────────────────────────────────────────
                         df_chart['EMA13']  = df_chart['Close'].ewm(span=13,  adjust=False).mean()
@@ -19200,7 +19228,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                             plot_bgcolor=tv_bg_color,
                             paper_bgcolor=tv_bg_color,
                             font=dict(color=tv_text_color, size=11),
-                            height=1080,
+                            height=980,
                             showlegend=False,
                             barmode="stack",
                             margin=dict(l=0, r=120, t=10, b=40),
@@ -19215,9 +19243,12 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                             yaxis3=dict(**ax_y_grid,  title='DELTA'),
                             yaxis4=dict(**ax_y_grid,  title='RSI', range=[0, 100]),
                             yaxis5=dict(**ax_y_grid,  title='MACD'),
+                            # ── OPTIMASI: nonaktifkan animasi & transisi Plotly ──
+                            transition=dict(duration=0),
+                            uirevision="static",
                         )
 
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
                         # ── EMA Legend ────────────────────────────────────────
                         ema_items = [
@@ -26416,22 +26447,53 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
 
             with _rm_tab_bi:
                 # ── BI RATE MONITOR + GLOBAL RATES ────────────────────────
-                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏦 BI RATE MONITOR & GLOBAL INTEREST RATES</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏦 BI RATE MONITOR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
-                # ── Hardcoded historical data (update berkala) ──
+                # ── Hardcoded historical data (update berkala) — mulai dari Jan 2020 ──
                 _bi_rate_history = [
+                    # ── 2020 ──
+                    {"date": "Jan 2020", "rate": 5.00}, {"date": "Feb 2020", "rate": 4.75},
+                    {"date": "Mar 2020", "rate": 4.50}, {"date": "Apr 2020", "rate": 4.50},
+                    {"date": "Mei 2020", "rate": 4.50}, {"date": "Jun 2020", "rate": 4.25},
+                    {"date": "Jul 2020", "rate": 4.00}, {"date": "Ags 2020", "rate": 4.00},
+                    {"date": "Sep 2020", "rate": 4.00}, {"date": "Okt 2020", "rate": 4.00},
+                    {"date": "Nov 2020", "rate": 3.75}, {"date": "Des 2020", "rate": 3.75},
+                    # ── 2021 ──
+                    {"date": "Jan 2021", "rate": 3.75}, {"date": "Feb 2021", "rate": 3.50},
+                    {"date": "Mar 2021", "rate": 3.50}, {"date": "Apr 2021", "rate": 3.50},
+                    {"date": "Mei 2021", "rate": 3.50}, {"date": "Jun 2021", "rate": 3.50},
+                    {"date": "Jul 2021", "rate": 3.50}, {"date": "Ags 2021", "rate": 3.50},
+                    {"date": "Sep 2021", "rate": 3.50}, {"date": "Okt 2021", "rate": 3.50},
+                    {"date": "Nov 2021", "rate": 3.50}, {"date": "Des 2021", "rate": 3.50},
+                    # ── 2022 ──
+                    {"date": "Jan 2022", "rate": 3.50}, {"date": "Feb 2022", "rate": 3.50},
+                    {"date": "Mar 2022", "rate": 3.50}, {"date": "Apr 2022", "rate": 3.50},
+                    {"date": "Mei 2022", "rate": 3.50}, {"date": "Jun 2022", "rate": 3.50},
+                    {"date": "Jul 2022", "rate": 3.50}, {"date": "Ags 2022", "rate": 3.75},
+                    {"date": "Sep 2022", "rate": 4.25}, {"date": "Okt 2022", "rate": 4.75},
+                    {"date": "Nov 2022", "rate": 5.25}, {"date": "Des 2022", "rate": 5.50},
+                    # ── 2023 ──
+                    {"date": "Jan 2023", "rate": 5.75}, {"date": "Feb 2023", "rate": 5.75},
+                    {"date": "Mar 2023", "rate": 5.75}, {"date": "Apr 2023", "rate": 5.75},
+                    {"date": "Mei 2023", "rate": 5.75}, {"date": "Jun 2023", "rate": 5.75},
+                    {"date": "Jul 2023", "rate": 5.75}, {"date": "Ags 2023", "rate": 5.75},
+                    {"date": "Sep 2023", "rate": 5.75}, {"date": "Okt 2023", "rate": 6.00},
+                    {"date": "Nov 2023", "rate": 6.00}, {"date": "Des 2023", "rate": 6.00},
+                    # ── 2024 ──
                     {"date": "Jan 2024", "rate": 6.00}, {"date": "Feb 2024", "rate": 6.00},
                     {"date": "Mar 2024", "rate": 6.00}, {"date": "Apr 2024", "rate": 6.25},
                     {"date": "Mei 2024", "rate": 6.25}, {"date": "Jun 2024", "rate": 6.25},
                     {"date": "Jul 2024", "rate": 6.25}, {"date": "Ags 2024", "rate": 6.25},
                     {"date": "Sep 2024", "rate": 6.00}, {"date": "Okt 2024", "rate": 6.00},
                     {"date": "Nov 2024", "rate": 6.00}, {"date": "Des 2024", "rate": 6.00},
+                    # ── 2025 ──
                     {"date": "Jan 2025", "rate": 5.75}, {"date": "Feb 2025", "rate": 5.75},
                     {"date": "Mar 2025", "rate": 5.75}, {"date": "Apr 2025", "rate": 5.75},
                     {"date": "Mei 2025", "rate": 5.50}, {"date": "Jun 2025", "rate": 5.50},
                     {"date": "Jul 2025", "rate": 5.25}, {"date": "Ags 2025", "rate": 5.25},
                     {"date": "Sep 2025", "rate": 5.25}, {"date": "Okt 2025", "rate": 5.00},
                     {"date": "Nov 2025", "rate": 5.00}, {"date": "Des 2025", "rate": 5.00},
+                    # ── 2026 ──
                     {"date": "Jan 2026", "rate": 5.00}, {"date": "Feb 2026", "rate": 4.75},
                     {"date": "Mar 2026", "rate": 4.75}, {"date": "Apr 2026", "rate": 4.75},
                     {"date": "Mei 2026", "rate": 5.25},
@@ -26596,7 +26658,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                 <body>
                   <div class="chart-wrap">
                     <div class="chart-title">
-                      📊 BI RATE HISTORIS (Jan 2024 – Mei 2026)
+                      📊 BI RATE HISTORIS (Jan 2020 – Mei 2026)
                       <span>Current: {_bi_current:.2f}%</span>
                     </div>
                     <canvas id="bi_rate_chart" style="height:190px !important;"></canvas>
@@ -26659,7 +26721,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                           y: {{
                             ticks: {{ color: '#888', font: {{ size: 9 }}, callback: function(v) {{ return v.toFixed(2)+'%'; }} }},
                             grid: {{ color: 'rgba(255,255,255,0.05)' }},
-                            min: 4.0, max: 6.8,
+                            min: 3.0, max: 6.8,
                           }}
                         }}
                       }}
@@ -26687,6 +26749,82 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
 
                 _rates_src_note = "US 10Y via yfinance" if _global_rates["US 10Y"]["source"] == "yfinance" else "Semua rates: hardcoded (yfinance gagal)"
                 st.caption(f"📡 Sumber data: BI Rate = hardcoded dari keputusan resmi BI · {_rates_src_note} · Cache 30 menit")
+
+                # ── TABEL BI RATE PER BULAN (2020–sekarang) ──────────────────
+                st.markdown("<div style='margin-top:20px;'></div>", unsafe_allow_html=True)
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📋 TABEL BI RATE PER BULAN (2020 – 2026)</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+                # Kelompokkan per tahun
+                _bi_by_year = {}
+                for _r in _bi_rate_history:
+                    _yr = _r["date"].split(" ")[1]
+                    _bi_by_year.setdefault(_yr, {})[_r["date"].split(" ")[0]] = _r["rate"]
+
+                _month_order = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Ags","Sep","Okt","Nov","Des"]
+
+                # Build HTML table
+                _tbl_html = """
+                <div style="overflow-x:auto;margin-top:8px;">
+                <table style="width:100%;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;">
+                  <thead>
+                    <tr style="background:rgba(139,92,246,0.15);border-bottom:1px solid rgba(255,255,255,0.1);">
+                      <th style="padding:8px 10px;text-align:left;color:#a78bfa;font-weight:600;letter-spacing:0.05em;">TAHUN</th>
+                """
+                for _m in _month_order:
+                    _tbl_html += f'<th style="padding:8px 6px;text-align:center;color:#a78bfa;font-weight:600;">{_m}</th>'
+                _tbl_html += '<th style="padding:8px 8px;text-align:center;color:#a78bfa;font-weight:600;">Δ YoY</th></tr></thead><tbody>'
+
+                _prev_year_last = None
+                for _yr in sorted(_bi_by_year.keys()):
+                    _yr_data = _bi_by_year[_yr]
+                    _yr_last = None
+                    for _m in reversed(_month_order):
+                        if _m in _yr_data:
+                            _yr_last = _yr_data[_m]
+                            break
+
+                    # YoY delta
+                    if _prev_year_last is not None and _yr_last is not None:
+                        _yoy = _yr_last - _prev_year_last
+                        _yoy_str = f'<span style="color:{"#ef5350" if _yoy>0 else "#26a69a" if _yoy<0 else "#888"};">{_yoy:+.2f}%</span>'
+                    else:
+                        _yoy_str = '<span style="color:#555;">—</span>'
+
+                    _tbl_html += f'<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">'
+                    _tbl_html += f'<td style="padding:7px 10px;color:#e2e8f0;font-weight:700;">{_yr}</td>'
+
+                    _prev_rate = None
+                    for _m in _month_order:
+                        if _m in _yr_data:
+                            _rate = _yr_data[_m]
+                            # Color-code by change
+                            if _prev_rate is None:
+                                _cell_color = "#e2e8f0"
+                                _bg = "transparent"
+                            elif _rate > _prev_rate:
+                                _cell_color = "#ef5350"
+                                _bg = "rgba(239,83,80,0.08)"
+                            elif _rate < _prev_rate:
+                                _cell_color = "#26a69a"
+                                _bg = "rgba(38,166,154,0.08)"
+                            else:
+                                _cell_color = "#94a3b8"
+                                _bg = "transparent"
+                            _prev_rate = _rate
+                            _tbl_html += f'<td style="padding:7px 6px;text-align:center;color:{_cell_color};background:{_bg};font-weight:600;">{_rate:.2f}%</td>'
+                        else:
+                            _tbl_html += '<td style="padding:7px 6px;text-align:center;color:#374151;">—</td>'
+
+                    _tbl_html += f'<td style="padding:7px 8px;text-align:center;">{_yoy_str}</td></tr>'
+                    if _yr_last is not None:
+                        _prev_year_last = _yr_last
+
+                _tbl_html += """</tbody></table>
+                <div style="margin-top:8px;font-size:0.65rem;color:#555;font-family:IBM Plex Mono,monospace;">
+                  🟢 Hijau = BI Rate turun &nbsp;|&nbsp; 🔴 Merah = BI Rate naik &nbsp;|&nbsp; Abu = tidak berubah &nbsp;|&nbsp; Δ YoY = selisih rate akhir tahun vs akhir tahun sebelumnya
+                </div>
+                </div>"""
+                st.markdown(_tbl_html, unsafe_allow_html=True)
 
 
             with _rm_tab_ai:
