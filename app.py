@@ -18388,6 +18388,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
             _rot_sh_now = _rot_dt.datetime.now()
 
             # ── Ambil database shareholder ──────────────────────────────
+            _rot_sh_db = {}  # init default agar tidak NameError jika try gagal
             try:
                 import datetime as _sh_dt_local
                 import calendar as _sh_cal
@@ -18536,7 +18537,10 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 _rot_sh_ticker = st.selectbox("Pilih Saham", _rot_tickers, key="rot_sh_ticker_sel")
                 _rot_rows = _rot_sh_db.get(_rot_sh_ticker, [])
                 if _rot_rows:
-                    import plotly.graph_objects as go
+                    try:
+                        import plotly.graph_objects as go
+                    except ImportError:
+                        go = None
                     _rot_dates  = [r["date"].strftime("%b %Y") for r in _rot_rows]
                     _rot_vals   = [r["shareholders"] for r in _rot_rows]
                     _rot_latest = _rot_vals[-1]
@@ -18547,22 +18551,34 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                     _col1.metric("Pemegang Saham Terakhir", f"{_rot_latest:,}".replace(",","."))
                     _col2.metric("Perubahan MoM", f"{_rot_delta:+,}".replace(",","."), f"{_rot_pct:+.2f}%")
                     _col3.metric("Periode Data", f"{len(_rot_rows)} bulan")
-                    _rot_fig = go.Figure()
-                    _rot_fig.add_trace(go.Scatter(
-                        x=_rot_dates, y=_rot_vals, mode="lines+markers",
-                        line=dict(color="#00E5BE", width=2),
-                        marker=dict(size=5, color="#00E5BE"),
-                        fill="tozeroy", fillcolor="rgba(0,229,190,0.08)",
-                        name=_rot_sh_ticker
-                    ))
-                    _rot_fig.update_layout(
-                        template="plotly_dark" if is_dark else "plotly_white",
-                        height=260, margin=dict(l=0,r=0,t=24,b=0),
-                        xaxis=dict(tickangle=-30, tickfont=dict(size=10)),
-                        yaxis=dict(tickformat=","), showlegend=False,
-                        title=dict(text=f"{_rot_sh_ticker} — Tren Pemegang Saham", font=dict(size=13))
-                    )
-                    st.plotly_chart(_rot_fig, use_container_width=True)
+                    if go:
+                        try:
+                            _rot_fig = go.Figure()
+                            _rot_fig.add_trace(go.Scatter(
+                                x=_rot_dates, y=_rot_vals, mode="lines+markers",
+                                line=dict(color="#00E5BE", width=2),
+                                marker=dict(size=5, color="#00E5BE"),
+                                fill="tozeroy", fillcolor="rgba(0,229,190,0.08)",
+                                name=_rot_sh_ticker
+                            ))
+                            _rot_fig.update_layout(
+                                template="plotly_dark" if is_dark else "plotly_white",
+                                height=260, margin=dict(l=0,r=0,t=24,b=0),
+                                xaxis=dict(tickangle=-30, tickfont=dict(size=10)),
+                                yaxis=dict(tickformat=","), showlegend=False,
+                                title=dict(text=f"{_rot_sh_ticker} — Tren Pemegang Saham", font=dict(size=13))
+                            )
+                            st.plotly_chart(_rot_fig, use_container_width=True)
+                        except Exception as _plt_err:
+                            # Fallback: tampilkan tabel data jika plotly gagal
+                            import pandas as _sh_pd
+                            _df_sh = _sh_pd.DataFrame({"Bulan": _rot_dates, "Pemegang Saham": _rot_vals})
+                            st.dataframe(_df_sh, use_container_width=True)
+                    else:
+                        # Fallback tanpa plotly
+                        import pandas as _sh_pd
+                        _df_sh = _sh_pd.DataFrame({"Bulan": _rot_dates, "Pemegang Saham": _rot_vals})
+                        st.dataframe(_df_sh, use_container_width=True)
             else:
                 st.markdown(f"<p style=\'color:{text_sub};\'>Data database shareholder tidak tersedia di konteks ini.</p>", unsafe_allow_html=True)
 
@@ -30004,22 +30020,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
 
                 _sc1, _sc2, _sc3 = st.columns([3, 1, 1])
                 with _sc1:
-                    # Password gate untuk Generate Manual (kode: 929292)
-                    if not st.session_state.get("brosum_manual_unlocked"):
-                        _bm_pw_col, _bm_btn_col = st.columns([2, 1])
-                        with _bm_pw_col:
-                            _bm_pw = st.text_input("Kode akses Generate Manual:",
-                                                   type="password", placeholder="••••••",
-                                                   key="brosum_pw_input", label_visibility="collapsed")
-                        with _bm_btn_col:
-                            if st.button("🔓 UNLOCK", use_container_width=True, key="brosum_pw_btn"):
-                                if _bm_pw == "929292":
-                                    st.session_state["brosum_manual_unlocked"] = True
-                                    st.rerun()
-                                else:
-                                    st.error("❌ Kode salah.")
-                    else:
-                        st.markdown(f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:#26a69a;'>🔓 Generate Manual Unlocked</span>", unsafe_allow_html=True)
+                    st.markdown(f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:#26a69a;'>🔓 Generate Manual Aktif</span>", unsafe_allow_html=True)
                 with _sc2:
                     # Gunakan on_click callback agar button state tidak hilang setelah rerun unlock
                     def _do_unlock_and_generate():
@@ -30030,7 +30031,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                         use_container_width=True,
                         key="btn_screen30",
                         help="Jalankan screening sekarang tanpa menunggu jadwal 20:30",
-                        disabled=not st.session_state.get("brosum_manual_unlocked", False)
+                        disabled=False
                     )
                     # Sinkronkan: jika tombol diklik, set flag
                     if _btn_screen30:
@@ -33448,7 +33449,7 @@ components.html("""
         });
     }
     var _pt = null, _pc = null, _ul = {};
-    var TL = { 'market forecast': '929292', 'alpha plan': '171717' };
+    var TL = { 'market forecast': '929292', 'alpha plan': '171717', 'broker summary': '929292' };
     function gL(t) {
         var tx = (t.textContent || '').toLowerCase().trim();
         for (var k in TL) { if (tx.indexOf(k) !== -1) return { key: k, code: TL[k] }; }
