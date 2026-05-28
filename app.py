@@ -16138,6 +16138,12 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
         components.html(ca_html_widget, height=_ca_total_h + 8, scrolling=False)
 
+        def highlight_status(val):
+            if val == 'NEW ENTRY': return 'background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; font-weight: bold;'
+            elif val == 'DOWNGRADED': return 'background-color: rgba(241, 196, 15, 0.2); color: #f1c40f;'
+            elif 'OUT' in str(val): return 'background-color: rgba(231, 76, 60, 0.2); color: #e74c3c;'
+            return ''
+
         def safe_style(df_style, func, subset):
             if hasattr(df_style, 'map'):
                 return df_style.map(func, subset=subset)
