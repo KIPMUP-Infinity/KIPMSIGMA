@@ -5752,10 +5752,10 @@ def _show_sigma_loading_screen():
 </head>
 <body>
     <div class="sigma-logo">&#x3A3;</div>
-    <div class="loader-subtitle">Strategic Intelligence Engine</div>
-    <div class="loader-version">KIPM-UP &middot; MnM &middot; IDX TERMINAL</div>
+    <div class="loader-subtitle">Moonside Engine</div>
+    <div class="loader-version">SIGMA KIPM-UP X MOONSIDE</div>
     <div class="bar-wrap"><div class="bar-fill"></div></div>
-    <div class="term-log" id="tlog">Initializing core systems...</div>
+    <div class="term-log" id="tlog"></div>
     <div class="bottom-tag">SIGMA &copy; 2026</div>
 
     <script>
@@ -5792,16 +5792,16 @@ def _show_sigma_loading_screen():
     with _ph:
         components.html(_LOADING_HTML, height=540, scrolling=False)
 
-    # 7 detik — cukup untuk semua sistem siap, semua log sempat terbaca
-    time.sleep(7)
+    # 4 detik — cukup untuk sistem siap, refresh terasa lebih cepat
+    time.sleep(4)
     _ph.empty()
 
     # Set flag → tidak akan pernah masuk blok ini lagi sampai session mati
     st.session_state["_sigma_loading_done"] = True
 
 # ─────────────────────────────────────────────────────────────────────────────
-# ── Guard: _sm_load_all hanya jalan sekali per 5 menit (bukan setiap rerun) ──
-_SM_LOAD_TTL = 300  # 5 menit
+# ── Guard: _sm_load_all hanya jalan sekali per 30 menit (bukan setiap rerun) ──
+_SM_LOAD_TTL = 1800  # 30 menit — dinaikkan agar refresh tidak re-deploy semua
 _sm_load_ts = st.session_state.get("_sm_load_ts", 0)
 if time.time() - _sm_load_ts >= _SM_LOAD_TTL:
     _sm_load_all()
@@ -13993,7 +13993,16 @@ table{{margin-bottom:0!important;}}
         if req_daily or req_weekly:
             mode_str  = "Daily (24 Jam Terakhir)" if req_daily else "Weekly (1 Minggu Terakhir)"
             mode_key  = "daily" if req_daily else "weekly"
-            with st.spinner(f"Mengumpulkan data real-time & menyusun {mode_str} Market Brief..."):
+
+            # ── SMART CACHE: skip generate jika konten hari ini sudah ada ──────
+            from datetime import timezone as _tz, timedelta as _tdelta
+            _today_date_str = datetime.now(_tz(_tdelta(hours=7))).strftime("%d %B %Y")
+            _cache_content  = st.session_state.get("mb_daily_content" if req_daily else "mb_weekly_content", "")
+            _cache_ts       = st.session_state.get("mb_daily_timestamp" if req_daily else "mb_weekly_timestamp", "")
+            if _cache_content and _today_date_str in str(_cache_ts):
+                st.info(f"✅ {mode_str} sudah tersedia hari ini (cache). Scroll ke bawah untuk melihatnya.", icon="⚡")
+            if not (_cache_content and _today_date_str in str(_cache_ts)):
+              with st.spinner(f"Mengumpulkan data real-time & menyusun {mode_str} Market Brief..."):
                 try:
                     import feedparser as _fp
                     _feedparser_ok = True
@@ -14125,7 +14134,7 @@ table{{margin-bottom:0!important;}}
                     """Gunakan Anthropic API + web_search untuk data real-time."""
                     import urllib.request, json as _j
                     _payload = {
-                        "model": "claude-opus-4-5",
+                        "model": "claude-sonnet-4-5",
                         "max_tokens": max_tok,
                         "tools": [{"type": "web_search_20250305", "name": "web_search"}],
                         "messages": [{"role": "user", "content": user_prompt}]
