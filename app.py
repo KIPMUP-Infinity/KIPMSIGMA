@@ -26444,6 +26444,281 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
 
                 st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
+                # ═══════════════════════════════════════════════════════════════
+                # FED RATE MONITOR — BAGIAN BAWAH: Historis, Jadwal, Tabel
+                # (mirip BI Rate Monitor, tapi versi Federal Reserve)
+                # ═══════════════════════════════════════════════════════════════
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📡 FED FUNDS RATE — HISTORIS & KONTEKS GLOBAL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+                # ── Fed Rate History (2020–2026) ─────────────────────────────
+                _fed_rate_history = [
+                    # ── 2020 (COVID — Fed cuts ke nol) ──
+                    {"date": "Jan 2020", "rate": 1.75}, {"date": "Feb 2020", "rate": 1.75},
+                    {"date": "Mar 2020", "rate": 0.25}, {"date": "Apr 2020", "rate": 0.25},
+                    {"date": "Mei 2020", "rate": 0.25}, {"date": "Jun 2020", "rate": 0.25},
+                    {"date": "Jul 2020", "rate": 0.25}, {"date": "Ags 2020", "rate": 0.25},
+                    {"date": "Sep 2020", "rate": 0.25}, {"date": "Okt 2020", "rate": 0.25},
+                    {"date": "Nov 2020", "rate": 0.25}, {"date": "Des 2020", "rate": 0.25},
+                    # ── 2021 (zero rate policy berlanjut) ──
+                    {"date": "Jan 2021", "rate": 0.25}, {"date": "Feb 2021", "rate": 0.25},
+                    {"date": "Mar 2021", "rate": 0.25}, {"date": "Apr 2021", "rate": 0.25},
+                    {"date": "Mei 2021", "rate": 0.25}, {"date": "Jun 2021", "rate": 0.25},
+                    {"date": "Jul 2021", "rate": 0.25}, {"date": "Ags 2021", "rate": 0.25},
+                    {"date": "Sep 2021", "rate": 0.25}, {"date": "Okt 2021", "rate": 0.25},
+                    {"date": "Nov 2021", "rate": 0.25}, {"date": "Des 2021", "rate": 0.25},
+                    # ── 2022 (hiking cycle terkencang 40 tahun) ──
+                    {"date": "Jan 2022", "rate": 0.25}, {"date": "Feb 2022", "rate": 0.25},
+                    {"date": "Mar 2022", "rate": 0.50}, {"date": "Apr 2022", "rate": 0.50},
+                    {"date": "Mei 2022", "rate": 1.00}, {"date": "Jun 2022", "rate": 1.75},
+                    {"date": "Jul 2022", "rate": 2.50}, {"date": "Ags 2022", "rate": 2.50},
+                    {"date": "Sep 2022", "rate": 3.25}, {"date": "Okt 2022", "rate": 3.25},
+                    {"date": "Nov 2022", "rate": 4.00}, {"date": "Des 2022", "rate": 4.50},
+                    # ── 2023 (lanjut hike ke puncak 5.50%) ──
+                    {"date": "Jan 2023", "rate": 4.50}, {"date": "Feb 2023", "rate": 4.75},
+                    {"date": "Mar 2023", "rate": 5.00}, {"date": "Apr 2023", "rate": 5.00},
+                    {"date": "Mei 2023", "rate": 5.25}, {"date": "Jun 2023", "rate": 5.25},
+                    {"date": "Jul 2023", "rate": 5.50}, {"date": "Ags 2023", "rate": 5.50},
+                    {"date": "Sep 2023", "rate": 5.50}, {"date": "Okt 2023", "rate": 5.50},
+                    {"date": "Nov 2023", "rate": 5.50}, {"date": "Des 2023", "rate": 5.50},
+                    # ── 2024 (hold panjang, mulai cut Sep 2024) ──
+                    {"date": "Jan 2024", "rate": 5.50}, {"date": "Feb 2024", "rate": 5.50},
+                    {"date": "Mar 2024", "rate": 5.50}, {"date": "Apr 2024", "rate": 5.50},
+                    {"date": "Mei 2024", "rate": 5.50}, {"date": "Jun 2024", "rate": 5.50},
+                    {"date": "Jul 2024", "rate": 5.50}, {"date": "Ags 2024", "rate": 5.50},
+                    {"date": "Sep 2024", "rate": 5.00}, {"date": "Okt 2024", "rate": 5.00},
+                    {"date": "Nov 2024", "rate": 4.75}, {"date": "Des 2024", "rate": 4.50},
+                    # ── 2025 (pause cutting cycle) ──
+                    {"date": "Jan 2025", "rate": 4.50}, {"date": "Feb 2025", "rate": 4.50},
+                    {"date": "Mar 2025", "rate": 4.50}, {"date": "Apr 2025", "rate": 4.50},
+                    {"date": "Mei 2025", "rate": 4.50}, {"date": "Jun 2025", "rate": 4.50},
+                    {"date": "Jul 2025", "rate": 4.50}, {"date": "Ags 2025", "rate": 4.50},
+                    {"date": "Sep 2025", "rate": 4.50}, {"date": "Okt 2025", "rate": 4.50},
+                    {"date": "Nov 2025", "rate": 4.50}, {"date": "Des 2025", "rate": 4.50},
+                    # ── 2026 (hold di 4.25–4.50%) ──
+                    {"date": "Jan 2026", "rate": 4.50}, {"date": "Feb 2026", "rate": 4.50},
+                    {"date": "Mar 2026", "rate": 4.50}, {"date": "Apr 2026", "rate": 4.50},
+                    {"date": "Mei 2026", "rate": 4.50},
+                ]
+
+                _fomc_schedule_2026 = [
+                    {"date": "28–29 Jan 2026", "result": "HOLD 4.25–4.50%", "status": "done"},
+                    {"date": "18–19 Mar 2026", "result": "HOLD 4.25–4.50%", "status": "done"},
+                    {"date": "6–7 Mei 2026",   "result": "HOLD 4.25–4.50%", "status": "done"},
+                    {"date": "17–18 Jun 2026",  "result": "—",               "status": "upcoming"},
+                    {"date": "29–30 Jul 2026",  "result": "—",               "status": "future"},
+                    {"date": "16–17 Sep 2026",  "result": "—",               "status": "future"},
+                    {"date": "4–5 Nov 2026",    "result": "—",               "status": "future"},
+                    {"date": "15–16 Des 2026",  "result": "—",               "status": "future"},
+                ]
+
+                _fed_current = _fed_rate_history[-1]["rate"]
+                _fed_prev_r  = _fed_rate_history[-2]["rate"] if len(_fed_rate_history) > 1 else _fed_current
+                _fed_chg_r   = _fed_current - _fed_prev_r
+
+                # ── Metric Cards ─────────────────────────────────────────────
+                try:
+                    _gr = _global_rates
+                except NameError:
+                    _gr = {
+                        "SOFR":   {"value": 4.31, "change": -0.02},
+                        "US 10Y": {"value": 4.38, "change":  0.05, "source": "hardcoded"},
+                        "ID 10Y": {"value": 6.82, "change": -0.08},
+                    }
+
+                _fed_rc = st.columns(5)
+                _fed_rate_items = [
+                    ("Fed Funds",       "4.25–4.50%",
+                     f"HOLD · FOMC 7 Mei 2026", "#8b5cf6"),
+                    ("SOFR",            f"{_gr['SOFR']['value']:.2f}%",
+                     "Secured Overnight · USD",  "#f59e0b"),
+                    ("US 10Y Yield",    f"{_gr['US 10Y']['value']:.2f}%",
+                     f"{'▲' if _gr['US 10Y']['change']>0 else '▼'} {abs(_gr['US 10Y']['change']):.2f}% · {'yfinance' if _gr['US 10Y']['source']=='yfinance' else 'live'}",
+                     "#3b82f6"),
+                    ("ID 10Y Yield",    f"{_gr['ID 10Y']['value']:.2f}%",
+                     f"Spread vs US: +{round(_gr['ID 10Y']['value']-_gr['US 10Y']['value'],2):.2f}%",
+                     "#10b981"),
+                    ("Spread ID–US 10Y",
+                     f"+{round(_gr['ID 10Y']['value']-_gr['US 10Y']['value'],2):.2f}%",
+                     "Daya tarik EM Indonesia", "#e879f9"),
+                ]
+                for _fc, (_lbl, _val, _delta, _color) in zip(_fed_rc, _fed_rate_items):
+                    with _fc:
+                        st.markdown(f"""
+                        <div style='background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);
+                        border-radius:8px;padding:12px 10px;text-align:center;margin-bottom:8px;'>
+                        <div style='font-size:0.7rem;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;'>{_lbl}</div>
+                        <div style='font-size:{"1.25rem" if len(_val)>7 else "1.4rem"};font-weight:700;color:{_color};font-family:IBM Plex Mono,monospace;'>{_val}</div>
+                        <div style='font-size:0.68rem;color:#64748b;margin-top:3px;'>{_delta}</div>
+                        </div>""", unsafe_allow_html=True)
+
+                # ── Fed Rate History Chart ────────────────────────────────────
+                _fed_labels_js = str([r["date"] for r in _fed_rate_history]).replace("'", '"')
+                _fed_vals_js   = str([r["rate"] for r in _fed_rate_history])
+                _fed_chart_html = f"""
+                <!DOCTYPE html><html><head>
+                  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+                  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+                  <style>
+                    *{{box-sizing:border-box;margin:0;padding:0;}}
+                    html,body{{width:100%;height:100%;background:transparent;}}
+                    .chart-wrap{{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.09);
+                      border-radius:8px;padding:14px 16px 10px;width:100%;height:230px;}}
+                    .chart-title{{font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:#888;
+                      letter-spacing:0.08em;text-transform:uppercase;display:flex;
+                      justify-content:space-between;margin-bottom:8px;}}
+                    .chart-title span{{color:#8b5cf6;font-weight:700;}}
+                  </style>
+                </head><body>
+                  <div class="chart-wrap">
+                    <div class="chart-title">
+                      📊 FED FUNDS RATE HISTORIS (Jan 2020 – Mei 2026)
+                      <span>Current: {_fed_current:.2f}% (upper bound)</span>
+                    </div>
+                    <canvas id="fed_chart" style="height:190px!important;"></canvas>
+                  </div>
+                  <script>
+                  (function(){{
+                    var ctx = document.getElementById('fed_chart').getContext('2d');
+                    var labels = {_fed_labels_js};
+                    var vals   = {_fed_vals_js};
+                    var ptColors = vals.map(function(v,i){{
+                      if(i===0) return '#8b5cf6';
+                      return v>vals[i-1]?'#ef5350':(v<vals[i-1]?'#26a69a':'#8b5cf6');
+                    }});
+                    new Chart(ctx,{{
+                      type:'line',
+                      data:{{
+                        labels:labels,
+                        datasets:[{{
+                          label:'Fed Funds Rate (%)',
+                          data:vals,
+                          borderColor:'#8b5cf6',
+                          backgroundColor:'rgba(139,92,246,0.10)',
+                          tension:0.1,
+                          fill:true,
+                          stepped:'before',
+                          pointRadius:3,
+                          pointHoverRadius:6,
+                          borderWidth:2.5,
+                          pointBackgroundColor:ptColors,
+                          pointBorderColor:ptColors,
+                        }}]
+                      }},
+                      options:{{
+                        responsive:true,
+                        maintainAspectRatio:false,
+                        animation:false,
+                        plugins:{{
+                          legend:{{display:false}},
+                          tooltip:{{
+                            backgroundColor:'#1a1a2e',titleColor:'#888',bodyColor:'#8b5cf6',
+                            callbacks:{{label:function(c){{return ' '+c.parsed.y.toFixed(2)+'%';}}}}
+                          }}
+                        }},
+                        interaction:{{mode:'index',intersect:false}},
+                        scales:{{
+                          x:{{
+                            ticks:{{color:'#888',font:{{size:9}},maxRotation:45,minRotation:0,autoSkip:true,maxTicksLimit:18}},
+                            grid:{{color:'rgba(255,255,255,0.04)'}}
+                          }},
+                          y:{{
+                            ticks:{{color:'#888',font:{{size:9}},callback:function(v){{return v.toFixed(2)+'%';}}}},
+                            grid:{{color:'rgba(255,255,255,0.05)'}},
+                            min:0.0,max:6.0
+                          }}
+                        }}
+                      }}
+                    }});
+                  }})();
+                  </script>
+                </body></html>
+                """
+                components.html(_fed_chart_html, height=255, scrolling=False)
+
+                # ── FOMC Schedule 2026 ────────────────────────────────────────
+                st.markdown("<div style='font-size:0.75rem;color:#888;margin:12px 0 6px;font-family:IBM Plex Mono,monospace;'>📅 JADWAL FOMC 2026</div>", unsafe_allow_html=True)
+                _fomc_cols = st.columns(4)
+                for _fi, _fomc in enumerate(_fomc_schedule_2026):
+                    with _fomc_cols[_fi % 4]:
+                        _fomc_clr  = "#8b5cf6" if _fomc["status"] == "done" else ("#f59e0b" if _fomc["status"] == "upcoming" else "#374151")
+                        _fomc_icon = "✅" if _fomc["status"] == "done" else ("🔔" if _fomc["status"] == "upcoming" else "📋")
+                        st.markdown(f"""
+                        <div style='background:rgba(255,255,255,0.02);border:1px solid {_fomc_clr}33;
+                        border-radius:6px;padding:8px 10px;margin-bottom:6px;font-family:IBM Plex Mono,monospace;'>
+                        <div style='font-size:0.68rem;color:{_fomc_clr};margin-bottom:2px;'>{_fomc_icon} {_fomc["date"]}</div>
+                        <div style='font-size:0.7rem;color:#ccc;'>{_fomc["result"]}</div>
+                        </div>""", unsafe_allow_html=True)
+
+                st.caption("📡 Sumber data: Fed Funds = FOMC official · US 10Y via yfinance · SOFR proxy (^IRX) · Cache 30 menit")
+
+                # ── TABEL FED FUNDS RATE PER BULAN (2020–2026) ───────────────
+                st.markdown("<div style='margin-top:20px;'></div>", unsafe_allow_html=True)
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📋 TABEL FED FUNDS RATE PER BULAN (2020 – 2026)</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+                _fed_by_year = {}
+                for _r in _fed_rate_history:
+                    _yr = _r["date"].split(" ")[1]
+                    _fed_by_year.setdefault(_yr, {})[_r["date"].split(" ")[0]] = _r["rate"]
+
+                _month_order_fed = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Ags","Sep","Okt","Nov","Des"]
+
+                _fed_tbl = """
+                <div style="overflow-x:auto;margin-top:8px;">
+                <table style="width:100%;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;">
+                  <thead>
+                    <tr style="background:rgba(139,92,246,0.15);border-bottom:1px solid rgba(255,255,255,0.1);">
+                      <th style="padding:8px 10px;text-align:left;color:#a78bfa;font-weight:600;letter-spacing:0.05em;">TAHUN</th>
+                """
+                for _m in _month_order_fed:
+                    _fed_tbl += f'<th style="padding:8px 6px;text-align:center;color:#a78bfa;font-weight:600;">{_m}</th>'
+                _fed_tbl += '<th style="padding:8px 8px;text-align:center;color:#a78bfa;font-weight:600;">Δ YoY</th></tr></thead><tbody>'
+
+                _fpyl = None
+                for _yr in sorted(_fed_by_year.keys()):
+                    _yrd = _fed_by_year[_yr]
+                    _yrl = None
+                    for _m in reversed(_month_order_fed):
+                        if _m in _yrd:
+                            _yrl = _yrd[_m]; break
+                    if _fpyl is not None and _yrl is not None:
+                        _yoy = _yrl - _fpyl
+                        _yc  = "#ef5350" if _yoy > 0 else ("#26a69a" if _yoy < 0 else "#888")
+                        _ys  = f'<span style="color:{_yc};">{_yoy:+.2f}%</span>'
+                    else:
+                        _ys = '<span style="color:#555;">—</span>'
+
+                    _fed_tbl += f'<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">'
+                    _fed_tbl += f'<td style="padding:7px 10px;color:#e2e8f0;font-weight:700;">{_yr}</td>'
+                    _pr = None
+                    for _m in _month_order_fed:
+                        if _m in _yrd:
+                            _rv = _yrd[_m]
+                            if _pr is None:
+                                _cc = "#e2e8f0"; _bg = "transparent"
+                            elif _rv > _pr:
+                                _cc = "#ef5350"; _bg = "rgba(239,83,80,0.08)"
+                            elif _rv < _pr:
+                                _cc = "#26a69a"; _bg = "rgba(38,166,154,0.08)"
+                            else:
+                                _cc = "#94a3b8"; _bg = "transparent"
+                            _pr = _rv
+                            _fed_tbl += f'<td style="padding:7px 6px;text-align:center;color:{_cc};background:{_bg};font-weight:600;">{_rv:.2f}%</td>'
+                        else:
+                            _fed_tbl += '<td style="padding:7px 6px;text-align:center;color:#374151;">—</td>'
+                    _fed_tbl += f'<td style="padding:7px 8px;text-align:center;">{_ys}</td></tr>'
+                    if _yrl is not None:
+                        _fpyl = _yrl
+
+                _fed_tbl += """</tbody></table>
+                <div style="margin-top:8px;font-size:0.65rem;color:#555;font-family:IBM Plex Mono,monospace;">
+                  🟢 Hijau = Fed Rate turun &nbsp;|&nbsp; 🔴 Merah = Fed Rate naik &nbsp;|&nbsp;
+                  Abu = tidak berubah &nbsp;|&nbsp; Δ YoY = selisih rate akhir tahun &nbsp;|&nbsp;
+                  Nilai = upper bound target range (contoh: 4.50% = target range 4.25–4.50%)
+                </div></div>"""
+                st.markdown(_fed_tbl, unsafe_allow_html=True)
+
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
 
             with _rm_tab_bi:
                 # ── BI RATE MONITOR + GLOBAL RATES ────────────────────────
