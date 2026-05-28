@@ -10044,6 +10044,181 @@ def show_login():
     st.stop()
 
 if st.session_state.user is None: show_login()
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SIGMA LOADING SCREEN — muncul SEKALI per session setelah login berhasil
+# Menggunakan session_state flag agar tidak blocking saat rerun/navigasi tab
+# ─────────────────────────────────────────────────────────────────────────────
+def show_sigma_loading_screen():
+    """
+    Loading screen animasi SIGMA Terminal.
+    Hanya tampil SEKALI per session menggunakan flag session_state.
+    Aman dari rerun loop — tidak memblokir UI pada navigasi tab berikutnya.
+    """
+    if st.session_state.get("_sigma_loading_done", False):
+        return
+
+    loading_html = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body, html {
+            width: 100%; height: 100%;
+            background-color: #050a15;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Space Mono', monospace;
+            color: #e2e8f0;
+            overflow: hidden;
+        }
+
+        .sigma-logo-glow {
+            font-size: 130px;
+            font-weight: 700;
+            color: #00E5BE;
+            text-shadow:
+                0 0 20px rgba(0, 229, 190, 0.5),
+                0 0 50px rgba(0, 229, 190, 0.3);
+            animation: pulse 2s ease-in-out infinite;
+            margin-bottom: 8px;
+            line-height: 1;
+            user-select: none;
+        }
+
+        .loader-subtitle {
+            font-size: 11px;
+            letter-spacing: 5px;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .loader-version {
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: #334155;
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        .loading-bar-container {
+            width: 300px;
+            height: 2px;
+            background-color: rgba(255, 255, 255, 0.07);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 18px;
+        }
+
+        .loading-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00E5BE, #4A9EF0, #a78bfa);
+            width: 0%;
+            border-radius: 2px;
+            animation: load 3.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .terminal-logs {
+            font-size: 9px;
+            color: #475569;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            height: 14px;
+            transition: opacity 0.2s;
+        }
+
+        .bottom-label {
+            position: absolute;
+            bottom: 18px;
+            font-size: 8px;
+            letter-spacing: 2px;
+            color: #1e293b;
+            text-transform: uppercase;
+        }
+
+        @keyframes pulse {
+            0%   { transform: scale(0.97); opacity: 0.75;
+                   text-shadow: 0 0 20px rgba(0,229,190,0.35); }
+            50%  { transform: scale(1.03); opacity: 1;
+                   text-shadow: 0 0 40px rgba(0,229,190,0.85),
+                                0 0 80px rgba(0,229,190,0.4); }
+            100% { transform: scale(0.97); opacity: 0.75;
+                   text-shadow: 0 0 20px rgba(0,229,190,0.35); }
+        }
+
+        @keyframes load {
+            0%   { width: 0%; }
+            15%  { width: 20%; }
+            40%  { width: 50%; }
+            70%  { width: 78%; }
+            90%  { width: 93%; }
+            100% { width: 100%; }
+        }
+    </style>
+    </head>
+    <body>
+        <div class="sigma-logo-glow">&#x3A3;</div>
+        <div class="loader-subtitle">Strategic Intelligence Engine</div>
+        <div class="loader-version">KIPM-UP &middot; MnM &middot; IDX TERMINAL</div>
+        <div class="loading-bar-container">
+            <div class="loading-bar-fill"></div>
+        </div>
+        <div class="terminal-logs" id="term-log">Initializing core systems...</div>
+        <div class="bottom-label">SIGMA &copy; 2026</div>
+
+        <script>
+            const logs = [
+                "Initializing SIGMA core systems...",
+                "Authenticating Groq &amp; MiMo AI arrays...",
+                "Fetching IDX real-time market data...",
+                "Syncing Bandarmologi &amp; GoAPI engine...",
+                "Loading MnM Strategy+ framework...",
+                "Calibrating dark terminal renderer...",
+                "SYSTEM READY &mdash; LAUNCHING SIGMA..."
+            ];
+            let i = 0;
+            const logEl = document.getElementById('term-log');
+            const logInterval = setInterval(() => {
+                if (i < logs.length) {
+                    logEl.style.opacity = '0';
+                    setTimeout(() => {
+                        logEl.innerHTML = logs[i];
+                        logEl.style.opacity = '1';
+                        i++;
+                    }, 150);
+                } else {
+                    clearInterval(logInterval);
+                }
+            }, 480);
+        </script>
+    </body>
+    </html>
+    """
+
+    placeholder = st.empty()
+    with placeholder:
+        components.html(loading_html, height=520, scrolling=False)
+
+    # Sleep hanya berjalan SEKALI — aman karena flag akan di-set setelahnya
+    time.sleep(3.5)
+    placeholder.empty()
+
+    # ── Tandai sudah selesai agar tidak muncul lagi saat rerun ────────────────
+    st.session_state["_sigma_loading_done"] = True
+
+
+# Panggil loading screen — hanya aktif saat pertama kali masuk setelah login
+show_sigma_loading_screen()
+# ─────────────────────────────────────────────────────────────────────────────
+
 init_chat()
 user = st.session_state.user
 C = get_colors(st.session_state.theme)
