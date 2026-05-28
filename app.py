@@ -16138,6 +16138,11 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
         components.html(ca_html_widget, height=_ca_total_h + 8, scrolling=False)
 
+        def safe_style(df_style, func, subset):
+            if hasattr(df_style, 'map'):
+                return df_style.map(func, subset=subset)
+            return df_style.applymap(func, subset=subset)
+
         # ── SUB-TABS: SECTOR ROTATION | INDEX | SHAREHOLDER | INFLASI | IHSG | KURS ──
         _rot_tab_rrg, _rot_tab_index, _rot_tab_shareholder, _rot_tab_inflasi, _rot_tab_ihsg, _rot_tab_kurs = st.tabs([
             "  📊 SECTOR ROTATION — RRG  ",
