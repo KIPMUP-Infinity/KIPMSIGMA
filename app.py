@@ -8827,12 +8827,22 @@ def show_system_selector():
     </style>
     """, unsafe_allow_html=True)
 
-    # Scroll to top
+    # Scroll to top + hapus overlay transisi jika ada
     components.html("""<script>
 (function(){
     try{window.parent.scrollTo({top:0,behavior:'instant'});}catch(e){}
     try{window.parent.document.documentElement.scrollTop=0;}catch(e){}
     setTimeout(function(){try{window.parent.scrollTo({top:0,behavior:'instant'});}catch(e){}},150);
+    // Hapus overlay transisi jika masih ada
+    try {
+        var pd = window.parent.document;
+        var ov = pd.getElementById('sigma-transition-overlay');
+        if (ov) {
+            var b = pd.getElementById('sigma-ov-bar');
+            if (b) b.style.width = '100%';
+            setTimeout(function(){ if (ov && ov.parentNode) ov.parentNode.removeChild(ov); }, 200);
+        }
+    } catch(e) {}
 })();
 </script>""", height=0)
 
@@ -9702,7 +9712,7 @@ body{{
         </div>
     </div>
 
-    <div class="foot">SIGMA &nbsp;&middot;&nbsp; by MarketnMocha(MnM) &nbsp;&times;&nbsp; KIPM Universitas Pancasila</div>
+    <div class="foot">SIGMA &nbsp;&middot;&nbsp; by MOONSIDE &nbsp;&times;&nbsp; KIPM Universitas Pancasila</div>
 </div>
 
 <script>
@@ -9819,7 +9829,22 @@ var TERMINAL_URL = "{_terminal_url}";
 
 /* [FIXED] selectChat & selectTerminal: hapus delay dan race condition.
    Langsung klik Streamlit button (lebih reliable), URL fallback tanpa setTimeout. */
+function _showTransitionOverlay() {{
+    try {{
+        var pd = window.parent.document;
+        if (pd.getElementById('sigma-transition-overlay')) return;
+        var ov = pd.createElement('div');
+        ov.id = 'sigma-transition-overlay';
+        ov.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:#020617;z-index:9999999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;';
+        ov.innerHTML = '<div style="font-family:ui-sans-serif,system-ui,sans-serif;font-size:2rem;font-weight:700;color:#a78bfa;letter-spacing:0.05em;">\u03A3</div><div style="width:120px;height:3px;background:rgba(124,58,237,0.2);border-radius:99px;overflow:hidden;"><div id="sigma-ov-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#7c3aed,#3b82f6);border-radius:99px;transition:width 0.4s ease;"></div></div><div style="font-size:0.72rem;letter-spacing:0.15em;color:rgba(167,139,250,0.6);text-transform:uppercase;">Memuat...</div>';
+        pd.body.appendChild(ov);
+        setTimeout(function(){{ var b=pd.getElementById('sigma-ov-bar'); if(b) b.style.width='70%'; }}, 50);
+        setTimeout(function(){{ var b=pd.getElementById('sigma-ov-bar'); if(b) b.style.width='90%'; }}, 800);
+    }} catch(e) {{}}
+}}
 function selectChat() {{
+    // Tampilkan overlay transisi segera agar tidak ada blank screen
+    _showTransitionOverlay();
     // Sembunyikan selector segera agar tidak ada flash gambar
     try {{ document.getElementById('sigma-selector-root').style.display='none'; }} catch(e) {{}}
     try {{
@@ -9847,6 +9872,8 @@ function selectTerminal() {{
         window.parent.location.replace(TERMINAL_URL);
         return;
     }}
+    // Tampilkan overlay transisi segera agar tidak ada blank screen
+    _showTransitionOverlay();
     // Sembunyikan selector segera
     try {{ document.getElementById('sigma-selector-root').style.display='none'; }} catch(e) {{}}
     try {{
@@ -10220,7 +10247,7 @@ def show_login():
         """, unsafe_allow_html=True)
     except: st.info("Google login belum dikonfigurasi di Secrets")
 
-    st.markdown(f"""<p style="text-align:center;color:rgba(255,255,255,0.25);font-size:0.72rem;margin-top:24px;line-height:1.6;">Dengan masuk, kamu menyetujui penggunaan platform untuk analisa.<br>Analisa bersifat <em>do your own research</em> dan disclaimer berlaku.<br> by. @MarketnMocha</p>""", unsafe_allow_html=True)
+    st.markdown(f"""<p style="text-align:center;color:rgba(255,255,255,0.25);font-size:0.72rem;margin-top:24px;line-height:1.6;">Dengan masuk, kamu menyetujui penggunaan platform untuk analisa.<br>Analisa bersifat <em>do your own research</em> dan disclaimer berlaku.<br> by. @MOONSIDE</p>""", unsafe_allow_html=True)
     st.stop()
 
 if st.session_state.user is None: show_login()
@@ -11371,8 +11398,10 @@ def _call_ai_reco(prompt_text, max_tok=8000):
         pass
     return "⚠️ Semua AI engine sedang overload (rate limit). Tunggu 1-2 menit lalu coba lagi."
 
-# ─── PENGATURAN UI CSS KHUSUS (hanya jika sudah login) ───
-if st.session_state.get("user") is not None:
+# ─── PENGATURAN UI CSS KHUSUS (hanya jika sudah login & bukan dashboard) ───
+# FIX BOCOR: Jangan inject chat UI saat current_view == "dashboard"
+# agar komponen chat tidak muncul di atas halaman SIGMA Terminal
+if st.session_state.get("user") is not None and current_view != "dashboard":
     st.markdown(f"""
 <style>
 /* PENANGKAL ERROR COPY PASTE: MEMAKSA STATUS UPLOAD UNTUK TETAP TERLIHAT */
@@ -11444,10 +11473,14 @@ section[data-testid="stFileUploaderDropzone"] small {{
 }}
 </style>
 """, unsafe_allow_html=True)
-_hist_items = ""
-for _sesi in st.session_state.sessions:
-    _sid = _sesi["id"]; _is_act = _sid == st.session_state.active_id; _td = _sesi["title"][:35].replace("'","").replace("`","").replace("\\","").replace('"',""); _fw = "700" if _is_act else "400"; _bg = C['hover'] if _is_act else "transparent"
-    _hist_items += f"""
+
+# ── Sidebar menu & query-param handler: hanya di luar dashboard ──
+# FIX BOCOR: Jangan inject sidebar chat UI saat current_view == "dashboard"
+if current_view != "dashboard":
+    _hist_items = ""
+    for _sesi in st.session_state.sessions:
+        _sid = _sesi["id"]; _is_act = _sid == st.session_state.active_id; _td = _sesi["title"][:35].replace("'","").replace("`","").replace("\\","").replace('"',""); _fw = "700" if _is_act else "400"; _bg = C['hover'] if _is_act else "transparent"
+        _hist_items += f"""
 (function(){{
     var row=pd.createElement('div'); row.style.cssText='display:flex;align-items:center;width:100%;';
     var a=pd.createElement('a'); a.textContent='{_td}'; var u=new URL(window.parent.location.href); u.searchParams.set('do','sel_{_sid}'); a.href=u.toString(); a.style.cssText='flex:1;display:block;padding:12px 8px 12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;min-width:0;'; a.onmouseenter=function(){{this.style.background='linear-gradient(135deg,rgba(124,58,237,0.18),rgba(59,130,246,0.16))';this.style.borderLeft='2px solid rgba(124,58,237,0.55)';this.style.color='#a78bfa';}}; a.onmouseleave=function(){{this.style.background='{_bg}';this.style.borderLeft='2px solid transparent';this.style.color='{C["text"]}';}};
@@ -11456,7 +11489,7 @@ for _sesi in st.session_state.sessions:
 }})();
 """
 
-components.html(f"""
+    components.html(f"""
 <script>
 (function(){{
 var pd=window.parent.document;
@@ -11734,6 +11767,21 @@ if current_view == "dashboard":
     except ImportError:
         st.error("&#9888; Library 'yfinance', 'pandas', atau 'plotly' belum terinstall.")
         st.stop()
+
+    # ── FIX TRANSISI CEPAT: hapus loading overlay saat dashboard sudah siap render ──
+    components.html("""<script>
+(function(){
+    try {
+        var pd = window.parent.document;
+        var ov = pd.getElementById('sigma-transition-overlay');
+        if (ov) {
+            var b = pd.getElementById('sigma-ov-bar');
+            if (b) { b.style.width = '100%'; }
+            setTimeout(function(){ if (ov && ov.parentNode) ov.parentNode.removeChild(ov); }, 200);
+        }
+    } catch(e) {}
+})();
+</script>""", height=0)
 
 # FIX UKURAN DESKTOP & MOBILE (ANTI TERPOTONG)
     st.markdown("""
@@ -30659,6 +30707,20 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
 
 # ─────────────────────────────────────────────
 else:
+    # ── FIX TRANSISI CEPAT: hapus loading overlay saat chat sudah siap render ──
+    components.html("""<script>
+(function(){
+    try {
+        var pd = window.parent.document;
+        var ov = pd.getElementById('sigma-transition-overlay');
+        if (ov) {
+            var b = pd.getElementById('sigma-ov-bar');
+            if (b) { b.style.width = '100%'; }
+            setTimeout(function(){ if (ov && ov.parentNode) ov.parentNode.removeChild(ov); }, 200);
+        }
+    } catch(e) {}
+})();
+</script>""", height=0)
     if not active["messages"][1:]:
         uname = user.get("name", "").split()[0] if user.get("name") else "Trader"
         st.markdown(f"""
