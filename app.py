@@ -14026,37 +14026,114 @@ table{{margin-bottom:0!important;}}
 
             # ── Inflasi Indonesia (BPS) ─────────────────────────────────
             _inf_id_data = [
-                {"period":"Mei 2026","yoy":1.87,"mom":-0.11,"core":2.08,"status":"RENDAH","color":"#00E5BE"},
-                {"period":"Apr 2026","yoy":1.95,"mom":-0.33,"core":2.13,"status":"RENDAH","color":"#00E5BE"},
-                {"period":"Mar 2026","yoy":2.28,"mom":0.08,"core":2.31,"status":"TERKENDALI","color":"#00E5BE"},
-                {"period":"Feb 2026","yoy":2.60,"mom":0.12,"core":2.44,"status":"NORMAL","color":"#F0A500"},
-                {"period":"Jan 2026","yoy":2.90,"mom":0.42,"core":2.55,"status":"NORMAL","color":"#F0A500"},
-                {"period":"Des 2025","yoy":3.05,"mom":0.44,"core":2.62,"status":"NORMAL","color":"#F0A500"},
-                {"period":"Nov 2025","yoy":2.83,"mom":0.30,"core":2.58,"status":"NORMAL","color":"#F0A500"},
-                {"period":"Okt 2025","yoy":2.56,"mom":0.08,"core":2.51,"status":"NORMAL","color":"#F0A500"},
-                {"period":"Sep 2025","yoy":2.28,"mom":-0.04,"core":2.43,"status":"TERKENDALI","color":"#00E5BE"},
+                {"period":"Jan 2020","yoy":2.68,"mom":0.39,"core":2.80},
+                {"period":"Feb 2020","yoy":2.98,"mom":0.28,"core":2.84},
+                {"period":"Mar 2020","yoy":2.96,"mom":0.10,"core":2.87},
+                {"period":"Apr 2020","yoy":2.67,"mom":0.08,"core":2.85},
+                {"period":"Mei 2020","yoy":2.19,"mom":-0.07,"core":2.62},
+                {"period":"Jun 2020","yoy":1.96,"mom":0.18,"core":2.47},
+                {"period":"Jul 2020","yoy":1.54,"mom":0.09,"core":2.40},
+                {"period":"Ags 2020","yoy":1.32,"mom":-0.05,"core":2.27},
+                {"period":"Sep 2020","yoy":1.42,"mom":0.05,"core":2.19},
+                {"period":"Okt 2020","yoy":1.44,"mom":0.07,"core":2.04},
+                {"period":"Nov 2020","yoy":1.59,"mom":0.28,"core":1.95},
+                {"period":"Des 2020","yoy":1.68,"mom":0.45,"core":1.60},
+                {"period":"Jan 2021","yoy":1.55,"mom":0.26,"core":1.56},
+                {"period":"Feb 2021","yoy":1.38,"mom":0.10,"core":1.53},
+                {"period":"Mar 2021","yoy":1.37,"mom":0.08,"core":1.55},
+                {"period":"Apr 2021","yoy":1.42,"mom":0.13,"core":1.50},
+                {"period":"Mei 2021","yoy":1.68,"mom":0.32,"core":1.45},
+                {"period":"Jun 2021","yoy":1.33,"mom":0.11,"core":1.49},
+                {"period":"Jul 2021","yoy":1.52,"mom":0.08,"core":1.51},
+                {"period":"Ags 2021","yoy":1.59,"mom":0.03,"core":1.56},
+                {"period":"Sep 2021","yoy":1.60,"mom":0.04,"core":1.56},
+                {"period":"Okt 2021","yoy":1.66,"mom":0.12,"core":1.55},
+                {"period":"Nov 2021","yoy":1.75,"mom":0.37,"core":1.57},
+                {"period":"Des 2021","yoy":1.87,"mom":0.57,"core":1.56},
+                {"period":"Jan 2022","yoy":2.18,"mom":0.56,"core":1.84},
+                {"period":"Feb 2022","yoy":2.06,"mom":0.02,"core":1.83},
+                {"period":"Mar 2022","yoy":2.64,"mom":0.66,"core":2.03},
+                {"period":"Apr 2022","yoy":3.47,"mom":0.95,"core":2.60},
+                {"period":"Mei 2022","yoy":3.55,"mom":0.40,"core":2.58},
+                {"period":"Jun 2022","yoy":4.35,"mom":0.61,"core":2.63},
+                {"period":"Jul 2022","yoy":4.94,"mom":0.64,"core":2.86},
+                {"period":"Ags 2022","yoy":4.69,"mom":0.21,"core":3.04},
+                {"period":"Sep 2022","yoy":5.95,"mom":1.17,"core":3.21},
+                {"period":"Okt 2022","yoy":5.71,"mom":0.11,"core":3.31},
+                {"period":"Nov 2022","yoy":5.42,"mom":0.09,"core":3.30},
+                {"period":"Des 2022","yoy":5.51,"mom":0.66,"core":3.36},
+                {"period":"Jan 2023","yoy":5.28,"mom":0.34,"core":3.27},
+                {"period":"Feb 2023","yoy":5.47,"mom":0.16,"core":3.09},
+                {"period":"Mar 2023","yoy":4.97,"mom":0.18,"core":2.94},
+                {"period":"Apr 2023","yoy":4.33,"mom":0.33,"core":2.83},
+                {"period":"Mei 2023","yoy":4.00,"mom":0.09,"core":2.66},
+                {"period":"Jun 2023","yoy":3.52,"mom":0.14,"core":2.58},
+                {"period":"Jul 2023","yoy":3.08,"mom":-0.12,"core":2.43},
+                {"period":"Ags 2023","yoy":3.27,"mom":0.13,"core":2.18},
+                {"period":"Sep 2023","yoy":2.28,"mom":-0.05,"core":2.00},
+                {"period":"Okt 2023","yoy":2.56,"mom":0.17,"core":1.91},
+                {"period":"Nov 2023","yoy":2.86,"mom":0.38,"core":1.87},
+                {"period":"Des 2023","yoy":2.61,"mom":0.41,"core":1.80},
+                {"period":"Jan 2024","yoy":2.57,"mom":0.04,"core":1.68},
+                {"period":"Feb 2024","yoy":2.75,"mom":0.37,"core":1.68},
+                {"period":"Mar 2024","yoy":3.05,"mom":0.52,"core":1.77},
+                {"period":"Apr 2024","yoy":3.00,"mom":0.25,"core":1.82},
+                {"period":"Mei 2024","yoy":2.84,"mom":0.09,"core":1.93},
+                {"period":"Jun 2024","yoy":2.51,"mom":0.08,"core":1.90},
+                {"period":"Jul 2024","yoy":2.13,"mom":-0.18,"core":1.95},
+                {"period":"Ags 2024","yoy":2.12,"mom":-0.03,"core":2.02},
+                {"period":"Sep 2024","yoy":1.84,"mom":-0.12,"core":2.04},
+                {"period":"Okt 2024","yoy":1.71,"mom":0.08,"core":2.11},
+                {"period":"Nov 2024","yoy":1.55,"mom":0.30,"core":2.26},
+                {"period":"Des 2024","yoy":1.57,"mom":0.44,"core":2.26},
+                {"period":"Jan 2025","yoy":1.57,"mom":0.76,"core":2.34},
+                {"period":"Feb 2025","yoy":1.64,"mom":0.10,"core":2.48},
+                {"period":"Mar 2025","yoy":1.65,"mom":0.08,"core":2.48},
+                {"period":"Apr 2025","yoy":1.95,"mom":0.22,"core":2.45},
+                {"period":"Mei 2025","yoy":2.37,"mom":0.10,"core":2.37},
+                {"period":"Jun 2025","yoy":2.37,"mom":0.19,"core":2.45},
+                {"period":"Jul 2025","yoy":2.51,"mom":-0.07,"core":2.50},
+                {"period":"Ags 2025","yoy":2.56,"mom":0.08,"core":2.52},
+                {"period":"Sep 2025","yoy":2.28,"mom":-0.04,"core":2.43},
+                {"period":"Okt 2025","yoy":2.56,"mom":0.08,"core":2.51},
+                {"period":"Nov 2025","yoy":2.83,"mom":0.30,"core":2.58},
+                {"period":"Des 2025","yoy":3.05,"mom":0.44,"core":2.62},
+                {"period":"Jan 2026","yoy":2.90,"mom":0.42,"core":2.55},
+                {"period":"Feb 2026","yoy":2.60,"mom":0.12,"core":2.44},
+                {"period":"Mar 2026","yoy":2.28,"mom":0.08,"core":2.31},
+                {"period":"Apr 2026","yoy":1.95,"mom":-0.33,"core":2.13},
+                {"period":"Mei 2026","yoy":1.87,"mom":-0.11,"core":2.08},
             ]
-            _inf_rows_id = "".join([f"""<tr style=\'border-bottom:1px solid rgba(255,255,255,0.05);\'>
-  <td style=\'padding:5px 8px;color:{C["text"]};\'>{ r["period"]}</td>
-  <td style=\'text-align:center;padding:5px 8px;color:{r["color"]};font-weight:700;\'>{r["yoy"]:.2f}%</td>
-  <td style=\'text-align:center;padding:5px 8px;color:{"#00E5BE" if r["mom"]>=0 else "#E24B4A"};\'>{"+" if r["mom"]>=0 else ""}{r["mom"]:.2f}%</td>
-  <td style=\'text-align:center;padding:5px 8px;color:{C["text"]};\'>{ r["core"]:.2f}%</td>
-  <td style=\'text-align:center;padding:5px 8px;\'><span style=\'background:rgba(0,229,190,0.12);color:{r["color"]};padding:2px 8px;border-radius:4px;font-size:0.75rem;\'>{r["status"]}</span></td>
-</tr>""" for r in _inf_id_data])
-            st.markdown(f"""
-<div style=\'background:{"rgba(99,102,241,0.08)" if is_dark else "#f0f0ff"};border:1px solid rgba(99,102,241,0.25);border-left:3px solid #6366f1;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;\'>
-<div style=\'font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#6366f1;margin-bottom:10px;\'>🇮🇩 INFLASI INDONESIA (BPS) — 9 BULAN TERAKHIR</div>
-<table style=\'width:100%;border-collapse:collapse;font-size:0.82rem;\'>
-<tr style=\'border-bottom:1px solid rgba(99,102,241,0.2);\'>
-  <th style=\'text-align:left;padding:4px 8px;color:{text_sub};font-weight:600;\'>Periode</th>
-  <th style=\'text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;\'>CPI YoY</th>
-  <th style=\'text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;\'>CPI MoM</th>
-  <th style=\'text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;\'>Core Inflation</th>
-  <th style=\'text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;\'>Status</th>
-</tr>{_inf_rows_id}
-</table>
-<div style=\'margin-top:10px;font-size:0.72rem;color:{text_sub};\'>📌 Target BI: 1.5–3.5% YoY · Sumber: BPS Indonesia · Update: Awal bulan berikutnya</div>
-</div>""", unsafe_allow_html=True)
+            # ── Tabel Inflasi style BI Rate (grid tahun x bulan) ────────
+            _inf_mo = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Ags","Sep","Okt","Nov","Des"]
+            _inf_by_year = {}
+            for _ri in _inf_id_data:
+                _mo_i, _yr_i = _ri["period"].split(" ")
+                _inf_by_year.setdefault(_yr_i, {})[_mo_i] = _ri
+            def _inf_fc(v):
+                if v >= 5.0: return ("#ef5350","rgba(239,83,80,0.13)")
+                if v >= 3.5: return ("#F0A500","rgba(240,165,0,0.10)")
+                if v >= 1.5: return ("#00E5BE","rgba(0,229,190,0.08)")
+                return ("#a78bfa","rgba(167,139,250,0.10)")
+            _inf_tbl_html = '<div style="overflow-x:auto;margin-top:8px;"><table style="width:100%;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(99,102,241,0.15);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#a78bfa;font-weight:600;letter-spacing:0.05em;">TAHUN</th>'
+            for _m in _inf_mo:
+                _inf_tbl_html += f'<th style="padding:8px 5px;text-align:center;color:#a78bfa;font-weight:600;">{_m}</th>'
+            _inf_tbl_html += '<th style="padding:8px 8px;text-align:center;color:#a78bfa;font-weight:600;">Des YoY</th></tr></thead><tbody>'
+            for _yr_i in sorted(_inf_by_year.keys()):
+                _yd_i = _inf_by_year[_yr_i]
+                _dv = _yd_i.get("Des",{}).get("yoy",None)
+                _ds = (f'<span style="color:{_inf_fc(_dv)[0]};font-weight:700;">{_dv:.2f}%</span>' if _dv is not None else '<span style="color:#555;">&#8212;</span>')
+                _inf_tbl_html += f'<tr style="border-bottom:1px solid rgba(255,255,255,0.04);"><td style="padding:7px 10px;color:#e2e8f0;font-weight:700;">{_yr_i}</td>'
+                for _m in _inf_mo:
+                    if _m in _yd_i:
+                        _v = _yd_i[_m]["yoy"]; _fc,_bg = _inf_fc(_v)
+                        _inf_tbl_html += f'<td style="padding:7px 5px;text-align:center;color:{_fc};background:{_bg};font-weight:600;">{_v:.1f}%</td>'
+                    else:
+                        _inf_tbl_html += '<td style="padding:7px 5px;text-align:center;color:#374151;">&#8212;</td>'
+                _inf_tbl_html += f'<td style="padding:7px 8px;text-align:center;">{_ds}</td></tr>'
+            _inf_tbl_html += '</tbody></table><div style="margin-top:8px;font-size:0.65rem;color:#555;font-family:IBM Plex Mono,monospace;">&#128993; Ungu &lt;1.5% (bawah target) &nbsp;|&nbsp; &#128994; Hijau 1.5&#8211;3.5% (target BI) &nbsp;|&nbsp; &#127993; Kuning 3.5&#8211;5% &nbsp;|&nbsp; &#128308; Merah &gt;5% &nbsp;|&nbsp; Nilai = CPI YoY %</div></div>'
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>&#128202; TABEL CPI YoY BULANAN (2020 &#8211; 2026)</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown(_inf_tbl_html, unsafe_allow_html=True)
 
             # ── Inflasi US (BLS/Fed) ─────────────────────────────────
             _inf_us_data = [
@@ -14254,6 +14331,54 @@ Jawab dalam Bahasa Indonesia, tajam dan analitis. Maksimal 450 kata."""
 
             # ── IHSG Monthly Data ──────────────────────────────────────
             _ihsg_monthly = [
+                {"month":"Jan 2020","close":6325.42,"chg_pct":-5.13},
+                {"month":"Feb 2020","close":5940.05,"chg_pct":-6.10},
+                {"month":"Mar 2020","close":4538.93,"chg_pct":-23.58},
+                {"month":"Apr 2020","close":4716.40,"chg_pct":3.91},
+                {"month":"Mei 2020","close":4753.61,"chg_pct":0.79},
+                {"month":"Jun 2020","close":4905.39,"chg_pct":3.19},
+                {"month":"Jul 2020","close":5149.63,"chg_pct":4.98},
+                {"month":"Ags 2020","close":5238.49,"chg_pct":1.73},
+                {"month":"Sep 2020","close":4870.98,"chg_pct":-7.01},
+                {"month":"Okt 2020","close":5128.22,"chg_pct":5.28},
+                {"month":"Nov 2020","close":5672.20,"chg_pct":10.61},
+                {"month":"Des 2020","close":5979.07,"chg_pct":5.41},
+                {"month":"Jan 2021","close":6386.00,"chg_pct":6.81},
+                {"month":"Feb 2021","close":6241.80,"chg_pct":-2.26},
+                {"month":"Mar 2021","close":6008.00,"chg_pct":-3.75},
+                {"month":"Apr 2021","close":5995.18,"chg_pct":-0.21},
+                {"month":"Mei 2021","close":5947.45,"chg_pct":-0.80},
+                {"month":"Jun 2021","close":5985.48,"chg_pct":0.64},
+                {"month":"Jul 2021","close":6007.34,"chg_pct":0.37},
+                {"month":"Ags 2021","close":6046.54,"chg_pct":0.65},
+                {"month":"Sep 2021","close":6166.44,"chg_pct":1.98},
+                {"month":"Okt 2021","close":6569.58,"chg_pct":6.54},
+                {"month":"Nov 2021","close":6534.98,"chg_pct":-0.53},
+                {"month":"Des 2021","close":6581.48,"chg_pct":0.71},
+                {"month":"Jan 2022","close":6714.29,"chg_pct":2.02},
+                {"month":"Feb 2022","close":6888.17,"chg_pct":2.59},
+                {"month":"Mar 2022","close":7071.45,"chg_pct":2.66},
+                {"month":"Apr 2022","close":7228.91,"chg_pct":2.23},
+                {"month":"Mei 2022","close":7148.50,"chg_pct":-1.11},
+                {"month":"Jun 2022","close":6911.85,"chg_pct":-3.31},
+                {"month":"Jul 2022","close":7105.46,"chg_pct":2.80},
+                {"month":"Ags 2022","close":7178.59,"chg_pct":1.03},
+                {"month":"Sep 2022","close":7030.70,"chg_pct":-2.06},
+                {"month":"Okt 2022","close":7052.58,"chg_pct":0.31},
+                {"month":"Nov 2022","close":7081.31,"chg_pct":0.41},
+                {"month":"Des 2022","close":6850.62,"chg_pct":-3.26},
+                {"month":"Jan 2023","close":6898.67,"chg_pct":0.70},
+                {"month":"Feb 2023","close":6843.24,"chg_pct":-0.80},
+                {"month":"Mar 2023","close":6805.28,"chg_pct":-0.56},
+                {"month":"Apr 2023","close":6915.72,"chg_pct":1.62},
+                {"month":"Mei 2023","close":6633.25,"chg_pct":-4.08},
+                {"month":"Jun 2023","close":6698.40,"chg_pct":0.98},
+                {"month":"Jul 2023","close":6939.91,"chg_pct":3.60},
+                {"month":"Ags 2023","close":6953.26,"chg_pct":0.19},
+                {"month":"Sep 2023","close":6837.43,"chg_pct":-1.67},
+                {"month":"Okt 2023","close":6760.89,"chg_pct":-1.12},
+                {"month":"Nov 2023","close":7035.35,"chg_pct":4.06},
+                {"month":"Des 2023","close":7272.79,"chg_pct":3.37},
                 {"month":"Jan 2024","close":7286.88,"chg_pct":-0.43},
                 {"month":"Feb 2024","close":7311.20,"chg_pct":0.34},
                 {"month":"Mar 2024","close":7288.17,"chg_pct":-0.31},
@@ -14284,25 +14409,37 @@ Jawab dalam Bahasa Indonesia, tajam dan analitis. Maksimal 450 kata."""
                 {"month":"Apr 2026","close":6622.44,"chg_pct":-3.92},
                 {"month":"Mei 2026","close":6780.25,"chg_pct":2.38},
             ]
-            _ihsg_rows_html = "".join([f"""<tr style=\'border-bottom:1px solid rgba(255,255,255,0.04);\'>
-  <td style=\'padding:5px 8px;color:{C["text"]};\'>{r["month"]}</td>
-  <td style=\'text-align:right;padding:5px 8px;color:{C["text"]};font-weight:700;font-family:IBM Plex Mono,monospace;\'>{r["close"]:,.2f}</td>
-  <td style=\'text-align:center;padding:5px 8px;\'><span style=\'color:{"#00E5BE" if r["chg_pct"]>=0 else "#E24B4A"};font-weight:700;\'>{"▲" if r["chg_pct"]>=0 else "▼"} {abs(r["chg_pct"]):.2f}%</span></td>
-  <td style=\'text-align:center;padding:5px 8px;\'><span style=\'background:{"rgba(0,229,190,0.12)" if r["chg_pct"]>=0 else "rgba(226,75,74,0.12)"};color:{"#00E5BE" if r["chg_pct"]>=0 else "#E24B4A"};padding:2px 8px;border-radius:4px;font-size:0.73rem;\'>{"NAIK" if r["chg_pct"]>=0 else "TURUN"}</span></td>
-</tr>""" for r in reversed(_ihsg_monthly)])
-            st.markdown(f"""<div style=\'background:{"rgba(0,229,190,0.04)" if is_dark else "#f0fffe"};border:1px solid rgba(0,229,190,0.2);border-left:3px solid #00E5BE;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;\'>
-<div style=\'font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#00E5BE;margin-bottom:10px;\'>📈 IHSG (^JKSE) — CLOSING AKHIR BULAN</div>
-<div style=\'max-height:360px;overflow-y:auto;\'>
-<table style=\'width:100%;border-collapse:collapse;font-size:0.82rem;\'>
-<tr style=\'border-bottom:1px solid rgba(0,229,190,0.25);position:sticky;top:0;background:{"#0d0d1a" if is_dark else "#f0fffe"};\'>
-  <th style=\'text-align:left;padding:5px 8px;color:{text_sub};font-weight:600;\'>Bulan</th>
-  <th style=\'text-align:right;padding:5px 8px;color:{text_sub};font-weight:600;\'>Closing</th>
-  <th style=\'text-align:center;padding:5px 8px;color:{text_sub};font-weight:600;\'>MoM</th>
-  <th style=\'text-align:center;padding:5px 8px;color:{text_sub};font-weight:600;\'>Status</th>
-</tr>{_ihsg_rows_html}
-</table></div>
-<div style=\'margin-top:10px;font-size:0.72rem;color:{text_sub};\'>📌 Data closing akhir bulan · Sumber: Yahoo Finance / BEI · Update: H+1 bulan berikutnya</div>
-</div>""", unsafe_allow_html=True)
+            # ── Tabel IHSG style BI Rate (grid tahun x bulan) ──────────
+            _ih_mo = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Ags","Sep","Okt","Nov","Des"]
+            _ih_by_year = {}
+            for _ri in _ihsg_monthly:
+                _mo_i, _yr_i = _ri["month"].split(" ")
+                _ih_by_year.setdefault(_yr_i, {})[_mo_i] = _ri
+            def _ih_fc(chg):
+                if chg >= 3:  return ("#00E5BE","rgba(0,229,190,0.14)")
+                if chg > 0:   return ("#26a69a","rgba(38,166,154,0.08)")
+                if chg >= -3: return ("#ef5350","rgba(239,83,80,0.08)")
+                return ("#e24b4a","rgba(226,75,74,0.14)")
+            _ih_tbl_html = '<div style="overflow-x:auto;margin-top:8px;"><table style="width:100%;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(0,229,190,0.12);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#00E5BE;font-weight:600;letter-spacing:0.05em;">TAHUN</th>'
+            for _m in _ih_mo:
+                _ih_tbl_html += f'<th style="padding:8px 5px;text-align:center;color:#00E5BE;font-weight:600;">{_m}</th>'
+            _ih_tbl_html += '<th style="padding:8px 8px;text-align:center;color:#00E5BE;font-weight:600;">Des Close</th></tr></thead><tbody>'
+            for _yr_i in sorted(_ih_by_year.keys()):
+                _yd_i = _ih_by_year[_yr_i]
+                _dc = _yd_i.get("Des",{}).get("close",None)
+                _ds = (f'<span style="font-weight:700;color:#e2e8f0;">{_dc:,.0f}</span>' if _dc is not None else '<span style="color:#555;">&#8212;</span>')
+                _ih_tbl_html += f'<tr style="border-bottom:1px solid rgba(255,255,255,0.04);"><td style="padding:7px 10px;color:#e2e8f0;font-weight:700;">{_yr_i}</td>'
+                for _m in _ih_mo:
+                    if _m in _yd_i:
+                        _chg = _yd_i[_m]["chg_pct"]; _fc,_bg = _ih_fc(_chg)
+                        _sym = "&#9650;" if _chg >= 0 else "&#9660;"
+                        _ih_tbl_html += f'<td style="padding:7px 5px;text-align:center;color:{_fc};background:{_bg};font-weight:600;">{_sym}{abs(_chg):.1f}%</td>'
+                    else:
+                        _ih_tbl_html += '<td style="padding:7px 5px;text-align:center;color:#374151;">&#8212;</td>'
+                _ih_tbl_html += f'<td style="padding:7px 8px;text-align:center;">{_ds}</td></tr>'
+            _ih_tbl_html += '</tbody></table><div style="margin-top:8px;font-size:0.65rem;color:#555;font-family:IBM Plex Mono,monospace;">&#128994; Hijau tua &#8805;+3% &nbsp;|&nbsp; &#128994; Hijau muda 0&#8211;3% &nbsp;|&nbsp; &#128308; Merah -0&#8211;-3% &nbsp;|&nbsp; &#128308; Merah tua &#8804;-3% &nbsp;|&nbsp; Nilai = MoM %</div></div>'
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>&#128202; TABEL IHSG CLOSING BULANAN (2020 &#8211; 2026)</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown(_ih_tbl_html, unsafe_allow_html=True)
 
             # ── Chart IHSG ──────────────────────────────────────────────
             _ih_labels = str([r["month"] for r in _ihsg_monthly]).replace("'", '"')
@@ -14464,6 +14601,54 @@ Jawab dalam Bahasa Indonesia, tajam dan profesional. Maksimal 500 kata."""
 
             # ── USD/IDR Monthly Data ────────────────────────────────────
             _kurs_monthly = [
+                {"month":"Jan 2020","rate":13660,"chg_pct":-0.22},
+                {"month":"Feb 2020","rate":13908,"chg_pct":1.81},
+                {"month":"Mar 2020","rate":16367,"chg_pct":17.68},
+                {"month":"Apr 2020","rate":15157,"chg_pct":-7.39},
+                {"month":"Mei 2020","rate":14733,"chg_pct":-2.80},
+                {"month":"Jun 2020","rate":14302,"chg_pct":-2.93},
+                {"month":"Jul 2020","rate":14655,"chg_pct":2.47},
+                {"month":"Ags 2020","rate":14554,"chg_pct":-0.69},
+                {"month":"Sep 2020","rate":14918,"chg_pct":2.50},
+                {"month":"Okt 2020","rate":14690,"chg_pct":-1.53},
+                {"month":"Nov 2020","rate":14140,"chg_pct":-3.74},
+                {"month":"Des 2020","rate":14050,"chg_pct":-0.64},
+                {"month":"Jan 2021","rate":14050,"chg_pct":0.00},
+                {"month":"Feb 2021","rate":14235,"chg_pct":1.32},
+                {"month":"Mar 2021","rate":14536,"chg_pct":2.11},
+                {"month":"Apr 2021","rate":14483,"chg_pct":-0.36},
+                {"month":"Mei 2021","rate":14280,"chg_pct":-1.40},
+                {"month":"Jun 2021","rate":14496,"chg_pct":1.51},
+                {"month":"Jul 2021","rate":14478,"chg_pct":-0.12},
+                {"month":"Ags 2021","rate":14374,"chg_pct":-0.72},
+                {"month":"Sep 2021","rate":14269,"chg_pct":-0.73},
+                {"month":"Okt 2021","rate":14267,"chg_pct":-0.01},
+                {"month":"Nov 2021","rate":14378,"chg_pct":0.78},
+                {"month":"Des 2021","rate":14253,"chg_pct":-0.87},
+                {"month":"Jan 2022","rate":14340,"chg_pct":0.61},
+                {"month":"Feb 2022","rate":14349,"chg_pct":0.06},
+                {"month":"Mar 2022","rate":14359,"chg_pct":0.07},
+                {"month":"Apr 2022","rate":14416,"chg_pct":0.40},
+                {"month":"Mei 2022","rate":14568,"chg_pct":1.05},
+                {"month":"Jun 2022","rate":14999,"chg_pct":2.96},
+                {"month":"Jul 2022","rate":14900,"chg_pct":-0.66},
+                {"month":"Ags 2022","rate":14868,"chg_pct":-0.21},
+                {"month":"Sep 2022","rate":15220,"chg_pct":2.37},
+                {"month":"Okt 2022","rate":15565,"chg_pct":2.27},
+                {"month":"Nov 2022","rate":15687,"chg_pct":0.78},
+                {"month":"Des 2022","rate":15731,"chg_pct":0.28},
+                {"month":"Jan 2023","rate":14876,"chg_pct":-5.43},
+                {"month":"Feb 2023","rate":15240,"chg_pct":2.45},
+                {"month":"Mar 2023","rate":15075,"chg_pct":-1.08},
+                {"month":"Apr 2023","rate":14730,"chg_pct":-2.29},
+                {"month":"Mei 2023","rate":14915,"chg_pct":1.26},
+                {"month":"Jun 2023","rate":15040,"chg_pct":0.84},
+                {"month":"Jul 2023","rate":15123,"chg_pct":0.55},
+                {"month":"Ags 2023","rate":15415,"chg_pct":1.93},
+                {"month":"Sep 2023","rate":15480,"chg_pct":0.42},
+                {"month":"Okt 2023","rate":15820,"chg_pct":2.20},
+                {"month":"Nov 2023","rate":15635,"chg_pct":-1.17},
+                {"month":"Des 2023","rate":15399,"chg_pct":-1.51},
                 {"month":"Jan 2024","rate":15690,"chg_pct":-0.19},
                 {"month":"Feb 2024","rate":15715,"chg_pct":0.16},
                 {"month":"Mar 2024","rate":15875,"chg_pct":1.02},
@@ -14494,25 +14679,37 @@ Jawab dalam Bahasa Indonesia, tajam dan profesional. Maksimal 500 kata."""
                 {"month":"Apr 2026","rate":16890,"chg_pct":0.87},
                 {"month":"Mei 2026","rate":16350,"chg_pct":-3.20},
             ]
-            _kurs_rows_html = "".join([f"""<tr style=\'border-bottom:1px solid rgba(255,255,255,0.04);\'>
-  <td style=\'padding:5px 8px;color:{C["text"]};\'>{r["month"]}</td>
-  <td style=\'text-align:right;padding:5px 8px;color:{C["text"]};font-weight:700;font-family:IBM Plex Mono,monospace;\'>Rp {r["rate"]:,}.</td>
-  <td style=\'text-align:center;padding:5px 8px;\'><span style=\'color:{"#E24B4A" if r["chg_pct"]>=0 else "#00E5BE"};font-weight:700;\'>{"▲" if r["chg_pct"]>=0 else "▼"} {abs(r["chg_pct"]):.2f}%</span></td>
-  <td style=\'text-align:center;padding:5px 8px;\'><span style=\'background:{"rgba(226,75,74,0.12)" if r["chg_pct"]>=0 else "rgba(0,229,190,0.12)"};color:{"#E24B4A" if r["chg_pct"]>=0 else "#00E5BE"};padding:2px 8px;border-radius:4px;font-size:0.73rem;\'>{"LEMAH" if r["chg_pct"]>=0 else "KUAT"}</span></td>
-</tr>""" for r in reversed(_kurs_monthly)])
-            st.markdown(f"""<div style=\'background:{"rgba(240,165,0,0.04)" if is_dark else "#fffbf0"};border:1px solid rgba(240,165,0,0.25);border-left:3px solid #F0A500;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;\'>
-<div style=\'font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#F0A500;margin-bottom:10px;\'>💱 USD/IDR — CLOSING AKHIR BULAN (KURS TENGAH BI)</div>
-<div style=\'max-height:360px;overflow-y:auto;\'>
-<table style=\'width:100%;border-collapse:collapse;font-size:0.82rem;\'>
-<tr style=\'border-bottom:1px solid rgba(240,165,0,0.25);position:sticky;top:0;background:{"#0d0d1a" if is_dark else "#fffbf0"};\'>
-  <th style=\'text-align:left;padding:5px 8px;color:{text_sub};font-weight:600;\'>Bulan</th>
-  <th style=\'text-align:right;padding:5px 8px;color:{text_sub};font-weight:600;\'>USD/IDR</th>
-  <th style=\'text-align:center;padding:5px 8px;color:{text_sub};font-weight:600;\'>MoM</th>
-  <th style=\'text-align:center;padding:5px 8px;color:{text_sub};font-weight:600;\'>Rupiah</th>
-</tr>{_kurs_rows_html}
-</table></div>
-<div style=\'margin-top:10px;font-size:0.72rem;color:{text_sub};\'>📌 ▲ = Rupiah melemah (IDR per USD naik) · ▼ = Rupiah menguat · Sumber: BI / Yahoo Finance</div>
-</div>""", unsafe_allow_html=True)
+            # ── Tabel Kurs style BI Rate (grid tahun x bulan) ──────────
+            _kr_mo = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Ags","Sep","Okt","Nov","Des"]
+            _kr_by_year = {}
+            for _ri in _kurs_monthly:
+                _mo_i, _yr_i = _ri["month"].split(" ")
+                _kr_by_year.setdefault(_yr_i, {})[_mo_i] = _ri
+            def _kr_fc(chg):
+                if chg >= 2:  return ("#ef5350","rgba(239,83,80,0.13)")
+                if chg > 0:   return ("#F0A500","rgba(240,165,0,0.08)")
+                if chg >= -2: return ("#26a69a","rgba(38,166,154,0.08)")
+                return ("#00E5BE","rgba(0,229,190,0.14)")
+            _kr_tbl_html = '<div style="overflow-x:auto;margin-top:8px;"><table style="width:100%;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(240,165,0,0.12);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#F0A500;font-weight:600;letter-spacing:0.05em;">TAHUN</th>'
+            for _m in _kr_mo:
+                _kr_tbl_html += f'<th style="padding:8px 5px;text-align:center;color:#F0A500;font-weight:600;">{_m}</th>'
+            _kr_tbl_html += '<th style="padding:8px 8px;text-align:center;color:#F0A500;font-weight:600;">Des Rate</th></tr></thead><tbody>'
+            for _yr_i in sorted(_kr_by_year.keys()):
+                _yd_i = _kr_by_year[_yr_i]
+                _dr = _yd_i.get("Des",{}).get("rate",None)
+                _ds = (f'<span style="font-weight:700;color:#e2e8f0;">{_dr:,}</span>' if _dr is not None else '<span style="color:#555;">&#8212;</span>')
+                _kr_tbl_html += f'<tr style="border-bottom:1px solid rgba(255,255,255,0.04);"><td style="padding:7px 10px;color:#e2e8f0;font-weight:700;">{_yr_i}</td>'
+                for _m in _kr_mo:
+                    if _m in _yd_i:
+                        _chg = _yd_i[_m]["chg_pct"]; _fc,_bg = _kr_fc(_chg)
+                        _sym = "&#9650;" if _chg >= 0 else "&#9660;"
+                        _kr_tbl_html += f'<td style="padding:7px 5px;text-align:center;color:{_fc};background:{_bg};font-weight:600;">{_sym}{abs(_chg):.1f}%</td>'
+                    else:
+                        _kr_tbl_html += '<td style="padding:7px 5px;text-align:center;color:#374151;">&#8212;</td>'
+                _kr_tbl_html += f'<td style="padding:7px 8px;text-align:center;">{_ds}</td></tr>'
+            _kr_tbl_html += '</tbody></table><div style="margin-top:8px;font-size:0.65rem;color:#555;font-family:IBM Plex Mono,monospace;">&#128994; Hijau tua &#8804;-2% (Rupiah menguat kuat) &nbsp;|&nbsp; &#128994; Hijau -2&#8211;0% &nbsp;|&nbsp; &#127993; Kuning 0&#8211;+2% (melemah) &nbsp;|&nbsp; &#128308; Merah &#8805;+2% &nbsp;|&nbsp; &#9650; = IDR naik = Rupiah MELEMAH</div></div>'
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>&#128202; TABEL KURS USD/IDR BULANAN (2020 &#8211; 2026)</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown(_kr_tbl_html, unsafe_allow_html=True)
 
             # ── Chart Kurs ───────────────────────────────────────────────
             _kurs_labels = str([r["month"] for r in _kurs_monthly]).replace("'", '"')
@@ -18000,37 +18197,114 @@ Jawab dalam Bahasa Indonesia, padat dan profesional. Maksimal 400 kata."""
 
             # ── Inflasi Indonesia (BPS) ─────────────────────────────────
             _inf_id_data = [
-                {"period":"Mei 2026","yoy":1.87,"mom":-0.11,"core":2.08,"status":"RENDAH","color":"#00E5BE"},
-                {"period":"Apr 2026","yoy":1.95,"mom":-0.33,"core":2.13,"status":"RENDAH","color":"#00E5BE"},
-                {"period":"Mar 2026","yoy":2.28,"mom":0.08,"core":2.31,"status":"TERKENDALI","color":"#00E5BE"},
-                {"period":"Feb 2026","yoy":2.60,"mom":0.12,"core":2.44,"status":"NORMAL","color":"#F0A500"},
-                {"period":"Jan 2026","yoy":2.90,"mom":0.42,"core":2.55,"status":"NORMAL","color":"#F0A500"},
-                {"period":"Des 2025","yoy":3.05,"mom":0.44,"core":2.62,"status":"NORMAL","color":"#F0A500"},
-                {"period":"Nov 2025","yoy":2.83,"mom":0.30,"core":2.58,"status":"NORMAL","color":"#F0A500"},
-                {"period":"Okt 2025","yoy":2.56,"mom":0.08,"core":2.51,"status":"NORMAL","color":"#F0A500"},
-                {"period":"Sep 2025","yoy":2.28,"mom":-0.04,"core":2.43,"status":"TERKENDALI","color":"#00E5BE"},
+                {"period":"Jan 2020","yoy":2.68,"mom":0.39,"core":2.80},
+                {"period":"Feb 2020","yoy":2.98,"mom":0.28,"core":2.84},
+                {"period":"Mar 2020","yoy":2.96,"mom":0.10,"core":2.87},
+                {"period":"Apr 2020","yoy":2.67,"mom":0.08,"core":2.85},
+                {"period":"Mei 2020","yoy":2.19,"mom":-0.07,"core":2.62},
+                {"period":"Jun 2020","yoy":1.96,"mom":0.18,"core":2.47},
+                {"period":"Jul 2020","yoy":1.54,"mom":0.09,"core":2.40},
+                {"period":"Ags 2020","yoy":1.32,"mom":-0.05,"core":2.27},
+                {"period":"Sep 2020","yoy":1.42,"mom":0.05,"core":2.19},
+                {"period":"Okt 2020","yoy":1.44,"mom":0.07,"core":2.04},
+                {"period":"Nov 2020","yoy":1.59,"mom":0.28,"core":1.95},
+                {"period":"Des 2020","yoy":1.68,"mom":0.45,"core":1.60},
+                {"period":"Jan 2021","yoy":1.55,"mom":0.26,"core":1.56},
+                {"period":"Feb 2021","yoy":1.38,"mom":0.10,"core":1.53},
+                {"period":"Mar 2021","yoy":1.37,"mom":0.08,"core":1.55},
+                {"period":"Apr 2021","yoy":1.42,"mom":0.13,"core":1.50},
+                {"period":"Mei 2021","yoy":1.68,"mom":0.32,"core":1.45},
+                {"period":"Jun 2021","yoy":1.33,"mom":0.11,"core":1.49},
+                {"period":"Jul 2021","yoy":1.52,"mom":0.08,"core":1.51},
+                {"period":"Ags 2021","yoy":1.59,"mom":0.03,"core":1.56},
+                {"period":"Sep 2021","yoy":1.60,"mom":0.04,"core":1.56},
+                {"period":"Okt 2021","yoy":1.66,"mom":0.12,"core":1.55},
+                {"period":"Nov 2021","yoy":1.75,"mom":0.37,"core":1.57},
+                {"period":"Des 2021","yoy":1.87,"mom":0.57,"core":1.56},
+                {"period":"Jan 2022","yoy":2.18,"mom":0.56,"core":1.84},
+                {"period":"Feb 2022","yoy":2.06,"mom":0.02,"core":1.83},
+                {"period":"Mar 2022","yoy":2.64,"mom":0.66,"core":2.03},
+                {"period":"Apr 2022","yoy":3.47,"mom":0.95,"core":2.60},
+                {"period":"Mei 2022","yoy":3.55,"mom":0.40,"core":2.58},
+                {"period":"Jun 2022","yoy":4.35,"mom":0.61,"core":2.63},
+                {"period":"Jul 2022","yoy":4.94,"mom":0.64,"core":2.86},
+                {"period":"Ags 2022","yoy":4.69,"mom":0.21,"core":3.04},
+                {"period":"Sep 2022","yoy":5.95,"mom":1.17,"core":3.21},
+                {"period":"Okt 2022","yoy":5.71,"mom":0.11,"core":3.31},
+                {"period":"Nov 2022","yoy":5.42,"mom":0.09,"core":3.30},
+                {"period":"Des 2022","yoy":5.51,"mom":0.66,"core":3.36},
+                {"period":"Jan 2023","yoy":5.28,"mom":0.34,"core":3.27},
+                {"period":"Feb 2023","yoy":5.47,"mom":0.16,"core":3.09},
+                {"period":"Mar 2023","yoy":4.97,"mom":0.18,"core":2.94},
+                {"period":"Apr 2023","yoy":4.33,"mom":0.33,"core":2.83},
+                {"period":"Mei 2023","yoy":4.00,"mom":0.09,"core":2.66},
+                {"period":"Jun 2023","yoy":3.52,"mom":0.14,"core":2.58},
+                {"period":"Jul 2023","yoy":3.08,"mom":-0.12,"core":2.43},
+                {"period":"Ags 2023","yoy":3.27,"mom":0.13,"core":2.18},
+                {"period":"Sep 2023","yoy":2.28,"mom":-0.05,"core":2.00},
+                {"period":"Okt 2023","yoy":2.56,"mom":0.17,"core":1.91},
+                {"period":"Nov 2023","yoy":2.86,"mom":0.38,"core":1.87},
+                {"period":"Des 2023","yoy":2.61,"mom":0.41,"core":1.80},
+                {"period":"Jan 2024","yoy":2.57,"mom":0.04,"core":1.68},
+                {"period":"Feb 2024","yoy":2.75,"mom":0.37,"core":1.68},
+                {"period":"Mar 2024","yoy":3.05,"mom":0.52,"core":1.77},
+                {"period":"Apr 2024","yoy":3.00,"mom":0.25,"core":1.82},
+                {"period":"Mei 2024","yoy":2.84,"mom":0.09,"core":1.93},
+                {"period":"Jun 2024","yoy":2.51,"mom":0.08,"core":1.90},
+                {"period":"Jul 2024","yoy":2.13,"mom":-0.18,"core":1.95},
+                {"period":"Ags 2024","yoy":2.12,"mom":-0.03,"core":2.02},
+                {"period":"Sep 2024","yoy":1.84,"mom":-0.12,"core":2.04},
+                {"period":"Okt 2024","yoy":1.71,"mom":0.08,"core":2.11},
+                {"period":"Nov 2024","yoy":1.55,"mom":0.30,"core":2.26},
+                {"period":"Des 2024","yoy":1.57,"mom":0.44,"core":2.26},
+                {"period":"Jan 2025","yoy":1.57,"mom":0.76,"core":2.34},
+                {"period":"Feb 2025","yoy":1.64,"mom":0.10,"core":2.48},
+                {"period":"Mar 2025","yoy":1.65,"mom":0.08,"core":2.48},
+                {"period":"Apr 2025","yoy":1.95,"mom":0.22,"core":2.45},
+                {"period":"Mei 2025","yoy":2.37,"mom":0.10,"core":2.37},
+                {"period":"Jun 2025","yoy":2.37,"mom":0.19,"core":2.45},
+                {"period":"Jul 2025","yoy":2.51,"mom":-0.07,"core":2.50},
+                {"period":"Ags 2025","yoy":2.56,"mom":0.08,"core":2.52},
+                {"period":"Sep 2025","yoy":2.28,"mom":-0.04,"core":2.43},
+                {"period":"Okt 2025","yoy":2.56,"mom":0.08,"core":2.51},
+                {"period":"Nov 2025","yoy":2.83,"mom":0.30,"core":2.58},
+                {"period":"Des 2025","yoy":3.05,"mom":0.44,"core":2.62},
+                {"period":"Jan 2026","yoy":2.90,"mom":0.42,"core":2.55},
+                {"period":"Feb 2026","yoy":2.60,"mom":0.12,"core":2.44},
+                {"period":"Mar 2026","yoy":2.28,"mom":0.08,"core":2.31},
+                {"period":"Apr 2026","yoy":1.95,"mom":-0.33,"core":2.13},
+                {"period":"Mei 2026","yoy":1.87,"mom":-0.11,"core":2.08},
             ]
-            _inf_rows_id = "".join([f"""<tr style=\'border-bottom:1px solid rgba(255,255,255,0.05);\'>
-  <td style=\'padding:5px 8px;color:{C["text"]};\'>{ r["period"]}</td>
-  <td style=\'text-align:center;padding:5px 8px;color:{r["color"]};font-weight:700;\'>{r["yoy"]:.2f}%</td>
-  <td style=\'text-align:center;padding:5px 8px;color:{"#00E5BE" if r["mom"]>=0 else "#E24B4A"};\'>{"+" if r["mom"]>=0 else ""}{r["mom"]:.2f}%</td>
-  <td style=\'text-align:center;padding:5px 8px;color:{C["text"]};\'>{ r["core"]:.2f}%</td>
-  <td style=\'text-align:center;padding:5px 8px;\'><span style=\'background:rgba(0,229,190,0.12);color:{r["color"]};padding:2px 8px;border-radius:4px;font-size:0.75rem;\'>{r["status"]}</span></td>
-</tr>""" for r in _inf_id_data])
-            st.markdown(f"""
-<div style=\'background:{"rgba(99,102,241,0.08)" if is_dark else "#f0f0ff"};border:1px solid rgba(99,102,241,0.25);border-left:3px solid #6366f1;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;\'>
-<div style=\'font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#6366f1;margin-bottom:10px;\'>🇮🇩 INFLASI INDONESIA (BPS) — 9 BULAN TERAKHIR</div>
-<table style=\'width:100%;border-collapse:collapse;font-size:0.82rem;\'>
-<tr style=\'border-bottom:1px solid rgba(99,102,241,0.2);\'>
-  <th style=\'text-align:left;padding:4px 8px;color:{text_sub};font-weight:600;\'>Periode</th>
-  <th style=\'text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;\'>CPI YoY</th>
-  <th style=\'text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;\'>CPI MoM</th>
-  <th style=\'text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;\'>Core Inflation</th>
-  <th style=\'text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;\'>Status</th>
-</tr>{_inf_rows_id}
-</table>
-<div style=\'margin-top:10px;font-size:0.72rem;color:{text_sub};\'>📌 Target BI: 1.5–3.5% YoY · Sumber: BPS Indonesia · Update: Awal bulan berikutnya</div>
-</div>""", unsafe_allow_html=True)
+            # ── Tabel Inflasi style BI Rate (grid tahun x bulan) ────────
+            _inf_mo = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Ags","Sep","Okt","Nov","Des"]
+            _inf_by_year = {}
+            for _ri in _inf_id_data:
+                _mo_i, _yr_i = _ri["period"].split(" ")
+                _inf_by_year.setdefault(_yr_i, {})[_mo_i] = _ri
+            def _inf_fc(v):
+                if v >= 5.0: return ("#ef5350","rgba(239,83,80,0.13)")
+                if v >= 3.5: return ("#F0A500","rgba(240,165,0,0.10)")
+                if v >= 1.5: return ("#00E5BE","rgba(0,229,190,0.08)")
+                return ("#a78bfa","rgba(167,139,250,0.10)")
+            _inf_tbl_html = '<div style="overflow-x:auto;margin-top:8px;"><table style="width:100%;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(99,102,241,0.15);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#a78bfa;font-weight:600;letter-spacing:0.05em;">TAHUN</th>'
+            for _m in _inf_mo:
+                _inf_tbl_html += f'<th style="padding:8px 5px;text-align:center;color:#a78bfa;font-weight:600;">{_m}</th>'
+            _inf_tbl_html += '<th style="padding:8px 8px;text-align:center;color:#a78bfa;font-weight:600;">Des YoY</th></tr></thead><tbody>'
+            for _yr_i in sorted(_inf_by_year.keys()):
+                _yd_i = _inf_by_year[_yr_i]
+                _dv = _yd_i.get("Des",{}).get("yoy",None)
+                _ds = (f'<span style="color:{_inf_fc(_dv)[0]};font-weight:700;">{_dv:.2f}%</span>' if _dv is not None else '<span style="color:#555;">&#8212;</span>')
+                _inf_tbl_html += f'<tr style="border-bottom:1px solid rgba(255,255,255,0.04);"><td style="padding:7px 10px;color:#e2e8f0;font-weight:700;">{_yr_i}</td>'
+                for _m in _inf_mo:
+                    if _m in _yd_i:
+                        _v = _yd_i[_m]["yoy"]; _fc,_bg = _inf_fc(_v)
+                        _inf_tbl_html += f'<td style="padding:7px 5px;text-align:center;color:{_fc};background:{_bg};font-weight:600;">{_v:.1f}%</td>'
+                    else:
+                        _inf_tbl_html += '<td style="padding:7px 5px;text-align:center;color:#374151;">&#8212;</td>'
+                _inf_tbl_html += f'<td style="padding:7px 8px;text-align:center;">{_ds}</td></tr>'
+            _inf_tbl_html += '</tbody></table><div style="margin-top:8px;font-size:0.65rem;color:#555;font-family:IBM Plex Mono,monospace;">&#128993; Ungu &lt;1.5% (bawah target) &nbsp;|&nbsp; &#128994; Hijau 1.5&#8211;3.5% (target BI) &nbsp;|&nbsp; &#127993; Kuning 3.5&#8211;5% &nbsp;|&nbsp; &#128308; Merah &gt;5% &nbsp;|&nbsp; Nilai = CPI YoY %</div></div>'
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>&#128202; TABEL CPI YoY BULANAN (2020 &#8211; 2026)</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown(_inf_tbl_html, unsafe_allow_html=True)
 
             # ── Inflasi US (BLS/Fed) ─────────────────────────────────
             _inf_us_data = [
@@ -18228,6 +18502,54 @@ Jawab dalam Bahasa Indonesia, tajam dan analitis. Maksimal 450 kata."""
 
             # ── IHSG Monthly Data ──────────────────────────────────────
             _ihsg_monthly = [
+                {"month":"Jan 2020","close":6325.42,"chg_pct":-5.13},
+                {"month":"Feb 2020","close":5940.05,"chg_pct":-6.10},
+                {"month":"Mar 2020","close":4538.93,"chg_pct":-23.58},
+                {"month":"Apr 2020","close":4716.40,"chg_pct":3.91},
+                {"month":"Mei 2020","close":4753.61,"chg_pct":0.79},
+                {"month":"Jun 2020","close":4905.39,"chg_pct":3.19},
+                {"month":"Jul 2020","close":5149.63,"chg_pct":4.98},
+                {"month":"Ags 2020","close":5238.49,"chg_pct":1.73},
+                {"month":"Sep 2020","close":4870.98,"chg_pct":-7.01},
+                {"month":"Okt 2020","close":5128.22,"chg_pct":5.28},
+                {"month":"Nov 2020","close":5672.20,"chg_pct":10.61},
+                {"month":"Des 2020","close":5979.07,"chg_pct":5.41},
+                {"month":"Jan 2021","close":6386.00,"chg_pct":6.81},
+                {"month":"Feb 2021","close":6241.80,"chg_pct":-2.26},
+                {"month":"Mar 2021","close":6008.00,"chg_pct":-3.75},
+                {"month":"Apr 2021","close":5995.18,"chg_pct":-0.21},
+                {"month":"Mei 2021","close":5947.45,"chg_pct":-0.80},
+                {"month":"Jun 2021","close":5985.48,"chg_pct":0.64},
+                {"month":"Jul 2021","close":6007.34,"chg_pct":0.37},
+                {"month":"Ags 2021","close":6046.54,"chg_pct":0.65},
+                {"month":"Sep 2021","close":6166.44,"chg_pct":1.98},
+                {"month":"Okt 2021","close":6569.58,"chg_pct":6.54},
+                {"month":"Nov 2021","close":6534.98,"chg_pct":-0.53},
+                {"month":"Des 2021","close":6581.48,"chg_pct":0.71},
+                {"month":"Jan 2022","close":6714.29,"chg_pct":2.02},
+                {"month":"Feb 2022","close":6888.17,"chg_pct":2.59},
+                {"month":"Mar 2022","close":7071.45,"chg_pct":2.66},
+                {"month":"Apr 2022","close":7228.91,"chg_pct":2.23},
+                {"month":"Mei 2022","close":7148.50,"chg_pct":-1.11},
+                {"month":"Jun 2022","close":6911.85,"chg_pct":-3.31},
+                {"month":"Jul 2022","close":7105.46,"chg_pct":2.80},
+                {"month":"Ags 2022","close":7178.59,"chg_pct":1.03},
+                {"month":"Sep 2022","close":7030.70,"chg_pct":-2.06},
+                {"month":"Okt 2022","close":7052.58,"chg_pct":0.31},
+                {"month":"Nov 2022","close":7081.31,"chg_pct":0.41},
+                {"month":"Des 2022","close":6850.62,"chg_pct":-3.26},
+                {"month":"Jan 2023","close":6898.67,"chg_pct":0.70},
+                {"month":"Feb 2023","close":6843.24,"chg_pct":-0.80},
+                {"month":"Mar 2023","close":6805.28,"chg_pct":-0.56},
+                {"month":"Apr 2023","close":6915.72,"chg_pct":1.62},
+                {"month":"Mei 2023","close":6633.25,"chg_pct":-4.08},
+                {"month":"Jun 2023","close":6698.40,"chg_pct":0.98},
+                {"month":"Jul 2023","close":6939.91,"chg_pct":3.60},
+                {"month":"Ags 2023","close":6953.26,"chg_pct":0.19},
+                {"month":"Sep 2023","close":6837.43,"chg_pct":-1.67},
+                {"month":"Okt 2023","close":6760.89,"chg_pct":-1.12},
+                {"month":"Nov 2023","close":7035.35,"chg_pct":4.06},
+                {"month":"Des 2023","close":7272.79,"chg_pct":3.37},
                 {"month":"Jan 2024","close":7286.88,"chg_pct":-0.43},
                 {"month":"Feb 2024","close":7311.20,"chg_pct":0.34},
                 {"month":"Mar 2024","close":7288.17,"chg_pct":-0.31},
@@ -18258,25 +18580,37 @@ Jawab dalam Bahasa Indonesia, tajam dan analitis. Maksimal 450 kata."""
                 {"month":"Apr 2026","close":6622.44,"chg_pct":-3.92},
                 {"month":"Mei 2026","close":6780.25,"chg_pct":2.38},
             ]
-            _ihsg_rows_html = "".join([f"""<tr style=\'border-bottom:1px solid rgba(255,255,255,0.04);\'>
-  <td style=\'padding:5px 8px;color:{C["text"]};\'>{r["month"]}</td>
-  <td style=\'text-align:right;padding:5px 8px;color:{C["text"]};font-weight:700;font-family:IBM Plex Mono,monospace;\'>{r["close"]:,.2f}</td>
-  <td style=\'text-align:center;padding:5px 8px;\'><span style=\'color:{"#00E5BE" if r["chg_pct"]>=0 else "#E24B4A"};font-weight:700;\'>{"▲" if r["chg_pct"]>=0 else "▼"} {abs(r["chg_pct"]):.2f}%</span></td>
-  <td style=\'text-align:center;padding:5px 8px;\'><span style=\'background:{"rgba(0,229,190,0.12)" if r["chg_pct"]>=0 else "rgba(226,75,74,0.12)"};color:{"#00E5BE" if r["chg_pct"]>=0 else "#E24B4A"};padding:2px 8px;border-radius:4px;font-size:0.73rem;\'>{"NAIK" if r["chg_pct"]>=0 else "TURUN"}</span></td>
-</tr>""" for r in reversed(_ihsg_monthly)])
-            st.markdown(f"""<div style=\'background:{"rgba(0,229,190,0.04)" if is_dark else "#f0fffe"};border:1px solid rgba(0,229,190,0.2);border-left:3px solid #00E5BE;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;\'>
-<div style=\'font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#00E5BE;margin-bottom:10px;\'>📈 IHSG (^JKSE) — CLOSING AKHIR BULAN</div>
-<div style=\'max-height:360px;overflow-y:auto;\'>
-<table style=\'width:100%;border-collapse:collapse;font-size:0.82rem;\'>
-<tr style=\'border-bottom:1px solid rgba(0,229,190,0.25);position:sticky;top:0;background:{"#0d0d1a" if is_dark else "#f0fffe"};\'>
-  <th style=\'text-align:left;padding:5px 8px;color:{text_sub};font-weight:600;\'>Bulan</th>
-  <th style=\'text-align:right;padding:5px 8px;color:{text_sub};font-weight:600;\'>Closing</th>
-  <th style=\'text-align:center;padding:5px 8px;color:{text_sub};font-weight:600;\'>MoM</th>
-  <th style=\'text-align:center;padding:5px 8px;color:{text_sub};font-weight:600;\'>Status</th>
-</tr>{_ihsg_rows_html}
-</table></div>
-<div style=\'margin-top:10px;font-size:0.72rem;color:{text_sub};\'>📌 Data closing akhir bulan · Sumber: Yahoo Finance / BEI · Update: H+1 bulan berikutnya</div>
-</div>""", unsafe_allow_html=True)
+            # ── Tabel IHSG style BI Rate (grid tahun x bulan) ──────────
+            _ih_mo = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Ags","Sep","Okt","Nov","Des"]
+            _ih_by_year = {}
+            for _ri in _ihsg_monthly:
+                _mo_i, _yr_i = _ri["month"].split(" ")
+                _ih_by_year.setdefault(_yr_i, {})[_mo_i] = _ri
+            def _ih_fc(chg):
+                if chg >= 3:  return ("#00E5BE","rgba(0,229,190,0.14)")
+                if chg > 0:   return ("#26a69a","rgba(38,166,154,0.08)")
+                if chg >= -3: return ("#ef5350","rgba(239,83,80,0.08)")
+                return ("#e24b4a","rgba(226,75,74,0.14)")
+            _ih_tbl_html = '<div style="overflow-x:auto;margin-top:8px;"><table style="width:100%;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(0,229,190,0.12);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#00E5BE;font-weight:600;letter-spacing:0.05em;">TAHUN</th>'
+            for _m in _ih_mo:
+                _ih_tbl_html += f'<th style="padding:8px 5px;text-align:center;color:#00E5BE;font-weight:600;">{_m}</th>'
+            _ih_tbl_html += '<th style="padding:8px 8px;text-align:center;color:#00E5BE;font-weight:600;">Des Close</th></tr></thead><tbody>'
+            for _yr_i in sorted(_ih_by_year.keys()):
+                _yd_i = _ih_by_year[_yr_i]
+                _dc = _yd_i.get("Des",{}).get("close",None)
+                _ds = (f'<span style="font-weight:700;color:#e2e8f0;">{_dc:,.0f}</span>' if _dc is not None else '<span style="color:#555;">&#8212;</span>')
+                _ih_tbl_html += f'<tr style="border-bottom:1px solid rgba(255,255,255,0.04);"><td style="padding:7px 10px;color:#e2e8f0;font-weight:700;">{_yr_i}</td>'
+                for _m in _ih_mo:
+                    if _m in _yd_i:
+                        _chg = _yd_i[_m]["chg_pct"]; _fc,_bg = _ih_fc(_chg)
+                        _sym = "&#9650;" if _chg >= 0 else "&#9660;"
+                        _ih_tbl_html += f'<td style="padding:7px 5px;text-align:center;color:{_fc};background:{_bg};font-weight:600;">{_sym}{abs(_chg):.1f}%</td>'
+                    else:
+                        _ih_tbl_html += '<td style="padding:7px 5px;text-align:center;color:#374151;">&#8212;</td>'
+                _ih_tbl_html += f'<td style="padding:7px 8px;text-align:center;">{_ds}</td></tr>'
+            _ih_tbl_html += '</tbody></table><div style="margin-top:8px;font-size:0.65rem;color:#555;font-family:IBM Plex Mono,monospace;">&#128994; Hijau tua &#8805;+3% &nbsp;|&nbsp; &#128994; Hijau muda 0&#8211;3% &nbsp;|&nbsp; &#128308; Merah -0&#8211;-3% &nbsp;|&nbsp; &#128308; Merah tua &#8804;-3% &nbsp;|&nbsp; Nilai = MoM %</div></div>'
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>&#128202; TABEL IHSG CLOSING BULANAN (2020 &#8211; 2026)</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown(_ih_tbl_html, unsafe_allow_html=True)
 
             # ── Chart IHSG ──────────────────────────────────────────────
             _ih_labels = str([r["month"] for r in _ihsg_monthly]).replace("'", '"')
@@ -18438,6 +18772,54 @@ Jawab dalam Bahasa Indonesia, tajam dan profesional. Maksimal 500 kata."""
 
             # ── USD/IDR Monthly Data ────────────────────────────────────
             _kurs_monthly = [
+                {"month":"Jan 2020","rate":13660,"chg_pct":-0.22},
+                {"month":"Feb 2020","rate":13908,"chg_pct":1.81},
+                {"month":"Mar 2020","rate":16367,"chg_pct":17.68},
+                {"month":"Apr 2020","rate":15157,"chg_pct":-7.39},
+                {"month":"Mei 2020","rate":14733,"chg_pct":-2.80},
+                {"month":"Jun 2020","rate":14302,"chg_pct":-2.93},
+                {"month":"Jul 2020","rate":14655,"chg_pct":2.47},
+                {"month":"Ags 2020","rate":14554,"chg_pct":-0.69},
+                {"month":"Sep 2020","rate":14918,"chg_pct":2.50},
+                {"month":"Okt 2020","rate":14690,"chg_pct":-1.53},
+                {"month":"Nov 2020","rate":14140,"chg_pct":-3.74},
+                {"month":"Des 2020","rate":14050,"chg_pct":-0.64},
+                {"month":"Jan 2021","rate":14050,"chg_pct":0.00},
+                {"month":"Feb 2021","rate":14235,"chg_pct":1.32},
+                {"month":"Mar 2021","rate":14536,"chg_pct":2.11},
+                {"month":"Apr 2021","rate":14483,"chg_pct":-0.36},
+                {"month":"Mei 2021","rate":14280,"chg_pct":-1.40},
+                {"month":"Jun 2021","rate":14496,"chg_pct":1.51},
+                {"month":"Jul 2021","rate":14478,"chg_pct":-0.12},
+                {"month":"Ags 2021","rate":14374,"chg_pct":-0.72},
+                {"month":"Sep 2021","rate":14269,"chg_pct":-0.73},
+                {"month":"Okt 2021","rate":14267,"chg_pct":-0.01},
+                {"month":"Nov 2021","rate":14378,"chg_pct":0.78},
+                {"month":"Des 2021","rate":14253,"chg_pct":-0.87},
+                {"month":"Jan 2022","rate":14340,"chg_pct":0.61},
+                {"month":"Feb 2022","rate":14349,"chg_pct":0.06},
+                {"month":"Mar 2022","rate":14359,"chg_pct":0.07},
+                {"month":"Apr 2022","rate":14416,"chg_pct":0.40},
+                {"month":"Mei 2022","rate":14568,"chg_pct":1.05},
+                {"month":"Jun 2022","rate":14999,"chg_pct":2.96},
+                {"month":"Jul 2022","rate":14900,"chg_pct":-0.66},
+                {"month":"Ags 2022","rate":14868,"chg_pct":-0.21},
+                {"month":"Sep 2022","rate":15220,"chg_pct":2.37},
+                {"month":"Okt 2022","rate":15565,"chg_pct":2.27},
+                {"month":"Nov 2022","rate":15687,"chg_pct":0.78},
+                {"month":"Des 2022","rate":15731,"chg_pct":0.28},
+                {"month":"Jan 2023","rate":14876,"chg_pct":-5.43},
+                {"month":"Feb 2023","rate":15240,"chg_pct":2.45},
+                {"month":"Mar 2023","rate":15075,"chg_pct":-1.08},
+                {"month":"Apr 2023","rate":14730,"chg_pct":-2.29},
+                {"month":"Mei 2023","rate":14915,"chg_pct":1.26},
+                {"month":"Jun 2023","rate":15040,"chg_pct":0.84},
+                {"month":"Jul 2023","rate":15123,"chg_pct":0.55},
+                {"month":"Ags 2023","rate":15415,"chg_pct":1.93},
+                {"month":"Sep 2023","rate":15480,"chg_pct":0.42},
+                {"month":"Okt 2023","rate":15820,"chg_pct":2.20},
+                {"month":"Nov 2023","rate":15635,"chg_pct":-1.17},
+                {"month":"Des 2023","rate":15399,"chg_pct":-1.51},
                 {"month":"Jan 2024","rate":15690,"chg_pct":-0.19},
                 {"month":"Feb 2024","rate":15715,"chg_pct":0.16},
                 {"month":"Mar 2024","rate":15875,"chg_pct":1.02},
@@ -18468,25 +18850,37 @@ Jawab dalam Bahasa Indonesia, tajam dan profesional. Maksimal 500 kata."""
                 {"month":"Apr 2026","rate":16890,"chg_pct":0.87},
                 {"month":"Mei 2026","rate":16350,"chg_pct":-3.20},
             ]
-            _kurs_rows_html = "".join([f"""<tr style=\'border-bottom:1px solid rgba(255,255,255,0.04);\'>
-  <td style=\'padding:5px 8px;color:{C["text"]};\'>{r["month"]}</td>
-  <td style=\'text-align:right;padding:5px 8px;color:{C["text"]};font-weight:700;font-family:IBM Plex Mono,monospace;\'>Rp {r["rate"]:,}.</td>
-  <td style=\'text-align:center;padding:5px 8px;\'><span style=\'color:{"#E24B4A" if r["chg_pct"]>=0 else "#00E5BE"};font-weight:700;\'>{"▲" if r["chg_pct"]>=0 else "▼"} {abs(r["chg_pct"]):.2f}%</span></td>
-  <td style=\'text-align:center;padding:5px 8px;\'><span style=\'background:{"rgba(226,75,74,0.12)" if r["chg_pct"]>=0 else "rgba(0,229,190,0.12)"};color:{"#E24B4A" if r["chg_pct"]>=0 else "#00E5BE"};padding:2px 8px;border-radius:4px;font-size:0.73rem;\'>{"LEMAH" if r["chg_pct"]>=0 else "KUAT"}</span></td>
-</tr>""" for r in reversed(_kurs_monthly)])
-            st.markdown(f"""<div style=\'background:{"rgba(240,165,0,0.04)" if is_dark else "#fffbf0"};border:1px solid rgba(240,165,0,0.25);border-left:3px solid #F0A500;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;\'>
-<div style=\'font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#F0A500;margin-bottom:10px;\'>💱 USD/IDR — CLOSING AKHIR BULAN (KURS TENGAH BI)</div>
-<div style=\'max-height:360px;overflow-y:auto;\'>
-<table style=\'width:100%;border-collapse:collapse;font-size:0.82rem;\'>
-<tr style=\'border-bottom:1px solid rgba(240,165,0,0.25);position:sticky;top:0;background:{"#0d0d1a" if is_dark else "#fffbf0"};\'>
-  <th style=\'text-align:left;padding:5px 8px;color:{text_sub};font-weight:600;\'>Bulan</th>
-  <th style=\'text-align:right;padding:5px 8px;color:{text_sub};font-weight:600;\'>USD/IDR</th>
-  <th style=\'text-align:center;padding:5px 8px;color:{text_sub};font-weight:600;\'>MoM</th>
-  <th style=\'text-align:center;padding:5px 8px;color:{text_sub};font-weight:600;\'>Rupiah</th>
-</tr>{_kurs_rows_html}
-</table></div>
-<div style=\'margin-top:10px;font-size:0.72rem;color:{text_sub};\'>📌 ▲ = Rupiah melemah (IDR per USD naik) · ▼ = Rupiah menguat · Sumber: BI / Yahoo Finance</div>
-</div>""", unsafe_allow_html=True)
+            # ── Tabel Kurs style BI Rate (grid tahun x bulan) ──────────
+            _kr_mo = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Ags","Sep","Okt","Nov","Des"]
+            _kr_by_year = {}
+            for _ri in _kurs_monthly:
+                _mo_i, _yr_i = _ri["month"].split(" ")
+                _kr_by_year.setdefault(_yr_i, {})[_mo_i] = _ri
+            def _kr_fc(chg):
+                if chg >= 2:  return ("#ef5350","rgba(239,83,80,0.13)")
+                if chg > 0:   return ("#F0A500","rgba(240,165,0,0.08)")
+                if chg >= -2: return ("#26a69a","rgba(38,166,154,0.08)")
+                return ("#00E5BE","rgba(0,229,190,0.14)")
+            _kr_tbl_html = '<div style="overflow-x:auto;margin-top:8px;"><table style="width:100%;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(240,165,0,0.12);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#F0A500;font-weight:600;letter-spacing:0.05em;">TAHUN</th>'
+            for _m in _kr_mo:
+                _kr_tbl_html += f'<th style="padding:8px 5px;text-align:center;color:#F0A500;font-weight:600;">{_m}</th>'
+            _kr_tbl_html += '<th style="padding:8px 8px;text-align:center;color:#F0A500;font-weight:600;">Des Rate</th></tr></thead><tbody>'
+            for _yr_i in sorted(_kr_by_year.keys()):
+                _yd_i = _kr_by_year[_yr_i]
+                _dr = _yd_i.get("Des",{}).get("rate",None)
+                _ds = (f'<span style="font-weight:700;color:#e2e8f0;">{_dr:,}</span>' if _dr is not None else '<span style="color:#555;">&#8212;</span>')
+                _kr_tbl_html += f'<tr style="border-bottom:1px solid rgba(255,255,255,0.04);"><td style="padding:7px 10px;color:#e2e8f0;font-weight:700;">{_yr_i}</td>'
+                for _m in _kr_mo:
+                    if _m in _yd_i:
+                        _chg = _yd_i[_m]["chg_pct"]; _fc,_bg = _kr_fc(_chg)
+                        _sym = "&#9650;" if _chg >= 0 else "&#9660;"
+                        _kr_tbl_html += f'<td style="padding:7px 5px;text-align:center;color:{_fc};background:{_bg};font-weight:600;">{_sym}{abs(_chg):.1f}%</td>'
+                    else:
+                        _kr_tbl_html += '<td style="padding:7px 5px;text-align:center;color:#374151;">&#8212;</td>'
+                _kr_tbl_html += f'<td style="padding:7px 8px;text-align:center;">{_ds}</td></tr>'
+            _kr_tbl_html += '</tbody></table><div style="margin-top:8px;font-size:0.65rem;color:#555;font-family:IBM Plex Mono,monospace;">&#128994; Hijau tua &#8804;-2% (Rupiah menguat kuat) &nbsp;|&nbsp; &#128994; Hijau -2&#8211;0% &nbsp;|&nbsp; &#127993; Kuning 0&#8211;+2% (melemah) &nbsp;|&nbsp; &#128308; Merah &#8805;+2% &nbsp;|&nbsp; &#9650; = IDR naik = Rupiah MELEMAH</div></div>'
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>&#128202; TABEL KURS USD/IDR BULANAN (2020 &#8211; 2026)</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown(_kr_tbl_html, unsafe_allow_html=True)
 
             # ── Chart Kurs ───────────────────────────────────────────────
             _kurs_labels = str([r["month"] for r in _kurs_monthly]).replace("'", '"')
