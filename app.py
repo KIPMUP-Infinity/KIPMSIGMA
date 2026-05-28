@@ -8154,28 +8154,11 @@ FORMAT - Bahasa Indonesia, max 600 kata, Markdown:
 Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
 
                     _dr_result = None
-                    _ant_key_sch = st.secrets.get("ANTHROPIC_API_KEY","")
-                    if _ant_key_sch:
-                        try:
-                            import urllib.request as _ur_sch, json as _jsch
-                            _pl_sch = {
-                                "model": "claude-sonnet-4-5",
-                                "max_tokens": 4000,
-                                "tools": [{"type":"web_search_20250305","name":"web_search"}],
-                                "messages": [{"role":"user","content": _dr_prompt}]
-                            }
-                            _req_sch = _ur_sch.Request(
-                                "https://api.anthropic.com/v1/messages",
-                                data=_jsch.dumps(_pl_sch).encode(),
-                                headers={"Content-Type":"application/json",
-                                         "x-api-key": _ant_key_sch,
-                                         "anthropic-version":"2023-06-01",
-                                         "anthropic-beta":"web-search-2025-03-05"}
-                            )
-                            with _ur_sch.urlopen(_req_sch, timeout=45) as _r_sch:
-                                _d_sch = _jsch.loads(_r_sch.read())
-                            _dr_result = "".join(b.get("text","") for b in _d_sch.get("content",[]) if b.get("type")=="text").strip() or None
-                        except Exception: pass
+                    # ── [FIXED] Ganti Anthropic → Gemini (lebih cepat, tidak butuh ANTHROPIC_API_KEY) ──
+                    try:
+                        _dr_result, _ = _call_gemini_text([{"role": "user", "content": _dr_prompt}])
+                        if not _dr_result: _dr_result = None
+                    except Exception: _dr_result = None
 
                     if not _dr_result:
                         try:
@@ -9834,44 +9817,56 @@ var TERMINAL_URL = "{_terminal_url}";
     requestAnimationFrame(draw);
 }})();
 
+/* [FIXED] selectChat & selectTerminal: hapus delay dan race condition.
+   Langsung klik Streamlit button (lebih reliable), URL fallback tanpa setTimeout. */
 function selectChat() {{
+    // Sembunyikan selector segera agar tidak ada flash gambar
+    try {{ document.getElementById('sigma-selector-root').style.display='none'; }} catch(e) {{}}
     try {{
         var pd = window.parent.document;
         var btns = pd.querySelectorAll('[data-testid="stButton"] button');
         for (var i = 0; i < btns.length; i++) {{
-            var t = (btns[i].innerText||btns[i].textContent||"").toLowerCase();
-            if (t.includes('chat')) {{ btns[i].click(); return; }}
+            var t = (btns[i].innerText||btns[i].textContent||"").toLowerCase().trim();
+            if (t === 'chat') {{ btns[i].click(); return; }}
         }}
-    }} catch(e) {{}}
-    setTimeout(function() {{
+        // Fallback URL langsung — tanpa delay
+        var u = new URL(window.parent.location.href);
+        u.searchParams.set('action','open_chat');
+        window.parent.location.replace(u.toString());
+    }} catch(e) {{
         try {{
-            var u = new URL(window.parent.location.href);
-            u.searchParams.set('action','open_chat');
-            window.parent.location.assign(u.toString());
-        }} catch(e) {{}}
-    }}, 120);
+            var u2 = new URL(window.parent.location.href);
+            u2.searchParams.set('action','open_chat');
+            window.parent.location.replace(u2.toString());
+        }} catch(e2) {{}}
+    }}
 }}
 
 function selectTerminal() {{
     if (TERMINAL_URL && TERMINAL_URL.length > 4) {{
-        window.parent.location.href = TERMINAL_URL;
+        window.parent.location.replace(TERMINAL_URL);
         return;
     }}
+    // Sembunyikan selector segera
+    try {{ document.getElementById('sigma-selector-root').style.display='none'; }} catch(e) {{}}
     try {{
         var pd = window.parent.document;
         var btns = pd.querySelectorAll('[data-testid="stButton"] button');
         for (var i = 0; i < btns.length; i++) {{
-            var t = (btns[i].innerText||btns[i].textContent||"").toLowerCase();
-            if (t.includes('terminal')) {{ btns[i].click(); return; }}
+            var t = (btns[i].innerText||btns[i].textContent||"").toLowerCase().trim();
+            if (t === 'terminal') {{ btns[i].click(); return; }}
         }}
-    }} catch(e) {{}}
-    setTimeout(function() {{
+        // Fallback URL langsung — tanpa delay
+        var u = new URL(window.parent.location.href);
+        u.searchParams.set('action','open_terminal');
+        window.parent.location.replace(u.toString());
+    }} catch(e) {{
         try {{
-            var u = new URL(window.parent.location.href);
-            u.searchParams.set('action','open_terminal');
-            window.parent.location.assign(u.toString());
-        }} catch(e) {{}}
-    }}, 120);
+            var u2 = new URL(window.parent.location.href);
+            u2.searchParams.set('action','open_terminal');
+            window.parent.location.replace(u2.toString());
+        }} catch(e2) {{}}
+    }}
 }}
 
 /* -- ANIMATED MINI CHART (Canvas) -- */
@@ -10070,11 +10065,9 @@ if st.session_state.user and not st.session_state.get("selected_system"):
         st.session_state.selected_system = "terminal_local"
         st.session_state.current_view = "dashboard"
     else:
-        # Auto-direct ke SIGMA — skip halaman pemilihan sistem
-        st.session_state.selected_system = "terminal_local"
-        st.session_state.current_view = "dashboard"
-        try: st.query_params["nav"] = "terminal_local"
-        except Exception: pass
+        # [FIXED] Jangan auto-redirect ke SIGMA. Tampilkan 3-card selector dulu.
+        show_system_selector()
+        st.stop()
 
 # ── FIX: jika selected_system="terminal" (external URL), redirect kembali otomatis ──
 # Ini terjadi setelah theme toggle atau rerun — pastikan user tidak stuck di chat view
@@ -11370,25 +11363,10 @@ def _call_ai_reco(prompt_text, max_tok=8000):
         return result
     except Exception:
         _time_reco.sleep(1)
+    # ── [FIXED] Ganti Anthropic → Gemini sebagai last-resort fallback ──
     try:
-        _ant_key = st.secrets.get("ANTHROPIC_API_KEY", "")
-        if _ant_key:
-            import urllib.request as _ur, json as _uj
-            _payload = {
-                "model": "claude-haiku-4-5-20251001",
-                "max_tokens": min(max_tok, 4000),
-                "messages": [{"role": "user", "content": prompt_text}]
-            }
-            _req = _ur.Request(
-                "https://api.anthropic.com/v1/messages",
-                data=_uj.dumps(_payload).encode(),
-                headers={"Content-Type":"application/json","x-api-key":_ant_key,"anthropic-version":"2023-06-01"},
-                method="POST"
-            )
-            with _ur.urlopen(_req, timeout=60) as _r:
-                _d = _uj.loads(_r.read())
-            _txt = "".join(b.get("text","") for b in _d.get("content",[]) if b.get("type")=="text")
-            if _txt: return _txt
+        _gem_txt, _ = _call_gemini_text([{"role": "user", "content": prompt_text}])
+        if _gem_txt: return _gem_txt
     except Exception:
         pass
     return "⚠️ Semua AI engine sedang overload (rate limit). Tunggu 1-2 menit lalu coba lagi."
@@ -14127,37 +14105,15 @@ table{{margin-bottom:0!important;}}
 
                 _rt_block = _fmt_price_block(_rt_data)
 
-                # ── Anthropic API dengan web_search tool untuk data REAL-TIME ────
-                _anthropic_key = st.secrets.get("ANTHROPIC_API_KEY", "")
-
+                # ── [FIXED] Ganti Anthropic → Gemini untuk data REAL-TIME ────
+                # Gemini lebih cepat dan tidak butuh ANTHROPIC_API_KEY
                 def _call_anthropic_with_search(user_prompt, max_tok=4000):
-                    """Gunakan Anthropic API + web_search untuk data real-time."""
-                    import urllib.request, json as _j
-                    _payload = {
-                        "model": "claude-sonnet-4-5",
-                        "max_tokens": max_tok,
-                        "tools": [{"type": "web_search_20250305", "name": "web_search"}],
-                        "messages": [{"role": "user", "content": user_prompt}]
-                    }
-                    _req = urllib.request.Request(
-                        "https://api.anthropic.com/v1/messages",
-                        data=_j.dumps(_payload).encode(),
-                        headers={
-                            "Content-Type": "application/json",
-                            "x-api-key": _anthropic_key,
-                            "anthropic-version": "2023-06-01",
-                            "anthropic-beta": "interleaved-thinking-2025-05-14"
-                        },
-                        method="POST"
-                    )
-                    with urllib.request.urlopen(_req, timeout=55) as _r:
-                        _data = _j.loads(_r.read())
-                    # Gabungkan semua text block dari response
-                    _full_text = ""
-                    for _block in _data.get("content", []):
-                        if _block.get("type") == "text":
-                            _full_text += _block.get("text", "")
-                    return _full_text.strip() if _full_text else None
+                    """[FIXED] Gunakan Gemini sebagai pengganti Anthropic API."""
+                    try:
+                        _result, _ = _call_gemini_text([{"role": "user", "content": user_prompt}])
+                        return _result if _result else None
+                    except Exception:
+                        return None
 
                 # ── Build prompt - BERBEDA antara Daily dan Weekly ────────
                 _rss_dom_str  = chr(10).join([f"• {h}" for h in dom_news[:15]]) if dom_news else "⚠ Tidak tersedia."
