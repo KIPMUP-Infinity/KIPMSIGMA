@@ -9312,7 +9312,7 @@ body{{
         <div class="hd-line"></div>
     </div>
 
-    <div class="grid">
+    <div class="grid" id="sigma-selector-root">
 
         <!-- =============== SIGMA AI CHAT =============== -->
         <div class="card card-ai" onclick="selectChat()">
@@ -9577,7 +9577,7 @@ body{{
                 <li><span class="fdot"></span> Alpha Screener &mdash; AI Stock Insight, Daily, Weekly &amp; BSJP</li>
             </ul>
 
-            <button class="cta cta-terminal" onclick="event.stopPropagation();selectTerminal()">MASUK KE TERMINAL &rarr;</button>
+            <button class="cta cta-terminal" onclick="event.stopPropagation();selectTerminal()">MASUK KE DASHBOARD &rarr;</button>
         </div>
 
         <!-- =============== KIPM ACADEMY =============== -->
@@ -12645,10 +12645,11 @@ if current_view == "dashboard":
 
         return result
 
-    tab_live, tab_marketdata, tab_rotation, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
+    tab_live, tab_marketdata, tab_rotation, tab_alpha_plan, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
         "  📡 MARKET LIVE  ",
         "  📈 MARKET DATA  ",
         "  📊 INDEX & SECTOR ROTATION  ",
+        "  🗓️ ALPHA PLAN  ",
         "  ⚡ ALPHA SCREENER  ",
         "  🔧 TOOLS  ",
         "  📖 PANDUAN  ",
@@ -12656,6 +12657,7 @@ if current_view == "dashboard":
     # tab_idxmap alias ke tab_live agar blok lama (globe dkk) tetap berjalan
     tab_idxmap = tab_live
     tab_macro = tab_marketdata  # alias — Economic Calendar dirender di tab_macro = tab_marketdata context
+    # tab_alpha_plan: new tab for Alpha Plan (Daily, Weekly, BSJP, Track Record)
 
     with tab_idxmap:
         # ── Sub-tab Market Live ──────────────────────────────────────────────
@@ -12933,12 +12935,13 @@ table{{margin-bottom:0!important;}}
         # ════════════════════════════════════════════════════════════════
         # MARKET DATA — Rate Monitor · Bond Yield · Dividend · Shareholder · Fundamental Screener
         # ════════════════════════════════════════════════════════════════
-        _md_subtab_ratemon, _md_subtab_yield, _md_subtab_dividend, _md_subtab_shareholder, _md_subtab_fundamental = st.tabs([
+        _md_subtab_ratemon, _md_subtab_yield, _md_subtab_dividend, _md_subtab_shareholder, _md_subtab_fundamental, _md_subtab_inflasi = st.tabs([
             "  📡 RATE MONITOR  ",
             "  🏛️ BOND YIELD  ",
             "  💰 DIVIDEND  ",
             "  👥 SHAREHOLDER  ",
             "  📊 FUNDAMENTAL SCREENER  ",
+            "  📉 INFLASI  ",
         ])
 
         # ════════════════════════════════════════════════════════════════
@@ -18983,6 +18986,86 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
+
+        # ════════════════════════════════════════════════════════════════
+        # TAB: INFLASI — Data Inflasi Indonesia & Global
+        # ════════════════════════════════════════════════════════════════
+        with _md_subtab_inflasi:
+            st.markdown(
+                "<div class='trm-section'><div class='trm-section-line'></div>"
+                "<span class='trm-section-label'>📉 INFLASI — INDONESIA & GLOBAL</span>"
+                "<div class='trm-section-line'></div></div>",
+                unsafe_allow_html=True
+            )
+
+            # ── Data Inflasi Indonesia (BPS) ──
+            st.markdown(f"""
+<div style='background:{"rgba(99,102,241,0.08)" if is_dark else "#f0f0ff"};border:1px solid rgba(99,102,241,0.25);border-left:3px solid #6366f1;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;'>
+<div style='font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#6366f1;margin-bottom:10px;'>🇮🇩 INFLASI INDONESIA (BPS)</div>
+<table style='width:100%;border-collapse:collapse;font-size:0.82rem;'>
+<tr style='border-bottom:1px solid rgba(99,102,241,0.2);'>
+  <th style='text-align:left;padding:4px 8px;color:{text_sub};font-weight:600;'>Periode</th>
+  <th style='text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;'>CPI YoY</th>
+  <th style='text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;'>CPI MoM</th>
+  <th style='text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;'>Core Inflation</th>
+  <th style='text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;'>Status</th>
+</tr>
+<tr style='border-bottom:1px solid rgba(255,255,255,0.05);'>
+  <td style='padding:5px 8px;color:{C["text"]};'>Apr 2026</td><td style='text-align:center;padding:5px 8px;color:#00E5BE;font-weight:700;'>1.95%</td><td style='text-align:center;padding:5px 8px;color:#E24B4A;'>-0.33%</td><td style='text-align:center;padding:5px 8px;color:{C["text"]};'>2.13%</td><td style='text-align:center;padding:5px 8px;'><span style='background:rgba(0,229,190,0.15);color:#00E5BE;padding:2px 8px;border-radius:4px;font-size:0.75rem;'>RENDAH</span></td>
+</tr>
+<tr style='border-bottom:1px solid rgba(255,255,255,0.05);'>
+  <td style='padding:5px 8px;color:{C["text"]};'>Mar 2026</td><td style='text-align:center;padding:5px 8px;color:#00E5BE;font-weight:700;'>2.28%</td><td style='text-align:center;padding:5px 8px;color:#F0A500;'>+0.08%</td><td style='text-align:center;padding:5px 8px;color:{C["text"]};'>2.31%</td><td style='text-align:center;padding:5px 8px;'><span style='background:rgba(0,229,190,0.15);color:#00E5BE;padding:2px 8px;border-radius:4px;font-size:0.75rem;'>TERKENDALI</span></td>
+</tr>
+<tr style='border-bottom:1px solid rgba(255,255,255,0.05);'>
+  <td style='padding:5px 8px;color:{C["text"]};'>Feb 2026</td><td style='text-align:center;padding:5px 8px;color:#F0A500;font-weight:700;'>2.60%</td><td style='text-align:center;padding:5px 8px;color:#00E5BE;'>+0.12%</td><td style='text-align:center;padding:5px 8px;color:{C["text"]};'>2.44%</td><td style='text-align:center;padding:5px 8px;'><span style='background:rgba(240,165,0,0.15);color:#F0A500;padding:2px 8px;border-radius:4px;font-size:0.75rem;'>NORMAL</span></td>
+</tr>
+<tr>
+  <td style='padding:5px 8px;color:{C["text"]};'>Jan 2026</td><td style='text-align:center;padding:5px 8px;color:#F0A500;font-weight:700;'>2.90%</td><td style='text-align:center;padding:5px 8px;color:#00E5BE;'>+0.42%</td><td style='text-align:center;padding:5px 8px;color:{C["text"]};'>2.55%</td><td style='text-align:center;padding:5px 8px;'><span style='background:rgba(240,165,0,0.15);color:#F0A500;padding:2px 8px;border-radius:4px;font-size:0.75rem;'>NORMAL</span></td>
+</tr>
+</table>
+<div style='margin-top:10px;font-size:0.72rem;color:{text_sub};'>📌 Target BI: 1.5–3.5% YoY · Sumber: BPS Indonesia</div>
+</div>
+""", unsafe_allow_html=True)
+
+            # ── Data Inflasi US (Fed & BLS) ──
+            st.markdown(f"""
+<div style='background:{"rgba(239,68,68,0.06)" if is_dark else "#fff5f5"};border:1px solid rgba(239,68,68,0.2);border-left:3px solid #ef4444;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;'>
+<div style='font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#ef4444;margin-bottom:10px;'>🇺🇸 INFLASI AS (BLS / Fed)</div>
+<table style='width:100%;border-collapse:collapse;font-size:0.82rem;'>
+<tr style='border-bottom:1px solid rgba(239,68,68,0.2);'>
+  <th style='text-align:left;padding:4px 8px;color:{text_sub};font-weight:600;'>Indikator</th>
+  <th style='text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;'>Terbaru</th>
+  <th style='text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;'>Prev</th>
+  <th style='text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;'>Target Fed</th>
+  <th style='text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;'>Dampak IDX</th>
+</tr>
+<tr style='border-bottom:1px solid rgba(255,255,255,0.05);'>
+  <td style='padding:5px 8px;color:{C["text"]};font-weight:600;'>CPI YoY</td><td style='text-align:center;padding:5px 8px;color:#F0A500;font-weight:700;'>2.4%</td><td style='text-align:center;padding:5px 8px;color:{text_sub};'>2.8%</td><td style='text-align:center;padding:5px 8px;color:{text_sub};'>2.0%</td><td style='text-align:center;padding:5px 8px;'><span style='background:rgba(0,229,190,0.15);color:#00E5BE;padding:2px 8px;border-radius:4px;font-size:0.75rem;'>POSITIF</span></td>
+</tr>
+<tr style='border-bottom:1px solid rgba(255,255,255,0.05);'>
+  <td style='padding:5px 8px;color:{C["text"]};font-weight:600;'>Core CPI MoM</td><td style='text-align:center;padding:5px 8px;color:#F0A500;font-weight:700;'>0.3%</td><td style='text-align:center;padding:5px 8px;color:{text_sub};'>0.3%</td><td style='text-align:center;padding:5px 8px;color:{text_sub};'>≤0.2%</td><td style='text-align:center;padding:5px 8px;'><span style='background:rgba(240,165,0,0.15);color:#F0A500;padding:2px 8px;border-radius:4px;font-size:0.75rem;'>NETRAL</span></td>
+</tr>
+<tr>
+  <td style='padding:5px 8px;color:{C["text"]};font-weight:600;'>Core PCE YoY</td><td style='text-align:center;padding:5px 8px;color:#F0A500;font-weight:700;'>2.6%</td><td style='text-align:center;padding:5px 8px;color:{text_sub};'>2.8%</td><td style='text-align:center;padding:5px 8px;color:{text_sub};'>2.0%</td><td style='text-align:center;padding:5px 8px;'><span style='background:rgba(0,229,190,0.15);color:#00E5BE;padding:2px 8px;border-radius:4px;font-size:0.75rem;'>MEMBAIK</span></td>
+</tr>
+</table>
+<div style='margin-top:10px;font-size:0.72rem;color:{text_sub};'>📌 PCE = Indikator favorit Fed · Turun = sinyal dovish → positif EM & IDX</div>
+</div>
+""", unsafe_allow_html=True)
+
+            # ── Analisis Dampak ke IDX ──
+            st.markdown(f"""
+<div style='background:{"rgba(30,30,60,0.4)" if is_dark else "#f8f9ff"};border:1px solid rgba(99,102,241,0.15);border-radius:8px;padding:14px 18px;font-family:IBM Plex Mono,monospace;font-size:0.82rem;'>
+<div style='font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:{text_sub};margin-bottom:10px;'>💡 IMPLIKASI KE IDX & IHSG</div>
+<div style='color:{C["text"]};line-height:1.7;'>
+• <strong style='color:#00E5BE;'>Inflasi ID rendah (1.95%)</strong> → BI Rate berpeluang turun → likuiditas naik → saham sensitif bunga naik (BBCA, BBRI, BSDE, SMRA)<br>
+• <strong style='color:#F0A500;'>Inflasi US turun (2.4%)</strong> → Ekspektasi cut Fed meningkat → DXY melemah → IDR menguat → asing masuk ke EM<br>
+• <strong style='color:#6366f1;'>PCE 2.6% → menuju target 2%</strong> → dovish signal nyata, bukan noise → IHSG berpotensi rebound structural<br>
+• <strong style='color:#E24B4A;'>Risiko:</strong> Tarif dagang US & geopolitik bisa re-inflate → pantau CPI Juni & PCE Mei
+</div>
+</div>
+""", unsafe_allow_html=True)
+
     # ── TAB: INDEX & SECTOR ROTATION ──────────────────────────────────
     with tab_rotation:
 
@@ -20746,6 +20829,21 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             ],
         }
 
+    # ─── ALPHA PLAN TAB — Daily · Weekly · BSJP · Track Record ───────────
+    with tab_alpha_plan:
+        st.markdown(
+            "<div class='trm-section'><div class='trm-section-line'></div>"
+            "<span class='trm-section-label'>🗓️ ALPHA PLAN</span>"
+            "<div class='trm-section-line'></div></div>",
+            unsafe_allow_html=True
+        )
+        reco_tab_daily, reco_tab_weekly, reco_tab_bsjp, reco_tab_trackrecord_plan = st.tabs([
+            "  📅 DAILY PLAN  ",
+            "  📆 WEEKLY PLAN  ",
+            "  🌙 BELI SORE JUAL PAGI  ",
+            "  🏆 TRACK RECORD  ",
+        ])
+
     with tab_alpha_screener:
         # ── ALPHA SCREENER — NO LOCK (akses langsung) ─────────────────────────
         _alpha_unlocked = True
@@ -20754,15 +20852,20 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         # [UI statement removed]
 
-        alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_brosum, alpha_tab_ipo, alpha_tab_trackrecord = st.tabs([
+        # ── ALPHA PLAN (tab terpisah) mengandung: Daily, Weekly, BSJP, Track Record ──
+        # Alpha Screener hanya berisi: Insight, Fundamental, IPO, Broker Summary
+        alpha_tab_insight, alpha_tab_brosum, alpha_tab_ipo, alpha_tab_fundamental2 = st.tabs([
             "  ⚡ ALPHA STOCK INSIGHT  ",
-            "  📅 DAILY PLAN  ",
-            "  📆 WEEKLY PLAN  ",
-            "  🌙 BELI SORE JUAL PAGI  ",
             "  🏦 BROKER SUMMARY  ",
             "  📋 ANALISA IPO  ",
-            "  🏆 TRACK RECORD  ",
+            "  📊 FUNDAMENTAL SCREENER  ",
         ])
+        # Alias agar blok lama yang referensi tab_daily/weekly/bsjp/trackrecord tetap berjalan
+        # (akan dirender di tab_alpha_plan di bawah)
+        alpha_tab_daily = None
+        alpha_tab_weekly = None
+        alpha_tab_bsjp = None
+        alpha_tab_trackrecord = None
 
         with alpha_tab_ipo:
             # ════════════════════════════════════════════════════════════════
@@ -21317,7 +21420,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 st.session_state[tr_update_key] = True
             except Exception: pass
 
-        with alpha_tab_trackrecord:
+        with reco_tab_trackrecord_plan:
             # ════════════════════════════════════════════════════════════════
             # TAB TRACK RECORD PUSAT — BSJP + DAILY + WEEKLY
             # ════════════════════════════════════════════════════════════════
@@ -23673,11 +23776,9 @@ white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-bo
             except:
                 return "Data shareholder tidak tersedia"
 
-        # ── Sub-tabs sudah didefinisikan di atas (alpha_tab_daily/weekly/bsjp/fundamental) ──
-        # reco_tab_* aliases untuk backward compat internal
-        reco_tab_daily       = alpha_tab_daily
-        reco_tab_weekly      = alpha_tab_weekly
-        reco_tab_bsjp        = alpha_tab_bsjp
+        # ── reco_tab_* sudah didefinisikan di tab_alpha_plan di atas ──
+        # Tidak perlu redefine di sini — mereka adalah tab objects dari "with tab_alpha_plan: st.tabs(...)"
+        # reco_tab_daily, reco_tab_weekly, reco_tab_bsjp, reco_tab_trackrecord_plan → sudah ada di scope
 
         # ─── SHARED TABLE RENDERER ─────────────────────────────────────────
         def _render_table_reco(session_key_result, session_key_ts, accent_color,
@@ -25511,7 +25612,11 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
         _auto_update_track_record()
 
         # ─── TAB DAILY ────────────────────────────────────────────────────
-        with reco_tab_daily:
+        if reco_tab_daily is not None:
+         pass
+        if False and reco_tab_daily is None: pass  # skip
+        if reco_tab_daily is not None:
+         with reco_tab_daily:
 
 
             _now_d        = _wib_now()
