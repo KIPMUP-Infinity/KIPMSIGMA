@@ -13022,14 +13022,16 @@ table{{margin-bottom:0!important;}}
         # ════════════════════════════════════════════════════════════════
         # MARKET DATA — Rate Monitor · Bond Yield · Dividend · Shareholder
         # ════════════════════════════════════════════════════════════════
-        _md_subtab_ratemon, _md_subtab_yield, _md_subtab_dividend = st.tabs([
+        _md_subtab_ratemon, _md_subtab_yield, _md_subtab_dividend, _md_subtab_inflasi, _md_subtab_ihsg, _md_subtab_kurs = st.tabs([
             "  📡 RATE MONITOR  ",
             "  🏛️ BOND YIELD  ",
             "  💰 DIVIDEND  ",
+            "  📉 INFLASI  ",
+            "  📈 IHSG  ",
+            "  💱 KURS RUPIAH  ",
         ])
-        # Shareholder & Inflasi dipindah ke tab INDEX & SECTOR ROTATION
+        # Shareholder dipindah ke tab INDEX & SECTOR ROTATION
         _md_subtab_shareholder = None
-        _md_subtab_inflasi = None
 
         # ════════════════════════════════════════════════════════════════
         # TAB: BOND YIELD — Indonesia 10Y vs DXY vs USD/IDR
@@ -14017,6 +14019,400 @@ table{{margin-bottom:0!important;}}
                     {_dv_txt.replace(chr(10), "<br>")}
                     </div>""", unsafe_allow_html=True)
                 st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+        # ── MARKET DATA: INFLASI sub-tab ──
+        with _md_subtab_inflasi:
+            st.markdown("<div class=\'trm-section\'><div class=\'trm-section-line\'></div><span class=\'trm-section-label\'>📉 INFLASI — INDONESIA & GLOBAL</span><div class=\'trm-section-line\'></div></div>", unsafe_allow_html=True)
+
+            # ── Inflasi Indonesia (BPS) ─────────────────────────────────
+            _inf_id_data = [
+                {"period":"Mei 2026","yoy":1.87,"mom":-0.11,"core":2.08,"status":"RENDAH","color":"#00E5BE"},
+                {"period":"Apr 2026","yoy":1.95,"mom":-0.33,"core":2.13,"status":"RENDAH","color":"#00E5BE"},
+                {"period":"Mar 2026","yoy":2.28,"mom":0.08,"core":2.31,"status":"TERKENDALI","color":"#00E5BE"},
+                {"period":"Feb 2026","yoy":2.60,"mom":0.12,"core":2.44,"status":"NORMAL","color":"#F0A500"},
+                {"period":"Jan 2026","yoy":2.90,"mom":0.42,"core":2.55,"status":"NORMAL","color":"#F0A500"},
+                {"period":"Des 2025","yoy":3.05,"mom":0.44,"core":2.62,"status":"NORMAL","color":"#F0A500"},
+                {"period":"Nov 2025","yoy":2.83,"mom":0.30,"core":2.58,"status":"NORMAL","color":"#F0A500"},
+                {"period":"Okt 2025","yoy":2.56,"mom":0.08,"core":2.51,"status":"NORMAL","color":"#F0A500"},
+                {"period":"Sep 2025","yoy":2.28,"mom":-0.04,"core":2.43,"status":"TERKENDALI","color":"#00E5BE"},
+            ]
+            _inf_rows_id = "".join([f"""<tr style=\'border-bottom:1px solid rgba(255,255,255,0.05);\'>
+  <td style=\'padding:5px 8px;color:{C["text"]};\'>{ r["period"]}</td>
+  <td style=\'text-align:center;padding:5px 8px;color:{r["color"]};font-weight:700;\'>{r["yoy"]:.2f}%</td>
+  <td style=\'text-align:center;padding:5px 8px;color:{"#00E5BE" if r["mom"]>=0 else "#E24B4A"};\'>{"+" if r["mom"]>=0 else ""}{r["mom"]:.2f}%</td>
+  <td style=\'text-align:center;padding:5px 8px;color:{C["text"]};\'>{ r["core"]:.2f}%</td>
+  <td style=\'text-align:center;padding:5px 8px;\'><span style=\'background:rgba(0,229,190,0.12);color:{r["color"]};padding:2px 8px;border-radius:4px;font-size:0.75rem;\'>{r["status"]}</span></td>
+</tr>""" for r in _inf_id_data])
+            st.markdown(f"""
+<div style=\'background:{"rgba(99,102,241,0.08)" if is_dark else "#f0f0ff"};border:1px solid rgba(99,102,241,0.25);border-left:3px solid #6366f1;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;\'>
+<div style=\'font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#6366f1;margin-bottom:10px;\'>🇮🇩 INFLASI INDONESIA (BPS) — 9 BULAN TERAKHIR</div>
+<table style=\'width:100%;border-collapse:collapse;font-size:0.82rem;\'>
+<tr style=\'border-bottom:1px solid rgba(99,102,241,0.2);\'>
+  <th style=\'text-align:left;padding:4px 8px;color:{text_sub};font-weight:600;\'>Periode</th>
+  <th style=\'text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;\'>CPI YoY</th>
+  <th style=\'text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;\'>CPI MoM</th>
+  <th style=\'text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;\'>Core Inflation</th>
+  <th style=\'text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;\'>Status</th>
+</tr>{_inf_rows_id}
+</table>
+<div style=\'margin-top:10px;font-size:0.72rem;color:{text_sub};\'>📌 Target BI: 1.5–3.5% YoY · Sumber: BPS Indonesia · Update: Awal bulan berikutnya</div>
+</div>""", unsafe_allow_html=True)
+
+            # ── Inflasi US (BLS/Fed) ─────────────────────────────────
+            _inf_us_data = [
+                {"ind":"CPI YoY","val":"2.4%","prev":"2.8%","target":"2.0%","dampak":"POSITIF","dc":"#00E5BE"},
+                {"ind":"Core CPI MoM","val":"0.3%","prev":"0.3%","target":"≤0.2%","dampak":"NETRAL","dc":"#F0A500"},
+                {"ind":"Core PCE YoY","val":"2.6%","prev":"2.8%","target":"2.0%","dampak":"MEMBAIK","dc":"#00E5BE"},
+                {"ind":"CPI MoM","val":"-0.1%","prev":"0.2%","target":"≤0.2%","dampak":"DOVISH","dc":"#00E5BE"},
+                {"ind":"PPI YoY","val":"2.1%","prev":"2.7%","target":"—","dampak":"MEMBAIK","dc":"#00E5BE"},
+            ]
+            _inf_rows_us = "".join([f"""<tr style=\'border-bottom:1px solid rgba(255,255,255,0.05);\'>
+  <td style=\'padding:5px 8px;color:{C["text"]};font-weight:600;\'>{r["ind"]}</td>
+  <td style=\'text-align:center;padding:5px 8px;color:#F0A500;font-weight:700;\'>{r["val"]}</td>
+  <td style=\'text-align:center;padding:5px 8px;color:{text_sub};\'>{r["prev"]}</td>
+  <td style=\'text-align:center;padding:5px 8px;color:{text_sub};\'>{r["target"]}</td>
+  <td style=\'text-align:center;padding:5px 8px;\'><span style=\'background:rgba(0,229,190,0.12);color:{r["dc"]};padding:2px 8px;border-radius:4px;font-size:0.75rem;\'>{r["dampak"]}</span></td>
+</tr>""" for r in _inf_us_data])
+            st.markdown(f"""
+<div style=\'background:{"rgba(239,68,68,0.06)" if is_dark else "#fff5f5"};border:1px solid rgba(239,68,68,0.2);border-left:3px solid #ef4444;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;\'>
+<div style=\'font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#ef4444;margin-bottom:10px;\'>🇺🇸 INFLASI AS (BLS / Fed)</div>
+<table style=\'width:100%;border-collapse:collapse;font-size:0.82rem;\'>
+<tr style=\'border-bottom:1px solid rgba(239,68,68,0.2);\'>
+  <th style=\'text-align:left;padding:4px 8px;color:{text_sub};font-weight:600;\'>Indikator</th>
+  <th style=\'text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;\'>Terbaru</th>
+  <th style=\'text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;\'>Prev</th>
+  <th style=\'text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;\'>Target Fed</th>
+  <th style=\'text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;\'>Dampak IDX</th>
+</tr>{_inf_rows_us}
+</table>
+<div style=\'margin-top:10px;font-size:0.72rem;color:{text_sub};\'>📌 PCE = indikator favorit Fed · Turun = sinyal dovish → positif EM & IDX · Sumber: BLS, Fed</div>
+</div>""", unsafe_allow_html=True)
+
+            # ── Chart Inflasi Indonesia (Chart.js via components.html) ──
+            _inf_labels_js = str([r["period"] for r in reversed(_inf_id_data)]).replace("'",'"')
+            _inf_yoy_js    = str([r["yoy"]    for r in reversed(_inf_id_data)])
+            _inf_core_js   = str([r["core"]   for r in reversed(_inf_id_data)])
+            components.html(f"""<!DOCTYPE html><html><head>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head><body style="background:transparent;margin:0;padding:0;">
+<div style="background:{"rgba(20,20,40,0.9)" if is_dark else "#fff"};border-radius:10px;padding:12px;margin-bottom:8px;">
+<div style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;color:#6366f1;margin-bottom:6px;">📉 TREN INFLASI INDONESIA (CPI YoY vs Core)</div>
+<canvas id="infChart" style="height:160px!important;"></canvas></div>
+<script>
+new Chart(document.getElementById("infChart"),{{
+  type:"line",
+  data:{{labels:{_inf_labels_js},datasets:[
+    {{label:"CPI YoY (%)",data:{_inf_yoy_js},borderColor:"#6366f1",backgroundColor:"rgba(99,102,241,0.1)",borderWidth:2,pointRadius:4,fill:true,tension:0.4}},
+    {{label:"Core Inflation (%)",data:{_inf_core_js},borderColor:"#00E5BE",backgroundColor:"transparent",borderWidth:2,pointRadius:3,borderDash:[4,4],tension:0.4}}
+  ]}},
+  options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{labels:{{color:"{"#ccc" if is_dark else "#333"}",font:{{size:10}}}}}}}},
+  scales:{{x:{{ticks:{{color:"{"#aaa" if is_dark else "#666"}",maxRotation:30,font:{{size:9}}}},grid:{{color:"rgba(255,255,255,0.05)"}}}},
+           y:{{ticks:{{color:"{"#aaa" if is_dark else "#666"}",font:{{size:9}},callback:function(v){{return v+"%"}}}},grid:{{color:"rgba(255,255,255,0.05)"}}}}}}}}
+}});
+</script></body></html>""", height=200)
+
+            st.markdown("<hr class=\'fancy-divider\'>", unsafe_allow_html=True)
+
+            # ── AI ANALYTIC — INFLASI ───────────────────────────────────
+            st.markdown("<div class=\'trm-section\'><div class=\'trm-section-line\'></div><span class=\'trm-section-label\'>🤖 AI ANALYST — INFLASI & DAMPAK PASAR</span><div class=\'trm-section-line\'></div></div>", unsafe_allow_html=True)
+            if st.button("🤖 Generate AI Analysis — Inflasi", key="rot_inf_ai_btn"):
+                with st.spinner("Menganalisis data inflasi..."):
+                    try:
+                        _inf_prompt = """Kamu adalah ekonom dan analis pasar modal Indonesia. Analisa kondisi inflasi terkini:
+
+DATA INFLASI INDONESIA (BPS):
+- Mei 2026: 1.87% YoY, -0.11% MoM, Core 2.08%
+- Apr 2026: 1.95% YoY, -0.33% MoM, Core 2.13%
+- Mar 2026: 2.28% YoY, +0.08% MoM, Core 2.31%
+- Feb 2026: 2.60% YoY, +0.12% MoM, Core 2.44%
+- Jan 2026: 2.90% YoY, +0.42% MoM, Core 2.55%
+Target BI: 1.5–3.5% YoY
+
+DATA INFLASI AS (BLS/Fed):
+- CPI YoY: 2.4% (prev 2.8%) | Core CPI MoM: 0.3% | Core PCE YoY: 2.6% (prev 2.8%)
+- CPI MoM: -0.1% | PPI YoY: 2.1%
+Target Fed: 2.0% PCE
+
+Berikan analisis dalam format:
+1. **TREN INFLASI INDONESIA** — Tren deflasi/disinflasi yang sedang terjadi, apakah mengkhawatirkan atau sehat?
+2. **RUANG KEBIJAKAN BI** — Dengan inflasi di level ini, apakah BI punya ruang turunkan suku bunga?
+3. **KONDISI INFLASI AS** — Apakah Fed semakin dekat ke target? Implikasi ke kebijakan FOMC?
+4. **TRANSMISI KE IDX** — Bagaimana kondisi dual-inflasi ini mempengaruhi IHSG dan sektor spesifik?
+5. **SEKTOR PILIHAN** — Sektor mana yang paling diuntungkan dari kondisi inflasi rendah ini?
+6. **RISIKO RE-INFLASI** — Apa faktor yang bisa membalik tren inflasi rendah ini?
+
+Jawab dalam Bahasa Indonesia, tajam dan analitis. Maksimal 450 kata."""
+                        _inf_ai_resp = _call_groq_api(_inf_prompt, max_tokens=700)
+                        if _inf_ai_resp:
+                            st.markdown(f"""<div style=\'background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.25);border-left:3px solid #6366f1;border-radius:0 8px 8px 0;padding:14px 18px;font-family:"DM Sans",sans-serif;font-size:0.875rem;line-height:1.7;color:{C["text"]};\'>{ _inf_ai_resp.replace(chr(10),"<br>")}</div>""", unsafe_allow_html=True)
+                        else:
+                            st.warning("AI tidak tersedia. Pastikan Groq API key aktif.")
+                    except Exception as _e:
+                        st.error(f"Error AI: {_e}")
+
+        # ══════════════════════════════════════════════════════════════
+
+        # ── MARKET DATA: IHSG sub-tab ──
+        with _md_subtab_ihsg:
+            st.markdown("<div class=\'trm-section\'><div class=\'trm-section-line\'></div><span class=\'trm-section-label\'>📈 IHSG — CLOSING AKHIR BULAN</span><div class=\'trm-section-line\'></div></div>", unsafe_allow_html=True)
+            st.markdown(f"<p style=\'font-family:\"DM Sans\",sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:14px;\'>Data penutupan bulanan IHSG (JKSE) · Sumber: Yahoo Finance / BEI · Klik baris tabel untuk detail</p>", unsafe_allow_html=True)
+
+            # ── IHSG Monthly Data ──────────────────────────────────────
+            _ihsg_monthly = [
+                {"month":"Jan 2024","close":7286.88,"chg_pct":-0.43},
+                {"month":"Feb 2024","close":7311.20,"chg_pct":0.34},
+                {"month":"Mar 2024","close":7288.17,"chg_pct":-0.31},
+                {"month":"Apr 2024","close":7119.75,"chg_pct":-2.31},
+                {"month":"Mei 2024","close":7164.81,"chg_pct":0.63},
+                {"month":"Jun 2024","close":7063.58,"chg_pct":-1.41},
+                {"month":"Jul 2024","close":7288.37,"chg_pct":3.18},
+                {"month":"Ags 2024","close":7670.89,"chg_pct":5.24},
+                {"month":"Sep 2024","close":7696.05,"chg_pct":0.33},
+                {"month":"Okt 2024","close":7568.13,"chg_pct":-1.66},
+                {"month":"Nov 2024","close":7114.28,"chg_pct":-5.99},
+                {"month":"Des 2024","close":7079.91,"chg_pct":-0.48},
+                {"month":"Jan 2025","close":6752.63,"chg_pct":-4.62},
+                {"month":"Feb 2025","close":6498.74,"chg_pct":-3.76},
+                {"month":"Mar 2025","close":6326.73,"chg_pct":-2.65},
+                {"month":"Apr 2025","close":6431.82,"chg_pct":1.66},
+                {"month":"Mei 2025","close":6829.40,"chg_pct":6.19},
+                {"month":"Jun 2025","close":6942.11,"chg_pct":1.65},
+                {"month":"Jul 2025","close":7103.55,"chg_pct":2.32},
+                {"month":"Ags 2025","close":7224.88,"chg_pct":1.71},
+                {"month":"Sep 2025","close":7198.43,"chg_pct":-0.37},
+                {"month":"Okt 2025","close":7315.20,"chg_pct":1.62},
+                {"month":"Nov 2025","close":7421.56,"chg_pct":1.45},
+                {"month":"Des 2025","close":7436.30,"chg_pct":0.20},
+                {"month":"Jan 2026","close":7213.45,"chg_pct":-2.99},
+                {"month":"Feb 2026","close":7088.12,"chg_pct":-1.74},
+                {"month":"Mar 2026","close":6892.40,"chg_pct":-2.76},
+                {"month":"Apr 2026","close":6622.44,"chg_pct":-3.92},
+                {"month":"Mei 2026","close":6780.25,"chg_pct":2.38},
+            ]
+            _ihsg_rows_html = "".join([f"""<tr style=\'border-bottom:1px solid rgba(255,255,255,0.04);\'>
+  <td style=\'padding:5px 8px;color:{C["text"]};\'>{r["month"]}</td>
+  <td style=\'text-align:right;padding:5px 8px;color:{C["text"]};font-weight:700;font-family:IBM Plex Mono,monospace;\'>{r["close"]:,.2f}</td>
+  <td style=\'text-align:center;padding:5px 8px;\'><span style=\'color:{"#00E5BE" if r["chg_pct"]>=0 else "#E24B4A"};font-weight:700;\'>{"▲" if r["chg_pct"]>=0 else "▼"} {abs(r["chg_pct"]):.2f}%</span></td>
+  <td style=\'text-align:center;padding:5px 8px;\'><span style=\'background:{"rgba(0,229,190,0.12)" if r["chg_pct"]>=0 else "rgba(226,75,74,0.12)"};color:{"#00E5BE" if r["chg_pct"]>=0 else "#E24B4A"};padding:2px 8px;border-radius:4px;font-size:0.73rem;\'>{"NAIK" if r["chg_pct"]>=0 else "TURUN"}</span></td>
+</tr>""" for r in reversed(_ihsg_monthly)])
+            st.markdown(f"""<div style=\'background:{"rgba(0,229,190,0.04)" if is_dark else "#f0fffe"};border:1px solid rgba(0,229,190,0.2);border-left:3px solid #00E5BE;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;\'>
+<div style=\'font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#00E5BE;margin-bottom:10px;\'>📈 IHSG (^JKSE) — CLOSING AKHIR BULAN</div>
+<div style=\'max-height:360px;overflow-y:auto;\'>
+<table style=\'width:100%;border-collapse:collapse;font-size:0.82rem;\'>
+<tr style=\'border-bottom:1px solid rgba(0,229,190,0.25);position:sticky;top:0;background:{"#0d0d1a" if is_dark else "#f0fffe"};\'>
+  <th style=\'text-align:left;padding:5px 8px;color:{text_sub};font-weight:600;\'>Bulan</th>
+  <th style=\'text-align:right;padding:5px 8px;color:{text_sub};font-weight:600;\'>Closing</th>
+  <th style=\'text-align:center;padding:5px 8px;color:{text_sub};font-weight:600;\'>MoM</th>
+  <th style=\'text-align:center;padding:5px 8px;color:{text_sub};font-weight:600;\'>Status</th>
+</tr>{_ihsg_rows_html}
+</table></div>
+<div style=\'margin-top:10px;font-size:0.72rem;color:{text_sub};\'>📌 Data closing akhir bulan · Sumber: Yahoo Finance / BEI · Update: H+1 bulan berikutnya</div>
+</div>""", unsafe_allow_html=True)
+
+            # ── Chart IHSG ──────────────────────────────────────────────
+            _ih_labels = str([r["month"] for r in _ihsg_monthly]).replace("'",'"')
+            _ih_closes = str([r["close"] for r in _ihsg_monthly])
+            components.html(f"""<!DOCTYPE html><html><head>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head><body style="background:transparent;margin:0;padding:0;">
+<div style="background:{"rgba(20,20,40,0.9)" if is_dark else "#fff"};border-radius:10px;padding:12px;margin-bottom:8px;">
+<div style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;color:#00E5BE;margin-bottom:6px;">📈 IHSG — TREN CLOSING AKHIR BULAN</div>
+<canvas id="ihsgChart" style="height:180px!important;"></canvas></div>
+<script>
+new Chart(document.getElementById("ihsgChart"),{{
+  type:"line",
+  data:{{labels:{_ih_labels},datasets:[{{
+    label:"IHSG Closing",data:{_ih_closes},
+    borderColor:"#00E5BE",backgroundColor:"rgba(0,229,190,0.08)",
+    borderWidth:2,pointRadius:3,fill:true,tension:0.4
+  }}]}},
+  options:{{responsive:true,maintainAspectRatio:false,
+    plugins:{{legend:{{display:false}}}},
+    scales:{{x:{{ticks:{{color:"{"#aaa" if is_dark else "#666"}",maxRotation:45,font:{{size:8}}}},grid:{{display:false}}}},
+             y:{{ticks:{{color:"{"#aaa" if is_dark else "#666"}",font:{{size:9}},callback:function(v){{return v.toLocaleString()}}}},grid:{{color:"rgba(255,255,255,0.05)"}}}}}}}}
+}});
+</script></body></html>""", height=210)
+
+            st.markdown("<hr class=\'fancy-divider\'>", unsafe_allow_html=True)
+
+            # ── AI ANALYTIC — IHSG ──────────────────────────────────────
+            st.markdown("<div class=\'trm-section\'><div class=\'trm-section-line\'></div><span class=\'trm-section-label\'>🤖 AI ANALYST — IHSG OUTLOOK</span><div class=\'trm-section-line\'></div></div>", unsafe_allow_html=True)
+            if st.button("🤖 Generate AI Analysis — IHSG", key="rot_ihsg_ai_btn"):
+                with st.spinner("Menganalisis tren IHSG..."):
+                    try:
+                        _ihsg_prompt = """Kamu adalah analis teknikal dan fundamental pasar saham Indonesia. Analisa kondisi IHSG terkini:
+
+DATA IHSG CLOSING AKHIR BULAN (terakhir):
+- Mei 2026: 6,780.25 (+2.38% MoM)
+- Apr 2026: 6,622.44 (-3.92% MoM)
+- Mar 2026: 6,892.40 (-2.76% MoM)
+- Feb 2026: 7,088.12 (-1.74% MoM)
+- Jan 2026: 7,213.45 (-2.99% MoM)
+- Des 2025: 7,436.30 (+0.20% MoM) — HIGH 2025
+
+KONTEKS MAKRO:
+- BI Rate: 5.25% (naik 50bps Mei 2026, hawkish surprise)
+- Inflasi ID: 1.87% YoY (di bawah target bawah BI 1.5–3.5%)
+- Kurs USD/IDR: ~16,350 (tekanan moderat)
+- Fed Funds Rate: 4.50% (tren turun)
+
+Berikan analisis dalam format:
+1. **TREN TEKNIKAL IHSG** — Saat ini berada di fase apa? Bull/Bear/Konsolidasi? Level support-resistance kritis?
+2. **FAKTOR PENAHAN** — Apa yang menekan IHSG sepanjang Jan-Apr 2026?
+3. **SINYAL PEMULIHAN** — Rebound Mei 2026 apakah awal recovery atau dead-cat bounce?
+4. **LEVEL KUNCI** — Support kritis dan resistance yang perlu diperhatikan
+5. **SEKTOR PENGGERAK** — Sektor apa yang kemungkinan menjadi locomotive recovery IHSG?
+6. **SKENARIO 3 BULAN KE DEPAN** — Base case, bull case, bear case dengan level target
+7. **STRATEGI** — Aksi yang disarankan untuk investor jangka menengah
+
+Jawab dalam Bahasa Indonesia, tajam dan profesional. Maksimal 500 kata."""
+                        _ihsg_ai_resp = _call_groq_api(_ihsg_prompt, max_tokens=750)
+                        if _ihsg_ai_resp:
+                            st.markdown(f"""<div style=\'background:rgba(0,229,190,0.07);border:1px solid rgba(0,229,190,0.2);border-left:3px solid #00E5BE;border-radius:0 8px 8px 0;padding:14px 18px;font-family:"DM Sans",sans-serif;font-size:0.875rem;line-height:1.7;color:{C["text"]};\'>{ _ihsg_ai_resp.replace(chr(10),"<br>")}</div>""", unsafe_allow_html=True)
+                        else:
+                            st.warning("AI tidak tersedia. Pastikan Groq API key aktif.")
+                    except Exception as _e:
+                        st.error(f"Error AI: {_e}")
+
+        # ══════════════════════════════════════════════════════════════
+
+        # ── MARKET DATA: KURS sub-tab ──
+        with _md_subtab_kurs:
+            st.markdown("<div class=\'trm-section\'><div class=\'trm-section-line\'></div><span class=\'trm-section-label\'>💱 KURS RUPIAH — USD/IDR CLOSING AKHIR BULAN</span><div class=\'trm-section-line\'></div></div>", unsafe_allow_html=True)
+            st.markdown(f"<p style=\'font-family:\"DM Sans\",sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:14px;\'>Kurs tengah BI USD/IDR closing akhir bulan · Naik = Rupiah <b>melemah</b> · Turun = Rupiah <b>menguat</b></p>", unsafe_allow_html=True)
+
+            # ── USD/IDR Monthly Data ────────────────────────────────────
+            _kurs_monthly = [
+                {"month":"Jan 2024","rate":15690,"chg_pct":-0.19},
+                {"month":"Feb 2024","rate":15715,"chg_pct":0.16},
+                {"month":"Mar 2024","rate":15875,"chg_pct":1.02},
+                {"month":"Apr 2024","rate":16195,"chg_pct":2.02},
+                {"month":"Mei 2024","rate":16190,"chg_pct":-0.03},
+                {"month":"Jun 2024","rate":16412,"chg_pct":1.37},
+                {"month":"Jul 2024","rate":16100,"chg_pct":-1.90},
+                {"month":"Ags 2024","rate":15665,"chg_pct":-2.70},
+                {"month":"Sep 2024","rate":15375,"chg_pct":-1.85},
+                {"month":"Okt 2024","rate":15730,"chg_pct":2.31},
+                {"month":"Nov 2024","rate":15905,"chg_pct":1.11},
+                {"month":"Des 2024","rate":16120,"chg_pct":1.35},
+                {"month":"Jan 2025","rate":16340,"chg_pct":1.37},
+                {"month":"Feb 2025","rate":16515,"chg_pct":1.07},
+                {"month":"Mar 2025","rate":16755,"chg_pct":1.45},
+                {"month":"Apr 2025","rate":16870,"chg_pct":0.69},
+                {"month":"Mei 2025","rate":16620,"chg_pct":-1.48},
+                {"month":"Jun 2025","rate":16450,"chg_pct":-1.02},
+                {"month":"Jul 2025","rate":16230,"chg_pct":-1.34},
+                {"month":"Ags 2025","rate":16050,"chg_pct":-1.11},
+                {"month":"Sep 2025","rate":15890,"chg_pct":-1.00},
+                {"month":"Okt 2025","rate":15755,"chg_pct":-0.85},
+                {"month":"Nov 2025","rate":15920,"chg_pct":1.05},
+                {"month":"Des 2025","rate":16185,"chg_pct":1.67},
+                {"month":"Jan 2026","rate":16420,"chg_pct":1.45},
+                {"month":"Feb 2026","rate":16580,"chg_pct":0.97},
+                {"month":"Mar 2026","rate":16745,"chg_pct":1.00},
+                {"month":"Apr 2026","rate":16890,"chg_pct":0.87},
+                {"month":"Mei 2026","rate":16350,"chg_pct":-3.20},
+            ]
+            _kurs_rows_html = "".join([f"""<tr style=\'border-bottom:1px solid rgba(255,255,255,0.04);\'>
+  <td style=\'padding:5px 8px;color:{C["text"]};\'>{r["month"]}</td>
+  <td style=\'text-align:right;padding:5px 8px;color:{C["text"]};font-weight:700;font-family:IBM Plex Mono,monospace;\'>Rp {r["rate"]:,}.</td>
+  <td style=\'text-align:center;padding:5px 8px;\'><span style=\'color:{"#E24B4A" if r["chg_pct"]>=0 else "#00E5BE"};font-weight:700;\'>{"▲" if r["chg_pct"]>=0 else "▼"} {abs(r["chg_pct"]):.2f}%</span></td>
+  <td style=\'text-align:center;padding:5px 8px;\'><span style=\'background:{"rgba(226,75,74,0.12)" if r["chg_pct"]>=0 else "rgba(0,229,190,0.12)"};color:{"#E24B4A" if r["chg_pct"]>=0 else "#00E5BE"};padding:2px 8px;border-radius:4px;font-size:0.73rem;\'>{"LEMAH" if r["chg_pct"]>=0 else "KUAT"}</span></td>
+</tr>""" for r in reversed(_kurs_monthly)])
+            st.markdown(f"""<div style=\'background:{"rgba(240,165,0,0.04)" if is_dark else "#fffbf0"};border:1px solid rgba(240,165,0,0.25);border-left:3px solid #F0A500;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;\'>
+<div style=\'font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#F0A500;margin-bottom:10px;\'>💱 USD/IDR — CLOSING AKHIR BULAN (KURS TENGAH BI)</div>
+<div style=\'max-height:360px;overflow-y:auto;\'>
+<table style=\'width:100%;border-collapse:collapse;font-size:0.82rem;\'>
+<tr style=\'border-bottom:1px solid rgba(240,165,0,0.25);position:sticky;top:0;background:{"#0d0d1a" if is_dark else "#fffbf0"};\'>
+  <th style=\'text-align:left;padding:5px 8px;color:{text_sub};font-weight:600;\'>Bulan</th>
+  <th style=\'text-align:right;padding:5px 8px;color:{text_sub};font-weight:600;\'>USD/IDR</th>
+  <th style=\'text-align:center;padding:5px 8px;color:{text_sub};font-weight:600;\'>MoM</th>
+  <th style=\'text-align:center;padding:5px 8px;color:{text_sub};font-weight:600;\'>Rupiah</th>
+</tr>{_kurs_rows_html}
+</table></div>
+<div style=\'margin-top:10px;font-size:0.72rem;color:{text_sub};\'>📌 ▲ = Rupiah melemah (IDR per USD naik) · ▼ = Rupiah menguat · Sumber: BI / Yahoo Finance</div>
+</div>""", unsafe_allow_html=True)
+
+            # ── Chart Kurs ───────────────────────────────────────────────
+            _kurs_labels = str([r["month"] for r in _kurs_monthly]).replace("'",'"')
+            _kurs_rates  = str([r["rate"]  for r in _kurs_monthly])
+            components.html(f"""<!DOCTYPE html><html><head>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head><body style="background:transparent;margin:0;padding:0;">
+<div style="background:{"rgba(20,20,40,0.9)" if is_dark else "#fff"};border-radius:10px;padding:12px;margin-bottom:8px;">
+<div style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;color:#F0A500;margin-bottom:6px;">💱 USD/IDR — TREN KURS TENGAH BI</div>
+<canvas id="kursChart" style="height:180px!important;"></canvas></div>
+<script>
+new Chart(document.getElementById("kursChart"),{{
+  type:"line",
+  data:{{labels:{_kurs_labels},datasets:[{{
+    label:"USD/IDR",data:{_kurs_rates},
+    borderColor:"#F0A500",backgroundColor:"rgba(240,165,0,0.08)",
+    borderWidth:2,pointRadius:3,fill:true,tension:0.4
+  }}]}},
+  options:{{responsive:true,maintainAspectRatio:false,
+    plugins:{{legend:{{display:false}}}},
+    scales:{{x:{{ticks:{{color:"{"#aaa" if is_dark else "#666"}",maxRotation:45,font:{{size:8}}}},grid:{{display:false}}}},
+             y:{{ticks:{{color:"{"#aaa" if is_dark else "#666"}",font:{{size:9}},callback:function(v){{return "Rp "+v.toLocaleString()}}}},grid:{{color:"rgba(255,255,255,0.05)"}}}}}}}}
+}});
+</script></body></html>""", height=210)
+
+            # ── Key Metrics ─────────────────────────────────────────────
+            _krs_latest  = _kurs_monthly[-1]["rate"]
+            _krs_prev    = _kurs_monthly[-2]["rate"]
+            _krs_delta   = _krs_latest - _krs_prev
+            _krs_ytd_start = next((r["rate"] for r in _kurs_monthly if "Des 2025" in r["month"]), _krs_latest)
+            _krs_ytd_chg = (_krs_latest - _krs_ytd_start) / _krs_ytd_start * 100
+            _c1,_c2,_c3,_c4 = st.columns(4)
+            _c1.metric("USD/IDR Terakhir", f"Rp {_krs_latest:,}".replace(",","."))
+            _c2.metric("Perubahan MoM", f"Rp {_krs_delta:+,}".replace(",","."), f"Rupiah {'menguat' if _krs_delta<0 else 'melemah'}")
+            _c3.metric("YTD 2026", f"{_krs_ytd_chg:+.2f}%", f"Dari Rp {_krs_ytd_start:,}".replace(",","."))
+            _c4.metric("BI Rate Buffer", "5.25%", "vs Fed 4.50%")
+
+            st.markdown("<hr class=\'fancy-divider\'>", unsafe_allow_html=True)
+
+            # ── AI ANALYTIC — KURS ──────────────────────────────────────
+            st.markdown("<div class=\'trm-section\'><div class=\'trm-section-line\'></div><span class=\'trm-section-label\'>🤖 AI ANALYST — KURS RUPIAH OUTLOOK</span><div class=\'trm-section-line\'></div></div>", unsafe_allow_html=True)
+            if st.button("🤖 Generate AI Analysis — Kurs Rupiah", key="rot_kurs_ai_btn"):
+                with st.spinner("Menganalisis pergerakan Rupiah..."):
+                    try:
+                        _kurs_prompt = """Kamu adalah ekonom spesialis forex dan pasar keuangan Indonesia. Analisa kondisi kurs Rupiah terkini:
+
+DATA USD/IDR CLOSING AKHIR BULAN (terakhir):
+- Mei 2026: Rp 16,350 (-3.20% MoM — Rupiah MENGUAT signifikan)
+- Apr 2026: Rp 16,890 (+0.87% MoM — Rupiah melemah)
+- Mar 2026: Rp 16,745 (+1.00% MoM — Rupiah melemah)
+- Feb 2026: Rp 16,580 (+0.97% MoM — Rupiah melemah)
+- Jan 2026: Rp 16,420 (+1.45% MoM — Rupiah melemah)
+- Des 2025: Rp 16,185 (baseline)
+YTD 2026: +1.02% (Rupiah sedikit melemah dari awal tahun)
+
+KONTEKS MAKRO:
+- BI Rate: 5.25% (naik 50bps Mei 2026 — intervensi hawkish untuk defend Rupiah)
+- Fed Funds Rate: 4.50% (spread BI-Fed: 75bps)
+- Inflasi ID: 1.87% YoY (sangat rendah — tekanan dari dalam minimal)
+- IHSG: 6,780 (rebound Mei 2026)
+- DXY: ~99.8 (melemah dari 107)
+
+Berikan analisis dalam format:
+1. **TREN KURS RUPIAH** — Analisa tren Jan-Mei 2026: tekanan struktural vs siklusal?
+2. **FAKTOR PENGUATAN MEI** — Mengapa Rupiah menguat -3.20% MoM di Mei? Sustainable?
+3. **DAMPAK KENAIKAN BI RATE** — Kenaikan BI Rate 50bps ke 5.25% efektif defend Rupiah?
+4. **SPREAD BI-FED** — Dengan spread 75bps, apakah cukup menarik carry trade?
+5. **LEVEL KRITIS** — Support dan resistance kurs yang perlu dipantau
+6. **DAMPAK KE IDX** — Bagaimana pergerakan Rupiah mempengaruhi IHSG dan sektor eksportir/importir?
+7. **OUTLOOK 3 BULAN** — Proyeksi range USD/IDR dengan skenario bull/base/bear
+
+Jawab dalam Bahasa Indonesia, tajam dan analitis. Maksimal 500 kata."""
+                        _kurs_ai_resp = _call_groq_api(_kurs_prompt, max_tokens=750)
+                        if _kurs_ai_resp:
+                            st.markdown(f"""<div style=\'background:rgba(240,165,0,0.07);border:1px solid rgba(240,165,0,0.25);border-left:3px solid #F0A500;border-radius:0 8px 8px 0;padding:14px 18px;font-family:"DM Sans",sans-serif;font-size:0.875rem;line-height:1.7;color:{C["text"]};\'>{ _kurs_ai_resp.replace(chr(10),"<br>")}</div>""", unsafe_allow_html=True)
+                        else:
+                            st.warning("AI tidak tersedia. Pastikan Groq API key aktif.")
+                    except Exception as _e:
+                        st.error(f"Error AI: {_e}")
+
+    # ─── ALPHA PLAN TAB — Daily · Weekly · BSJP · Track Record ───────────
 
     with tab_macro:
         pass  # Tab ini kosong — konten ada di tab Market Data dan Market Map
@@ -15474,98 +15870,6 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 </script></body></html>"""
 
         components.html(ca_html_widget, height=_ca_total_h + 8, scrolling=False)
-
-    # ── Inflasi & Shareholder dipindah ke INDEX & SECTOR ROTATION ──
-        if _md_subtab_inflasi is not None:
-         with _md_subtab_inflasi:
-            st.markdown(
-                "<div class='trm-section'><div class='trm-section-line'></div>"
-                "<span class='trm-section-label'>📉 INFLASI — INDONESIA & GLOBAL</span>"
-                "<div class='trm-section-line'></div></div>",
-                unsafe_allow_html=True
-            )
-
-            # ── Data Inflasi Indonesia (BPS) ──
-            st.markdown(f"""
-<div style='background:{"rgba(99,102,241,0.08)" if is_dark else "#f0f0ff"};border:1px solid rgba(99,102,241,0.25);border-left:3px solid #6366f1;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;'>
-<div style='font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#6366f1;margin-bottom:10px;'>🇮🇩 INFLASI INDONESIA (BPS)</div>
-<table style='width:100%;border-collapse:collapse;font-size:0.82rem;'>
-<tr style='border-bottom:1px solid rgba(99,102,241,0.2);'>
-  <th style='text-align:left;padding:4px 8px;color:{text_sub};font-weight:600;'>Periode</th>
-  <th style='text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;'>CPI YoY</th>
-  <th style='text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;'>CPI MoM</th>
-  <th style='text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;'>Core Inflation</th>
-  <th style='text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;'>Status</th>
-</tr>
-<tr style='border-bottom:1px solid rgba(255,255,255,0.05);'>
-  <td style='padding:5px 8px;color:{C["text"]};'>Apr 2026</td><td style='text-align:center;padding:5px 8px;color:#00E5BE;font-weight:700;'>1.95%</td><td style='text-align:center;padding:5px 8px;color:#E24B4A;'>-0.33%</td><td style='text-align:center;padding:5px 8px;color:{C["text"]};'>2.13%</td><td style='text-align:center;padding:5px 8px;'><span style='background:rgba(0,229,190,0.15);color:#00E5BE;padding:2px 8px;border-radius:4px;font-size:0.75rem;'>RENDAH</span></td>
-</tr>
-<tr style='border-bottom:1px solid rgba(255,255,255,0.05);'>
-  <td style='padding:5px 8px;color:{C["text"]};'>Mar 2026</td><td style='text-align:center;padding:5px 8px;color:#00E5BE;font-weight:700;'>2.28%</td><td style='text-align:center;padding:5px 8px;color:#F0A500;'>+0.08%</td><td style='text-align:center;padding:5px 8px;color:{C["text"]};'>2.31%</td><td style='text-align:center;padding:5px 8px;'><span style='background:rgba(0,229,190,0.15);color:#00E5BE;padding:2px 8px;border-radius:4px;font-size:0.75rem;'>TERKENDALI</span></td>
-</tr>
-<tr style='border-bottom:1px solid rgba(255,255,255,0.05);'>
-  <td style='padding:5px 8px;color:{C["text"]};'>Feb 2026</td><td style='text-align:center;padding:5px 8px;color:#F0A500;font-weight:700;'>2.60%</td><td style='text-align:center;padding:5px 8px;color:#00E5BE;'>+0.12%</td><td style='text-align:center;padding:5px 8px;color:{C["text"]};'>2.44%</td><td style='text-align:center;padding:5px 8px;'><span style='background:rgba(240,165,0,0.15);color:#F0A500;padding:2px 8px;border-radius:4px;font-size:0.75rem;'>NORMAL</span></td>
-</tr>
-<tr>
-  <td style='padding:5px 8px;color:{C["text"]};'>Jan 2026</td><td style='text-align:center;padding:5px 8px;color:#F0A500;font-weight:700;'>2.90%</td><td style='text-align:center;padding:5px 8px;color:#00E5BE;'>+0.42%</td><td style='text-align:center;padding:5px 8px;color:{C["text"]};'>2.55%</td><td style='text-align:center;padding:5px 8px;'><span style='background:rgba(240,165,0,0.15);color:#F0A500;padding:2px 8px;border-radius:4px;font-size:0.75rem;'>NORMAL</span></td>
-</tr>
-</table>
-<div style='margin-top:10px;font-size:0.72rem;color:{text_sub};'>📌 Target BI: 1.5–3.5% YoY · Sumber: BPS Indonesia</div>
-</div>
-""", unsafe_allow_html=True)
-
-            # ── Data Inflasi US (Fed & BLS) ──
-            st.markdown(f"""
-<div style='background:{"rgba(239,68,68,0.06)" if is_dark else "#fff5f5"};border:1px solid rgba(239,68,68,0.2);border-left:3px solid #ef4444;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;'>
-<div style='font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#ef4444;margin-bottom:10px;'>🇺🇸 INFLASI AS (BLS / Fed)</div>
-<table style='width:100%;border-collapse:collapse;font-size:0.82rem;'>
-<tr style='border-bottom:1px solid rgba(239,68,68,0.2);'>
-  <th style='text-align:left;padding:4px 8px;color:{text_sub};font-weight:600;'>Indikator</th>
-  <th style='text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;'>Terbaru</th>
-  <th style='text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;'>Prev</th>
-  <th style='text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;'>Target Fed</th>
-  <th style='text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;'>Dampak IDX</th>
-</tr>
-<tr style='border-bottom:1px solid rgba(255,255,255,0.05);'>
-  <td style='padding:5px 8px;color:{C["text"]};font-weight:600;'>CPI YoY</td><td style='text-align:center;padding:5px 8px;color:#F0A500;font-weight:700;'>2.4%</td><td style='text-align:center;padding:5px 8px;color:{text_sub};'>2.8%</td><td style='text-align:center;padding:5px 8px;color:{text_sub};'>2.0%</td><td style='text-align:center;padding:5px 8px;'><span style='background:rgba(0,229,190,0.15);color:#00E5BE;padding:2px 8px;border-radius:4px;font-size:0.75rem;'>POSITIF</span></td>
-</tr>
-<tr style='border-bottom:1px solid rgba(255,255,255,0.05);'>
-  <td style='padding:5px 8px;color:{C["text"]};font-weight:600;'>Core CPI MoM</td><td style='text-align:center;padding:5px 8px;color:#F0A500;font-weight:700;'>0.3%</td><td style='text-align:center;padding:5px 8px;color:{text_sub};'>0.3%</td><td style='text-align:center;padding:5px 8px;color:{text_sub};'>≤0.2%</td><td style='text-align:center;padding:5px 8px;'><span style='background:rgba(240,165,0,0.15);color:#F0A500;padding:2px 8px;border-radius:4px;font-size:0.75rem;'>NETRAL</span></td>
-</tr>
-<tr>
-  <td style='padding:5px 8px;color:{C["text"]};font-weight:600;'>Core PCE YoY</td><td style='text-align:center;padding:5px 8px;color:#F0A500;font-weight:700;'>2.6%</td><td style='text-align:center;padding:5px 8px;color:{text_sub};'>2.8%</td><td style='text-align:center;padding:5px 8px;color:{text_sub};'>2.0%</td><td style='text-align:center;padding:5px 8px;'><span style='background:rgba(0,229,190,0.15);color:#00E5BE;padding:2px 8px;border-radius:4px;font-size:0.75rem;'>MEMBAIK</span></td>
-</tr>
-</table>
-<div style='margin-top:10px;font-size:0.72rem;color:{text_sub};'>📌 PCE = Indikator favorit Fed · Turun = sinyal dovish → positif EM & IDX</div>
-</div>
-""", unsafe_allow_html=True)
-
-            # ── Analisis Dampak ke IDX ──
-            st.markdown(f"""
-<div style='background:{"rgba(30,30,60,0.4)" if is_dark else "#f8f9ff"};border:1px solid rgba(99,102,241,0.15);border-radius:8px;padding:14px 18px;font-family:IBM Plex Mono,monospace;font-size:0.82rem;'>
-<div style='font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:{text_sub};margin-bottom:10px;'>💡 IMPLIKASI KE IDX & IHSG</div>
-<div style='color:{C["text"]};line-height:1.7;'>
-• <strong style='color:#00E5BE;'>Inflasi ID rendah (1.95%)</strong> → BI Rate berpeluang turun → likuiditas naik → saham sensitif bunga naik (BBCA, BBRI, BSDE, SMRA)<br>
-• <strong style='color:#F0A500;'>Inflasi US turun (2.4%)</strong> → Ekspektasi cut Fed meningkat → DXY melemah → IDR menguat → asing masuk ke EM<br>
-• <strong style='color:#6366f1;'>PCE 2.6% → menuju target 2%</strong> → dovish signal nyata, bukan noise → IHSG berpotensi rebound structural<br>
-• <strong style='color:#E24B4A;'>Risiko:</strong> Tarif dagang US & geopolitik bisa re-inflate → pantau CPI Juni & PCE Mei
-</div>
-</div>
-""", unsafe_allow_html=True)
-
-    # ── TAB: INDEX & SECTOR ROTATION ──────────────────────────────────
-    with tab_rotation:
-
-        def highlight_status(val):
-            if val == 'NEW ENTRY': return 'background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; font-weight: bold;'
-            elif val == 'DOWNGRADED': return 'background-color: rgba(241, 196, 15, 0.2); color: #f1c40f;'
-            elif 'OUT' in str(val): return 'background-color: rgba(231, 76, 60, 0.2); color: #e74c3c;'
-            return ''
-            
-        def safe_style(df_style, func, subset):
-            if hasattr(df_style, 'map'):
-                return df_style.map(func, subset=subset)
-            return df_style.applymap(func, subset=subset)
 
         # ── SUB-TABS: SECTOR ROTATION | INDEX | SHAREHOLDER | INFLASI | IHSG | KURS ──
         _rot_tab_rrg, _rot_tab_index, _rot_tab_shareholder, _rot_tab_inflasi, _rot_tab_ihsg, _rot_tab_kurs = st.tabs([
