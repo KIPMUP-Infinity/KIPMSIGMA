@@ -12748,10 +12748,11 @@ if current_view == "dashboard":
 
     with tab_idxmap:
         # ── Sub-tab Market Live ──────────────────────────────────────────────
-        _mm_subtab_globe, _mm_subtab_news, _mm_subtab_cal = st.tabs([
+        _mm_subtab_globe, _mm_subtab_news, _mm_subtab_cal, _mm_subtab_marketnotes = st.tabs([
             "  🌐 Index, Komoditas & Forex  ",
             "  📰 News  ",
             "  📅 Kalender  ",
+            "  📋 Market Notes  ",
         ])
 
     with _mm_subtab_cal:
@@ -27654,7 +27655,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
         with _md_subtab_ratemon:
             # ── NESTED SUB-TABS: Rate Monitor ────────────────────────────────────
             _rm_tab_fed, _rm_tab_bi, _rm_tab_ai = st.tabs([
-                "  📡 FED RATE MONITOR TOOL  ",
+                "  📡 FED RATE MONITOR  ",
                 "  🏦 BI RATE MONITOR  ",
                 "  🤖 AI ANALYST — RATE MONITOR  ",
             ])
@@ -27665,7 +27666,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                 # ─────────────────────────────────────────────────────────
                 # FED RATE MONITOR TOOL
                 # ─────────────────────────────────────────────────────────
-                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FED RATE MONITOR TOOL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FED RATE MONITOR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
                 # ── Current Rate Info Card ──────────────────────────────
                 st.markdown(f"""
@@ -29539,10 +29540,210 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
 
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
+        with _mm_subtab_marketnotes:
+            # ─────────────────────────────────────────────────────────
+            # MARKET NOTES — MASTER FORECAST IHSG
+            # ─────────────────────────────────────────────────────────
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>MASTER FORECAST IHSG</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
-            # ════════════════════════════════════════════════════════════════
-            # TAB: INFLASI — Data Inflasi Indonesia & Global
-            # ════════════════════════════════════════════════════════════════
+            st.markdown("""
+            <style>
+            .mf-card {
+                background: #1a1a2e;
+                border-radius: 14px;
+                padding: 20px 24px;
+                max-width: 680px;
+                margin: 0 auto 24px auto;
+                font-family: 'IBM Plex Mono', 'Courier New', monospace;
+            }
+            .mf-title {
+                font-size: 1.5rem;
+                font-weight: 900;
+                color: #ffffff;
+                letter-spacing: 0.03em;
+                margin-bottom: 18px;
+            }
+            .mf-row {
+                display: flex;
+                align-items: flex-start;
+                gap: 12px;
+                margin-bottom: 11px;
+                font-size: 0.82rem;
+            }
+            .mf-date {
+                min-width: 60px;
+                color: #e0e0e0;
+                font-weight: 600;
+                padding-top: 2px;
+            }
+            .mf-dots {
+                display: flex;
+                align-items: center;
+                gap: 3px;
+                min-width: 90px;
+                flex-wrap: nowrap;
+            }
+            .mf-dot-red   { width: 11px; height: 11px; border-radius: 50%; background: #e24b4a; display: inline-block; flex-shrink:0; }
+            .mf-dot-green { width: 11px; height: 11px; border-radius: 50%; background: #26a69a; display: inline-block; flex-shrink:0; }
+            .mf-dot-arr   { font-size: 0.72rem; color: #aaaaaa; padding: 0 1px; }
+            .mf-note {
+                color: #c8c8d0;
+                line-height: 1.45;
+                flex: 1;
+            }
+            .mf-note b { color: #ffffff; }
+            .mf-separator {
+                border: none;
+                border-top: 1px solid rgba(255,255,255,0.07);
+                margin: 6px 0;
+            }
+            </style>
+            <div class="mf-card">
+              <div class="mf-title">MASTER FORECAST IHSG</div>
+
+              <!-- 29 Mei -->
+              <div class="mf-row">
+                <div class="mf-date">29 Mei</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span>
+                </div>
+                <div class="mf-note">Tekanan MSCI &amp; foreign reposition</div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 2 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">2 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-red"></span><span class="mf-dot-arr">↗</span><span class="mf-dot-green"></span>
+                </div>
+                <div class="mf-note">Shake besar lalu <b>relief rebound</b></div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 3 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">3 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-green"></span><span class="mf-dot-green"></span><span class="mf-dot-green"></span>
+                </div>
+                <div class="mf-note">Short covering &amp; rebound continuation</div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 4 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">4 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-green"></span><span class="mf-dot-green"></span><span class="mf-dot-green"></span><span class="mf-dot-green"></span>
+                </div>
+                <div class="mf-note"><b>Momentum rebound paling kuat</b></div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 5 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">5 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-green"></span><span class="mf-dot-arr">↘</span><span class="mf-dot-red"></span>
+                </div>
+                <div class="mf-note">Profit taking Jumat</div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 8 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">8 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-green"></span><span class="mf-dot-green"></span><span class="mf-dot-green"></span>
+                </div>
+                <div class="mf-note">Optimisme sementara lanjut</div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 9 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">9 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-green"></span><span class="mf-dot-green"></span>
+                </div>
+                <div class="mf-note">Bullish selektif</div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 10 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">10 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-green"></span><span class="mf-dot-arr">↔</span>
+                </div>
+                <div class="mf-note">Konsolidasi sehat</div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 11 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">11 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-arr">↔</span><span class="mf-dot-red"></span>
+                </div>
+                <div class="mf-note">Awal pricing in ketakutan MSCI</div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 12 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">12 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span>
+                </div>
+                <div class="mf-note">Profit taking + fear mulai naik</div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 15 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">15 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span>
+                </div>
+                <div class="mf-note">Reduce position sebelum libur</div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 17 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">17 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span>
+                </div>
+                <div class="mf-note">H-1 assessment, <b>market paling nervous</b></div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 18 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">18 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-arr">↕↕↕</span>
+                </div>
+                <div class="mf-note"><b>Hari penentuan, volatile ekstrem</b></div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 19 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">19 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-red"></span><span class="mf-dot-arr">↔</span><span class="mf-dot-green"></span>
+                </div>
+                <div class="mf-note">Market mencerna hasil MSCI</div>
+              </div>
+
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         with alpha_tab_brosum:
 
