@@ -5605,6 +5605,8 @@ def init_session():
         "ai_bondyield_result": None,
         # ── RRG slot ──
         "_rrg_prev_slot": "",
+        # ── Loading screen flag — False hanya saat session baru, True setelah tampil ──
+        "_sigma_loading_done": False,
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -5612,7 +5614,192 @@ def init_session():
 
 init_session()
 
-# ── Load sigma_modules persistent storage ──
+# ─────────────────────────────────────────────────────────────────────────────
+# SIGMA LOADING SCREEN — muncul SEKALI per Python session (browser tab baru).
+# Guard berlapis:
+#   1. _sigma_loading_done di session_state (persist selama session hidup)
+#   2. Dipanggil SEBELUM routing & rerun apapun → rerun dari Analyze, tab
+#      switch, dll tidak akan pernah menyentuh time.sleep() lagi.
+# ─────────────────────────────────────────────────────────────────────────────
+def _show_sigma_loading_screen():
+    # Guard lapis 1 — sudah pernah tampil di session ini
+    if st.session_state.get("_sigma_loading_done", False):
+        return
+
+    # Guard lapis 2 — belum ada user (halaman login) → jangan tampilkan
+    if not st.session_state.get("user"):
+        return
+
+    _LOADING_HTML = """<!DOCTYPE html>
+<html>
+<head>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html {
+        width: 100%; height: 100%;
+        background: #050a15;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Space Mono', monospace;
+        overflow: hidden;
+    }
+
+    /* ── SIGMA Σ logo — Gold Gradient ── */
+    .sigma-logo {
+        font-size: 128px;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 10px;
+        user-select: none;
+        background: linear-gradient(160deg,
+            #fffbe0 0%,
+            #ffd700 20%,
+            #f5a623 45%,
+            #c87000 70%,
+            #8b5200 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: pulse-gold 2.4s ease-in-out infinite;
+        filter: drop-shadow(0 0 18px rgba(245,166,35,0.55))
+                drop-shadow(0 0 48px rgba(200,112,0,0.30));
+    }
+
+    .loader-subtitle {
+        font-size: 11px;
+        letter-spacing: 5px;
+        color: #94a3b8;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+    }
+
+    .loader-version {
+        font-size: 9px;
+        letter-spacing: 2px;
+        color: #2d3748;
+        margin-bottom: 36px;
+        text-transform: uppercase;
+    }
+
+    /* ── Progress bar — Gold gradient ── */
+    .bar-wrap {
+        width: 300px;
+        height: 2px;
+        background: rgba(255,255,255,0.06);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+    .bar-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: 2px;
+        background: linear-gradient(90deg,
+            #8b5200 0%,
+            #c87000 25%,
+            #f5a623 55%,
+            #ffd700 80%,
+            #fffbe0 100%
+        );
+        animation: fill-bar 6.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .term-log {
+        font-size: 9px;
+        color: #4a5568;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        height: 13px;
+        transition: opacity 0.18s ease;
+    }
+
+    .bottom-tag {
+        position: absolute;
+        bottom: 16px;
+        font-size: 8px;
+        letter-spacing: 2px;
+        color: #1a202c;
+        text-transform: uppercase;
+    }
+
+    @keyframes pulse-gold {
+        0%   { filter: drop-shadow(0 0 12px rgba(245,166,35,0.40))
+                        drop-shadow(0 0 36px rgba(200,112,0,0.20));
+               transform: scale(0.97); }
+        50%  { filter: drop-shadow(0 0 28px rgba(255,215,0,0.80))
+                        drop-shadow(0 0 70px rgba(245,166,35,0.45));
+               transform: scale(1.035); }
+        100% { filter: drop-shadow(0 0 12px rgba(245,166,35,0.40))
+                        drop-shadow(0 0 36px rgba(200,112,0,0.20));
+               transform: scale(0.97); }
+    }
+
+    @keyframes fill-bar {
+        0%   { width: 0%; }
+        10%  { width: 12%; }
+        25%  { width: 32%; }
+        45%  { width: 55%; }
+        65%  { width: 72%; }
+        82%  { width: 88%; }
+        95%  { width: 96%; }
+        100% { width: 100%; }
+    }
+</style>
+</head>
+<body>
+    <div class="sigma-logo">&#x3A3;</div>
+    <div class="loader-subtitle">Strategic Intelligence Engine</div>
+    <div class="loader-version">KIPM-UP &middot; MnM &middot; IDX TERMINAL</div>
+    <div class="bar-wrap"><div class="bar-fill"></div></div>
+    <div class="term-log" id="tlog">Initializing core systems...</div>
+    <div class="bottom-tag">SIGMA &copy; 2026</div>
+
+    <script>
+        const msgs = [
+            "Initializing SIGMA core systems...",
+            "Authenticating Groq &amp; MiMo AI arrays...",
+            "Fetching IDX real-time market data...",
+            "Syncing Bandarmologi &amp; GoAPI engine...",
+            "Loading MnM Strategy+ framework...",
+            "Calibrating dark terminal renderer...",
+            "Running pre-flight system checks...",
+            "Warming up AI inference pipeline...",
+            "SYSTEM READY &mdash; LAUNCHING SIGMA..."
+        ];
+        let idx = 0;
+        const el = document.getElementById('tlog');
+        const iv = setInterval(() => {
+            if (idx < msgs.length) {
+                el.style.opacity = '0';
+                setTimeout(() => {
+                    el.innerHTML = msgs[idx];
+                    el.style.opacity = '1';
+                    idx++;
+                }, 160);
+            } else {
+                clearInterval(iv);
+            }
+        }, 800);
+    </script>
+</body>
+</html>"""
+
+    _ph = st.empty()
+    with _ph:
+        components.html(_LOADING_HTML, height=540, scrolling=False)
+
+    # 7 detik — cukup untuk semua sistem siap, semua log sempat terbaca
+    time.sleep(7)
+    _ph.empty()
+
+    # Set flag → tidak akan pernah masuk blok ini lagi sampai session mati
+    st.session_state["_sigma_loading_done"] = True
+
+# ─────────────────────────────────────────────────────────────────────────────
 # ── Guard: _sm_load_all hanya jalan sekali per 5 menit (bukan setiap rerun) ──
 _SM_LOAD_TTL = 300  # 5 menit
 _sm_load_ts = st.session_state.get("_sm_load_ts", 0)
@@ -10045,179 +10232,9 @@ def show_login():
 
 if st.session_state.user is None: show_login()
 
-# ─────────────────────────────────────────────────────────────────────────────
-# SIGMA LOADING SCREEN — muncul SEKALI per session setelah login berhasil
-# Menggunakan session_state flag agar tidak blocking saat rerun/navigasi tab
-# ─────────────────────────────────────────────────────────────────────────────
-def show_sigma_loading_screen():
-    """
-    Loading screen animasi SIGMA Terminal.
-    Hanya tampil SEKALI per session menggunakan flag session_state.
-    Aman dari rerun loop — tidak memblokir UI pada navigasi tab berikutnya.
-    """
-    if st.session_state.get("_sigma_loading_done", False):
-        return
-
-    loading_html = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body, html {
-            width: 100%; height: 100%;
-            background-color: #050a15;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Space Mono', monospace;
-            color: #e2e8f0;
-            overflow: hidden;
-        }
-
-        .sigma-logo-glow {
-            font-size: 130px;
-            font-weight: 700;
-            color: #00E5BE;
-            text-shadow:
-                0 0 20px rgba(0, 229, 190, 0.5),
-                0 0 50px rgba(0, 229, 190, 0.3);
-            animation: pulse 2s ease-in-out infinite;
-            margin-bottom: 8px;
-            line-height: 1;
-            user-select: none;
-        }
-
-        .loader-subtitle {
-            font-size: 11px;
-            letter-spacing: 5px;
-            color: #94a3b8;
-            margin-bottom: 8px;
-            text-align: center;
-            text-transform: uppercase;
-        }
-
-        .loader-version {
-            font-size: 9px;
-            letter-spacing: 2px;
-            color: #334155;
-            margin-bottom: 32px;
-            text-align: center;
-        }
-
-        .loading-bar-container {
-            width: 300px;
-            height: 2px;
-            background-color: rgba(255, 255, 255, 0.07);
-            border-radius: 2px;
-            overflow: hidden;
-            margin-bottom: 18px;
-        }
-
-        .loading-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #00E5BE, #4A9EF0, #a78bfa);
-            width: 0%;
-            border-radius: 2px;
-            animation: load 3.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
-
-        .terminal-logs {
-            font-size: 9px;
-            color: #475569;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            height: 14px;
-            transition: opacity 0.2s;
-        }
-
-        .bottom-label {
-            position: absolute;
-            bottom: 18px;
-            font-size: 8px;
-            letter-spacing: 2px;
-            color: #1e293b;
-            text-transform: uppercase;
-        }
-
-        @keyframes pulse {
-            0%   { transform: scale(0.97); opacity: 0.75;
-                   text-shadow: 0 0 20px rgba(0,229,190,0.35); }
-            50%  { transform: scale(1.03); opacity: 1;
-                   text-shadow: 0 0 40px rgba(0,229,190,0.85),
-                                0 0 80px rgba(0,229,190,0.4); }
-            100% { transform: scale(0.97); opacity: 0.75;
-                   text-shadow: 0 0 20px rgba(0,229,190,0.35); }
-        }
-
-        @keyframes load {
-            0%   { width: 0%; }
-            15%  { width: 20%; }
-            40%  { width: 50%; }
-            70%  { width: 78%; }
-            90%  { width: 93%; }
-            100% { width: 100%; }
-        }
-    </style>
-    </head>
-    <body>
-        <div class="sigma-logo-glow">&#x3A3;</div>
-        <div class="loader-subtitle">Strategic Intelligence Engine</div>
-        <div class="loader-version">KIPM-UP &middot; MnM &middot; IDX TERMINAL</div>
-        <div class="loading-bar-container">
-            <div class="loading-bar-fill"></div>
-        </div>
-        <div class="terminal-logs" id="term-log">Initializing core systems...</div>
-        <div class="bottom-label">SIGMA &copy; 2026</div>
-
-        <script>
-            const logs = [
-                "Initializing SIGMA core systems...",
-                "Authenticating Groq &amp; MiMo AI arrays...",
-                "Fetching IDX real-time market data...",
-                "Syncing Bandarmologi &amp; GoAPI engine...",
-                "Loading MnM Strategy+ framework...",
-                "Calibrating dark terminal renderer...",
-                "SYSTEM READY &mdash; LAUNCHING SIGMA..."
-            ];
-            let i = 0;
-            const logEl = document.getElementById('term-log');
-            const logInterval = setInterval(() => {
-                if (i < logs.length) {
-                    logEl.style.opacity = '0';
-                    setTimeout(() => {
-                        logEl.innerHTML = logs[i];
-                        logEl.style.opacity = '1';
-                        i++;
-                    }, 150);
-                } else {
-                    clearInterval(logInterval);
-                }
-            }, 480);
-        </script>
-    </body>
-    </html>
-    """
-
-    placeholder = st.empty()
-    with placeholder:
-        components.html(loading_html, height=520, scrolling=False)
-
-    # Sleep hanya berjalan SEKALI — aman karena flag akan di-set setelahnya
-    time.sleep(3.5)
-    placeholder.empty()
-
-    # ── Tandai sudah selesai agar tidak muncul lagi saat rerun ────────────────
-    st.session_state["_sigma_loading_done"] = True
-
-
-# Panggil loading screen — hanya aktif saat pertama kali masuk setelah login
-show_sigma_loading_screen()
-# ─────────────────────────────────────────────────────────────────────────────
+# ── Loading screen: dipanggil tepat setelah auth, sebelum routing UI ──
+# Guard berlapis sudah ada di dalam fungsi — aman dari rerun apapun
+_show_sigma_loading_screen()
 
 init_chat()
 user = st.session_state.user
