@@ -11694,6 +11694,45 @@ if "amnesia_fixed" not in st.session_state and st.session_state.get("user"):
 
 current_view = st.session_state.get("current_view", "chat")
 
+# ─── SIGMA CUSTOM SPINNER (menggantikan st.spinner default) ───────────────────
+# Tampilan: logo Σ berputar + teks pesan, dark mode, konsisten dengan brand SIGMA
+import contextlib as _contextlib
+
+@_contextlib.contextmanager  
+def _sigma_spinner(msg: str = "Memproses..."):
+    """Context manager pengganti st.spinner — tampilkan SIGMA branded loading indicator."""
+    import streamlit.components.v1 as _cmp
+    _safe_msg = str(msg).replace("'", "\'").replace('"', '&quot;').replace('`', '&#96;').replace('\\', '\\\\')
+    _ph = st.empty()
+    with _ph:
+        _cmp.html(f"""
+<div id="sigma-spinner-wrap" style="
+    display:flex;align-items:center;gap:12px;
+    padding:10px 18px;margin:6px 0;
+    background:rgba(124,58,237,0.07);
+    border:1px solid rgba(124,58,237,0.22);
+    border-radius:10px;
+    font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;
+">
+  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"
+       style="flex-shrink:0;animation:sigma-spin 1.1s linear infinite;">
+    <style>@keyframes sigma-spin{{from{{transform:rotate(0deg)}}to{{transform:rotate(360deg)}}}}</style>
+    <circle cx="11" cy="11" r="9" stroke="rgba(124,58,237,0.18)" stroke-width="2.5"/>
+    <path d="M11 2 A9 9 0 0 1 20 11" stroke="#7c3aed" stroke-width="2.5" stroke-linecap="round"/>
+    <text x="11" y="15.5" text-anchor="middle" font-size="9" font-weight="700"
+          fill="#a78bfa" font-family="ui-sans-serif,system-ui,sans-serif"
+          style="animation:none;">&#x3A3;</text>
+  </svg>
+  <span style="font-size:0.82rem;color:rgba(200,185,255,0.9);letter-spacing:0.01em;line-height:1.4;">{_safe_msg}</span>
+</div>
+""", height=52, scrolling=False)
+    try:
+        yield
+    finally:
+        _ph.empty()
+# ─────────────────────────────────────────────────────────────────────────────
+
+
 # ══ TOP-LEVEL CACHE FUNCTIONS ═════════════════════════════════════════════════
 # Didefinisikan di sini (BUKAN di dalam if current_view==dashboard) agar
 # Streamlit cache tidak di-invalidate setiap rerun. Nested @st.cache_data
@@ -12812,7 +12851,7 @@ if current_view == "dashboard":
         _idx_tk_key = tuple((n, tk) for n, tk, *_ in _IDX_TICKERS)
         _com_tk_key = tuple((n, tk) for n, tk, *_ in _COM_TICKERS)
 
-        with st.spinner("Memuat data pasar global..."):
+        with _sigma_spinner("Memuat data pasar global..."):
             _idx_data = _fetch_tickers_v3(_idx_tk_key, _lm_slot)
             _com_data = _fetch_tickers_v3(_com_tk_key, _lm_slot)
 
@@ -13619,7 +13658,7 @@ table{{margin-bottom:0!important;}}
     5. **Outlook** — Apakah yield akan turun (bullish obligasi) atau naik (bearish)? Apa triggernya?
 
     Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur dan tegas."""
-                    with st.spinner("🤖 SIGMA menganalisa bond yield..."):
+                    with _sigma_spinner("🤖 SIGMA menganalisa bond yield..."):
                         try:
                             _ai_by_result, _ai_by_model = _call_groq_primary(_by_prompt, max_tokens=2000, temperature=0.6)
                             st.session_state["ai_bond_yield_result"] = (_ai_by_result, _ai_by_model)
@@ -13961,7 +14000,7 @@ table{{margin-bottom:0!important;}}
     5. **Kesimpulan** — Apakah dividend play di IDX 2026 ini layak dijadikan strategi utama?
 
     Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur, tegas, dan actionable."""
-                    with st.spinner("🤖 SIGMA menganalisa data dividen IDX..."):
+                    with _sigma_spinner("🤖 SIGMA menganalisa data dividen IDX..."):
                         try:
                             _ai_dv_result, _ai_dv_model = _call_groq_primary(_dv_prompt, max_tokens=2000, temperature=0.65)
                             st.session_state["ai_dividend_result"] = (_ai_dv_result, _ai_dv_model)
@@ -14030,7 +14069,7 @@ table{{margin-bottom:0!important;}}
             if _cache_content and _today_date_str in str(_cache_ts):
                 st.info(f"✅ {mode_str} sudah tersedia hari ini (cache). Scroll ke bawah untuk melihatnya.", icon="⚡")
             if not (_cache_content and _today_date_str in str(_cache_ts)):
-              with st.spinner(f"Mengumpulkan data real-time & menyusun {mode_str} Market Brief..."):
+              with _sigma_spinner(f"Mengumpulkan data real-time & menyusun {mode_str} Market Brief..."):
                 try:
                     import feedparser as _fp
                     _feedparser_ok = True
@@ -15232,7 +15271,7 @@ tbody td{{padding:7px 10px;color:{text_main};vertical-align:middle;font-size:0.7
             st.cache_data.clear()
             st.session_state[_ca_auto_key] = True
 
-        with st.spinner("Mengambil jadwal korporasi IDX (3 bulan ke depan)..."):
+        with _sigma_spinner("Mengambil jadwal korporasi IDX (3 bulan ke depan)..."):
             ca_data_raw = fetch_idx_corporate_actions()
 
         # ── Apply filters ─────────────────────────────────────────
@@ -17436,7 +17475,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 elif not _ipo_pdf_bytes:
                     st.warning("⚠️ Upload file PDF Prospektus terlebih dahulu.")
                 else:
-                    with st.spinner("📖 Membaca & Membedah Ratusan Halaman Prospektus IPO..."):
+                    with _sigma_spinner("📖 Membaca & Membedah Ratusan Halaman Prospektus IPO..."):
                         try:
                             # Baca PDF dari bytes yang tersimpan di session_state
                             _ipo_doc = fitz.open(stream=_ipo_pdf_bytes, filetype="pdf")
@@ -18389,7 +18428,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                         _insight_cache_key = None
 
                 if run_analysis:
-                    with st.spinner("SIGMA sedang mengumpulkan data, menganalisis, dan menggambar chart..."):
+                    with _sigma_spinner("SIGMA sedang mengumpulkan data, menganalisis, dan menggambar chart..."):
                         if _use_cached_insight:
                             st.info(
                                 "⚡ **Analisa dikembalikan dari cache** — harga tidak berubah signifikan dari analisa sebelumnya. "
@@ -21364,7 +21403,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
 
             # ── Generate baru ──
             try:
-                with st.spinner(f"⚡ SIGMA Auto-Generate {plan_type.upper()} Plan..."):
+                with _sigma_spinner(f"⚡ SIGMA Auto-Generate {plan_type.upper()} Plan..."):
                     _price_map = _reco_fetch_prices(tuple(_WATCHLIST_RECO))
                     if not _price_map:
                         return False
@@ -22105,7 +22144,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                     _force_brosum = st.button("📡 Refresh Broker Data", use_container_width=True, key="force_brosum_now")
 
                 if _force_brosum:
-                    with st.spinner("📡 Mengambil data broker terbaru..."):
+                    with _sigma_spinner("📡 Mengambil data broker terbaru..."):
                         try:
                             import yfinance as _yf_fr
                             from datetime import date as _da_fr, timedelta as _tda_fr
@@ -22176,7 +22215,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 
                 if _force_daily:
                     _bs30_force = st.session_state.get("sigma_bs30_screened") or []
-                    with st.spinner("⚡ Generate Daily Plan hari ini..."):
+                    with _sigma_spinner("⚡ Generate Daily Plan hari ini..."):
                         try:
                             # Jika bs30 kosong, langsung pakai independent screener (fallback)
                             if not _bs30_force:
@@ -22778,7 +22817,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                     _force_weekly = st.button("🔄 Generate Weekly", use_container_width=True, key="force_weekly_now")
                 if _force_weekly:
                     _bs30_fw = st.session_state.get("sigma_bs30_screened") or []
-                    with st.spinner("⚡ Generate Weekly Plan..."):
+                    with _sigma_spinner("⚡ Generate Weekly Plan..."):
                         try:
                             if not _bs30_fw:
                                 _bs30_fw = _sch_ensure_bs30(_wib_now(), _now_w.strftime("%Y-%m-%d")) or []
@@ -23298,7 +23337,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                     run_bsjp = st.button("▶ GENERATE BSJP", use_container_width=True, key="btn_bsjp")
 
                 if run_bsjp:
-                    with st.spinner("⚡ SIGMA Engine mencari kandidat BSJP..."):
+                    with _sigma_spinner("⚡ SIGMA Engine mencari kandidat BSJP..."):
                         price_data = _reco_fetch_prices(_WATCHLIST_RECO)
                         if price_data:
                             import json as _bj
@@ -23873,7 +23912,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                         _api_stat_html = "  ·  ".join([f"<b>{src}</b> {stat_}" for src,stat_ in _fs_api_status.items()])
                         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:#888;margin-bottom:8px;'>📡 STATUS API: {_api_stat_html}</p>", unsafe_allow_html=True)
 
-                        with st.spinner(f"Mengambil data fundamental {len(_fs_tickers)} saham IDX via yfinance..."):
+                        with _sigma_spinner(f"Mengambil data fundamental {len(_fs_tickers)} saham IDX via yfinance..."):
                             @st.cache_data(ttl=3600, show_spinner=False)
                             def _fetch_fundamental_batch(tickers_tuple):
                                 import yfinance as _yf2, threading as _thr, time as _tsl
@@ -24258,7 +24297,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                 )
 
                 if _btn_ai_screener and _has_screener_data:
-                    with st.spinner("🤖 SIGMA AI menganalisa hasil screener..."):
+                    with _sigma_spinner("🤖 SIGMA AI menganalisa hasil screener..."):
                         _pass_summary = []
                         for _tk, _d in (_ai_pass_data or [])[:20]:
                             _pass_summary.append(
@@ -24340,7 +24379,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                 )
                 _fsa2_btn = st.button("🔍 Tanya SIGMA AI", key="btn_fs_ai_tab", use_container_width=False)
                 if _fsa2_btn and _fs_ai_q2.strip():
-                    with st.spinner("SIGMA AI menganalisa..."):
+                    with _sigma_spinner("SIGMA AI menganalisa..."):
                         _fsa2_prompt = (
                             "Kamu adalah SIGMA AI, analis fundamental multi-disiplin (Damodaran, Graham, Lynch, Schilit). "
                             "Pertanyaan: " + _fs_ai_q2 + ". Jawab dalam bahasa Indonesia, padat dan actionable."
@@ -24946,14 +24985,14 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
 
                 # LANGKAH 2: Live fetch dari IDX / KSEI untuk semua emiten lain
                 if not sh_data:
-                    with st.spinner(f"🔍 Mengambil data {sh_ticker} dari IDX & KSEI..."):
+                    with _sigma_spinner(f"🔍 Mengambil data {sh_ticker} dari IDX & KSEI..."):
                         sh_data = fetch_sh_live(sh_ticker)
                         if sh_data:
                             data_source = "IDX/KSEI API (Live)"
 
                 # LANGKAH 3: Estimasi berbasis yfinance + pola industri
                 if not sh_data:
-                    with st.spinner(f"📊 Membangun estimasi data {sh_ticker}..."):
+                    with _sigma_spinner(f"📊 Membangun estimasi data {sh_ticker}..."):
                         sh_data = fetch_sh_historical_estimate(sh_ticker, _sh_all_db)
                         if sh_data:
                             data_source = "Estimasi (yfinance + pola industri)"
@@ -25020,7 +25059,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                         except Exception: pass
                         return pd.DataFrame()
 
-                    with st.spinner(f"Mengambil data harga {sh_ticker} (1 tahun)..."):
+                    with _sigma_spinner(f"Mengambil data harga {sh_ticker} (1 tahun)..."):
                         price_df = fetch_price_1y(sh_ticker)
 
                     df_sh = pd.DataFrame(sh_data)
@@ -26685,7 +26724,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
         5. **Kesimpulan** — 1–2 kalimat tegas soal outlook suku bunga untuk pasar modal Indonesia.
 
         Format: narasi profesional, padat, 300–400 kata. Gunakan bahasa Indonesia. Jujur dan tegas."""
-                    with st.spinner("🤖 SIGMA menganalisa kondisi rate monitor..."):
+                    with _sigma_spinner("🤖 SIGMA menganalisa kondisi rate monitor..."):
                         try:
                             _ai_rm_result, _ai_rm_model = _call_groq_primary(_rm_prompt, max_tokens=2000, temperature=0.6)
                             st.session_state["ai_rate_monitor_result"] = (_ai_rm_result, _ai_rm_model)
@@ -27230,7 +27269,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
 
                 _ec_ai_resp = None
                 _ec_ai_model = "error"
-                with st.spinner("⚡ SIGMA AI menganalisa dampak data ekonomi ke XAU, IDR, DXY, IHSG..."):
+                with _sigma_spinner("⚡ SIGMA AI menganalisa dampak data ekonomi ke XAU, IDR, DXY, IHSG..."):
                     try:
                         _ec_ai_resp, _ec_ai_model = _call_groq_text([{"role":"user","content":_ec_prompt}])
                     except Exception as _ec_e:
@@ -27898,7 +27937,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                         if not _goapi_key_ok:
                             st.error("❌ GoAPI_KEY tidak ditemukan di Streamlit secrets.")
                         else:
-                            with st.spinner("Testing GoAPI — probe URL + tanggal..."):
+                            with _sigma_spinner("Testing GoAPI — probe URL + tanggal..."):
                                 try:
                                     _test_dates = _trading_date_candidates(max_lookback=10)
                                     _found_url   = None
@@ -28929,7 +28968,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                             Klik  saham lain untuk berganti &middot; Klik lagi untuk tutup</span>
                         </div>""", unsafe_allow_html=True)
 
-                        with st.spinner(f"Mengambil broker summary {_sel_tk}..."):
+                        with _sigma_spinner(f"Mengambil broker summary {_sel_tk}..."):
                             _bd_data = _fetch_idx_broker_summary(_sel_tk, "daily")
 
                         if _bd_data:
@@ -28996,7 +29035,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                     _bh_tickers = [s["ticker"] for s in _bhdsc if s.get("ticker")]
                                     if _bh_tickers:
                                         try:
-                                            with st.spinner(f"⚡ Membuat Weekly Plan dari data {_bhde.get('date',_bhdk)}..."):
+                                            with _sigma_spinner(f"⚡ Membuat Weekly Plan dari data {_bhde.get('date',_bhdk)}..."):
                                                 _bh_price_map = _reco_fetch_prices(tuple(_bh_tickers))
                                                 if _bh_price_map:
                                                     _bh_weekly = _rule_based_plan_v2(_bh_price_map, _bhdsc, "weekly")
@@ -30683,7 +30722,7 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
                 )
 
                 if st.button("⚡ Cek Status Semua API", key="api_health_btn_panduan", use_container_width=False):
-                    with st.spinner("Mengecek semua API..."):
+                    with _sigma_spinner("Mengecek semua API..."):
                         _health_result = _get_api_health_summary()
                     st.session_state["_api_health_panduan_result"] = _health_result
 
@@ -30925,7 +30964,7 @@ else:
         is_ipo           = not _block and (prompt_lower.startswith("7.") or "analisa ipo" in prompt_lower)
 
         if is_dampak_makro:
-            with st.spinner("Menganalisa sentimen makro global/domestik..."):
+            with _sigma_spinner("Menganalisa sentimen makro global/domestik..."):
                 try:
                     ctx = build_global_context(prompt)
                     if ctx: full_prompt = f"[BERITA GLOBAL/EKONOMI]:\n{ctx}\n\n"
@@ -30936,7 +30975,7 @@ else:
 
         elif is_dampak_emiten and emiten_match:
             emiten_target = emiten_match.group(0).upper()
-            with st.spinner(f"Menganalisa korelasi berita ke emiten {emiten_target}..."):
+            with _sigma_spinner(f"Menganalisa korelasi berita ke emiten {emiten_target}..."):
                 try:
                     ctx = build_combined_context(prompt)
                     if ctx: full_prompt = f"[DATA BERITA DAN PASAR]:\n{ctx}\n\n"
@@ -30947,13 +30986,13 @@ else:
 
         elif is_bandarmologi:
             emiten_target = emiten_match.group(0).upper() if emiten_match else "SAHAM INI"
-            with st.spinner(f"Melacak Jejak Uang & Aliran Dana Bandar di {emiten_target}..."):
+            with _sigma_spinner(f"Melacak Jejak Uang & Aliran Dana Bandar di {emiten_target}..."):
                 full_prompt = TEMPLATE_BANDARMOLOGI.format(emiten=emiten_target)
                 full_prompt += f"\n\n[PENTING: Fokus 100% pada data Broker Summary, Average Price, dan Volume. JANGAN bahas indikator teknikal (RSI/MACD) atau Fundamental!]\nPertanyaan Asli User: {prompt}"
 
         elif is_fundamental_multidisiplin and emiten_match:
             emiten_target = emiten_match.group(0).upper()
-            with st.spinner(f"SIGMA menerapkan kerangka Damodaran / Graham / Lynch / Schilit untuk {emiten_target}..."):
+            with _sigma_spinner(f"SIGMA menerapkan kerangka Damodaran / Graham / Lynch / Schilit untuk {emiten_target}..."):
                 try:
                     fund_text = build_fundamental_from_text(f"fundamental {emiten_target}")
                 except:
@@ -30999,7 +31038,7 @@ Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di ak
             chosen_template = TEMPLATE_BANK if is_bank else TEMPLATE_NON_BANK
             tahun_sekarang = _wib_now().year
 
-            with st.spinner(f"Kalkulasi & Tarik Data Multi-Sumber {emiten_target}..."):
+            with _sigma_spinner(f"Kalkulasi & Tarik Data Multi-Sumber {emiten_target}..."):
                 try:
                     fund_text = build_fundamental_from_text(f"fundamental {emiten_target}")
                 except:
@@ -31014,7 +31053,7 @@ Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di ak
             _ca_v, _ca_w = _validate_price_corporate_action(emiten_target, None)
             _ca_prefix = f"\n\n[CORPORATE ACTION ALERT]:\n{_ca_w}\n" if _ca_w else ""
             if img_data or multi_images:
-                with st.spinner(f"Membaca Chart & Merancang 3 Skenario Trade Plan..."):
+                with _sigma_spinner(f"Membaca Chart & Merancang 3 Skenario Trade Plan..."):
                     full_prompt = TEMPLATE_TEKNIKAL.format(emiten=emiten_target) + _ca_prefix
             else:
                 full_prompt = TEMPLATE_TEKNIKAL.format(emiten=emiten_target) + _ca_prefix
@@ -31025,7 +31064,7 @@ Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di ak
             # ── Corporate Action Check ──
             _ca_v, _ca_w = _validate_price_corporate_action(emiten_target, None)
             _ca_prefix = f"\n\n[CORPORATE ACTION ALERT]:\n{_ca_w}\n" if _ca_w else ""
-            with st.spinner(f"Memproses Quad Confluence (Bandar + Teknikal + Funda + Makro) untuk {emiten_target}..."):
+            with _sigma_spinner(f"Memproses Quad Confluence (Bandar + Teknikal + Funda + Makro) untuk {emiten_target}..."):
                 try:
                     fund_text = build_fundamental_from_text(f"fundamental {emiten_target}")
                 except:
@@ -31038,7 +31077,7 @@ Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di ak
         elif is_ipo:
             if pdf_data:
                 emiten_target = emiten_match.group(0).upper() if emiten_match else "CALON EMITEN BARU"
-                with st.spinner("Membongkar & Membaca Ratusan Halaman Prospektus IPO..."):
+                with _sigma_spinner("Membongkar & Membaca Ratusan Halaman Prospektus IPO..."):
                     full_prompt = TEMPLATE_IPO.format(emiten=emiten_target, pdf_content=pdf_data[0])
             else:
                 full_prompt = "[INSTRUKSI SYSTEM]: Beritahu user dengan ramah bahwa untuk melakukan Analisa IPO, mereka WAJIB meng-upload atau melampirkan file PDF Prospektus e-IPO terlebih dahulu ke dalam kolom chat."
@@ -31084,7 +31123,7 @@ Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di ak
 
         try:
             with st.chat_message("assistant"):
-                with st.spinner("SIGMA menganalisis..."):
+                with _sigma_spinner("SIGMA menganalisis..."):
 
                     _history_msgs = [
                         {"role": m["role"], "content": m.get("content") or ""}
