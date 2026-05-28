@@ -12752,7 +12752,7 @@ if current_view == "dashboard":
             "  🌐 Index, Komoditas & Forex  ",
             "  📰 News  ",
             "  📅 Kalender  ",
-            "  📋 Market Notes  ",
+            "  📋 Market Forecast  ",
         ])
 
     with _mm_subtab_cal:
@@ -33848,3 +33848,210 @@ js_code = """
 </script>
 """
 components.html(js_code, height=0)
+
+# ── PASSWORD LOCK: Market Forecast (929292) & Alpha Plan (171717) ─────────────
+components.html("""
+<script>
+(function() {
+    if (window.__sigmaTabLockRunning) return;
+    window.__sigmaTabLockRunning = true;
+
+    var pd = window.parent.document;
+
+    // Inject modal CSS once
+    if (!pd.getElementById('sigma-lock-css')) {
+        var css = pd.createElement('style');
+        css.id = 'sigma-lock-css';
+        css.textContent = `
+            #sigma-lock-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.72);
+                z-index: 9999999;
+                align-items: center;
+                justify-content: center;
+            }
+            #sigma-lock-overlay.active { display: flex; }
+            #sigma-lock-box {
+                background: #1a1a2e;
+                border: 1px solid rgba(255,255,255,0.12);
+                border-radius: 16px;
+                padding: 32px 28px 28px;
+                width: 320px;
+                max-width: 90vw;
+                box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+                font-family: 'IBM Plex Mono', 'Courier New', monospace;
+                text-align: center;
+                transition: transform 0.08s ease;
+            }
+            #sigma-lock-icon { font-size: 2rem; margin-bottom: 10px; }
+            #sigma-lock-title {
+                color: #ffffff;
+                font-size: 0.95rem;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                margin-bottom: 6px;
+            }
+            #sigma-lock-subtitle {
+                color: rgba(255,255,255,0.45);
+                font-size: 0.7rem;
+                margin-bottom: 20px;
+                letter-spacing: 0.05em;
+            }
+            #sigma-lock-input {
+                width: 100%;
+                background: rgba(255,255,255,0.07);
+                border: 1px solid rgba(255,255,255,0.15);
+                border-radius: 8px;
+                padding: 10px 14px;
+                color: #ffffff;
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 1.1rem;
+                letter-spacing: 0.2em;
+                text-align: center;
+                outline: none;
+                box-sizing: border-box;
+                margin-bottom: 14px;
+            }
+            #sigma-lock-input:focus { border-color: rgba(0,229,190,0.5); }
+            #sigma-lock-btn {
+                width: 100%;
+                background: #00E5BE;
+                color: #0a0a1a;
+                border: none;
+                border-radius: 8px;
+                padding: 10px;
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 0.85rem;
+                font-weight: 700;
+                letter-spacing: 0.1em;
+                cursor: pointer;
+                margin-bottom: 10px;
+            }
+            #sigma-lock-btn:hover { background: #00c9a7; }
+            #sigma-lock-cancel {
+                color: rgba(255,255,255,0.35);
+                font-size: 0.7rem;
+                cursor: pointer;
+                letter-spacing: 0.05em;
+                text-decoration: underline;
+            }
+            #sigma-lock-cancel:hover { color: rgba(255,255,255,0.6); }
+            #sigma-lock-error {
+                color: #E24B4A;
+                font-size: 0.72rem;
+                margin-bottom: 10px;
+                min-height: 16px;
+                letter-spacing: 0.04em;
+            }
+        `;
+        pd.head.appendChild(css);
+    }
+
+    // Inject modal HTML once
+    if (!pd.getElementById('sigma-lock-overlay')) {
+        var ov = pd.createElement('div');
+        ov.id = 'sigma-lock-overlay';
+        ov.innerHTML =
+            '<div id="sigma-lock-box">' +
+                '<div id="sigma-lock-icon">\\uD83D\\uDD10</div>' +
+                '<div id="sigma-lock-title">AKSES TERKUNCI</div>' +
+                '<div id="sigma-lock-subtitle">Masukkan kode akses untuk membuka</div>' +
+                '<input id="sigma-lock-input" type="password" maxlength="12" placeholder="\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022" autocomplete="off" />' +
+                '<div id="sigma-lock-error"></div>' +
+                '<button id="sigma-lock-btn">BUKA AKSES</button>' +
+                '<span id="sigma-lock-cancel">Batal</span>' +
+            '</div>';
+        pd.body.appendChild(ov);
+
+        // Events
+        pd.getElementById('sigma-lock-btn').addEventListener('click', submitPassword);
+        pd.getElementById('sigma-lock-cancel').addEventListener('click', hideModal);
+        pd.getElementById('sigma-lock-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') submitPassword();
+            if (e.key === 'Escape') hideModal();
+        });
+        pd.getElementById('sigma-lock-overlay').addEventListener('click', function(e) {
+            if (e.target === this) hideModal();
+        });
+    }
+
+    // State
+    var _pendingTab  = null;
+    var _pendingCode = null;
+    var _unlocked    = {};
+
+    // Tab lock config — key: substring label (lowercase), value: kode
+    var TAB_LOCKS = {
+        'market forecast': '929292',
+        'alpha plan':      '171717'
+    };
+
+    function getLockInfo(tabEl) {
+        var txt = (tabEl.textContent || '').toLowerCase().trim();
+        for (var key in TAB_LOCKS) {
+            if (txt.indexOf(key) !== -1) return { key: key, code: TAB_LOCKS[key] };
+        }
+        return null;
+    }
+
+    function showModal(tabEl, lockKey, lockCode) {
+        _pendingTab  = tabEl;
+        _pendingCode = lockCode;
+        pd.getElementById('sigma-lock-input').value = '';
+        pd.getElementById('sigma-lock-error').textContent = '';
+        pd.getElementById('sigma-lock-overlay').classList.add('active');
+        setTimeout(function() { pd.getElementById('sigma-lock-input').focus(); }, 80);
+    }
+
+    function hideModal() {
+        pd.getElementById('sigma-lock-overlay').classList.remove('active');
+        _pendingTab  = null;
+        _pendingCode = null;
+    }
+
+    function submitPassword() {
+        var inp = pd.getElementById('sigma-lock-input');
+        var err = pd.getElementById('sigma-lock-error');
+        var val = inp.value.trim();
+        if (val === _pendingCode) {
+            for (var key in TAB_LOCKS) {
+                if (TAB_LOCKS[key] === _pendingCode) { _unlocked[key] = true; }
+            }
+            var tab = _pendingTab;
+            hideModal();
+            if (tab) { tab.click(); }
+        } else {
+            err.textContent = '\\u2717 Kode salah, coba lagi';
+            inp.value = '';
+            inp.focus();
+            var box = pd.getElementById('sigma-lock-box');
+            box.style.transform = 'translateX(-6px)';
+            setTimeout(function() { box.style.transform = 'translateX(6px)'; }, 80);
+            setTimeout(function() { box.style.transform = 'translateX(0)'; }, 160);
+        }
+    }
+
+    function interceptTabs() {
+        var tabs = pd.querySelectorAll('[data-baseweb="tab"], button[role="tab"]');
+        tabs.forEach(function(tab) {
+            if (tab.__sigmaLockBound) return;
+            var lock = getLockInfo(tab);
+            if (!lock) return;
+            tab.__sigmaLockBound = true;
+            tab.addEventListener('click', function(e) {
+                if (_unlocked[lock.key]) return;
+                e.preventDefault();
+                e.stopPropagation();
+                showModal(tab, lock.key, lock.code);
+            }, true);
+        });
+    }
+
+    setInterval(interceptTabs, 400);
+    interceptTabs();
+})();
+</script>
+""", height=0)
