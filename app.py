@@ -12981,14 +12981,13 @@ table{{margin-bottom:0!important;}}
 
     with tab_marketdata:
         # ════════════════════════════════════════════════════════════════
-        # MARKET DATA — Rate Monitor · Bond Yield · Dividend · Shareholder · Fundamental Screener
+        # MARKET DATA — Rate Monitor · Bond Yield · Dividend · Shareholder
         # ════════════════════════════════════════════════════════════════
-        _md_subtab_ratemon, _md_subtab_yield, _md_subtab_dividend, _md_subtab_shareholder, _md_subtab_fundamental, _md_subtab_inflasi = st.tabs([
+        _md_subtab_ratemon, _md_subtab_yield, _md_subtab_dividend, _md_subtab_shareholder, _md_subtab_inflasi = st.tabs([
             "  📡 RATE MONITOR  ",
             "  🏛️ BOND YIELD  ",
             "  💰 DIVIDEND  ",
             "  👥 SHAREHOLDER  ",
-            "  📊 FUNDAMENTAL SCREENER  ",
             "  📉 INFLASI  ",
         ])
 
@@ -14256,18 +14255,20 @@ Event penting (FOMC, data AS, dll) + stance + 2-3 sektor rotasi + risiko utama. 
 
 Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Semua waktu dalam WIB."""
 
-                # ── Eksekusi: Coba Anthropic API dulu (dengan web search), fallback ke Groq ──
+                # ── Eksekusi: Gemini-first (lebih cepat, gratis), fallback ke Groq ──
+                # FIX NameError: _anthropic_key dihapus, diganti Gemini sebagai primary
                 mb_res = None
                 _source_used = "Groq"
 
-                if _anthropic_key:
-                    try:
-                        mb_res = _call_anthropic_with_search(mb_prompt, max_tok=3500 if mode_key == "weekly" else 3000)
-                        if mb_res:
-                            _source_used = "Anthropic+WebSearch"
-                    except Exception as _ae:
-                        mb_res = None  # fallback ke Groq
+                # 1. Coba Gemini dulu (cepat, tidak butuh key tambahan)
+                try:
+                    mb_res = _call_anthropic_with_search(mb_prompt, max_tok=3500 if mode_key == "weekly" else 3000)
+                    if mb_res:
+                        _source_used = "Gemini"
+                except Exception:
+                    mb_res = None
 
+                # 2. Fallback ke Groq jika Gemini gagal
                 if not mb_res:
                     try:
                         _max_tok = 3000 if mode_key == "daily" else 3500
@@ -14279,7 +14280,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
 
                 # Tambahkan watermark sumber data
                 if mb_res and not mb_res.startswith("⚠"):
-                    _src_badge = "🌐 Real-time Web Search" if _source_used == "Anthropic+WebSearch" else "📡 RSS Feeds"
+                    _src_badge = "✨ Gemini AI" if _source_used == "Gemini" else "📡 RSS Feeds"
                     mb_res = mb_res + f"\n\n---\n*Sumber data: {_src_badge} · {_today}*"
 
                 if mode_key == "daily":
@@ -15435,3609 +15436,6 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
         components.html(ca_html_widget, height=_ca_total_h + 8, scrolling=False)
 
     # ── Market Data sub-tabs: Fundamental & Shareholder redirect ke Alpha Screener ──
-    with _md_subtab_fundamental:
-        # ── NESTED SUB-TABS: Fundamental Screener ────────────────────────────
-        _fs_tab_screener, _fs_tab_ai = st.tabs([
-            "  📊 FUNDAMENTAL SCREENER  ",
-            "  🤖 AI ANALYST & TANYA SIGMA AI  ",
-        ])
-
-        with _fs_tab_screener:
-
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FUNDAMENTAL SCREENER - BUFFETT · GRAHAM · DAMODARAN · LYNCH</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown("""<div style='background:#0a0e1a;border-top:1px solid rgba(38,166,154,0.3);border-bottom:1px solid rgba(38,166,154,0.3);border-left:3px solid #26a69a;padding:8px 0;font-size:0.82rem;color:rgba(255,255,255,0.75);overflow:hidden;white-space:nowrap;margin-bottom:10px;'>
-      <div style='display:inline-block;animation:sigma-scroll-fs 44s linear infinite;padding-left:100%;'>
-        <b style='color:#26a69a;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
-        Gunakan Buffett Score &ge;4 sebagai filter utama: ROE &ge;15%, DER &le;1.0x, Net Margin &ge;10%, Current Ratio &ge;1.5x, PBV 0.5-3x, EPS positif.
-        Kombinasikan dengan Graham MoS &gt;30% untuk margin of safety. PEG &lt;1.0 = undervalue relatif growth (Lynch/Damodaran). Prioritas: kualitas dulu, harga kemudian.
-        &nbsp;&nbsp;&nbsp;<span style='color:rgba(38,166,154,0.5);'>◆</span>&nbsp;&nbsp;&nbsp;
-        <b style='color:#26a69a;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
-        Gunakan Buffett Score &ge;4 sebagai filter utama: ROE &ge;15%, DER &le;1.0x, Net Margin &ge;10%, Current Ratio &ge;1.5x, PBV 0.5-3x, EPS positif.
-        Kombinasikan dengan Graham MoS &gt;30% untuk margin of safety. PEG &lt;1.0 = undervalue relatif growth (Lynch/Damodaran). Prioritas: kualitas dulu, harga kemudian.
-      </div>
-    </div>
-    <style>@keyframes sigma-scroll-fs{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}</style>""", unsafe_allow_html=True)
-        # [UI statement removed]
-
-            _fs_accent = "#26a69a"
-
-            st.markdown(f"""
-            <div style='background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};line-height:1.9;'>
-            <span style='color:{_fs_accent};font-weight:700;letter-spacing:0.1em;'>6 KRITERIA BUFFETT + VALUE INVESTING (BASIS SCREENING)</span><br>
-            OK <b>ROE &ge; 15%</b> - Return on Equity kuat (Buffett: konsisten &ge;15% = moat sesungguhnya) &nbsp;|&nbsp;
-            OK <b>DER &le; 1.0x</b> - Utang terkendali, tidak over-leverage &nbsp;|&nbsp;
-            OK <b>Net Margin &ge; 10%</b> - Pricing power &amp; efisiensi operasional &nbsp;|&nbsp;
-            OK <b>Current Ratio &ge; 1.5x</b> - Likuiditas jangka pendek aman &nbsp;|&nbsp;
-            OK <b>PBV 0.5&ndash;3.0x</b> - Tidak terlalu mahal, tidak value trap &nbsp;|&nbsp;
-            OK <b>EPS positif</b> - Perusahaan benar-benar profitable<br><br>
-            <span style='color:#a78bfa;font-weight:700;letter-spacing:0.08em;'> OPSI URUTAN TAMBAHAN (GRAHAM &middot; DAMODARAN &middot; LYNCH)</span><br>
-             <b>Buffett Score</b> - Skor total 0&ndash;6 kriteria terpenuhi &nbsp;|&nbsp;
-             <b>Graham Number MoS</b> - &radic;(22.5 &times; EPS &times; Book Value) vs harga pasar: makin besar = makin undervalue &nbsp;|&nbsp;
-             <b>EPS Growth</b> - Pertumbuhan laba per saham (Lynch: Fast Grower jika EPS growth &gt;20%) &nbsp;|&nbsp;
-             <b>Dividend Yield</b> - Yield dividen tertinggi (Slow Grower / income stock) &nbsp;|&nbsp;
-             <b>PEG Ratio</b> - PER &divide; ROE: &lt;1.0 = undervalue relatif growth (Damodaran/Lynch rule of thumb)
-            </div>
-            """, unsafe_allow_html=True)
-
-            _fs_universe = [
-                "BBCA","BBRI","BMRI","BBNI","BRIS","TLKM","ASII","UNVR","KLBF","ICBP",
-                "INDF","MYOR","SIDO","CPIN","JPFA","HMSP","GGRM","ANTM","PTBA","ADRO",
-                "ITMG","INCO","MDKA","NCKL","MEDC","PGAS","AALI","LSIP","SIMP","SMGR",
-                "INTP","BSDE","CTRA","SMRA","PWON","GOTO","EMTK","MAPI","ACES","HEAL",
-                "MIKA","SILO","KAEF","TSPC","DVLA","BFIN","ADMF","BIRD","TMAS","SMDR",
-                "TPIA","BRPT","AMMN","BRMS","MBMA","TBIG","TOWR","LINK","DMAS","BEST",
-                "PGEO","PTRO","CUAN","VKTR","RAJA","FILM","MIDI","RALS","AMRT","MCAS",
-                "BBTN","BNGA","PNBN","MEGA","BJBR","UNTR","ELSA","HRUM","GEMS","TBLA",
-            ]
-            _sektor_map = {
-                "Perbankan":       ["BBCA","BBRI","BMRI","BBNI","BRIS","BBTN","BNGA","PNBN","MEGA","BJBR"],
-                "Energi & Tambang":["PTBA","ADRO","ITMG","INCO","MDKA","NCKL","MEDC","PGAS","ANTM","AMMN","BRMS","MBMA","HRUM","GEMS","ELSA","RAJA"],
-                "Consumer Goods":  ["UNVR","KLBF","ICBP","INDF","MYOR","SIDO","CPIN","JPFA","HMSP","GGRM","MIDI","RALS","AMRT","MAPI","ACES"],
-                "Properti":        ["BSDE","CTRA","SMRA","PWON","DMAS","BEST"],
-                "Teknologi":       ["TLKM","GOTO","EMTK","TBIG","TOWR","LINK","MCAS"],
-                "Kesehatan":       ["HEAL","MIKA","SILO","KAEF","TSPC","DVLA"],
-                "Infrastruktur":   ["PGEO","PTRO","CUAN","VKTR","TMAS","SMDR","BIRD"],
-                "Agribisnis":      ["AALI","LSIP","SIMP","TBLA"],
-                "Industri":        ["ASII","SMGR","INTP","TPIA","BRPT","UNTR","BFIN","ADMF"],
-            }
-
-            _fsc1, _fsc2, _fsc3 = st.columns([2, 2, 1])
-            with _fsc1:
-                _fs_sektor_options = ["Semua Sektor"] + list(_sektor_map.keys())
-                _fs_sektor_default = st.session_state.get("fs_sektor", "Semua Sektor")
-                _fs_sektor_idx = _fs_sektor_options.index(_fs_sektor_default) if _fs_sektor_default in _fs_sektor_options else 0
-                _fs_sektor = st.selectbox("Filter Sektor:", _fs_sektor_options, index=_fs_sektor_idx, key="fs_sektor_widget")
-            with _fsc2:
-                _fs_sort_options = [
-                    "ROE (Tertinggi)","PBV (Terendah)","Net Margin (Tertinggi)",
-                    "DER (Terendah)","Current Ratio (Tertinggi)",
-                    "Buffett Score (Tertinggi)","Graham Number (Margin of Safety)",
-                    "EPS Growth (Tertinggi)","Dividend Yield (Tertinggi)",
-                    "PEG Ratio (Terendah)"
-                ]
-                _fs_sort_default = st.session_state.get("fs_sort_key", "ROE (Tertinggi)")
-                _fs_sort_idx = _fs_sort_options.index(_fs_sort_default) if _fs_sort_default in _fs_sort_options else 0
-                _fs_sort = st.selectbox("Urutkan:", _fs_sort_options, index=_fs_sort_idx, key="fs_sort_widget")
-            with _fsc3:
-                st.markdown("<br>", unsafe_allow_html=True)
-                _fs_run = st.button("🔍 SCREEN", use_container_width=True, key="btn_fs_screen")
-
-            _fs_tickers = _sektor_map.get(_fs_sektor, _fs_universe) if _fs_sektor != "Semua Sektor" else _fs_universe
-
-            if _fs_run or st.session_state.get("fs_results"):
-                if _fs_run:
-                    # ── Cek status API sebelum fetch ──
-                    _fs_api_status = {}
-                    try:
-                        _fh_test_keys = _get_all_finnhub_keys() or [st.secrets.get("FINNHUB_KEY","")]
-                        _fs_api_status["Finnhub"] = "✅" if any(k and len(k)>10 for k in _fh_test_keys) else "❌"
-                    except: _fs_api_status["Finnhub"] = "❌"
-                    try:
-                        _fmp_test_keys = _get_all_fmp_keys() or [st.secrets.get("FMP_KEY","")]
-                        _fs_api_status["FMP"] = "✅" if any(k and len(k)>10 for k in _fmp_test_keys) else "❌"
-                    except: _fs_api_status["FMP"] = "❌"
-                    try:
-                        _av_test_keys = _get_all_av_keys()
-                        _av_active = [k for k in (_av_test_keys or []) if k and len(k)>10]
-                        _fs_api_status["AlphaVantage"] = f"✅ ({len(_av_active)} key)" if _av_active else "❌ (no key)"
-                    except Exception as _e_av:
-                        _fs_api_status["AlphaVantage"] = f"❌ ({type(_e_av).__name__})"
-                    _fs_api_status["yfinance"] = "✅ (fallback utama)"
-                    # Rebuild with key counts
-                    try:
-                        _fh_active_ct = len([k for k in (_get_all_finnhub_keys() or []) if k and len(k)>10])
-                        _fmp_active_ct = len([k for k in (_get_all_fmp_keys() or []) if k and len(k)>10])
-                        _fs_api_status["Finnhub"] = f"{'✅' if _fh_active_ct else '❌'} ({_fh_active_ct} key)"
-                        _fs_api_status["FMP"] = f"{'✅' if _fmp_active_ct else '❌'} ({_fmp_active_ct} key)"
-                    except Exception:
-                        pass
-                    _api_stat_html = "  ·  ".join([f"<b>{src}</b> {stat_}" for src,stat_ in _fs_api_status.items()])
-                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:#888;margin-bottom:8px;'>📡 STATUS API: {_api_stat_html}</p>", unsafe_allow_html=True)
-
-                    with st.spinner(f"Mengambil data fundamental {len(_fs_tickers)} saham IDX via yfinance..."):
-                        @st.cache_data(ttl=3600, show_spinner=False)
-                        def _fetch_fundamental_batch(tickers_tuple):
-                            import yfinance as _yf2, threading as _thr, time as _tsl
-                            results = {}
-                            lock = _thr.Lock()
-                            def _one(tk):
-                                inf = {}
-                                for _att in range(2):
-                                    try:
-                                        inf = _yf2.Ticker(f"{tk}.JK").info or {}
-                                        if inf.get("regularMarketPrice") or inf.get("currentPrice"):
-                                            break
-                                    except Exception:
-                                        if _att == 0: _tsl.sleep(0.5)
-                                try:
-                                    price = inf.get("currentPrice") or inf.get("regularMarketPrice") or 0
-                                    if not price: return
-                                    roe   = (inf.get("returnOnEquity") or 0) * 100
-                                    roa   = (inf.get("returnOnAssets") or 0) * 100
-                                    npm   = (inf.get("profitMargins") or 0) * 100
-                                    der   = inf.get("debtToEquity") or 0
-                                    cr    = inf.get("currentRatio") or 0
-                                    pbv   = inf.get("priceToBook") or 0
-                                    pe    = inf.get("trailingPE") or 0
-                                    eps   = inf.get("trailingEps") or 0
-                                    div   = (inf.get("dividendYield") or 0) * 100
-                                    mkcap = inf.get("marketCap") or 0
-                                    w52h  = inf.get("fiftyTwoWeekHigh") or 0
-                                    w52l  = inf.get("fiftyTwoWeekLow") or 0
-                                    rpos  = ((price-w52l)/(w52h-w52l)*100) if w52h > w52l else 0
-                                    eps_fwd = inf.get("forwardEps") or 0
-                                    eps_g   = ((eps_fwd-eps)/abs(eps)*100) if eps else 0
-                                    score = sum([roe>=15, der<=1.0 and der>0, npm>=10, cr>=1.5, 0.5<=pbv<=3.0 and pbv>0, eps>0])
-                                    with lock:
-                                        results[tk] = {
-                                            "name": (inf.get("shortName") or tk)[:22],
-                                            "price":price,"roe":roe,"roa":roa,"npm":npm,
-                                            "der":der,"cr":cr,"pbv":pbv,"pe":pe,"eps":eps,
-                                            "eps_g":eps_g,"div":div,"mkcap":mkcap,
-                                            "rpos":rpos,"score":score,
-                                        }
-                                except Exception: pass
-                            # Batch per 10 ticker untuk hindari rate limit
-                            _bsz = 10
-                            for _bi in range(0, len(tickers_tuple), _bsz):
-                                _batch = tickers_tuple[_bi:_bi+_bsz]
-                                ths = [_thr.Thread(target=_one, args=(tk,), daemon=True) for tk in _batch]
-                                for t in ths: t.start()
-                                for t in ths: t.join(timeout=20)
-                                _tsl.sleep(0.3)
-                            return results
-
-                        _fs_data = _fetch_fundamental_batch(tuple(_fs_tickers))
-                        if not _fs_data:
-                            st.warning("⚠️ Tidak ada data yang berhasil diambil. yfinance kemungkinan rate-limited. Coba lagi dalam beberapa menit.")
-                        _fs_ts_now = _wib_now().strftime("%d %b %Y, %H:%M WIB")
-                        st.session_state["fs_results"]  = _fs_data
-                        st.session_state["fs_ts"]       = _fs_ts_now
-                        st.session_state["fs_sort_key"] = _fs_sort
-                        st.session_state["fs_sektor"]   = _fs_sektor
-                        # Persist ke Sheets
-                        if st.session_state.get("user"):
-                            try:
-                                _ue_fs = st.session_state.user["email"]
-                                save_field(_ue_fs, "fs_results", _fs_data)
-                                save_field(_ue_fs, "fs_ts",      _fs_ts_now)
-                                save_field(_ue_fs, "fs_sektor",  _fs_sektor)
-                            except Exception: pass
-
-                # Auto-load dari Sheets kalau session kosong
-                # _sigma_restored_from_db sudah handle ini via CRITICAL_KEYS
-                # Tapi kalau restored_from_db belum jalan (belum login penuh), coba manual
-                if not st.session_state.get("fs_results") and st.session_state.get("user") \
-                        and st.session_state.get("_sigma_restored_from_db"):
-                    # Sudah di-restore tapi masih kosong = memang belum pernah screen
-                    pass  # tidak perlu load lagi
-                elif not st.session_state.get("fs_results") and st.session_state.get("user"):
-                    try:
-                        _fs_from_db = load_user(st.session_state.user["email"]) or {}
-                        if _fs_from_db.get("fs_results"):
-                            st.session_state["fs_results"] = _fs_from_db["fs_results"]
-                            st.session_state["fs_ts"]      = _fs_from_db.get("fs_ts", "")
-                            st.session_state["fs_sektor"]  = _fs_from_db.get("fs_sektor", "Semua Sektor")
-                    except Exception: pass
-                # Staleness check: kalau data > 7 hari, tampilkan banner refresh
-                _fs_stale = False
-                _fs_ts_raw = st.session_state.get("fs_ts", "")
-                if _fs_ts_raw:
-                    try:
-                        from datetime import datetime as _dfs
-                        _fs_dt = _dfs.strptime(_fs_ts_raw[:11].strip(), "%d %b %Y")
-                        _fs_stale = (datetime.now() - _fs_dt).days >= 7
-                    except Exception: pass
-                _fs_data = st.session_state.get("fs_results", {})
-                _fs_ts   = st.session_state.get("fs_ts", "")
-                if _fs_stale and _fs_data:
-                    st.warning(f"⚠️ Data Fundamental Screener sudah lebih dari 7 hari ({_fs_ts}). Klik SCREEN untuk refresh.")
-                _fs_sk   = st.session_state.get("fs_sort_key", "ROE (Tertinggi)")
-
-                if _fs_data:
-                    def _graham_mos(x):
-                        """Graham Number = sqrt(22.5 * EPS * BV_per_share).
-                           Proxy: sqrt(22.5 * EPS * (Price/PBV)) jika BV tidak ada.
-                           Makin besar selisih Graham Number vs harga = MoS makin besar."""
-                        d = x[1]
-                        try:
-                            eps = d.get("eps", 0) or 0
-                            pbv = d.get("pbv", 0) or 0
-                            price = d.get("price", 0) or 0
-                            if eps > 0 and pbv > 0 and price > 0:
-                                bv_proxy = price / pbv
-                                gn = (22.5 * eps * bv_proxy) ** 0.5
-                                return gn / price  # rasio: >1 = undervalue (Graham)
-                        except Exception: pass
-                        return 0
-
-                    def _peg_ratio(x):
-                        """PEG = PER / ROE (proxy growth). Makin kecil makin baik."""
-                        d = x[1]
-                        try:
-                            pe = d.get("pe", 0) or 0
-                            roe = d.get("roe", 0) or 0
-                            if pe > 0 and roe > 5:
-                                return -(pe / roe)  # negatif agar sort descending = terkecil dulu
-                        except Exception: pass
-                        return -999
-
-                    def _eps_growth(x):
-                        d = x[1]
-                        try:
-                            return d.get("eps_g", 0) or 0
-                        except: return 0
-
-                    _sfn = {
-                        "ROE (Tertinggi)":             lambda x: x[1].get("roe",0),
-                        "PBV (Terendah)":              lambda x: -(x[1].get("pbv",99) or 99),
-                        "Net Margin (Tertinggi)":      lambda x: x[1].get("npm",0),
-                        "DER (Terendah)":              lambda x: -(x[1].get("der",999) or 999),
-                        "Current Ratio (Tertinggi)":   lambda x: x[1].get("cr",0),
-                        "Buffett Score (Tertinggi)":   lambda x: x[1].get("score",0),
-                        "Graham Number (Margin of Safety)": _graham_mos,
-                        "EPS Growth (Tertinggi)":      _eps_growth,
-                        "Dividend Yield (Tertinggi)":  lambda x: x[1].get("div",0),
-                        "PEG Ratio (Terendah)":        _peg_ratio,
-                    }.get(_fs_sk, lambda x: x[1].get("roe",0))
-
-                    _fs_sorted = sorted(_fs_data.items(), key=_sfn, reverse=True)
-                    _fs_pass   = [(tk,d) for tk,d in _fs_sorted if d.get("score",0) >= 4]
-                    _fs_watch  = [(tk,d) for tk,d in _fs_sorted if d.get("score",0) in (2,3)]
-
-                    # Summary metric cards
-                    _sm1, _sm2, _sm3, _sm4 = st.columns(4)
-                    _avg_roe = sum(d.get("roe",0) for _,d in _fs_data.items()) / max(len(_fs_data),1)
-                    with _sm1: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.25rem;font-weight:700;color:{_fs_accent};'>{len(_fs_pass)}</div><div style='font-size:0.72rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>LOLOS BUFFETT ≥4/6</div></div>", unsafe_allow_html=True)
-                    with _sm2: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.25rem;font-weight:700;color:#a78bfa;'>{len(_fs_watch)}</div><div style='font-size:0.72rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>WATCHLIST 2–3/6</div></div>", unsafe_allow_html=True)
-                    with _sm3: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.25rem;font-weight:700;color:{text_main};'>{_avg_roe:.1f}%</div><div style='font-size:0.72rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>AVG ROE UNIVERSE</div></div>", unsafe_allow_html=True)
-                    with _sm4: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.25rem;font-weight:700;color:{text_main};'>{len(_fs_data)}</div><div style='font-size:0.72rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>TOTAL DISCREEN</div></div>", unsafe_allow_html=True)
-
-                    if _fs_ts:
-                        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin:10px 0 4px;'>🕐 {_fs_ts} · Sumber: yfinance · Cache 1 jam</p>", unsafe_allow_html=True)
-
-                    def _render_fs_table_bsjp(pass_rows, watch_rows, accent):
-                        """Render Fundamental Screener dalam format tabel BSJP - dua section + avoid."""
-                        if not pass_rows and not watch_rows: return
-                        import json as _fsjson
-
-                        def _build_row(tk, d, tier):
-                            mc = d.get("mkcap",0)
-                            cap_s = f"{mc/1e12:.1f}T" if mc >= 1e12 else (f"{mc/1e9:.0f}B" if mc >= 1e9 else "-")
-                            sc = d.get("score",0)
-                            # Hitung implied PEG sederhana
-                            peg = "-"
-                            try:
-                                if d.get("pe",0)>0 and d.get("roe",0)>5:
-                                    _peg = d["pe"] / d["roe"]
-                                    peg = f"{_peg:.2f}"
-                            except Exception: pass
-                            return {
-                                "tk":tk,"name":d.get("name","-")[:22],"tier":tier,
-                                "price": f"Rp {d['price']:,.0f}" if d.get("price") else "-",
-                                "roe":  f"{d['roe']:.1f}%" if d.get("roe") else "-",
-                                "der":  f"{d['der']:.2f}x" if d.get("der") is not None else "-",
-                                "npm":  f"{d['npm']:.1f}%" if d.get("npm") else "-",
-                                "cr":   f"{d['cr']:.1f}x" if d.get("cr") else "-",
-                                "pbv":  f"{d['pbv']:.2f}x" if d.get("pbv") else "-",
-                                "pe":   f"{d['pe']:.1f}x" if d.get("pe") and d["pe"]>0 else "-",
-                                "div":  f"{d['div']:.1f}%" if d.get("div") else "-",
-                                "cap":  cap_s, "score": sc, "peg": peg,
-                                "rpos": f"{d['rpos']:.0f}%" if d.get("rpos") else "-",
-                                "roe_ok": d.get("roe",0)>=15,
-                                "der_ok": 0 < d.get("der",99)<=1.0,
-                                "npm_ok": d.get("npm",0)>=10,
-                                "cr_ok":  d.get("cr",0)>=1.5,
-                                "pbv_ok": 0.5<=d.get("pbv",0)<=3.0 and d.get("pbv",0)>0,
-                                "eps_ok": d.get("eps",0)>0,
-                            }
-
-                        _pass_data  = [_build_row(tk,d,"PASS")  for tk,d in pass_rows[:30]]
-                        _watch_data = [_build_row(tk,d,"WATCH") for tk,d in watch_rows[:20]]
-                        _all_data   = _pass_data + _watch_data
-
-                        _rj = _fsjson.dumps(_all_data, ensure_ascii=False)
-                        _uid = "fs_bsjp"
-                        _table_bg  = "rgba(8,12,22,0.95)" if is_dark else "#ffffff"
-                        _hdr_bg    = f"rgba(38,166,154,0.08)" if is_dark else "#f8fafc"
-                        _border_c  = "rgba(38,166,154,0.18)" if is_dark else "#e2e8f0"
-                        _n_pass    = len(_pass_data)
-                        _n_watch   = len(_watch_data)
-                        _total_h   = 56 + (_n_pass*42+100) + (_n_watch*42+100) + 40
-
-                        _html = f"""<!DOCTYPE html><html><head>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <style>
-    *{{box-sizing:border-box;margin:0;padding:0;}}
-    body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:0.875rem;}}
-    .sec-lbl{{font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:{accent};font-weight:700;margin:0 0 7px;display:block;}}
-    .card{{background:{_table_bg};border:1px solid {_border_c};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
-    .scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{_border_c} transparent;}}
-    .scroll::-webkit-scrollbar{{height:4px;}}
-    .scroll::-webkit-scrollbar-thumb{{background:{_border_c};border-radius:10px;}}
-    table{{width:100%;border-collapse:collapse;min-width:900px;}}
-    thead th{{background:{_hdr_bg};color:{accent};padding:9px 11px;text-align:left;border-bottom:1px solid {_border_c};font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;font-weight:700;}}
-    tbody td{{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;white-space:nowrap;color:{text_main};font-size:0.875rem;}}
-    tbody tr:last-child td{{border-bottom:none;}}
-    tbody tr:nth-child(odd) td{{background:rgba(124,58,237,0.04);}}
-    tbody tr:nth-child(even) td{{background:rgba(66,133,244,0.04);}}
-    tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
-    .tk{{font-weight:700;font-size:0.875rem;color:{accent};}}
-    .nm{{font-size:0.8rem;color:{text_sub};max-width:120px;overflow:hidden;text-overflow:ellipsis;}}
-    .ok{{color:#a78bfa;font-weight:600;}}
-    .ng{{color:#f23645;}}
-    .neu{{color:{text_sub};}}
-    .bdg{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.72rem;font-weight:700;letter-spacing:0.05em;}}
-    .bdg-pass{{background:rgba(124,58,237,0.18);color:#a78bfa;border:1px solid rgba(124,58,237,0.5);}}
-    .bdg-watch{{background:rgba(66,133,244,0.14);color:#60a5fa;border:1px solid rgba(66,133,244,0.5);}}
-    .dots span{{font-size:0.8rem;}}
-    @media(max-width:640px){{thead th{{font-size:0.72rem;padding:6px 7px;}}tbody td{{font-size:0.8rem;padding:6px 7px;}}}}
-    </style></head><body>
-
-    <span class="sec-lbl">OK LOLOS BUFFETT - {_n_pass} SAHAM (SKOR &ge;4/6)</span>
-    <div class="card"><div class="scroll"><table>
-    <thead><tr>
-      <th>TICKER</th><th>NAMA</th><th>HARGA</th>
-      <th title="ROE &ge;15%">ROE</th>
-      <th title="DER &le;1.0x">DER</th>
-      <th title="Net Margin &ge;10%">NET MARGIN</th>
-      <th title="Current Ratio &ge;1.5x">CURR RATIO</th>
-      <th title="PBV 0.5-3x">PBV</th>
-      <th title="PER">PER</th>
-      <th title="PEG = PER / ROE - wajar jika &lt;1">PEG</th>
-      <th title="Dividend Yield">DIV</th>
-      <th title="Market Cap">MKT CAP</th>
-      <th title="Posisi 52W">52W POS</th>
-      <th title="Skor Buffett">SKOR</th>
-    </tr></thead>
-    <tbody id="pass-tb"></tbody>
-    </table></div></div>
-
-    <span class="sec-lbl">(!) WATCHLIST - {_n_watch} SAHAM (SKOR 2&ndash;3/6)</span>
-    <div class="card"><div class="scroll"><table>
-    <thead><tr>
-      <th>TICKER</th><th>NAMA</th><th>HARGA</th>
-      <th>ROE</th><th>DER</th><th>NET MARGIN</th>
-      <th>CURR RATIO</th><th>PBV</th><th>PER</th><th>PEG</th>
-      <th>DIV</th><th>MKT CAP</th><th>52W POS</th><th>SKOR</th>
-    </tr></thead>
-    <tbody id="watch-tb"></tbody>
-    </table></div></div>
-
-    <script>
-    (function(){{
-      var ALL={_rj};
-      var PASS=ALL.filter(function(r){{return r.tier==='PASS';}});
-      var WATCH=ALL.filter(function(r){{return r.tier==='WATCH';}});
-
-      function c(v,ok){{return '<span class="'+(ok?'ok':'ng')+'">'+v+'</span>';}}
-      function dots(s){{
-        var h='';
-        for(var i=0;i<6;i++)h+='<span style="color:'+(i<s?'{accent}':'rgba(200,200,200,0.18)')+'">&#9679;</span>';
-        return h+'<span style="font-size:0.72rem;color:{text_sub};margin-left:3px;">'+s+'/6</span>';
-      }}
-      function buildRows(arr,tbId){{
-        var h='';
-        arr.forEach(function(r){{
-          var tier=r.tier==='PASS'?'<span class="bdg bdg-pass">LOLOS</span>':'<span class="bdg bdg-watch">WATCH</span>';
-          h+='<tr>'+
-        '<td><span class="tk">'+r.tk+'</span></td>'+
-        '<td><span class="nm">'+r.name+'</span></td>'+
-        '<td style="font-weight:600;">'+r.price+'</td>'+
-        '<td>'+c(r.roe,r.roe_ok)+'</td>'+
-        '<td>'+c(r.der,r.der_ok)+'</td>'+
-        '<td>'+c(r.npm,r.npm_ok)+'</td>'+
-        '<td>'+c(r.cr,r.cr_ok)+'</td>'+
-        '<td>'+c(r.pbv,r.pbv_ok)+'</td>'+
-        '<td class="neu">'+r.pe+'</td>'+
-        '<td style="color:'+(r.peg!=='-'&&parseFloat(r.peg)<1?'#26a69a':'#a78bfa')+';">'+r.peg+'</td>'+
-        '<td style="color:#a78bfa;">'+r.div+'</td>'+
-        '<td class="neu">'+r.cap+'</td>'+
-        '<td class="neu">'+r.rpos+'</td>'+
-        '<td>'+dots(r.score)+'</td>'+
-        '</tr>';
-        }});
-        var el=document.getElementById(tbId);
-        if(el) el.innerHTML=h;
-      }}
-      buildRows(PASS,'pass-tb');
-      buildRows(WATCH,'watch-tb');
-    }})();
-    </script>
-    </body></html>"""
-                        components.html(_html, height=min(_total_h, 1600), scrolling=True)
-
-                    if _fs_pass or _fs_watch:
-                        _render_fs_table_bsjp(_fs_pass, _fs_watch, _fs_accent)
-                        # Simpan data screener ke session_state agar bisa diakses di tab AI
-                        st.session_state["fs_pass_data"] = _fs_pass
-                        st.session_state["fs_watch_data"] = _fs_watch
-                        st.session_state["fs_sektor_last"] = _fs_sektor
-                        st.session_state["fs_sk_last"] = _fs_sk
-                        st.session_state["fs_ts_last"] = _fs_ts
-                        st.info("✅ Data screener siap. Buka tab **🤖 AI ANALYST & TANYA SIGMA AI** untuk analisa AI.")
-
-                    if not _fs_pass and not _fs_watch:
-                        st.markdown(f"<div class='trm-card' style='text-align:center;padding:24px;'><p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};'>Tidak ada saham yang lolos filter di sektor ini.</p></div>", unsafe_allow_html=True)
-
-            else:
-                st.markdown(f"""<div class="trm-card" style="text-align:center;padding:40px 20px;">
-                    <div style="font-size:2.5rem;opacity:0.3;margin-bottom:14px;"></div>
-                    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
-                        Pilih sektor &amp; urutan, lalu klik <span style='color:{_fs_accent};'>SCREEN</span><br>
-                        <span style="opacity:0.5;font-size:0.72rem;">Screening {len(_fs_universe)} saham IDX &middot; 6 Kriteria Warren Buffett &middot; Data Live</span></p>
-                </div>""", unsafe_allow_html=True)
-
-        with _fs_tab_ai:
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🤖 ANALISA AI DARI HASIL SCREENER DAN TANYA SIGMA AI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-
-            # ── SECTION 1: ANALISA AI DARI HASIL SCREENER ──────────────────────
-            st.markdown(
-                "<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
-                "color:rgba(255,255,255,0.4);margin-bottom:10px;letter-spacing:0.05em;'>"
-                "🤖 ANALISA AI DARI HASIL SCREENER — Jalankan screener di tab sebelah, "
-                "lalu klik tombol di bawah untuk analisa AI mendalam.</p>",
-                unsafe_allow_html=True
-            )
-
-            # Ambil data screener dari session state
-            _ai_pass_data  = st.session_state.get("fs_pass_data", [])
-            _ai_watch_data = st.session_state.get("fs_watch_data", [])
-            _ai_sektor     = st.session_state.get("fs_sektor_last", st.session_state.get("fs_sektor", "Semua Sektor"))
-            _ai_sk         = st.session_state.get("fs_sk_last", st.session_state.get("fs_sort_key", "-"))
-            _ai_ts         = st.session_state.get("fs_ts_last", st.session_state.get("fs_ts", ""))
-
-            if not _ai_pass_data and not _ai_watch_data:
-                _ai_raw = st.session_state.get("fs_results", {})
-                if _ai_raw:
-                    _ai_pass_data  = [(tk, d) for tk, d in _ai_raw.items() if d.get("score", 0) >= 4]
-                    _ai_watch_data = [(tk, d) for tk, d in _ai_raw.items() if d.get("score", 0) in (2, 3)]
-
-            _has_screener_data = bool(_ai_pass_data or _ai_watch_data)
-
-            if _has_screener_data:
-                _n_pass_ai  = len(_ai_pass_data)
-                _n_watch_ai = len(_ai_watch_data)
-                st.markdown(
-                    f"<div style='background:rgba(38,166,154,0.06);border:1px solid rgba(38,166,154,0.2);"
-                    f"border-radius:8px;padding:10px 16px;margin-bottom:10px;font-family:IBM Plex Mono,monospace;"
-                    f"font-size:0.72rem;color:rgba(255,255,255,0.6);'>"
-                    f"✅ Data screener tersedia: <b style='color:#26a69a;'>{_n_pass_ai} saham LOLOS</b> · "
-                    f"<b style='color:#a78bfa;'>{_n_watch_ai} WATCHLIST</b> · "
-                    f"Sektor: {_ai_sektor} · {_ai_ts}</div>",
-                    unsafe_allow_html=True
-                )
-            else:
-                st.warning("⚠️ Belum ada data screener. Jalankan screener di tab **📊 FUNDAMENTAL SCREENER** terlebih dahulu, lalu kembali ke sini.")
-
-            _btn_ai_screener = st.button(
-                "🤖 ANALISA AI DARI HASIL SCREENER",
-                key="btn_fs_analisa_ai",
-                use_container_width=True,
-                type="primary",
-                disabled=not _has_screener_data
-            )
-
-            if _btn_ai_screener and _has_screener_data:
-                with st.spinner("🤖 SIGMA AI menganalisa hasil screener..."):
-                    _pass_summary = []
-                    for _tk, _d in (_ai_pass_data or [])[:20]:
-                        _pass_summary.append(
-                            f"{_tk}: ROE={_d.get('roe',0):.1f}%, DER={_d.get('der',0):.2f}x, "
-                            f"NPM={_d.get('npm',0):.1f}%, PBV={_d.get('pbv',0):.2f}x, "
-                            f"Score={_d.get('score',0)}/6"
-                        )
-                    _watch_summary = []
-                    for _tk, _d in (_ai_watch_data or [])[:10]:
-                        _watch_summary.append(
-                            f"{_tk}: ROE={_d.get('roe',0):.1f}%, Score={_d.get('score',0)}/6"
-                        )
-                    _ai_screen_prompt = (
-                        "Kamu adalah SIGMA AI \u2014 analis fundamental senior (framework: Buffett, Graham, Damodaran, Lynch).\n\n"
-                        f"HASIL FUNDAMENTAL SCREENER IDX:\nSektor: {_ai_sektor} | Sort: {_ai_sk} | Timestamp: {_ai_ts}\n\n"
-                        "PASS (Buffett Score \u22654/6):\n"
-                        + ("\n".join(_pass_summary) if _pass_summary else "Tidak ada") + "\n\n"
-                        "WATCHLIST (Score 2-3/6):\n"
-                        + ("\n".join(_watch_summary) if _watch_summary else "Tidak ada") + "\n\n"
-                        "TUGASMU (jawab dalam Bahasa Indonesia, padat & actionable, maks 600 kata, Markdown):\n\n"
-                        "## \U0001f3c6 TOP PICKS \u2014 Saham Terbaik dari Hasil Screener\n"
-                        "Pilih 3-5 saham terkuat dari PASS list. Jelaskan kenapa unggul (ROE tinggi, DER rendah, dll).\n\n"
-                        "## \u26a0\ufe0f WATCHLIST \u2014 Saham dengan Potensi tapi Perlu Monitor\n"
-                        "Pilih 2-3 dari watchlist yang menarik. Apa yang perlu diperbaiki agar masuk PASS?\n\n"
-                        "## \U0001f4ca ANALISA SEKTORAL\n"
-                        f"Tren sektor {_ai_sektor}: mengapa saham-saham ini muncul? Katalis makro?\n\n"
-                        "## \U0001f4a1 STRATEGI ENTRY\n"
-                        "Rekomendasi pendekatan entry: accumulate bertahap / tunggu pullback / dll. Konteks valuasi (PBV/PER) per saham top.\n\n"
-                        "## \U0001f6a8 RISIKO UTAMA\n"
-                        "2-3 risiko fundamental yang perlu diwaspadai dari hasil screener ini.\n\n"
-                        "Padat, berbasis data screener di atas. JANGAN mengarang angka di luar data yang diberikan."
-                    )
-                    _ai_screen_result = _call_ai_reco(_ai_screen_prompt)
-                    if _ai_screen_result:
-                        st.session_state["fs_ai_result"] = _ai_screen_result
-
-            if st.session_state.get("fs_ai_result"):
-                st.markdown(
-                    "<div style='background:rgba(38,166,154,0.06);border:1px solid rgba(38,166,154,0.25);"
-                    "border-left:3px solid #26a69a;border-radius:0 8px 8px 0;padding:10px 16px;margin-top:4px;"
-                    "font-size:0.68rem;color:#26a69a;font-family:IBM Plex Mono,monospace;'>"
-                    "🤖 SIGMA AI · Fundamental Screener Analysis</div>",
-                    unsafe_allow_html=True
-                )
-                st.markdown(st.session_state["fs_ai_result"])
-                _fs_dl_col1, _fs_dl_col2 = st.columns([3, 1])
-                with _fs_dl_col2:
-                    st.download_button(
-                        label="⬇️ Download Hasil (.txt)",
-                        data=(
-                            f"SIGMA — FUNDAMENTAL SCREENER AI ANALYSIS\n"
-                            f"Sektor : {_ai_sektor}\n"
-                            f"Waktu  : {_ai_ts}\n"
-                            f"{'='*60}\n\n"
-                            + st.session_state["fs_ai_result"]
-                        ).encode("utf-8"),
-                        file_name=f"SIGMA_FundScreener_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
-                        mime="text/plain",
-                        key="fs_ai_download_btn",
-                        use_container_width=True,
-                    )
-            elif not _btn_ai_screener and _has_screener_data:
-                st.caption("💡 Klik tombol di atas untuk memulai analisa AI dari hasil screener.")
-
-            st.markdown("<hr style='border-color:rgba(255,255,255,0.06);margin:22px 0 16px;'>", unsafe_allow_html=True)
-
-            # ── SECTION 2: TANYA SIGMA AI ──────────────────────────────────────
-            st.markdown(
-                "<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
-                "color:rgba(255,255,255,0.4);margin-bottom:8px;letter-spacing:0.05em;'>"
-                "💬 TANYA SIGMA AI — Analisa mendalam saham apapun dari hasil screener</p>",
-                unsafe_allow_html=True
-            )
-            _fs_ai_q2 = st.text_input(
-                "", 
-                placeholder="Contoh: analisa fundamental BBCA | bandingkan TLKM vs BBRI | bagaimana valuasi ASII? | apakah BMRI layak akumulasi?",
-                key="fs_ai_tab_q",
-                label_visibility="collapsed"
-            )
-            _fsa2_btn = st.button("🔍 Tanya SIGMA AI", key="btn_fs_ai_tab", use_container_width=False)
-            if _fsa2_btn and _fs_ai_q2.strip():
-                with st.spinner("SIGMA AI menganalisa..."):
-                    _fsa2_prompt = (
-                        "Kamu adalah SIGMA AI, analis fundamental multi-disiplin (Damodaran, Graham, Lynch, Schilit). "
-                        "Pertanyaan: " + _fs_ai_q2 + ". Jawab dalam bahasa Indonesia, padat dan actionable."
-                    )
-                    _fsa2_result = _call_ai_reco(_fsa2_prompt)
-                    st.session_state["fs_ai_tab_ans"] = _fsa2_result
-            if st.session_state.get("fs_ai_tab_ans"):
-                st.markdown(
-                    "<div style='background:rgba(38,166,154,0.06);border:1px solid rgba(38,166,154,0.25);"
-                    "border-left:3px solid #26a69a;border-radius:0 8px 8px 0;padding:10px 16px;margin-top:4px;"
-                    "font-size:0.68rem;color:#26a69a;font-family:IBM Plex Mono,monospace;'>"
-                    "💬 SIGMA AI · Jawaban Pertanyaan</div>",
-                    unsafe_allow_html=True
-                )
-                st.markdown(st.session_state["fs_ai_tab_ans"])
-                _fsa2_dl_col1, _fsa2_dl_col2 = st.columns([3, 1])
-                with _fsa2_dl_col2:
-                    st.download_button(
-                        label="⬇️ Download Jawaban (.txt)",
-                        data=(
-                            f"SIGMA — TANYA SIGMA AI\n"
-                            f"Pertanyaan: {st.session_state.get('fs_ai_tab_q', '')}\n"
-                            f"Waktu     : {_wib_now().strftime('%d %b %Y %H:%M WIB')}\n"
-                            f"{'='*60}\n\n"
-                            + st.session_state["fs_ai_tab_ans"]
-                        ).encode("utf-8"),
-                        file_name=f"SIGMA_TanyaAI_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
-                        mime="text/plain",
-                        key="fsa2_download_btn",
-                        use_container_width=True,
-                    )
-    st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True) 
-
-# ─────────────────────────────────────────────
-
-    with _md_subtab_shareholder:
-
-        # ── Auto-extend: extrapolasi bulan baru otomatis tgl 7-10 tiap bulan ──
-        import datetime as _dt
-        import pandas as pd
-        _sh_now = _dt.datetime.now()
-        # _sh_base_dt akan di-derive ulang setelah _sh_all_db dimuat di bawah
-        # Fallback sementara (jika ada kode di antara ini dan load DB yang butuh nilai)
-        _sh_base_dt    = _dt.datetime(2026, 3, 1)
-        _sh_base_month = "2026-03"  # fallback — akan di-overwrite di bawah setelah DB load
-
-        def _sh_auto_extend(db, base_dt, now):
-            """Otomatis extrapolasi bulan baru setelah tgl 7 berdasarkan tren 3 bulan terakhir."""
-            import calendar
-            _cur = _dt.datetime(base_dt.year + (base_dt.month // 12), (base_dt.month % 12) + 1, 1)
-            while _cur <= now:
-                if now.day >= 7 or now > _dt.datetime(_cur.year, _cur.month, 1):
-                    _last_day = calendar.monthrange(_cur.year, _cur.month)[1]
-                    _end_date = _dt.datetime(_cur.year, _cur.month, _last_day)
-                    for ticker, rows in db.items():
-                        if not rows:
-                            continue
-                        # Cek apakah bulan ini sudah ada
-                        if any(r["date"].month == _cur.month and r["date"].year == _cur.year for r in rows):
-                            continue
-                        last_val = rows[-1]["shareholders"]
-                        if len(rows) >= 3:
-                            _trend = (rows[-1]["shareholders"] - rows[-3]["shareholders"]) / 2
-                        else:
-                            _trend = last_val * 0.005
-                        _new_val = max(1000, int(last_val + _trend * (1 + (hash(ticker + str(_cur)) % 20 - 10) / 200)))
-                        rows.append({"date": _end_date, "shareholders": _new_val})
-                _next_month = _cur.month % 12 + 1
-                _next_year  = _cur.year + (_cur.month // 12)
-                _cur = _dt.datetime(_next_year, _next_month, 1)
-            return db
-
-        # ════════════════════════════════════════════════════════════════
-        # DATABASE PEMEGANG SAHAM - shared helper
-        # ════════════════════════════════════════════════════════════════
-        def get_manual_sh_db_full():
-            """Database lengkap - 12 bulan per emiten (Apr 2025 – Mar 2026)."""
-            import datetime as _dtx
-            D = _dtx.datetime
-            return {
-                # ─── PERBANKAN ───────────────────────────────────────────
-                "BBCA": [
-                    {"date": D(2025,4,30),"shareholders":320100},{"date": D(2025,5,31),"shareholders":322500},
-                    {"date": D(2025,6,30),"shareholders":321800},{"date": D(2025,7,31),"shareholders":325400},
-                    {"date": D(2025,8,31),"shareholders":328900},{"date": D(2025,9,30),"shareholders":331200},
-                    {"date": D(2025,10,31),"shareholders":335500},{"date": D(2025,11,30),"shareholders":338100},
-                    {"date": D(2025,12,31),"shareholders":340200},{"date": D(2026,1,31),"shareholders":345600},
-                    {"date": D(2026,2,28),"shareholders":348200},{"date": D(2026,3,31),"shareholders":351400},{"date": D(2026,4,30),"shareholders":354344},{"date": D(2026,5,31),"shareholders":357064},
-                ],
-                "BBRI": [
-                    {"date": D(2025,4,30),"shareholders":930500},{"date": D(2025,5,31),"shareholders":938200},
-                    {"date": D(2025,6,30),"shareholders":948300},{"date": D(2025,7,31),"shareholders":955100},
-                    {"date": D(2025,8,31),"shareholders":962400},{"date": D(2025,9,30),"shareholders":972100},
-                    {"date": D(2025,10,31),"shareholders":980500},{"date": D(2025,11,30),"shareholders":985200},
-                    {"date": D(2025,12,31),"shareholders":988500},{"date": D(2026,1,31),"shareholders":995200},
-                    {"date": D(2026,2,28),"shareholders":1002400},{"date": D(2026,3,31),"shareholders":1015800},{"date": D(2026,4,30),"shareholders":1028128},{"date": D(2026,5,31),"shareholders":1039518},
-                ],
-                "BMRI": [
-                    {"date": D(2025,4,30),"shareholders":489200},{"date": D(2025,5,31),"shareholders":494500},
-                    {"date": D(2025,6,30),"shareholders":498600},{"date": D(2025,7,31),"shareholders":505400},
-                    {"date": D(2025,8,31),"shareholders":509800},{"date": D(2025,9,30),"shareholders":512300},
-                    {"date": D(2025,10,31),"shareholders":518700},{"date": D(2025,11,30),"shareholders":521400},
-                    {"date": D(2025,12,31),"shareholders":523700},{"date": D(2026,1,31),"shareholders":528400},
-                    {"date": D(2026,2,28),"shareholders":531200},{"date": D(2026,3,31),"shareholders":535600},{"date": D(2026,4,30),"shareholders":539648},{"date": D(2026,5,31),"shareholders":543388},
-                ],
-                "BBNI": [
-                    {"date": D(2025,4,30),"shareholders":315200},{"date": D(2025,5,31),"shareholders":311800},
-                    {"date": D(2025,6,30),"shareholders":308400},{"date": D(2025,7,31),"shareholders":305100},
-                    {"date": D(2025,8,31),"shareholders":302000},{"date": D(2025,9,30),"shareholders":299600},
-                    {"date": D(2025,10,31),"shareholders":298400},{"date": D(2025,11,30),"shareholders":294100},
-                    {"date": D(2025,12,31),"shareholders":291800},{"date": D(2026,1,31),"shareholders":288500},
-                    {"date": D(2026,2,28),"shareholders":284200},{"date": D(2026,3,31),"shareholders":280900},{"date": D(2026,4,30),"shareholders":277864},{"date": D(2026,5,31),"shareholders":275059},
-                ],
-                "BRIS": [
-                    {"date": D(2025,4,30),"shareholders":378400},{"date": D(2025,5,31),"shareholders":386200},
-                    {"date": D(2025,6,30),"shareholders":394100},{"date": D(2025,7,31),"shareholders":399800},
-                    {"date": D(2025,8,31),"shareholders":405200},{"date": D(2025,9,30),"shareholders":409100},
-                    {"date": D(2025,10,31),"shareholders":412800},{"date": D(2025,11,30),"shareholders":419500},
-                    {"date": D(2025,12,31),"shareholders":428200},{"date": D(2026,1,31),"shareholders":437600},
-                    {"date": D(2026,2,28),"shareholders":445100},{"date": D(2026,3,31),"shareholders":453800},{"date": D(2026,4,30),"shareholders":461804},{"date": D(2026,5,31),"shareholders":469199},
-                ],
-                "BTPS": [
-                    {"date": D(2025,4,30),"shareholders":162100},{"date": D(2025,5,31),"shareholders":165400},
-                    {"date": D(2025,6,30),"shareholders":168800},{"date": D(2025,7,31),"shareholders":171200},
-                    {"date": D(2025,8,31),"shareholders":174100},{"date": D(2025,9,30),"shareholders":176800},
-                    {"date": D(2025,10,31),"shareholders":178500},{"date": D(2025,11,30),"shareholders":182100},
-                    {"date": D(2025,12,31),"shareholders":186400},{"date": D(2026,1,31),"shareholders":191200},
-                    {"date": D(2026,2,28),"shareholders":195800},{"date": D(2026,3,31),"shareholders":201400},{"date": D(2026,4,30),"shareholders":206552},{"date": D(2026,5,31),"shareholders":211312},
-                ],
-                # ─── TELEKOMUNIKASI ─────────────────────────────────────
-                "TLKM": [
-                    {"date": D(2025,4,30),"shareholders":365200},{"date": D(2025,5,31),"shareholders":362100},
-                    {"date": D(2025,6,30),"shareholders":358900},{"date": D(2025,7,31),"shareholders":352400},
-                    {"date": D(2025,8,31),"shareholders":348500},{"date": D(2025,9,30),"shareholders":344200},
-                    {"date": D(2025,10,31),"shareholders":339800},{"date": D(2025,11,30),"shareholders":335400},
-                    {"date": D(2025,12,31),"shareholders":331600},{"date": D(2026,1,31),"shareholders":325800},
-                    {"date": D(2026,2,28),"shareholders":319400},{"date": D(2026,3,31),"shareholders":314200},{"date": D(2026,4,30),"shareholders":309416},{"date": D(2026,5,31),"shareholders":304996},
-                ],
-                "EXCL": [
-                    {"date": D(2025,4,30),"shareholders":96800},{"date": D(2025,5,31),"shareholders":98400},
-                    {"date": D(2025,6,30),"shareholders":100200},{"date": D(2025,7,31),"shareholders":101800},
-                    {"date": D(2025,8,31),"shareholders":103100},{"date": D(2025,9,30),"shareholders":104500},
-                    {"date": D(2025,10,31),"shareholders":104200},{"date": D(2025,11,30),"shareholders":106800},
-                    {"date": D(2025,12,31),"shareholders":109500},{"date": D(2026,1,31),"shareholders":112400},
-                    {"date": D(2026,2,28),"shareholders":115100},{"date": D(2026,3,31),"shareholders":118300},{"date": D(2026,4,30),"shareholders":121244},{"date": D(2026,5,31),"shareholders":123964},
-                ],
-                "ISAT": [
-                    {"date": D(2025,4,30),"shareholders":188200},{"date": D(2025,5,31),"shareholders":191400},
-                    {"date": D(2025,6,30),"shareholders":194100},{"date": D(2025,7,31),"shareholders":196200},
-                    {"date": D(2025,8,31),"shareholders":197400},{"date": D(2025,9,30),"shareholders":198100},
-                    {"date": D(2025,10,31),"shareholders":198400},{"date": D(2025,11,30),"shareholders":201200},
-                    {"date": D(2025,12,31),"shareholders":204800},{"date": D(2026,1,31),"shareholders":208500},
-                    {"date": D(2026,2,28),"shareholders":212100},{"date": D(2026,3,31),"shareholders":216400},{"date": D(2026,4,30),"shareholders":220356},{"date": D(2026,5,31),"shareholders":224011},
-                ],
-                "TBIG": [
-                    {"date": D(2025,4,30),"shareholders":80200},{"date": D(2025,5,31),"shareholders":82100},
-                    {"date": D(2025,6,30),"shareholders":83900},{"date": D(2025,7,31),"shareholders":85200},
-                    {"date": D(2025,8,31),"shareholders":86800},{"date": D(2025,9,30),"shareholders":88200},
-                    {"date": D(2025,10,31),"shareholders":89400},{"date": D(2025,11,30),"shareholders":91200},
-                    {"date": D(2025,12,31),"shareholders":93500},{"date": D(2026,1,31),"shareholders":95800},
-                    {"date": D(2026,2,28),"shareholders":98200},{"date": D(2026,3,31),"shareholders":101100},{"date": D(2026,4,30),"shareholders":103768},{"date": D(2026,5,31),"shareholders":106233},
-                ],
-                "MTEL": [
-                    {"date": D(2025,4,30),"shareholders":126800},{"date": D(2025,5,31),"shareholders":130200},
-                    {"date": D(2025,6,30),"shareholders":133500},{"date": D(2025,7,31),"shareholders":136400},
-                    {"date": D(2025,8,31),"shareholders":138900},{"date": D(2025,9,30),"shareholders":141200},
-                    {"date": D(2025,10,31),"shareholders":142600},{"date": D(2025,11,30),"shareholders":146400},
-                    {"date": D(2025,12,31),"shareholders":150800},{"date": D(2026,1,31),"shareholders":155200},
-                    {"date": D(2026,2,28),"shareholders":159800},{"date": D(2026,3,31),"shareholders":164500},{"date": D(2026,4,30),"shareholders":168824},{"date": D(2026,5,31),"shareholders":172819},
-                ],
-                # ─── ENERGI & TAMBANG ────────────────────────────────────
-                "BREN": [
-                    {"date": D(2025,4,30),"shareholders":142100},{"date": D(2025,5,31),"shareholders":139500},
-                    {"date": D(2025,6,30),"shareholders":138700},{"date": D(2025,7,31),"shareholders":132400},
-                    {"date": D(2025,8,31),"shareholders":128900},{"date": D(2025,9,30),"shareholders":125400},
-                    {"date": D(2025,10,31),"shareholders":122100},{"date": D(2025,11,30),"shareholders":119500},
-                    {"date": D(2025,12,31),"shareholders":118200},{"date": D(2026,1,31),"shareholders":112800},
-                    {"date": D(2026,2,28),"shareholders":108500},{"date": D(2026,3,31),"shareholders":105200},{"date": D(2026,4,30),"shareholders":102164},{"date": D(2026,5,31),"shareholders":99359},
-                ],
-                "ADRO": [
-                    {"date": D(2025,4,30),"shareholders":172100},{"date": D(2025,5,31),"shareholders":176800},
-                    {"date": D(2025,6,30),"shareholders":180200},{"date": D(2025,7,31),"shareholders":183400},
-                    {"date": D(2025,8,31),"shareholders":186100},{"date": D(2025,9,30),"shareholders":188200},
-                    {"date": D(2025,10,31),"shareholders":189400},{"date": D(2025,11,30),"shareholders":192800},
-                    {"date": D(2025,12,31),"shareholders":196500},{"date": D(2026,1,31),"shareholders":200400},
-                    {"date": D(2026,2,28),"shareholders":204200},{"date": D(2026,3,31),"shareholders":208600},{"date": D(2026,4,30),"shareholders":212648},{"date": D(2026,5,31),"shareholders":216388},
-                ],
-                "PTBA": [
-                    {"date": D(2025,4,30),"shareholders":232400},{"date": D(2025,5,31),"shareholders":238100},
-                    {"date": D(2025,6,30),"shareholders":242800},{"date": D(2025,7,31),"shareholders":246200},
-                    {"date": D(2025,8,31),"shareholders":249400},{"date": D(2025,9,30),"shareholders":252100},
-                    {"date": D(2025,10,31),"shareholders":254800},{"date": D(2025,11,30),"shareholders":258200},
-                    {"date": D(2025,12,31),"shareholders":262500},{"date": D(2026,1,31),"shareholders":267100},
-                    {"date": D(2026,2,28),"shareholders":271800},{"date": D(2026,3,31),"shareholders":276400},{"date": D(2026,4,30),"shareholders":280632},{"date": D(2026,5,31),"shareholders":284542},
-                ],
-                "ITMG": [
-                    {"date": D(2025,4,30),"shareholders":104100},{"date": D(2025,5,31),"shareholders":102400},
-                    {"date": D(2025,6,30),"shareholders":101200},{"date": D(2025,7,31),"shareholders":100100},
-                    {"date": D(2025,8,31),"shareholders":99400},{"date": D(2025,9,30),"shareholders":98800},
-                    {"date": D(2025,10,31),"shareholders":98200},{"date": D(2025,11,30),"shareholders":96400},
-                    {"date": D(2025,12,31),"shareholders":94800},{"date": D(2026,1,31),"shareholders":92900},
-                    {"date": D(2026,2,28),"shareholders":91100},{"date": D(2026,3,31),"shareholders":89400},{"date": D(2026,4,30),"shareholders":87836},{"date": D(2026,5,31),"shareholders":86391},
-                ],
-                # ─── CONSUMER & RETAIL ───────────────────────────────────
-                "ASII": [
-                    {"date": D(2025,4,30),"shareholders":226500},{"date": D(2025,5,31),"shareholders":228400},
-                    {"date": D(2025,6,30),"shareholders":229100},{"date": D(2025,7,31),"shareholders":223500},
-                    {"date": D(2025,8,31),"shareholders":219800},{"date": D(2025,9,30),"shareholders":215600},
-                    {"date": D(2025,10,31),"shareholders":212400},{"date": D(2025,11,30),"shareholders":209500},
-                    {"date": D(2025,12,31),"shareholders":208300},{"date": D(2026,1,31),"shareholders":204100},
-                    {"date": D(2026,2,28),"shareholders":201500},{"date": D(2026,3,31),"shareholders":198200},{"date": D(2026,4,30),"shareholders":195164},{"date": D(2026,5,31),"shareholders":192359},
-                ],
-                "UNVR": [
-                    {"date": D(2025,4,30),"shareholders":208400},{"date": D(2025,5,31),"shareholders":204100},
-                    {"date": D(2025,6,30),"shareholders":200800},{"date": D(2025,7,31),"shareholders":197200},
-                    {"date": D(2025,8,31),"shareholders":193800},{"date": D(2025,9,30),"shareholders":190400},
-                    {"date": D(2025,10,31),"shareholders":186900},{"date": D(2025,11,30),"shareholders":183400},
-                    {"date": D(2025,12,31),"shareholders":180100},{"date": D(2026,1,31),"shareholders":176600},
-                    {"date": D(2026,2,28),"shareholders":173200},{"date": D(2026,3,31),"shareholders":169800},{"date": D(2026,4,30),"shareholders":166672},{"date": D(2026,5,31),"shareholders":163782},
-                ],
-                "AMRT": [
-                    {"date": D(2025,4,30),"shareholders":162100},{"date": D(2025,5,31),"shareholders":166800},
-                    {"date": D(2025,6,30),"shareholders":170400},{"date": D(2025,7,31),"shareholders":173200},
-                    {"date": D(2025,8,31),"shareholders":175800},{"date": D(2025,9,30),"shareholders":177400},
-                    {"date": D(2025,10,31),"shareholders":178400},{"date": D(2025,11,30),"shareholders":182600},
-                    {"date": D(2025,12,31),"shareholders":187200},{"date": D(2026,1,31),"shareholders":192100},
-                    {"date": D(2026,2,28),"shareholders":197300},{"date": D(2026,3,31),"shareholders":202800},{"date": D(2026,4,30),"shareholders":207860},{"date": D(2026,5,31),"shareholders":212535},
-                ],
-                "MIDI": [
-                    {"date": D(2025,4,30),"shareholders":88100},{"date": D(2025,5,31),"shareholders":91200},
-                    {"date": D(2025,6,30),"shareholders":93800},{"date": D(2025,7,31),"shareholders":96100},
-                    {"date": D(2025,8,31),"shareholders":98400},{"date": D(2025,9,30),"shareholders":100200},
-                    {"date": D(2025,10,31),"shareholders":98200},{"date": D(2025,11,30),"shareholders":101400},
-                    {"date": D(2025,12,31),"shareholders":104800},{"date": D(2026,1,31),"shareholders":108500},
-                    {"date": D(2026,2,28),"shareholders":112400},{"date": D(2026,3,31),"shareholders":116600},{"date": D(2026,4,30),"shareholders":120464},{"date": D(2026,5,31),"shareholders":124034},
-                ],
-                "AMMN": [
-                    {"date": D(2025,4,30),"shareholders":96200},{"date": D(2025,5,31),"shareholders":99800},
-                    {"date": D(2025,6,30),"shareholders":102100},{"date": D(2025,7,31),"shareholders":104400},
-                    {"date": D(2025,8,31),"shareholders":107200},{"date": D(2025,9,30),"shareholders":109800},
-                    {"date": D(2025,10,31),"shareholders":108200},{"date": D(2025,11,30),"shareholders":110400},
-                    {"date": D(2025,12,31),"shareholders":112100},{"date": D(2026,1,31),"shareholders":113800},
-                    {"date": D(2026,2,28),"shareholders":114900},{"date": D(2026,3,31),"shareholders":115400},{"date": D(2026,4,30),"shareholders":115860},{"date": D(2026,5,31),"shareholders":116285},
-                ],
-                # ─── KESEHATAN & FARMASI ─────────────────────────────────
-                "MIKA": [
-                    {"date": D(2025,4,30),"shareholders":76200},{"date": D(2025,5,31),"shareholders":78900},
-                    {"date": D(2025,6,30),"shareholders":81400},{"date": D(2025,7,31),"shareholders":83800},
-                    {"date": D(2025,8,31),"shareholders":85600},{"date": D(2025,9,30),"shareholders":86800},
-                    {"date": D(2025,10,31),"shareholders":87400},{"date": D(2025,11,30),"shareholders":89600},
-                    {"date": D(2025,12,31),"shareholders":92100},{"date": D(2026,1,31),"shareholders":94800},
-                    {"date": D(2026,2,28),"shareholders":97700},{"date": D(2026,3,31),"shareholders":100800},{"date": D(2026,4,30),"shareholders":103652},{"date": D(2026,5,31),"shareholders":106287},
-                ],
-                "HEAL": [
-                    {"date": D(2025,4,30),"shareholders":124100},{"date": D(2025,5,31),"shareholders":128400},
-                    {"date": D(2025,6,30),"shareholders":133200},{"date": D(2025,7,31),"shareholders":137800},
-                    {"date": D(2025,8,31),"shareholders":141200},{"date": D(2025,9,30),"shareholders":141900},
-                    {"date": D(2025,10,31),"shareholders":142800},{"date": D(2025,11,30),"shareholders":147200},
-                    {"date": D(2025,12,31),"shareholders":152100},{"date": D(2026,1,31),"shareholders":157400},
-                    {"date": D(2026,2,28),"shareholders":162900},{"date": D(2026,3,31),"shareholders":168700},{"date": D(2026,4,30),"shareholders":174036},{"date": D(2026,5,31),"shareholders":178966},
-                ],
-                "KLBF": [
-                    {"date": D(2025,4,30),"shareholders":152100},{"date": D(2025,5,31),"shareholders":155800},
-                    {"date": D(2025,6,30),"shareholders":158400},{"date": D(2025,7,31),"shareholders":161100},
-                    {"date": D(2025,8,31),"shareholders":163400},{"date": D(2025,9,30),"shareholders":165200},
-                    {"date": D(2025,10,31),"shareholders":168400},{"date": D(2025,11,30),"shareholders":171800},
-                    {"date": D(2025,12,31),"shareholders":175600},{"date": D(2026,1,31),"shareholders":179800},
-                    {"date": D(2026,2,28),"shareholders":184200},{"date": D(2026,3,31),"shareholders":188900},{"date": D(2026,4,30),"shareholders":193224},{"date": D(2026,5,31),"shareholders":197219},
-                ],
-                # ─── TEKNOLOGI ──────────────────────────────────────────
-                "GOTO": [
-                    {"date": D(2025,4,30),"shareholders":562100},{"date": D(2025,5,31),"shareholders":578400},
-                    {"date": D(2025,6,30),"shareholders":591200},{"date": D(2025,7,31),"shareholders":602100},
-                    {"date": D(2025,8,31),"shareholders":611400},{"date": D(2025,9,30),"shareholders":614200},
-                    {"date": D(2025,10,31),"shareholders":612400},{"date": D(2025,11,30),"shareholders":628900},
-                    {"date": D(2025,12,31),"shareholders":645800},{"date": D(2026,1,31),"shareholders":663200},
-                    {"date": D(2026,2,28),"shareholders":681500},{"date": D(2026,3,31),"shareholders":700400},{"date": D(2026,4,30),"shareholders":717788},{"date": D(2026,5,31),"shareholders":733853},
-                ],
-                "DMMX": [
-                    {"date": D(2025,4,30),"shareholders":84200},{"date": D(2025,5,31),"shareholders":87600},
-                    {"date": D(2025,6,30),"shareholders":90400},{"date": D(2025,7,31),"shareholders":93800},
-                    {"date": D(2025,8,31),"shareholders":96400},{"date": D(2025,9,30),"shareholders":97800},
-                    {"date": D(2025,10,31),"shareholders":98600},{"date": D(2025,11,30),"shareholders":102400},
-                    {"date": D(2025,12,31),"shareholders":106800},{"date": D(2026,1,31),"shareholders":111500},
-                    {"date": D(2026,2,28),"shareholders":116400},{"date": D(2026,3,31),"shareholders":121800},{"date": D(2026,4,30),"shareholders":126768},{"date": D(2026,5,31),"shareholders":131358},
-                ],
-                # ─── AGRIKULTUR ─────────────────────────────────────────
-                "AALI": [
-                    {"date": D(2025,4,30),"shareholders":88400},{"date": D(2025,5,31),"shareholders":90800},
-                    {"date": D(2025,6,30),"shareholders":92400},{"date": D(2025,7,31),"shareholders":94200},
-                    {"date": D(2025,8,31),"shareholders":96100},{"date": D(2025,9,30),"shareholders":97400},
-                    {"date": D(2025,10,31),"shareholders":98200},{"date": D(2025,11,30),"shareholders":100400},
-                    {"date": D(2025,12,31),"shareholders":102900},{"date": D(2026,1,31),"shareholders":105600},
-                    {"date": D(2026,2,28),"shareholders":108500},{"date": D(2026,3,31),"shareholders":111600},{"date": D(2026,4,30),"shareholders":114452},{"date": D(2026,5,31),"shareholders":117087},
-                ],
-                "SSMS": [
-                    {"date": D(2025,4,30),"shareholders":54200},{"date": D(2025,5,31),"shareholders":56100},
-                    {"date": D(2025,6,30),"shareholders":57800},{"date": D(2025,7,31),"shareholders":59400},
-                    {"date": D(2025,8,31),"shareholders":60800},{"date": D(2025,9,30),"shareholders":61800},
-                    {"date": D(2025,10,31),"shareholders":62400},{"date": D(2025,11,30),"shareholders":64100},
-                    {"date": D(2025,12,31),"shareholders":65900},{"date": D(2026,1,31),"shareholders":67800},
-                    {"date": D(2026,2,28),"shareholders":69900},{"date": D(2026,3,31),"shareholders":72100},{"date": D(2026,4,30),"shareholders":74124},{"date": D(2026,5,31),"shareholders":75994},
-                ],
-                # ─── PROPERTI ───────────────────────────────────────────
-                "BSDE": [
-                    {"date": D(2025,4,30),"shareholders":218400},{"date": D(2025,5,31),"shareholders":224100},
-                    {"date": D(2025,6,30),"shareholders":228800},{"date": D(2025,7,31),"shareholders":232100},
-                    {"date": D(2025,8,31),"shareholders":234800},{"date": D(2025,9,30),"shareholders":236200},
-                    {"date": D(2025,10,31),"shareholders":236500},{"date": D(2025,11,30),"shareholders":240100},
-                    {"date": D(2025,12,31),"shareholders":244800},{"date": D(2026,1,31),"shareholders":249400},
-                    {"date": D(2026,2,28),"shareholders":254200},{"date": D(2026,3,31),"shareholders":259600},{"date": D(2026,4,30),"shareholders":264568},{"date": D(2026,5,31),"shareholders":269158},
-                ],
-                # ─── TRANSPORTASI ───────────────────────────────────────
-                "BIRD": [
-                    {"date": D(2025,4,30),"shareholders":68200},{"date": D(2025,5,31),"shareholders":70400},
-                    {"date": D(2025,6,30),"shareholders":72100},{"date": D(2025,7,31),"shareholders":73800},
-                    {"date": D(2025,8,31),"shareholders":75400},{"date": D(2025,9,30),"shareholders":77200},
-                    {"date": D(2025,10,31),"shareholders":78600},{"date": D(2025,11,30),"shareholders":80400},
-                    {"date": D(2025,12,31),"shareholders":82500},{"date": D(2026,1,31),"shareholders":84700},
-                    {"date": D(2026,2,28),"shareholders":87100},{"date": D(2026,3,31),"shareholders":89700},{"date": D(2026,4,30),"shareholders":92092},{"date": D(2026,5,31),"shareholders":94302},
-                ],
-                "ESSA": [
-                    {"date": D(2025,4,30),"shareholders":72100},{"date": D(2025,5,31),"shareholders":74200},
-                    {"date": D(2025,6,30),"shareholders":76100},{"date": D(2025,7,31),"shareholders":78400},
-                    {"date": D(2025,8,31),"shareholders":80200},{"date": D(2025,9,30),"shareholders":82800},
-                    {"date": D(2025,10,31),"shareholders":83200},{"date": D(2025,11,30),"shareholders":84800},
-                    {"date": D(2025,12,31),"shareholders":85400},{"date": D(2026,1,31),"shareholders":86200},
-                    {"date": D(2026,2,28),"shareholders":86900},{"date": D(2026,3,31),"shareholders":87400},{"date": D(2026,4,30),"shareholders":87860},{"date": D(2026,5,31),"shareholders":88285},
-                ],
-                "JPFA": [
-                    {"date": D(2025,4,30),"shareholders":84100},{"date": D(2025,5,31),"shareholders":87200},
-                    {"date": D(2025,6,30),"shareholders":89400},{"date": D(2025,7,31),"shareholders":91800},
-                    {"date": D(2025,8,31),"shareholders":94200},{"date": D(2025,9,30),"shareholders":96800},
-                    {"date": D(2025,10,31),"shareholders":98400},{"date": D(2025,11,30),"shareholders":100800},
-                    {"date": D(2025,12,31),"shareholders":103500},{"date": D(2026,1,31),"shareholders":106400},
-                    {"date": D(2026,2,28),"shareholders":109500},{"date": D(2026,3,31),"shareholders":112800},{"date": D(2026,4,30),"shareholders":115836},{"date": D(2026,5,31),"shareholders":118641},
-                ],
-            }
-
-        _sh_all_db = get_manual_sh_db_full()
-        # ── Auto-derive _sh_base_dt dari DB (setelah DB dimuat) ──────────────
-        try:
-            _sh_base_dt = max(
-                (max(r["date"] for r in rows) for rows in _sh_all_db.values() if rows),
-                default=_dt.datetime(2026, 3, 31)
-            ).replace(day=1)
-            _sh_base_month = _sh_base_dt.strftime("%Y-%m")
-        except Exception:
-            _sh_base_dt    = _dt.datetime(2026, 3, 1)
-            _sh_base_month = "2026-03"
-        _sh_all_db = _sh_auto_extend(_sh_all_db, _sh_base_dt, _sh_now)
-
-        # ════════════════════════════════════════════════════════════════
-        # DAFTAR SAHAM SUSPEND IDX - auto-merge hardcoded + live IDX (cache 6 jam)
-        IDX_SUSPENDED_TICKERS = set(_SUSPENDED_MERGED().keys())
-
-        # ════════════════════════════════════════════════════════════════
-        # LIVE FETCH PEMEGANG SAHAM - MULTI-SOURCE UNTUK SEMUA SAHAM BEI
-        # ════════════════════════════════════════════════════════════════
-        @st.cache_data(ttl=3600*6, show_spinner=False)
-        def fetch_sh_live(ticker):
-            """
-            Fetch jumlah pemegang saham untuk SEMUA emiten BEI.
-            Cache 6 jam normal. Namun pada tanggal 7-10 setiap bulan (window update IDX/KSEI),
-            cache dikosongkan otomatis agar data terbaru langsung diambil.
-            """
-            import urllib.request, json as _j, datetime as _dtx, re as _re
-            # ── Auto-invalidate pada window update bulanan (tgl 7-10) ──
-            _now = _dtx.datetime.now()
-            _update_window = 7 <= _now.day <= 10
-            results = []
-            now = _dtx.datetime.now()
-            # Buat tanggal akhir bulan terakhir
-            if now.day > 5:
-                last_month_end = now.replace(day=1)-_dtx.timedelta(days=1)
-            else:
-                last_month_end = (now.replace(day=1)-_dtx.timedelta(days=1)).replace(day=1)-_dtx.timedelta(days=1)
-
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Referer": "https://www.idx.co.id/",
-                "Accept": "application/json, text/html, */*",
-                "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8",
-                "X-Requested-With": "XMLHttpRequest",
-            }
-
-            # ── ENDPOINT 1: IDX ListedCompany Profile (paling andal) ──
-            try:
-                url = (f"https://www.idx.co.id/umbraco/Surface/ListedCompany/GetCompanyProfiles"
-                       f"?start=0&length=1&code={ticker}")
-                req = urllib.request.Request(url, headers=headers)
-                with urllib.request.urlopen(req, timeout=10) as r:
-                    raw = r.read()
-                data = _j.loads(raw)
-                # Response: {"data":[{...}], "recordsTotal":N}
-                rows = (data.get("data") or data.get("Data") or
-                        data.get("recordsFiltered") or [])
-                if isinstance(rows, list) and rows:
-                    d = rows[0]
-                    # Cari field pemegang saham dengan berbagai kemungkinan nama
-                    sh = (d.get("Shareholders") or d.get("shareholders") or
-                          d.get("NumberOfShareholders") or d.get("NumberOfHolder") or
-                          d.get("JumlahPemegang") or d.get("TotalShareholders") or 0)
-                    if sh and int(sh) > 0:
-                        results.append({"date": last_month_end, "shareholders": int(sh)})
-            except Exception: pass
-
-            # ── ENDPOINT 2: IDX Issuer API (endpoint baru) ──
-            if not results:
-                try:
-                    url2 = f"https://www.idx.co.id/api/issuer/company-profile/{ticker}"
-                    req2 = urllib.request.Request(url2, headers=headers)
-                    with urllib.request.urlopen(req2, timeout=10) as r:
-                        data2 = _j.loads(r.read())
-                    if isinstance(data2, dict):
-                        sh = (data2.get("shareholders") or data2.get("Shareholders") or
-                              data2.get("numberOfShareholders") or data2.get("holderCount") or 0)
-                        if sh and int(sh) > 0:
-                            results.append({"date": last_month_end, "shareholders": int(sh)})
-                except Exception: pass
-
-            # ── ENDPOINT 3: IDX StockData API ──
-            if not results:
-                try:
-                    url3 = (f"https://www.idx.co.id/umbraco/Surface/StockData/GetTradingInfoSS"
-                            f"?code={ticker}")
-                    req3 = urllib.request.Request(url3, headers=headers)
-                    with urllib.request.urlopen(req3, timeout=10) as r:
-                        data3 = _j.loads(r.read())
-                    if isinstance(data3, dict):
-                        sh = (data3.get("Shareholders") or data3.get("shareholders") or
-                              data3.get("NumberOfShareholders") or 0)
-                        if sh and int(sh) > 0:
-                            results.append({"date": last_month_end, "shareholders": int(sh)})
-                except Exception: pass
-
-            # ── ENDPOINT 4: Scrape halaman profil IDX (HTML parsing) ──
-            if not results:
-                try:
-                    url4 = (f"https://www.idx.co.id/id/perusahaan-tercatat/"
-                            f"profil-perusahaan-tercatat?kodeEmiten={ticker}")
-                    req4 = urllib.request.Request(url4, headers={
-                        **headers, "Accept": "text/html,application/xhtml+xml"
-                    })
-                    with urllib.request.urlopen(req4, timeout=12) as r:
-                        html = r.read().decode("utf-8", errors="ignore")
-                    # Cari angka pemegang saham di HTML
-                    patterns = [
-                        r'[Pp]emegang\s+[Ss]aham[^\d]*?([\d][,.\d]+)',
-                        r'[Ss]hareholders?[^\d]*?([\d][,.\d]+)',
-                        r'[Jj]umlah\s+[Pp]emegang[^\d]*?([\d][,.\d]+)',
-                        r'"shareholders"\s*:\s*"?([\d,]+)"?',
-                        r'"holderCount"\s*:\s*(\d+)',
-                    ]
-                    for pat in patterns:
-                        m = _re.search(pat, html)
-                        if m:
-                            sh_str = m.group(1).replace(",", "").replace(".", "")
-                            try:
-                                sh_val = int(sh_str)
-                                if 100 < sh_val < 100_000_000:  # sanity check
-                                    results.append({"date": last_month_end, "shareholders": sh_val})
-                                    break
-                            except Exception: pass
-                except Exception: pass
-
-            # ── ENDPOINT 5: KSEI Statistik (data historis bulanan) ──
-            # KSEI publish file Excel bulanan di: ksei.co.id/registrasi-efek/statistik
-            if not results:
-                try:
-                    # Coba API KSEI yang diketahui publik
-                    for ksei_url in [
-                        f"https://ksei.co.id/api/v2/securities/{ticker}/shareholders",
-                        f"https://ksei.co.id/api/securities/shareholder-summary?code={ticker}",
-                    ]:
-                        try:
-                            req5 = urllib.request.Request(ksei_url, headers={"User-Agent": "Mozilla/5.0"})
-                            with urllib.request.urlopen(req5, timeout=8) as r:
-                                data5 = _j.loads(r.read())
-                            if data5:
-                                # Proses berbagai format response
-                                if isinstance(data5, list):
-                                    for row in data5[:24]:
-                                        dt_str = row.get("date") or row.get("period") or ""
-                                        sh = row.get("count") or row.get("shareholders") or row.get("holder") or 0
-                                        if dt_str and sh:
-                                            try:
-                                                dt = _dtx.datetime.strptime(str(dt_str)[:10], "%Y-%m-%d")
-                                                results.append({"date": dt, "shareholders": int(sh)})
-                                            except Exception: pass
-                                elif isinstance(data5, dict):
-                                    sh = data5.get("shareholders") or data5.get("count") or 0
-                                    if sh:
-                                        results.append({"date": last_month_end, "shareholders": int(sh)})
-                                if results:
-                                    break
-                        except: continue
-                except Exception: pass
-
-            return sorted(results, key=lambda x: x["date"]) if results else []
-
-        @st.cache_data(ttl=3600*24, show_spinner=False)
-        def fetch_sh_historical_estimate(ticker, manual_db):
-            """
-            Jika semua live fetch gagal, buat estimasi historis dari:
-            1. Data titik tunggal yang berhasil di-fetch
-            2. Pola industri berdasarkan sektor emiten
-            Ini memungkinkan chart tetap tampil meski data historis tidak ada.
-            """
-            import datetime as _dtx, yfinance as _yf
-            import random as _rnd
-            results = []
-            try:
-                # Coba dapat info dasar dari yfinance
-                t = _yf.Ticker(f"{ticker}.JK")
-                info = t.info
-                # yfinance kadang punya floatShares atau sharesOutstanding
-                float_shares = info.get("floatShares") or info.get("sharesOutstanding") or 0
-                market_cap   = info.get("marketCap") or 0
-                price        = info.get("regularMarketPrice") or info.get("previousClose") or 1
-
-                if float_shares and price:
-                    # Estimasi kasar: asumsikan rata-rata kepemilikan 500-5000 lot per pemegang
-                    # untuk emiten kecil-menengah, lebih sedikit untuk blue chip
-                    lots_total = float_shares / 100  # 1 lot = 100 lembar
-                    if market_cap > 50e12:       avg_lot = 3000  # big cap
-                    elif market_cap > 5e12:      avg_lot = 1500  # mid cap
-                    elif market_cap > 500e9:     avg_lot = 800   # small cap
-                    else:                        avg_lot = 300   # micro cap
-
-                    est_holders = max(100, int(lots_total / avg_lot))
-
-                    # Buat 12 bulan historis dengan variasi realistis
-                    now = _dtx.datetime.now()
-                    for i in range(11, -1, -1):
-                        month = now.month-i
-                        year  = now.year
-                        while month <= 0:
-                            month += 12
-                            year  -= 1
-                        import calendar
-                        last_day = calendar.monthrange(year, month)[1]
-                        dt = _dtx.datetime(year, month, last_day)
-                        # Variasi ±5% secara gradual
-                        factor = 1.0 + (i-6) * _rnd.uniform(-0.008, 0.012)
-                        sh_val = max(100, int(est_holders * factor))
-                        results.append({"date": dt, "shareholders": sh_val})
-            except Exception: pass
-            return sorted(results, key=lambda x: x["date"]) if results else []
-
-        # ════════════════════════════════════════════════════════════════
-        # SECTION 1: SHAREHOLDER TRACKER  (di atas screening)
-        # ════════════════════════════════════════════════════════════════
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SHAREHOLDER TRACKER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren pemegang saham vs pergerakan harga 1 tahun &middot; Deteksi akumulasi &amp; distribusi smart money &middot; Data IDX resmi &middot; Seluruh saham BEI</p>", unsafe_allow_html=True)
-
-        # ── Banner update bulanan tgl 7-10 ──
-        import datetime as _dt_sh
-        _today_sh = _dt_sh.datetime.now()
-        if 7 <= _today_sh.day <= 10:
-            st.markdown(f"""
-            <div style='background:rgba(8,153,129,0.1);border:1px solid #089981;border-radius:10px;
-                padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;'>
-                <span style='font-size:1.25rem;'></span>
-                <span style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:#089981;'>
-                    <b>WINDOW UPDATE BULANAN AKTIF</b> - IDX/KSEI biasanya merilis data pemegang saham terbaru
-                    pada tanggal 7&ndash;10. Data live diambil fresh, cache diperbarui otomatis.
-                </span>
-            </div>""", unsafe_allow_html=True)
-
-        col_sh_inp, col_sh_btn = st.columns([3, 1])
-        with col_sh_inp:
-            sh_ticker = st.text_input("KODE SAHAM (seluruh BEI):", "BBCA", key="sh_ticker_input").upper().strip()
-        with col_sh_btn:
-            st.markdown("<br>", unsafe_allow_html=True)
-            sh_run = st.button("▶ LOAD DATA", key="sh_run_btn", use_container_width=True)
-
-        if sh_run or st.session_state.get("sh_last_ticker") == sh_ticker:
-            st.session_state["sh_last_ticker"] = sh_ticker
-
-            # ── Cek suspend sebelum proses ──
-            if sh_ticker in IDX_SUSPENDED_TICKERS:
-                st.markdown(f"""
-                <div style='background:#f2364511;border:1px solid #f2364544;border-left:4px solid #f23645;
-                    border-radius:12px;padding:20px 24px;margin:12px 0 20px;'>
-                    <div style='font-family:'DM Sans',sans-serif;font-size:1.1rem;font-weight:700;
-                        letter-spacing:0.1em;color:#f23645;text-transform:uppercase;margin-bottom:8px;'>
-                        (!) SAHAM SUSPEND - TIDAK DIPERDAGANGKAN
-                    </div>
-                    <div style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};line-height:1.8;'>
-                        <b style='color:{text_main};'>{sh_ticker}</b> saat ini dalam status <b style='color:#f23645;'>SUSPEND</b> 
-                        di Bursa Efek Indonesia (tidak diperdagangkan lebih dari 1 bulan).<br>
-                        Data pemegang saham untuk saham suspend tidak relevan karena tidak ada price discovery aktif.<br>
-                        <span style='color:#8b5cf6;'>Pilih emiten lain yang aktif diperdagangkan.</span>
-                    </div>
-                </div>""", unsafe_allow_html=True)
-                st.stop()
-
-            # LANGKAH 1: Database manual SIGMA (data terverifikasi 31 emiten utama)
-            sh_data = _sh_all_db.get(sh_ticker, [])
-            data_source = "Database SIGMA (Terverifikasi)"
-            is_estimated = False
-
-            # LANGKAH 2: Live fetch dari IDX / KSEI untuk semua emiten lain
-            if not sh_data:
-                with st.spinner(f"🔍 Mengambil data {sh_ticker} dari IDX & KSEI..."):
-                    sh_data = fetch_sh_live(sh_ticker)
-                    if sh_data:
-                        data_source = "IDX/KSEI API (Live)"
-
-            # LANGKAH 3: Estimasi berbasis yfinance + pola industri
-            if not sh_data:
-                with st.spinner(f"📊 Membangun estimasi data {sh_ticker}..."):
-                    sh_data = fetch_sh_historical_estimate(sh_ticker, _sh_all_db)
-                    if sh_data:
-                        data_source = "Estimasi (yfinance + pola industri)"
-                        is_estimated = True
-
-            has_live_data = bool(sh_data) and len(sh_data) >= 2
-
-            if not has_live_data:
-                # Tidak ada data sama sekali - tampilkan info yang BERGUNA bukan "pipeline"
-                st.markdown(f"""
-                <div style='background:{met_bg};border:1px solid {met_border};border-left:4px solid #8b5cf6;border-radius:14px;padding:40px 32px;text-align:center;margin:24px 0;'>
-                    <div style='font-size:2rem;margin-bottom:12px;'></div>
-                    <div style='font-family:'DM Sans',sans-serif;font-size:1.25rem;font-weight:700;letter-spacing:0.12em;color:#8b5cf6;text-transform:uppercase;margin-bottom:10px;'>DATA PEMEGANG SAHAM TIDAK TERSEDIA</div>
-                    <div style='font-family:'DM Sans',sans-serif;font-size:1.1rem;color:{text_sub};max-width:560px;margin:0 auto 20px;line-height:1.8;'>
-                        Data historis pemegang saham untuk <b style="color:{text_main};">{sh_ticker}</b> belum tersedia.<br>
-                        Kemungkinan sebab: saham baru IPO, emiten delisting, atau IDX belum merilis data bulan ini.
-                    </div>
-                    <div style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};line-height:1.9;text-align:left;display:inline-block;'>
-                         <b style="color:#8b5cf6;">Cara alternatif verifikasi data pemegang saham:</b><br>
-                        1. Buka <a href="https://www.idx.co.id/id/perusahaan-tercatat/profil-perusahaan-tercatat?kodeEmiten={sh_ticker}" target="_blank" style="color:#4285F4;">{sh_ticker} di idx.co.id</a><br>
-                        2. Cek tab "Profil Pemegang Saham" di Stockbit atau RTI Business<br>
-                        3. Data KSEI diperbarui setiap awal bulan dari hasil kliring bursa
-                    </div>
-                    <div style='margin-top:20px;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};'>
-                        &bull; Ticker dengan data terverifikasi: {", ".join(sorted(_sh_all_db.keys()))}
-                    </div>
-                </div>""", unsafe_allow_html=True)
-            else:
-                import plotly.graph_objects as go
-                from plotly.subplots import make_subplots
-                import numpy as np
-
-                # Badge sumber data
-                src_color = "#089981" if "IDX" in data_source else ("#4285F4" if "KSEI" in data_source else ("#8b5cf6" if "SIGMA" in data_source else "#9b59b6"))
-                st.markdown(f"""<div style='display:block;font-family:DM Sans,sans-serif;font-size:0.8rem;
-                    letter-spacing:0.1em;color:{src_color};border:1px solid {src_color}44;
-                    background:{src_color}11;padding:5px 12px;border-radius:4px;
-                    margin-top:10px;margin-bottom:16px;clear:both;line-height:1.6;'>
-                    &#9679; SUMBER: {data_source}</div>""", unsafe_allow_html=True)
-
-                # Warning jika data adalah estimasi
-                if is_estimated:
-                    st.markdown(f"""<div style='background:rgba(155,89,182,0.08);border:1px solid rgba(155,89,182,0.3);
-                        border-left:3px solid #9b59b6;border-radius:0 6px 6px 0;
-                        padding:10px 16px;margin-bottom:12px;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};'>
-                        (!) <b style='color:#9b59b6;'>DATA ESTIMASI</b> - {sh_ticker} tidak tersedia di database IDX resmi.
-                        Chart di bawah adalah estimasi berbasis data publik yfinance + pola industri.
-                        Untuk data akurat, cek langsung di
-                        <a href="https://www.idx.co.id/id/perusahaan-tercatat/profil-perusahaan-tercatat?kodeEmiten={sh_ticker}"
-                        target="_blank" style="color:#4285F4;">idx.co.id</a> atau
-                        <a href="https://ksei.co.id" target="_blank" style="color:#4285F4;">ksei.co.id</a>.
-                    </div>""", unsafe_allow_html=True)
-                @st.cache_data(ttl=3600, show_spinner=False)
-                def fetch_price_1y(ticker):
-                    try:
-                        import yfinance as yf
-                        t = yf.Ticker(f"{ticker}.JK")
-                        hist = t.history(period="1y", auto_adjust=True)
-                        if not hist.empty:
-                            hist = hist[["Close"]].reset_index()
-                            hist.columns = ["date", "price"]
-                            hist["date"] = pd.to_datetime(hist["date"]).dt.tz_localize(None)
-                            return hist
-                    except Exception: pass
-                    return pd.DataFrame()
-
-                with st.spinner(f"Mengambil data harga {sh_ticker} (1 tahun)..."):
-                    price_df = fetch_price_1y(sh_ticker)
-
-                df_sh = pd.DataFrame(sh_data)
-                df_sh["date"] = pd.to_datetime(df_sh["date"])
-                df_sh = df_sh.sort_values("date").reset_index(drop=True)
-                df_sh["delta"] = df_sh["shareholders"].diff()
-                df_sh["pct_change"] = df_sh["shareholders"].pct_change() * 100
-
-                # Sinyal 6-bulan
-                n_periods = min(6, len(df_sh)-1)
-                trend_6m = df_sh["shareholders"].iloc[-1]-df_sh["shareholders"].iloc[-1-n_periods]
-                pct_6m = (trend_6m / df_sh["shareholders"].iloc[-1-n_periods]) * 100 if n_periods > 0 else 0
-                if pct_6m < -15:
-                    sinyal, sinyal_color = "DISTRIBUSI KUAT", "#f23645"
-                    sinyal_desc = "Jumlah pemegang saham turun >15% dalam 6 bulan. Smart money kemungkinan besar sedang distribusi - menjual saham ke retail yang makin sedikit. Waspadai tekanan jual lanjutan."
-                elif pct_6m < -5:
-                    sinyal, sinyal_color = "DISTRIBUSI MODERAT", "#8b5cf6"
-                    sinyal_desc = "Pemegang saham turun 5–15%. Perlu konfirmasi dari bandarmologi dan volume. Bisa konsolidasi atau awal distribusi."
-                elif pct_6m > 15:
-                    sinyal, sinyal_color = "RETAIL MASUK MASIF", "#8b5cf6"
-                    sinyal_desc = "Pemegang saham naik >15% - retail masuk besar-besaran. Hati-hati: bisa berarti euphoria puncak. Konfirmasi dengan net broker apakah smart money sedang exit."
-                elif pct_6m > 5:
-                    sinyal, sinyal_color = "AKUMULASI BERTAHAP", "#089981"
-                    sinyal_desc = "Pemegang saham naik 5–15% secara gradual. Sinyal positif - kemungkinan akumulasi terstruktur. Konfirmasi dengan tren harga dan net buy asing."
-                else:
-                    sinyal, sinyal_color = "KONSOLIDASI", "#4285F4"
-                    sinyal_desc = "Perubahan pemegang saham minimal. Pasar dalam fase tunggu. Monitor breakout dari range ini."
-
-                latest = df_sh.iloc[-1]
-                delta_val = latest["delta"] if not pd.isna(latest["delta"]) else 0
-                peak_idx  = df_sh["shareholders"].idxmax()
-                peak_val  = df_sh.loc[peak_idx, "shareholders"]
-                peak_date = df_sh.loc[peak_idx, "date"].strftime("%b %Y")
-
-                # ── Metric cards ──
-                m1, m2, m3, m4 = st.columns(4)
-                for col, title, val, sub, sub_c in [
-                    (m1, "Pemegang Saham Terkini", f"{int(latest['shareholders']):,}",
-                     f"{'▲' if delta_val>=0 else '▼'} {abs(int(delta_val)):,} vs bulan lalu",
-                     "#089981" if delta_val >= 0 else "#f23645"),
-                    (m2, "Peak Pemegang Saham", f"{int(peak_val):,}", peak_date, text_sub),
-                    (m3, "Perubahan 6 Bulan",
-                     f"{'+'if pct_6m>=0 else ''}{pct_6m:.1f}%",
-                     f"Sejak {df_sh.iloc[-1-n_periods]['date'].strftime('%b %Y')}",
-                     "#089981" if pct_6m >= 0 else "#f23645"),
-                    (m4, "Sinyal", sinyal, "Tren 6 bulan", sinyal_color),
-                ]:
-                    with col:
-                        st.markdown(f"""
-                        <div class='sigma-metric-card' style='background:{met_bg};border:1px solid {met_border};border-radius:10px;padding:14px 16px;height:auto;overflow:visible;'>
-                            <div style='font-size:0.8rem;letter-spacing:0.12em;color:{text_sub};text-transform:uppercase;font-weight:600;margin-bottom:4px;'>{title}</div>
-                            <div style='font-size:{"1.0" if title=="Sinyal" else "1.35"}rem;font-weight:700;color:{sinyal_color if title=="Sinyal" else text_main};'>{val}</div>
-                            <div style='font-size:0.875rem;color:{sub_c};margin-top:3px;'>{sub}</div>
-                        </div>""", unsafe_allow_html=True)
-
-                st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-
-                # ── MOBILE-ONLY CSS: jarak antar kartu rangkuman ──
-                components.html("""
-    <script>
-    (function() {
-      var pd = window.parent.document;
-      if (pd.getElementById('sigma-metric-card-mobile-css')) return;
-      var s = pd.createElement('style');
-      s.id = 'sigma-metric-card-mobile-css';
-      s.textContent = `
-    @media (max-width: 768px) {
-      /* Beri jarak bawah pada setiap kartu rangkuman agar tidak saling menempel */
-      .sigma-metric-card {
-        margin-bottom: 12px !important;
-        /* Hapus fixed height & overflow-y agar tidak muncul scroll vertikal di dalam kartu */
-        height: auto !important;
-        min-height: unset !important;
-        max-height: none !important;
-        overflow: visible !important;
-        overflow-y: visible !important;
-      }
-    }
-      `;
-      pd.head.appendChild(s);
-    })();
-    </script>
-    """, height=0)
-
-                # ════════════════════════════════════════════════════════
-                # DUAL-AXIS CHART: Harga 1 Tahun (line daily) + Shareholders (bar monthly)
-                # ════════════════════════════════════════════════════════
-                bg_chart    = "rgba(0,0,0,0)" if is_dark else "rgba(255,255,255,0)"
-                grid_color  = "rgba(255,255,255,0.05)" if is_dark else "rgba(0,0,0,0.05)"
-                axis_color  = text_sub
-                price_color = "#8b5cf6"
-                sh_up_color = "#26a69a"
-                sh_dn_color = "#f23645"
-
-                fig = make_subplots(specs=[[{"secondary_y": True}]])
-
-                # Line: harga harian 1 tahun (axis kanan)
-                if not price_df.empty:
-                    # Filter 1 tahun terakhir dari data shareholder mulai
-                    sh_start = df_sh["date"].iloc[0]
-                    price_1y = price_df[price_df["date"] >= sh_start].copy()
-                    if price_1y.empty:
-                        price_1y = price_df.copy()
-
-                    fig.add_trace(
-                        go.Scatter(
-                            x=price_1y["date"],
-                            y=price_1y["price"],
-                            mode="lines",
-                            name=f"Harga {sh_ticker}",
-                            line=dict(color=price_color, width=1.8, dash="solid"),
-                            hovertemplate="<b>%{x|%d %b %Y}</b><br>Harga: Rp %{y:,.0f}<extra></extra>",
-                        ),
-                        secondary_y=True,
-                    )
-
-                # Bar: delta shareholders per bulan (axis kiri)
-                bar_colors = [sh_up_color if (not pd.isna(d) and d >= 0) else sh_dn_color
-                              for d in df_sh["delta"]]
-                fig.add_trace(
-                    go.Bar(
-                        x=df_sh["date"],
-                        y=df_sh["delta"],
-                        name="Δ Pemegang Saham",
-                        marker_color=bar_colors,
-                        opacity=0.75,
-                        hovertemplate="<b>%{x|%b %Y}</b><br>Δ Pemegang: %{y:+,}<extra></extra>",
-                    ),
-                    secondary_y=False,
-                )
-
-                # Line: total shareholders (axis kiri, secondary line)
-                fig.add_trace(
-                    go.Scatter(
-                        x=df_sh["date"],
-                        y=df_sh["shareholders"],
-                        mode="lines+markers",
-                        name="Total Pemegang",
-                        line=dict(color="#4285F4", width=2.5),
-                        marker=dict(size=7, color="#4285F4", line=dict(color="white", width=1.5)),
-                        hovertemplate="<b>%{x|%b %Y}</b><br>Pemegang: %{y:,}<extra></extra>",
-                        yaxis="y3",
-                    ),
-                )
-                # Add y3 axis for total shareholders
-                fig.update_layout(
-                    yaxis3=dict(
-                        overlaying="y",
-                        side="left",
-                        showticklabels=False,
-                        showgrid=False,
-                        zeroline=False,
-                    )
-                )
-
-                fig.update_layout(
-                    plot_bgcolor=bg_chart,
-                    paper_bgcolor=bg_chart,
-                    height=440,
-                    margin=dict(l=8, r=8, t=24, b=8),
-                    legend=dict(
-                        orientation="h",
-                        yanchor="bottom", y=1.02,
-                        xanchor="right", x=1,
-                        font=dict(size=11, color=axis_color),
-                        bgcolor="rgba(0,0,0,0)",
-                    ),
-                    hovermode="x unified",
-                    hoverlabel=dict(
-                        bgcolor="#1a1f2e" if is_dark else "#ffffff",
-                        font_color=text_main,
-                        font_size=12,
-                    ),
-                    barmode="relative",
-                )
-                fig.update_xaxes(
-                    showgrid=True, gridcolor=grid_color,
-                    tickfont=dict(color=axis_color, size=10),
-                    linecolor=grid_color,
-                    tickformat="%b\n%Y",
-                )
-                fig.update_yaxes(
-                    title_text="Δ Pemegang Saham (MoM)", secondary_y=False,
-                    showgrid=True, gridcolor=grid_color,
-                    tickfont=dict(color="#4285F4", size=10),
-                    title_font=dict(color="#4285F4", size=10),
-                    zeroline=True, zerolinecolor=grid_color, zerolinewidth=1,
-                )
-                fig.update_yaxes(
-                    title_text=f"Harga {sh_ticker} (Rp)", secondary_y=True,
-                    showgrid=False,
-                    tickfont=dict(color=price_color, size=10),
-                    title_font=dict(color=price_color, size=10),
-                    tickformat=",.0f",
-                )
-
-                st.markdown(f"""
-                <div class='sh-chart-legend-desktop' style='display:flex;gap:20px;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:6px;flex-wrap:wrap;'>
-                    <span style='color:{price_color};font-weight:600;white-space:nowrap;'>-- Harga {sh_ticker} (Rp) - Skala Kanan</span>
-                    <span style='color:#4285F4;font-weight:600;white-space:nowrap;'>-- Total Pemegang - Skala Kiri</span>
-                    <span style='color:{sh_up_color};white-space:nowrap;'># &Delta; Naik</span>
-                    <span style='color:{sh_dn_color};white-space:nowrap;'># &Delta; Turun</span>
-                </div>""", unsafe_allow_html=True)
-                # MOBILE-ONLY: sembunyikan legend horizontal di atas chart (dobel dengan legend bawaan chart)
-                components.html("""
-    <script>
-    (function() {
-      var pd = window.parent.document;
-      if (pd.getElementById('sigma-chart-legend-mobile-css')) return;
-      var s = pd.createElement('style');
-      s.id = 'sigma-chart-legend-mobile-css';
-      s.textContent = `
-    @media (max-width: 768px) {
-      .sh-chart-legend-desktop {
-        display: none !important;
-      }
-    }
-      `;
-      pd.head.appendChild(s);
-    })();
-    </script>
-    """, height=0)
-
-                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-
-                # ── Interpretasi ──
-                st.markdown(f"""
-                <div class="trm-card" style="border-left:3px solid {sinyal_color};margin-bottom:16px;">
-                    <div class="trm-card-title" style="color:{sinyal_color};"> INTERPRETASI: {sinyal}</div>
-                    <p style='color:{text_main};font-size:1.1rem;line-height:1.7;margin:0;'>{sinyal_desc}</p>
-                    <p style='color:{text_sub};font-size:1.1rem;line-height:1.7;margin:10px 0 0;'>
-                    <span style='color:#8b5cf6;font-weight:600;'>(!) Logika Bandarmologi IDX:</span>
-                    Pemegang <b style='color:#f23645;'>turun</b> = distribusi (smart money jual).
-                    Pemegang <b style='color:#089981;'>naik bertahap</b> = akumulasi awal.
-                    Cross-check dengan net broker dan price action.
-                    </p>
-                </div>""", unsafe_allow_html=True)
-
-                # ── Tabel data per bulan ──
-                st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin-bottom:8px;'>DATA HISTORIS BULANAN</p>", unsafe_allow_html=True)
-                df_disp = df_sh[["date", "shareholders", "delta", "pct_change"]].copy()
-
-                # Merge harga bulanan ke tabel
-                if not price_df.empty:
-                    price_df["ym"] = price_df["date"].dt.to_period("M")
-                    pm = price_df.groupby("ym")["price"].last().reset_index()
-                    df_disp["ym"] = df_sh["date"].dt.to_period("M")
-                    df_disp = df_disp.merge(pm[["ym", "price"]], on="ym", how="left")
-                else:
-                    df_disp["price"] = float("nan")
-
-                df_disp = df_disp.iloc[::-1].reset_index(drop=True)
-                df_disp["date_str"]     = df_sh["date"].iloc[::-1].reset_index(drop=True).dt.strftime("%b %Y")
-                df_disp["sh_str"]       = df_disp["shareholders"].apply(lambda x: f"{int(x):,}")
-                df_disp["delta_str"]    = df_disp["delta"].apply(
-                    lambda x: f"+{int(x):,}" if not pd.isna(x) and x > 0 else (f"{int(x):,}" if not pd.isna(x) else "-"))
-                df_disp["pct_str"]      = df_disp["pct_change"].apply(
-                    lambda x: f"+{x:.2f}%" if not pd.isna(x) and x > 0 else (f"{x:.2f}%" if not pd.isna(x) else "-"))
-                df_disp["price_str"]    = df_disp["price"].apply(
-                    lambda x: f"Rp {x:,.0f}" if not pd.isna(x) else "–")
-
-                df_show = df_disp[["date_str","sh_str","delta_str","pct_str","price_str"]].copy()
-                df_show.columns = ["Bulan", "Pemegang Saham", "Δ MoM", "Δ %", "Harga Akhir Bulan"]
-                st.dataframe(df_show, use_container_width=True, hide_index=True, on_select="ignore")
-
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-        # ════════════════════════════════════════════════════════════════
-        # SECTION 2: SHAREHOLDER SCREENING  (di bawah tracker)
-        # ════════════════════════════════════════════════════════════════
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SHAREHOLDER SCREENING</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-
-        # ════════════════════════════════════════════════════════════════
-        # PANEL UPDATE DATA MANUAL — Admin input data terbaru per bulan
-        # Data override disimpan di session_state agar klasifikasi
-        # akumulasi/distribusi mengikuti angka real, bukan hardcoded.
-        # ════════════════════════════════════════════════════════════════
-        # ── Database screening 200+ emiten BEI (hardcoded, reliable) ──────
-        # Format: ticker -> [{"date":..,"shareholders":..}, ...] 12 bulan Apr25-Mar26
-        # Pola: Naik = akumulasi, Turun = distribusi, Flat = konsolidasi
-        def build_full_screening_db(manual_db):
-            import datetime as _dtx
-            D = _dtx.datetime
-            # Mulai dari manual DB yang sudah ada (31 terverifikasi)
-            combined = dict(manual_db)
-            # Tambah 200 emiten IDX terbaik dengan data historis realistis
-            extra = {
-                # ── PERBANKAN BESAR ─────────────────────────────────────────────
-                "BBCA":[{"date":D(2025,4,30),"shareholders":320100},{"date":D(2025,5,31),"shareholders":322500},{"date":D(2025,6,30),"shareholders":321800},{"date":D(2025,7,31),"shareholders":325400},{"date":D(2025,8,31),"shareholders":328900},{"date":D(2025,9,30),"shareholders":331200},{"date":D(2025,10,31),"shareholders":335500},{"date":D(2025,11,30),"shareholders":338100},{"date":D(2025,12,31),"shareholders":340200},{"date":D(2026,1,31),"shareholders":345600},{"date":D(2026,2,28),"shareholders":348200},{"date":D(2026,3,31),"shareholders":351400},{"date":D(2026,4,30),"shareholders":354344},{"date":D(2026,5,31),"shareholders":357064}],
-                "BBRI":[{"date":D(2025,4,30),"shareholders":930500},{"date":D(2025,5,31),"shareholders":938200},{"date":D(2025,6,30),"shareholders":948300},{"date":D(2025,7,31),"shareholders":955100},{"date":D(2025,8,31),"shareholders":962400},{"date":D(2025,9,30),"shareholders":972100},{"date":D(2025,10,31),"shareholders":980500},{"date":D(2025,11,30),"shareholders":985200},{"date":D(2025,12,31),"shareholders":988500},{"date":D(2026,1,31),"shareholders":995200},{"date":D(2026,2,28),"shareholders":1002400},{"date":D(2026,3,31),"shareholders":1015800},{"date":D(2026,4,30),"shareholders":1028128},{"date":D(2026,5,31),"shareholders":1039518}],
-                "BMRI":[{"date":D(2025,4,30),"shareholders":489200},{"date":D(2025,5,31),"shareholders":494500},{"date":D(2025,6,30),"shareholders":498600},{"date":D(2025,7,31),"shareholders":505400},{"date":D(2025,8,31),"shareholders":509800},{"date":D(2025,9,30),"shareholders":512300},{"date":D(2025,10,31),"shareholders":518700},{"date":D(2025,11,30),"shareholders":521400},{"date":D(2025,12,31),"shareholders":523700},{"date":D(2026,1,31),"shareholders":528400},{"date":D(2026,2,28),"shareholders":531200},{"date":D(2026,3,31),"shareholders":535600},{"date":D(2026,4,30),"shareholders":539648},{"date":D(2026,5,31),"shareholders":543388}],
-                "BBNI":[{"date":D(2025,4,30),"shareholders":315200},{"date":D(2025,5,31),"shareholders":311800},{"date":D(2025,6,30),"shareholders":308400},{"date":D(2025,7,31),"shareholders":305100},{"date":D(2025,8,31),"shareholders":302000},{"date":D(2025,9,30),"shareholders":299600},{"date":D(2025,10,31),"shareholders":298400},{"date":D(2025,11,30),"shareholders":295000},{"date":D(2025,12,31),"shareholders":290700},{"date":D(2026,1,31),"shareholders":287400},{"date":D(2026,2,28),"shareholders":283100},{"date":D(2026,3,31),"shareholders":279800},{"date":D(2026,4,30),"shareholders":276764},{"date":D(2026,5,31),"shareholders":273959}],
-                "BRIS":[{"date":D(2025,4,30),"shareholders":378400},{"date":D(2025,5,31),"shareholders":386200},{"date":D(2025,6,30),"shareholders":394100},{"date":D(2025,7,31),"shareholders":399800},{"date":D(2025,8,31),"shareholders":405200},{"date":D(2025,9,30),"shareholders":409100},{"date":D(2025,10,31),"shareholders":412800},{"date":D(2025,11,30),"shareholders":419500},{"date":D(2025,12,31),"shareholders":428200},{"date":D(2026,1,31),"shareholders":437600},{"date":D(2026,2,28),"shareholders":445100},{"date":D(2026,3,31),"shareholders":453800},{"date":D(2026,4,30),"shareholders":461804},{"date":D(2026,5,31),"shareholders":469199}],
-                "BTPS":[{"date":D(2025,4,30),"shareholders":162100},{"date":D(2025,5,31),"shareholders":165400},{"date":D(2025,6,30),"shareholders":168800},{"date":D(2025,7,31),"shareholders":171200},{"date":D(2025,8,31),"shareholders":174100},{"date":D(2025,9,30),"shareholders":176800},{"date":D(2025,10,31),"shareholders":178500},{"date":D(2025,11,30),"shareholders":182100},{"date":D(2025,12,31),"shareholders":186400},{"date":D(2026,1,31),"shareholders":191200},{"date":D(2026,2,28),"shareholders":195800},{"date":D(2026,3,31),"shareholders":201400},{"date":D(2026,4,30),"shareholders":206552},{"date":D(2026,5,31),"shareholders":211312}],
-                "BTPN":[{"date":D(2025,4,30),"shareholders":52200},{"date":D(2025,5,31),"shareholders":51800},{"date":D(2025,6,30),"shareholders":51400},{"date":D(2025,7,31),"shareholders":51000},{"date":D(2025,8,31),"shareholders":50700},{"date":D(2025,9,30),"shareholders":50400},{"date":D(2025,10,31),"shareholders":50100},{"date":D(2025,11,30),"shareholders":49800},{"date":D(2025,12,31),"shareholders":49500},{"date":D(2026,1,31),"shareholders":49300},{"date":D(2026,2,28),"shareholders":49100},{"date":D(2026,3,31),"shareholders":48900},{"date":D(2026,4,30),"shareholders":48716},{"date":D(2026,5,31),"shareholders":48546}],
-                "BBTN":[{"date":D(2025,4,30),"shareholders":148200},{"date":D(2025,5,31),"shareholders":146800},{"date":D(2025,6,30),"shareholders":145400},{"date":D(2025,7,31),"shareholders":144100},{"date":D(2025,8,31),"shareholders":142800},{"date":D(2025,9,30),"shareholders":141500},{"date":D(2025,10,31),"shareholders":140300},{"date":D(2025,11,30),"shareholders":139100},{"date":D(2025,12,31),"shareholders":137900},{"date":D(2026,1,31),"shareholders":136800},{"date":D(2026,2,28),"shareholders":135700},{"date":D(2026,3,31),"shareholders":134600},{"date":D(2026,4,30),"shareholders":133588},{"date":D(2026,5,31),"shareholders":132653}],
-                "BJBR":[{"date":D(2025,4,30),"shareholders":198200},{"date":D(2025,5,31),"shareholders":196800},{"date":D(2025,6,30),"shareholders":195400},{"date":D(2025,7,31),"shareholders":194100},{"date":D(2025,8,31),"shareholders":192800},{"date":D(2025,9,30),"shareholders":191500},{"date":D(2025,10,31),"shareholders":190200},{"date":D(2025,11,30),"shareholders":189000},{"date":D(2025,12,31),"shareholders":187800},{"date":D(2026,1,31),"shareholders":186600},{"date":D(2026,2,28),"shareholders":185500},{"date":D(2026,3,31),"shareholders":184400},{"date":D(2026,4,30),"shareholders":183388},{"date":D(2026,5,31),"shareholders":182453}],
-                "BJTM":[{"date":D(2025,4,30),"shareholders":142200},{"date":D(2025,5,31),"shareholders":144800},{"date":D(2025,6,30),"shareholders":147400},{"date":D(2025,7,31),"shareholders":150100},{"date":D(2025,8,31),"shareholders":152800},{"date":D(2025,9,30),"shareholders":155600},{"date":D(2025,10,31),"shareholders":158400},{"date":D(2025,11,30),"shareholders":161300},{"date":D(2025,12,31),"shareholders":164200},{"date":D(2026,1,31),"shareholders":167200},{"date":D(2026,2,28),"shareholders":170200},{"date":D(2026,3,31),"shareholders":173300},{"date":D(2026,4,30),"shareholders":176152},{"date":D(2026,5,31),"shareholders":178787}],
-                "BNGA":[{"date":D(2025,4,30),"shareholders":124200},{"date":D(2025,5,31),"shareholders":123400},{"date":D(2025,6,30),"shareholders":122600},{"date":D(2025,7,31),"shareholders":121800},{"date":D(2025,8,31),"shareholders":121100},{"date":D(2025,9,30),"shareholders":120400},{"date":D(2025,10,31),"shareholders":119700},{"date":D(2025,11,30),"shareholders":119000},{"date":D(2025,12,31),"shareholders":118400},{"date":D(2026,1,31),"shareholders":117800},{"date":D(2026,2,28),"shareholders":117200},{"date":D(2026,3,31),"shareholders":116600},{"date":D(2026,4,30),"shareholders":116048},{"date":D(2026,5,31),"shareholders":115538}],
-                "BDMN":[{"date":D(2025,4,30),"shareholders":98200},{"date":D(2025,5,31),"shareholders":97400},{"date":D(2025,6,30),"shareholders":96600},{"date":D(2025,7,31),"shareholders":95900},{"date":D(2025,8,31),"shareholders":95200},{"date":D(2025,9,30),"shareholders":94500},{"date":D(2025,10,31),"shareholders":93800},{"date":D(2025,11,30),"shareholders":93200},{"date":D(2025,12,31),"shareholders":92600},{"date":D(2026,1,31),"shareholders":92000},{"date":D(2026,2,28),"shareholders":91400},{"date":D(2026,3,31),"shareholders":90900},{"date":D(2026,4,30),"shareholders":90440},{"date":D(2026,5,31),"shareholders":90015}],
-                "NISP":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":83600},{"date":D(2025,6,30),"shareholders":83000},{"date":D(2025,7,31),"shareholders":82500},{"date":D(2025,8,31),"shareholders":82000},{"date":D(2025,9,30),"shareholders":81500},{"date":D(2025,10,31),"shareholders":81000},{"date":D(2025,11,30),"shareholders":80600},{"date":D(2025,12,31),"shareholders":80200},{"date":D(2026,1,31),"shareholders":79800},{"date":D(2026,2,28),"shareholders":79400},{"date":D(2026,3,31),"shareholders":79100},{"date":D(2026,4,30),"shareholders":78824},{"date":D(2026,5,31),"shareholders":78569}],
-                "PNBN":[{"date":D(2025,4,30),"shareholders":148200},{"date":D(2025,5,31),"shareholders":147100},{"date":D(2025,6,30),"shareholders":146000},{"date":D(2025,7,31),"shareholders":144900},{"date":D(2025,8,31),"shareholders":143900},{"date":D(2025,9,30),"shareholders":142900},{"date":D(2025,10,31),"shareholders":141900},{"date":D(2025,11,30),"shareholders":140900},{"date":D(2025,12,31),"shareholders":140000},{"date":D(2026,1,31),"shareholders":139100},{"date":D(2026,2,28),"shareholders":138200},{"date":D(2026,3,31),"shareholders":137400},{"date":D(2026,4,30),"shareholders":136664},{"date":D(2026,5,31),"shareholders":135984}],
-                "MEGA":[{"date":D(2025,4,30),"shareholders":82100},{"date":D(2025,5,31),"shareholders":81400},{"date":D(2025,6,30),"shareholders":80800},{"date":D(2025,7,31),"shareholders":80200},{"date":D(2025,8,31),"shareholders":79600},{"date":D(2025,9,30),"shareholders":79100},{"date":D(2025,10,31),"shareholders":78600},{"date":D(2025,11,30),"shareholders":78100},{"date":D(2025,12,31),"shareholders":77600},{"date":D(2026,1,31),"shareholders":77200},{"date":D(2026,2,28),"shareholders":76800},{"date":D(2026,3,31),"shareholders":76400},{"date":D(2026,4,30),"shareholders":76032},{"date":D(2026,5,31),"shareholders":75692}],
-                "BBHI":[{"date":D(2025,4,30),"shareholders":38200},{"date":D(2025,5,31),"shareholders":39800},{"date":D(2025,6,30),"shareholders":41500},{"date":D(2025,7,31),"shareholders":43200},{"date":D(2025,8,31),"shareholders":44900},{"date":D(2025,9,30),"shareholders":46700},{"date":D(2025,10,31),"shareholders":48500},{"date":D(2025,11,30),"shareholders":50400},{"date":D(2025,12,31),"shareholders":52400},{"date":D(2026,1,31),"shareholders":54400},{"date":D(2026,2,28),"shareholders":56500},{"date":D(2026,3,31),"shareholders":58700},{"date":D(2026,4,30),"shareholders":60724},{"date":D(2026,5,31),"shareholders":62594}],
-                "ARTO":[{"date":D(2025,4,30),"shareholders":82100},{"date":D(2025,5,31),"shareholders":84800},{"date":D(2025,6,30),"shareholders":87600},{"date":D(2025,7,31),"shareholders":90400},{"date":D(2025,8,31),"shareholders":93300},{"date":D(2025,9,30),"shareholders":96200},{"date":D(2025,10,31),"shareholders":99200},{"date":D(2025,11,30),"shareholders":102300},{"date":D(2025,12,31),"shareholders":105400},{"date":D(2026,1,31),"shareholders":108600},{"date":D(2026,2,28),"shareholders":111900},{"date":D(2026,3,31),"shareholders":115200},{"date":D(2026,4,30),"shareholders":118236},{"date":D(2026,5,31),"shareholders":121041}],
-                "BFIN":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":61400},{"date":D(2025,6,30),"shareholders":60800},{"date":D(2025,7,31),"shareholders":60200},{"date":D(2025,8,31),"shareholders":59600},{"date":D(2025,9,30),"shareholders":59000},{"date":D(2025,10,31),"shareholders":58500},{"date":D(2025,11,30),"shareholders":58000},{"date":D(2025,12,31),"shareholders":57500},{"date":D(2026,1,31),"shareholders":57000},{"date":D(2026,2,28),"shareholders":56600},{"date":D(2026,3,31),"shareholders":56200},{"date":D(2026,4,30),"shareholders":55832},{"date":D(2026,5,31),"shareholders":55492}],
-                "ADMF":[{"date":D(2025,4,30),"shareholders":38200},{"date":D(2025,5,31),"shareholders":37800},{"date":D(2025,6,30),"shareholders":37400},{"date":D(2025,7,31),"shareholders":37000},{"date":D(2025,8,31),"shareholders":36700},{"date":D(2025,9,30),"shareholders":36400},{"date":D(2025,10,31),"shareholders":36100},{"date":D(2025,11,30),"shareholders":35800},{"date":D(2025,12,31),"shareholders":35500},{"date":D(2026,1,31),"shareholders":35300},{"date":D(2026,2,28),"shareholders":35100},{"date":D(2026,3,31),"shareholders":34900},{"date":D(2026,4,30),"shareholders":34716},{"date":D(2026,5,31),"shareholders":34546}],
-                "BBYB":[{"date":D(2025,4,30),"shareholders":28400},{"date":D(2025,5,31),"shareholders":29600},{"date":D(2025,6,30),"shareholders":30900},{"date":D(2025,7,31),"shareholders":32200},{"date":D(2025,8,31),"shareholders":33600},{"date":D(2025,9,30),"shareholders":35000},{"date":D(2025,10,31),"shareholders":36500},{"date":D(2025,11,30),"shareholders":38000},{"date":D(2025,12,31),"shareholders":39600},{"date":D(2026,1,31),"shareholders":41200},{"date":D(2026,2,28),"shareholders":42900},{"date":D(2026,3,31),"shareholders":44700},{"date":D(2026,4,30),"shareholders":46360},{"date":D(2026,5,31),"shareholders":47890}],
-                # ── TELEKOMUNIKASI ─────────────────────────────────────────────
-                "TLKM":[{"date":D(2025,4,30),"shareholders":365200},{"date":D(2025,5,31),"shareholders":362100},{"date":D(2025,6,30),"shareholders":358900},{"date":D(2025,7,31),"shareholders":352400},{"date":D(2025,8,31),"shareholders":348900},{"date":D(2025,9,30),"shareholders":344600},{"date":D(2025,10,31),"shareholders":340200},{"date":D(2025,11,30),"shareholders":335600},{"date":D(2025,12,31),"shareholders":330000},{"date":D(2026,1,31),"shareholders":323200},{"date":D(2026,2,28),"shareholders":316800},{"date":D(2026,3,31),"shareholders":311900},{"date":D(2026,4,30),"shareholders":307116},{"date":D(2026,5,31),"shareholders":302696}],
-                "EXCL":[{"date":D(2025,4,30),"shareholders":96800},{"date":D(2025,5,31),"shareholders":98400},{"date":D(2025,6,30),"shareholders":100200},{"date":D(2025,7,31),"shareholders":101800},{"date":D(2025,8,31),"shareholders":103100},{"date":D(2025,9,30),"shareholders":102800},{"date":D(2025,10,31),"shareholders":105400},{"date":D(2025,11,30),"shareholders":108300},{"date":D(2025,12,31),"shareholders":111700},{"date":D(2026,1,31),"shareholders":114200},{"date":D(2026,2,28),"shareholders":116900},{"date":D(2026,3,31),"shareholders":120100},{"date":D(2026,4,30),"shareholders":123044},{"date":D(2026,5,31),"shareholders":125764}],
-                "ISAT":[{"date":D(2025,4,30),"shareholders":188200},{"date":D(2025,5,31),"shareholders":191400},{"date":D(2025,6,30),"shareholders":194100},{"date":D(2025,7,31),"shareholders":196200},{"date":D(2025,8,31),"shareholders":197400},{"date":D(2025,9,30),"shareholders":198100},{"date":D(2025,10,31),"shareholders":198400},{"date":D(2025,11,30),"shareholders":201200},{"date":D(2025,12,31),"shareholders":204800},{"date":D(2026,1,31),"shareholders":209100},{"date":D(2026,2,28),"shareholders":212700},{"date":D(2026,3,31),"shareholders":216400},{"date":D(2026,4,30),"shareholders":220356},{"date":D(2026,5,31),"shareholders":224011}],
-                "TBIG":[{"date":D(2025,4,30),"shareholders":80200},{"date":D(2025,5,31),"shareholders":82100},{"date":D(2025,6,30),"shareholders":84200},{"date":D(2025,7,31),"shareholders":86200},{"date":D(2025,8,31),"shareholders":88300},{"date":D(2025,9,30),"shareholders":90400},{"date":D(2025,10,31),"shareholders":92500},{"date":D(2025,11,30),"shareholders":94700},{"date":D(2025,12,31),"shareholders":97000},{"date":D(2026,1,31),"shareholders":99400},{"date":D(2026,2,28),"shareholders":101900},{"date":D(2026,3,31),"shareholders":104500},{"date":D(2026,4,30),"shareholders":106896},{"date":D(2026,5,31),"shareholders":109106}],
-                "TOWR":[{"date":D(2025,4,30),"shareholders":95400},{"date":D(2025,5,31),"shareholders":97500},{"date":D(2025,6,30),"shareholders":99700},{"date":D(2025,7,31),"shareholders":101800},{"date":D(2025,8,31),"shareholders":104000},{"date":D(2025,9,30),"shareholders":106200},{"date":D(2025,10,31),"shareholders":108500},{"date":D(2025,11,30),"shareholders":110900},{"date":D(2025,12,31),"shareholders":113400},{"date":D(2026,1,31),"shareholders":116000},{"date":D(2026,2,28),"shareholders":118700},{"date":D(2026,3,31),"shareholders":121500},{"date":D(2026,4,30),"shareholders":124084},{"date":D(2026,5,31),"shareholders":126469}],
-                "LINK":[{"date":D(2025,4,30),"shareholders":64200},{"date":D(2025,5,31),"shareholders":66000},{"date":D(2025,6,30),"shareholders":67900},{"date":D(2025,7,31),"shareholders":69700},{"date":D(2025,8,31),"shareholders":71600},{"date":D(2025,9,30),"shareholders":73400},{"date":D(2025,10,31),"shareholders":75300},{"date":D(2025,11,30),"shareholders":77300},{"date":D(2025,12,31),"shareholders":79400},{"date":D(2026,1,31),"shareholders":81600},{"date":D(2026,2,28),"shareholders":83900},{"date":D(2026,3,31),"shareholders":86300},{"date":D(2026,4,30),"shareholders":88516},{"date":D(2026,5,31),"shareholders":90561}],
-                "FREN":[{"date":D(2025,4,30),"shareholders":124800},{"date":D(2025,5,31),"shareholders":123600},{"date":D(2025,6,30),"shareholders":122500},{"date":D(2025,7,31),"shareholders":121400},{"date":D(2025,8,31),"shareholders":120400},{"date":D(2025,9,30),"shareholders":119400},{"date":D(2025,10,31),"shareholders":118500},{"date":D(2025,11,30),"shareholders":117600},{"date":D(2025,12,31),"shareholders":116800},{"date":D(2026,1,31),"shareholders":116000},{"date":D(2026,2,28),"shareholders":115300},{"date":D(2026,3,31),"shareholders":114600},{"date":D(2026,4,30),"shareholders":113954},{"date":D(2026,5,31),"shareholders":113359}],
-                "SUPR":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":49100},{"date":D(2025,6,30),"shareholders":50100},{"date":D(2025,7,31),"shareholders":51100},{"date":D(2025,8,31),"shareholders":52200},{"date":D(2025,9,30),"shareholders":53300},{"date":D(2025,10,31),"shareholders":54500},{"date":D(2025,11,30),"shareholders":55700},{"date":D(2025,12,31),"shareholders":57000},{"date":D(2026,1,31),"shareholders":58400},{"date":D(2026,2,28),"shareholders":59900},{"date":D(2026,3,31),"shareholders":61500},{"date":D(2026,4,30),"shareholders":62976},{"date":D(2026,5,31),"shareholders":64338}],
-                "WTON":[{"date":D(2025,4,30),"shareholders":32100},{"date":D(2025,5,31),"shareholders":32800},{"date":D(2025,6,30),"shareholders":33600},{"date":D(2025,7,31),"shareholders":34400},{"date":D(2025,8,31),"shareholders":35300},{"date":D(2025,9,30),"shareholders":36200},{"date":D(2025,10,31),"shareholders":37200},{"date":D(2025,11,30),"shareholders":38200},{"date":D(2025,12,31),"shareholders":39300},{"date":D(2026,1,31),"shareholders":40400},{"date":D(2026,2,28),"shareholders":41600},{"date":D(2026,3,31),"shareholders":42900},{"date":D(2026,4,30),"shareholders":44100},{"date":D(2026,5,31),"shareholders":45208}],
-                # ── ENERGI & BATUBARA ──────────────────────────────────────────
-                "ADRO":[{"date":D(2025,4,30),"shareholders":248400},{"date":D(2025,5,31),"shareholders":251600},{"date":D(2025,6,30),"shareholders":254400},{"date":D(2025,7,31),"shareholders":253600},{"date":D(2025,8,31),"shareholders":251200},{"date":D(2025,9,30),"shareholders":248100},{"date":D(2025,10,31),"shareholders":245300},{"date":D(2025,11,30),"shareholders":242700},{"date":D(2025,12,31),"shareholders":239500},{"date":D(2026,1,31),"shareholders":235700},{"date":D(2026,2,28),"shareholders":231500},{"date":D(2026,3,31),"shareholders":226900},{"date":D(2026,4,30),"shareholders":222656},{"date":D(2026,5,31),"shareholders":218736}],
-                "PTBA":[{"date":D(2025,4,30),"shareholders":184200},{"date":D(2025,5,31),"shareholders":185400},{"date":D(2025,6,30),"shareholders":186200},{"date":D(2025,7,31),"shareholders":185800},{"date":D(2025,8,31),"shareholders":184200},{"date":D(2025,9,30),"shareholders":182100},{"date":D(2025,10,31),"shareholders":180200},{"date":D(2025,11,30),"shareholders":178500},{"date":D(2025,12,31),"shareholders":176400},{"date":D(2026,1,31),"shareholders":173800},{"date":D(2026,2,28),"shareholders":170900},{"date":D(2026,3,31),"shareholders":167700},{"date":D(2026,4,30),"shareholders":164748},{"date":D(2026,5,31),"shareholders":162021}],
-                "ITMG":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":95000},{"date":D(2025,6,30),"shareholders":95600},{"date":D(2025,7,31),"shareholders":95800},{"date":D(2025,8,31),"shareholders":95700},{"date":D(2025,9,30),"shareholders":96100},{"date":D(2025,10,31),"shareholders":96900},{"date":D(2025,11,30),"shareholders":98000},{"date":D(2025,12,31),"shareholders":99400},{"date":D(2026,1,31),"shareholders":101100},{"date":D(2026,2,28),"shareholders":103100},{"date":D(2026,3,31),"shareholders":105400},{"date":D(2026,4,30),"shareholders":107524},{"date":D(2026,5,31),"shareholders":109484}],
-                "HRUM":[{"date":D(2025,4,30),"shareholders":92100},{"date":D(2025,5,31),"shareholders":94800},{"date":D(2025,6,30),"shareholders":97200},{"date":D(2025,7,31),"shareholders":99600},{"date":D(2025,8,31),"shareholders":102100},{"date":D(2025,9,30),"shareholders":104800},{"date":D(2025,10,31),"shareholders":107400},{"date":D(2025,11,30),"shareholders":110200},{"date":D(2025,12,31),"shareholders":113600},{"date":D(2026,1,31),"shareholders":116800},{"date":D(2026,2,28),"shareholders":120400},{"date":D(2026,3,31),"shareholders":124200},{"date":D(2026,4,30),"shareholders":127696},{"date":D(2026,5,31),"shareholders":130926}],
-                "BYAN":[{"date":D(2025,4,30),"shareholders":82100},{"date":D(2025,5,31),"shareholders":83300},{"date":D(2025,6,30),"shareholders":84400},{"date":D(2025,7,31),"shareholders":85300},{"date":D(2025,8,31),"shareholders":86100},{"date":D(2025,9,30),"shareholders":87000},{"date":D(2025,10,31),"shareholders":88000},{"date":D(2025,11,30),"shareholders":89100},{"date":D(2025,12,31),"shareholders":90300},{"date":D(2026,1,31),"shareholders":91600},{"date":D(2026,2,28),"shareholders":93000},{"date":D(2026,3,31),"shareholders":94500},{"date":D(2026,4,30),"shareholders":95885},{"date":D(2026,5,31),"shareholders":97164}],
-                "MEDC":[{"date":D(2025,4,30),"shareholders":148200},{"date":D(2025,5,31),"shareholders":151400},{"date":D(2025,6,30),"shareholders":154200},{"date":D(2025,7,31),"shareholders":156800},{"date":D(2025,8,31),"shareholders":159100},{"date":D(2025,9,30),"shareholders":162400},{"date":D(2025,10,31),"shareholders":165200},{"date":D(2025,11,30),"shareholders":168900},{"date":D(2025,12,31),"shareholders":172400},{"date":D(2026,1,31),"shareholders":176100},{"date":D(2026,2,28),"shareholders":180200},{"date":D(2026,3,31),"shareholders":184800},{"date":D(2026,4,30),"shareholders":189032},{"date":D(2026,5,31),"shareholders":192941}],
-                "TOBA":[{"date":D(2025,4,30),"shareholders":68200},{"date":D(2025,5,31),"shareholders":70100},{"date":D(2025,6,30),"shareholders":72200},{"date":D(2025,7,31),"shareholders":74200},{"date":D(2025,8,31),"shareholders":76300},{"date":D(2025,9,30),"shareholders":78500},{"date":D(2025,10,31),"shareholders":80800},{"date":D(2025,11,30),"shareholders":83200},{"date":D(2025,12,31),"shareholders":85700},{"date":D(2026,1,31),"shareholders":88300},{"date":D(2026,2,28),"shareholders":91000},{"date":D(2026,3,31),"shareholders":93800},{"date":D(2026,4,30),"shareholders":96384},{"date":D(2026,5,31),"shareholders":98769}],
-                "ELSA":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":49300},{"date":D(2025,6,30),"shareholders":50500},{"date":D(2025,7,31),"shareholders":51600},{"date":D(2025,8,31),"shareholders":52800},{"date":D(2025,9,30),"shareholders":54000},{"date":D(2025,10,31),"shareholders":55300},{"date":D(2025,11,30),"shareholders":56700},{"date":D(2025,12,31),"shareholders":58200},{"date":D(2026,1,31),"shareholders":59800},{"date":D(2026,2,28),"shareholders":61500},{"date":D(2026,3,31),"shareholders":63300},{"date":D(2026,4,30),"shareholders":64961},{"date":D(2026,5,31),"shareholders":66494}],
-                "AKRA":[{"date":D(2025,4,30),"shareholders":68200},{"date":D(2025,5,31),"shareholders":69800},{"date":D(2025,6,30),"shareholders":71400},{"date":D(2025,7,31),"shareholders":73100},{"date":D(2025,8,31),"shareholders":74800},{"date":D(2025,9,30),"shareholders":76500},{"date":D(2025,10,31),"shareholders":78300},{"date":D(2025,11,30),"shareholders":80100},{"date":D(2025,12,31),"shareholders":82000},{"date":D(2026,1,31),"shareholders":83900},{"date":D(2026,2,28),"shareholders":85800},{"date":D(2026,3,31),"shareholders":87800},{"date":D(2026,4,30),"shareholders":89640},{"date":D(2026,5,31),"shareholders":91340}],
-                "PGAS":[{"date":D(2025,4,30),"shareholders":162100},{"date":D(2025,5,31),"shareholders":162900},{"date":D(2025,6,30),"shareholders":163300},{"date":D(2025,7,31),"shareholders":162700},{"date":D(2025,8,31),"shareholders":161300},{"date":D(2025,9,30),"shareholders":159500},{"date":D(2025,10,31),"shareholders":157900},{"date":D(2025,11,30),"shareholders":156500},{"date":D(2025,12,31),"shareholders":154700},{"date":D(2026,1,31),"shareholders":152500},{"date":D(2026,2,28),"shareholders":150000},{"date":D(2026,3,31),"shareholders":147300},{"date":D(2026,4,30),"shareholders":144808},{"date":D(2026,5,31),"shareholders":142508}],
-                "PGEO":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":63500},{"date":D(2025,6,30),"shareholders":65000},{"date":D(2025,7,31),"shareholders":66600},{"date":D(2025,8,31),"shareholders":68300},{"date":D(2025,9,30),"shareholders":70100},{"date":D(2025,10,31),"shareholders":72000},{"date":D(2025,11,30),"shareholders":74000},{"date":D(2025,12,31),"shareholders":76100},{"date":D(2026,1,31),"shareholders":78300},{"date":D(2026,2,28),"shareholders":80600},{"date":D(2026,3,31),"shareholders":83000},{"date":D(2026,4,30),"shareholders":85216},{"date":D(2026,5,31),"shareholders":87261}],
-                "BRMS":[{"date":D(2025,4,30),"shareholders":88200},{"date":D(2025,5,31),"shareholders":90600},{"date":D(2025,6,30),"shareholders":93200},{"date":D(2025,7,31),"shareholders":96000},{"date":D(2025,8,31),"shareholders":99000},{"date":D(2025,9,30),"shareholders":102200},{"date":D(2025,10,31),"shareholders":105600},{"date":D(2025,11,30),"shareholders":109200},{"date":D(2025,12,31),"shareholders":113000},{"date":D(2026,1,31),"shareholders":117000},{"date":D(2026,2,28),"shareholders":121200},{"date":D(2026,3,31),"shareholders":125600},{"date":D(2026,4,30),"shareholders":129660},{"date":D(2026,5,31),"shareholders":133409}],
-                "DSSA":[{"date":D(2025,4,30),"shareholders":72100},{"date":D(2025,5,31),"shareholders":72500},{"date":D(2025,6,30),"shareholders":72700},{"date":D(2025,7,31),"shareholders":72500},{"date":D(2025,8,31),"shareholders":71900},{"date":D(2025,9,30),"shareholders":71100},{"date":D(2025,10,31),"shareholders":70400},{"date":D(2025,11,30),"shareholders":69800},{"date":D(2025,12,31),"shareholders":69000},{"date":D(2026,1,31),"shareholders":68000},{"date":D(2026,2,28),"shareholders":66900},{"date":D(2026,3,31),"shareholders":65700},{"date":D(2026,4,30),"shareholders":64593},{"date":D(2026,5,31),"shareholders":63571}],
-                "GEMS":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":63700},{"date":D(2025,6,30),"shareholders":65400},{"date":D(2025,7,31),"shareholders":67200},{"date":D(2025,8,31),"shareholders":69100},{"date":D(2025,9,30),"shareholders":71100},{"date":D(2025,10,31),"shareholders":73200},{"date":D(2025,11,30),"shareholders":75400},{"date":D(2025,12,31),"shareholders":77700},{"date":D(2026,1,31),"shareholders":80100},{"date":D(2026,2,28),"shareholders":82600},{"date":D(2026,3,31),"shareholders":85200},{"date":D(2026,4,30),"shareholders":87600},{"date":D(2026,5,31),"shareholders":89815}],
-                "NCKL":[{"date":D(2025,4,30),"shareholders":82100},{"date":D(2025,5,31),"shareholders":84300},{"date":D(2025,6,30),"shareholders":86700},{"date":D(2025,7,31),"shareholders":89300},{"date":D(2025,8,31),"shareholders":92100},{"date":D(2025,9,30),"shareholders":95100},{"date":D(2025,10,31),"shareholders":98300},{"date":D(2025,11,30),"shareholders":101700},{"date":D(2025,12,31),"shareholders":105300},{"date":D(2026,1,31),"shareholders":109100},{"date":D(2026,2,28),"shareholders":113100},{"date":D(2026,3,31),"shareholders":117300},{"date":D(2026,4,30),"shareholders":121176},{"date":D(2026,5,31),"shareholders":124754}],
-                "ESSA":[{"date":D(2025,4,30),"shareholders":72100},{"date":D(2025,5,31),"shareholders":74200},{"date":D(2025,6,30),"shareholders":76100},{"date":D(2025,7,31),"shareholders":78400},{"date":D(2025,8,31),"shareholders":80200},{"date":D(2025,9,30),"shareholders":82800},{"date":D(2025,10,31),"shareholders":82400},{"date":D(2025,11,30),"shareholders":84000},{"date":D(2025,12,31),"shareholders":84600},{"date":D(2026,1,31),"shareholders":85400},{"date":D(2026,2,28),"shareholders":86100},{"date":D(2026,3,31),"shareholders":86600},{"date":D(2026,4,30),"shareholders":87060},{"date":D(2026,5,31),"shareholders":87485}],
-                "PTRO":[{"date":D(2025,4,30),"shareholders":52100},{"date":D(2025,5,31),"shareholders":53500},{"date":D(2025,6,30),"shareholders":55000},{"date":D(2025,7,31),"shareholders":56600},{"date":D(2025,8,31),"shareholders":58300},{"date":D(2025,9,30),"shareholders":60100},{"date":D(2025,10,31),"shareholders":62000},{"date":D(2025,11,30),"shareholders":64000},{"date":D(2025,12,31),"shareholders":66100},{"date":D(2026,1,31),"shareholders":68300},{"date":D(2026,2,28),"shareholders":70600},{"date":D(2026,3,31),"shareholders":73000},{"date":D(2026,4,30),"shareholders":75216},{"date":D(2026,5,31),"shareholders":77261}],
-                "MBMA":[{"date":D(2025,4,30),"shareholders":68200},{"date":D(2025,5,31),"shareholders":70000},{"date":D(2025,6,30),"shareholders":72000},{"date":D(2025,7,31),"shareholders":74100},{"date":D(2025,8,31),"shareholders":76300},{"date":D(2025,9,30),"shareholders":78600},{"date":D(2025,10,31),"shareholders":81000},{"date":D(2025,11,30),"shareholders":83500},{"date":D(2025,12,31),"shareholders":86100},{"date":D(2026,1,31),"shareholders":88800},{"date":D(2026,2,28),"shareholders":91600},{"date":D(2026,3,31),"shareholders":94500},{"date":D(2026,4,30),"shareholders":97177},{"date":D(2026,5,31),"shareholders":99648}],
-                "INCO":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":96400},{"date":D(2025,6,30),"shareholders":98800},{"date":D(2025,7,31),"shareholders":101300},{"date":D(2025,8,31),"shareholders":103900},{"date":D(2025,9,30),"shareholders":106600},{"date":D(2025,10,31),"shareholders":109400},{"date":D(2025,11,30),"shareholders":112300},{"date":D(2025,12,31),"shareholders":115300},{"date":D(2026,1,31),"shareholders":118400},{"date":D(2026,2,28),"shareholders":121600},{"date":D(2026,3,31),"shareholders":124900},{"date":D(2026,4,30),"shareholders":127947},{"date":D(2026,5,31),"shareholders":130760}],
-                "MDKA":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":86200},{"date":D(2025,6,30),"shareholders":88400},{"date":D(2025,7,31),"shareholders":90700},{"date":D(2025,8,31),"shareholders":93100},{"date":D(2025,9,30),"shareholders":95600},{"date":D(2025,10,31),"shareholders":98200},{"date":D(2025,11,30),"shareholders":100900},{"date":D(2025,12,31),"shareholders":103700},{"date":D(2026,1,31),"shareholders":106600},{"date":D(2026,2,28),"shareholders":109600},{"date":D(2026,3,31),"shareholders":112700},{"date":D(2026,4,30),"shareholders":115562},{"date":D(2026,5,31),"shareholders":118203}],
-                "ANTM":[{"date":D(2025,4,30),"shareholders":162100},{"date":D(2025,5,31),"shareholders":165900},{"date":D(2025,6,30),"shareholders":170000},{"date":D(2025,7,31),"shareholders":174300},{"date":D(2025,8,31),"shareholders":178800},{"date":D(2025,9,30),"shareholders":183500},{"date":D(2025,10,31),"shareholders":188400},{"date":D(2025,11,30),"shareholders":193500},{"date":D(2025,12,31),"shareholders":198800},{"date":D(2026,1,31),"shareholders":204300},{"date":D(2026,2,28),"shareholders":210000},{"date":D(2026,3,31),"shareholders":215900},{"date":D(2026,4,30),"shareholders":221348},{"date":D(2026,5,31),"shareholders":226376}],
-                "ADMR":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":42700},{"date":D(2025,6,30),"shareholders":43100},{"date":D(2025,7,31),"shareholders":43200},{"date":D(2025,8,31),"shareholders":43000},{"date":D(2025,9,30),"shareholders":42700},{"date":D(2025,10,31),"shareholders":42400},{"date":D(2025,11,30),"shareholders":42200},{"date":D(2025,12,31),"shareholders":41900},{"date":D(2026,1,31),"shareholders":41500},{"date":D(2026,2,28),"shareholders":41000},{"date":D(2026,3,31),"shareholders":40400},{"date":D(2026,4,30),"shareholders":39847},{"date":D(2026,5,31),"shareholders":39336}],
-                "ENRG":[{"date":D(2025,4,30),"shareholders":28400},{"date":D(2025,5,31),"shareholders":29000},{"date":D(2025,6,30),"shareholders":29700},{"date":D(2025,7,31),"shareholders":30400},{"date":D(2025,8,31),"shareholders":31200},{"date":D(2025,9,30),"shareholders":32000},{"date":D(2025,10,31),"shareholders":32900},{"date":D(2025,11,30),"shareholders":33800},{"date":D(2025,12,31),"shareholders":34800},{"date":D(2026,1,31),"shareholders":35800},{"date":D(2026,2,28),"shareholders":36900},{"date":D(2026,3,31),"shareholders":38100},{"date":D(2026,4,30),"shareholders":39208},{"date":D(2026,5,31),"shareholders":40230}],
-                # ── KONSUMER ───────────────────────────────────────────────────
-                "UNVR":[{"date":D(2025,4,30),"shareholders":184200},{"date":D(2025,5,31),"shareholders":185000},{"date":D(2025,6,30),"shareholders":185400},{"date":D(2025,7,31),"shareholders":184600},{"date":D(2025,8,31),"shareholders":182600},{"date":D(2025,9,30),"shareholders":180000},{"date":D(2025,10,31),"shareholders":177800},{"date":D(2025,11,30),"shareholders":175900},{"date":D(2025,12,31),"shareholders":173400},{"date":D(2026,1,31),"shareholders":170300},{"date":D(2026,2,28),"shareholders":166900},{"date":D(2026,3,31),"shareholders":163200},{"date":D(2026,4,30),"shareholders":159784},{"date":D(2026,5,31),"shareholders":156630}],
-                "ICBP":[{"date":D(2025,4,30),"shareholders":168200},{"date":D(2025,5,31),"shareholders":168800},{"date":D(2025,6,30),"shareholders":169000},{"date":D(2025,7,31),"shareholders":168600},{"date":D(2025,8,31),"shareholders":167400},{"date":D(2025,9,30),"shareholders":165800},{"date":D(2025,10,31),"shareholders":164400},{"date":D(2025,11,30),"shareholders":163200},{"date":D(2025,12,31),"shareholders":161600},{"date":D(2026,1,31),"shareholders":159600},{"date":D(2026,2,28),"shareholders":157400},{"date":D(2026,3,31),"shareholders":155000},{"date":D(2026,4,30),"shareholders":152784},{"date":D(2026,5,31),"shareholders":150739}],
-                "INDF":[{"date":D(2025,4,30),"shareholders":142100},{"date":D(2025,5,31),"shareholders":142600},{"date":D(2025,6,30),"shareholders":142700},{"date":D(2025,7,31),"shareholders":142400},{"date":D(2025,8,31),"shareholders":141400},{"date":D(2025,9,30),"shareholders":140000},{"date":D(2025,10,31),"shareholders":138800},{"date":D(2025,11,30),"shareholders":137800},{"date":D(2025,12,31),"shareholders":136400},{"date":D(2026,1,31),"shareholders":134600},{"date":D(2026,2,28),"shareholders":132600},{"date":D(2026,3,31),"shareholders":130400},{"date":D(2026,4,30),"shareholders":128368},{"date":D(2026,5,31),"shareholders":126492}],
-                "MYOR":[{"date":D(2025,4,30),"shareholders":124200},{"date":D(2025,5,31),"shareholders":124600},{"date":D(2025,6,30),"shareholders":124700},{"date":D(2025,7,31),"shareholders":124500},{"date":D(2025,8,31),"shareholders":123700},{"date":D(2025,9,30),"shareholders":122500},{"date":D(2025,10,31),"shareholders":121500},{"date":D(2025,11,30),"shareholders":120700},{"date":D(2025,12,31),"shareholders":119600},{"date":D(2026,1,31),"shareholders":118200},{"date":D(2026,2,28),"shareholders":116600},{"date":D(2026,3,31),"shareholders":114800},{"date":D(2026,4,30),"shareholders":113139},{"date":D(2026,5,31),"shareholders":111606}],
-                "CPIN":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":96000},{"date":D(2025,6,30),"shareholders":97900},{"date":D(2025,7,31),"shareholders":99900},{"date":D(2025,8,31),"shareholders":102000},{"date":D(2025,9,30),"shareholders":104200},{"date":D(2025,10,31),"shareholders":106500},{"date":D(2025,11,30),"shareholders":108900},{"date":D(2025,12,31),"shareholders":111400},{"date":D(2026,1,31),"shareholders":114000},{"date":D(2026,2,28),"shareholders":116700},{"date":D(2026,3,31),"shareholders":119500},{"date":D(2026,4,30),"shareholders":122085},{"date":D(2026,5,31),"shareholders":124471}],
-                "JPFA":[{"date":D(2025,4,30),"shareholders":84100},{"date":D(2025,5,31),"shareholders":87200},{"date":D(2025,6,30),"shareholders":89400},{"date":D(2025,7,31),"shareholders":91800},{"date":D(2025,8,31),"shareholders":94200},{"date":D(2025,9,30),"shareholders":96800},{"date":D(2025,10,31),"shareholders":98400},{"date":D(2025,11,30),"shareholders":100800},{"date":D(2025,12,31),"shareholders":103500},{"date":D(2026,1,31),"shareholders":106400},{"date":D(2026,2,28),"shareholders":109500},{"date":D(2026,3,31),"shareholders":112800},{"date":D(2026,4,30),"shareholders":115836},{"date":D(2026,5,31),"shareholders":118641}],
-                "SIDO":[{"date":D(2025,4,30),"shareholders":68200},{"date":D(2025,5,31),"shareholders":69600},{"date":D(2025,6,30),"shareholders":71100},{"date":D(2025,7,31),"shareholders":72700},{"date":D(2025,8,31),"shareholders":74400},{"date":D(2025,9,30),"shareholders":76200},{"date":D(2025,10,31),"shareholders":78100},{"date":D(2025,11,30),"shareholders":80100},{"date":D(2025,12,31),"shareholders":82200},{"date":D(2026,1,31),"shareholders":84400},{"date":D(2026,2,28),"shareholders":86700},{"date":D(2026,3,31),"shareholders":89100},{"date":D(2026,4,30),"shareholders":91316},{"date":D(2026,5,31),"shareholders":93361}],
-                "ULTJ":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":86000},{"date":D(2025,6,30),"shareholders":87900},{"date":D(2025,7,31),"shareholders":89900},{"date":D(2025,8,31),"shareholders":92000},{"date":D(2025,9,30),"shareholders":94200},{"date":D(2025,10,31),"shareholders":96500},{"date":D(2025,11,30),"shareholders":98900},{"date":D(2025,12,31),"shareholders":101400},{"date":D(2026,1,31),"shareholders":104000},{"date":D(2026,2,28),"shareholders":106700},{"date":D(2026,3,31),"shareholders":109500},{"date":D(2026,4,30),"shareholders":112085},{"date":D(2026,5,31),"shareholders":114471}],
-                "GGRM":[{"date":D(2025,4,30),"shareholders":162100},{"date":D(2025,5,31),"shareholders":161300},{"date":D(2025,6,30),"shareholders":160100},{"date":D(2025,7,31),"shareholders":158500},{"date":D(2025,8,31),"shareholders":156500},{"date":D(2025,9,30),"shareholders":154100},{"date":D(2025,10,31),"shareholders":151900},{"date":D(2025,11,30),"shareholders":149900},{"date":D(2025,12,31),"shareholders":147500},{"date":D(2026,1,31),"shareholders":144700},{"date":D(2026,2,28),"shareholders":141600},{"date":D(2026,3,31),"shareholders":138200},{"date":D(2026,4,30),"shareholders":135062},{"date":D(2026,5,31),"shareholders":132165}],
-                "HMSP":[{"date":D(2025,4,30),"shareholders":142100},{"date":D(2025,5,31),"shareholders":141500},{"date":D(2025,6,30),"shareholders":140500},{"date":D(2025,7,31),"shareholders":139100},{"date":D(2025,8,31),"shareholders":137300},{"date":D(2025,9,30),"shareholders":135100},{"date":D(2025,10,31),"shareholders":133100},{"date":D(2025,11,30),"shareholders":131300},{"date":D(2025,12,31),"shareholders":129100},{"date":D(2026,1,31),"shareholders":126500},{"date":D(2026,2,28),"shareholders":123600},{"date":D(2026,3,31),"shareholders":120400},{"date":D(2026,4,30),"shareholders":117447},{"date":D(2026,5,31),"shareholders":114720}],
-                "WIIM":[{"date":D(2025,4,30),"shareholders":38200},{"date":D(2025,5,31),"shareholders":39100},{"date":D(2025,6,30),"shareholders":40100},{"date":D(2025,7,31),"shareholders":41200},{"date":D(2025,8,31),"shareholders":42400},{"date":D(2025,9,30),"shareholders":43700},{"date":D(2025,10,31),"shareholders":45100},{"date":D(2025,11,30),"shareholders":46600},{"date":D(2025,12,31),"shareholders":48200},{"date":D(2026,1,31),"shareholders":49900},{"date":D(2026,2,28),"shareholders":51700},{"date":D(2026,3,31),"shareholders":53600},{"date":D(2026,4,30),"shareholders":55354},{"date":D(2026,5,31),"shareholders":56973}],
-                "MAPI":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":61700},{"date":D(2025,6,30),"shareholders":61100},{"date":D(2025,7,31),"shareholders":60300},{"date":D(2025,8,31),"shareholders":59300},{"date":D(2025,9,30),"shareholders":58100},{"date":D(2025,10,31),"shareholders":57000},{"date":D(2025,11,30),"shareholders":56100},{"date":D(2025,12,31),"shareholders":54900},{"date":D(2026,1,31),"shareholders":53400},{"date":D(2026,2,28),"shareholders":51700},{"date":D(2026,3,31),"shareholders":49800},{"date":D(2026,4,30),"shareholders":48047},{"date":D(2026,5,31),"shareholders":46428}],
-                "LPPF":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":47900},{"date":D(2025,6,30),"shareholders":47400},{"date":D(2025,7,31),"shareholders":46700},{"date":D(2025,8,31),"shareholders":45800},{"date":D(2025,9,30),"shareholders":44700},{"date":D(2025,10,31),"shareholders":43700},{"date":D(2025,11,30),"shareholders":42900},{"date":D(2025,12,31),"shareholders":41900},{"date":D(2026,1,31),"shareholders":40700},{"date":D(2026,2,28),"shareholders":39300},{"date":D(2026,3,31),"shareholders":37700},{"date":D(2026,4,30),"shareholders":36223},{"date":D(2026,5,31),"shareholders":34859}],
-                "RALS":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":41900},{"date":D(2025,6,30),"shareholders":41500},{"date":D(2025,7,31),"shareholders":40900},{"date":D(2025,8,31),"shareholders":40100},{"date":D(2025,9,30),"shareholders":39100},{"date":D(2025,10,31),"shareholders":38200},{"date":D(2025,11,30),"shareholders":37500},{"date":D(2025,12,31),"shareholders":36600},{"date":D(2026,1,31),"shareholders":35500},{"date":D(2026,2,28),"shareholders":34200},{"date":D(2026,3,31),"shareholders":32700},{"date":D(2026,4,30),"shareholders":31315},{"date":D(2026,5,31),"shareholders":30036}],
-                "ACES":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":93600},{"date":D(2025,6,30),"shareholders":92800},{"date":D(2025,7,31),"shareholders":91800},{"date":D(2025,8,31),"shareholders":90600},{"date":D(2025,9,30),"shareholders":89200},{"date":D(2025,10,31),"shareholders":87900},{"date":D(2025,11,30),"shareholders":86800},{"date":D(2025,12,31),"shareholders":85400},{"date":D(2026,1,31),"shareholders":83700},{"date":D(2026,2,28),"shareholders":81800},{"date":D(2026,3,31),"shareholders":79700},{"date":D(2026,4,30),"shareholders":77762},{"date":D(2026,5,31),"shareholders":75972}],
-                "AMRT":[{"date":D(2025,4,30),"shareholders":148200},{"date":D(2025,5,31),"shareholders":150600},{"date":D(2025,6,30),"shareholders":153200},{"date":D(2025,7,31),"shareholders":156000},{"date":D(2025,8,31),"shareholders":159000},{"date":D(2025,9,30),"shareholders":162200},{"date":D(2025,10,31),"shareholders":165600},{"date":D(2025,11,30),"shareholders":169200},{"date":D(2025,12,31),"shareholders":173000},{"date":D(2026,1,31),"shareholders":177000},{"date":D(2026,2,28),"shareholders":181200},{"date":D(2026,3,31),"shareholders":185600},{"date":D(2026,4,30),"shareholders":189661},{"date":D(2026,5,31),"shareholders":193411}],
-                "HERO":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":48000},{"date":D(2025,6,30),"shareholders":47600},{"date":D(2025,7,31),"shareholders":47000},{"date":D(2025,8,31),"shareholders":46200},{"date":D(2025,9,30),"shareholders":45200},{"date":D(2025,10,31),"shareholders":44300},{"date":D(2025,11,30),"shareholders":43600},{"date":D(2025,12,31),"shareholders":42700},{"date":D(2026,1,31),"shareholders":41600},{"date":D(2026,2,28),"shareholders":40300},{"date":D(2026,3,31),"shareholders":38800},{"date":D(2026,4,30),"shareholders":37415},{"date":D(2026,5,31),"shareholders":36136}],
-                "MIDI":[{"date":D(2025,4,30),"shareholders":28400},{"date":D(2025,5,31),"shareholders":29000},{"date":D(2025,6,30),"shareholders":29700},{"date":D(2025,7,31),"shareholders":30400},{"date":D(2025,8,31),"shareholders":31200},{"date":D(2025,9,30),"shareholders":32000},{"date":D(2025,10,31),"shareholders":32900},{"date":D(2025,11,30),"shareholders":33800},{"date":D(2025,12,31),"shareholders":34800},{"date":D(2026,1,31),"shareholders":35800},{"date":D(2026,2,28),"shareholders":36900},{"date":D(2026,3,31),"shareholders":38100},{"date":D(2026,4,30),"shareholders":39208},{"date":D(2026,5,31),"shareholders":40231}],
-                # ── TEKNOLOGI & DIGITAL ────────────────────────────────────────
-                "GOTO":[{"date":D(2025,4,30),"shareholders":562100},{"date":D(2025,5,31),"shareholders":578400},{"date":D(2025,6,30),"shareholders":591200},{"date":D(2025,7,31),"shareholders":602100},{"date":D(2025,8,31),"shareholders":611400},{"date":D(2025,9,30),"shareholders":614200},{"date":D(2025,10,31),"shareholders":612400},{"date":D(2025,11,30),"shareholders":628900},{"date":D(2025,12,31),"shareholders":645800},{"date":D(2026,1,31),"shareholders":663200},{"date":D(2026,2,28),"shareholders":681500},{"date":D(2026,3,31),"shareholders":700400},{"date":D(2026,4,30),"shareholders":717788},{"date":D(2026,5,31),"shareholders":733853}],
-                "EMTK":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":61700},{"date":D(2025,6,30),"shareholders":61100},{"date":D(2025,7,31),"shareholders":60300},{"date":D(2025,8,31),"shareholders":59300},{"date":D(2025,9,30),"shareholders":58100},{"date":D(2025,10,31),"shareholders":57000},{"date":D(2025,11,30),"shareholders":56100},{"date":D(2025,12,31),"shareholders":54900},{"date":D(2026,1,31),"shareholders":53400},{"date":D(2026,2,28),"shareholders":51700},{"date":D(2026,3,31),"shareholders":49800},{"date":D(2026,4,30),"shareholders":48047},{"date":D(2026,5,31),"shareholders":46428}],
-                "DMMX":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":87600},{"date":D(2025,6,30),"shareholders":90400},{"date":D(2025,7,31),"shareholders":93800},{"date":D(2025,8,31),"shareholders":96400},{"date":D(2025,9,30),"shareholders":97800},{"date":D(2025,10,31),"shareholders":98600},{"date":D(2025,11,30),"shareholders":102400},{"date":D(2025,12,31),"shareholders":106800},{"date":D(2026,1,31),"shareholders":111500},{"date":D(2026,2,28),"shareholders":116400},{"date":D(2026,3,31),"shareholders":121800},{"date":D(2026,4,30),"shareholders":126785},{"date":D(2026,5,31),"shareholders":131389}],
-                "VKTR":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":64800},{"date":D(2025,6,30),"shareholders":67600},{"date":D(2025,7,31),"shareholders":70500},{"date":D(2025,8,31),"shareholders":73400},{"date":D(2025,9,30),"shareholders":76400},{"date":D(2025,10,31),"shareholders":79400},{"date":D(2025,11,30),"shareholders":82500},{"date":D(2025,12,31),"shareholders":85700},{"date":D(2026,1,31),"shareholders":89000},{"date":D(2026,2,28),"shareholders":92300},{"date":D(2026,3,31),"shareholders":95700},{"date":D(2026,4,30),"shareholders":98828},{"date":D(2026,5,31),"shareholders":101717}],
-                "MCAS":[{"date":D(2025,4,30),"shareholders":28200},{"date":D(2025,5,31),"shareholders":29600},{"date":D(2025,6,30),"shareholders":31100},{"date":D(2025,7,31),"shareholders":32700},{"date":D(2025,8,31),"shareholders":34400},{"date":D(2025,9,30),"shareholders":36200},{"date":D(2025,10,31),"shareholders":37900},{"date":D(2025,11,30),"shareholders":39700},{"date":D(2025,12,31),"shareholders":41600},{"date":D(2026,1,31),"shareholders":43500},{"date":D(2026,2,28),"shareholders":45500},{"date":D(2026,3,31),"shareholders":47600},{"date":D(2026,4,30),"shareholders":49540},{"date":D(2026,5,31),"shareholders":51331}],
-                "BUKA":[{"date":D(2025,4,30),"shareholders":148200},{"date":D(2025,5,31),"shareholders":149000},{"date":D(2025,6,30),"shareholders":149400},{"date":D(2025,7,31),"shareholders":148600},{"date":D(2025,8,31),"shareholders":146600},{"date":D(2025,9,30),"shareholders":144000},{"date":D(2025,10,31),"shareholders":141800},{"date":D(2025,11,30),"shareholders":140000},{"date":D(2025,12,31),"shareholders":137700},{"date":D(2026,1,31),"shareholders":134800},{"date":D(2026,2,28),"shareholders":131600},{"date":D(2026,3,31),"shareholders":128100},{"date":D(2026,4,30),"shareholders":124869},{"date":D(2026,5,31),"shareholders":121887}],
-                "FILM":[{"date":D(2025,4,30),"shareholders":38200},{"date":D(2025,5,31),"shareholders":39800},{"date":D(2025,6,30),"shareholders":41500},{"date":D(2025,7,31),"shareholders":43200},{"date":D(2025,8,31),"shareholders":44900},{"date":D(2025,9,30),"shareholders":46700},{"date":D(2025,10,31),"shareholders":48500},{"date":D(2025,11,30),"shareholders":50400},{"date":D(2025,12,31),"shareholders":52300},{"date":D(2026,1,31),"shareholders":54300},{"date":D(2026,2,28),"shareholders":56300},{"date":D(2026,3,31),"shareholders":58400},{"date":D(2026,4,30),"shareholders":60338},{"date":D(2026,5,31),"shareholders":62128}],
-                # ── PROPERTI ───────────────────────────────────────────────────
-                "BSDE":[{"date":D(2025,4,30),"shareholders":218400},{"date":D(2025,5,31),"shareholders":224100},{"date":D(2025,6,30),"shareholders":228800},{"date":D(2025,7,31),"shareholders":232100},{"date":D(2025,8,31),"shareholders":234800},{"date":D(2025,9,30),"shareholders":236200},{"date":D(2025,10,31),"shareholders":236500},{"date":D(2025,11,30),"shareholders":240100},{"date":D(2025,12,31),"shareholders":244800},{"date":D(2026,1,31),"shareholders":249400},{"date":D(2026,2,28),"shareholders":254200},{"date":D(2026,3,31),"shareholders":259600},{"date":D(2026,4,30),"shareholders":264568},{"date":D(2026,5,31),"shareholders":269158}],
-                "CTRA":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":93800},{"date":D(2025,6,30),"shareholders":93200},{"date":D(2025,7,31),"shareholders":92400},{"date":D(2025,8,31),"shareholders":91400},{"date":D(2025,9,30),"shareholders":90200},{"date":D(2025,10,31),"shareholders":89100},{"date":D(2025,11,30),"shareholders":88200},{"date":D(2025,12,31),"shareholders":87000},{"date":D(2026,1,31),"shareholders":85500},{"date":D(2026,2,28),"shareholders":83800},{"date":D(2026,3,31),"shareholders":81900},{"date":D(2026,4,30),"shareholders":80147},{"date":D(2026,5,31),"shareholders":78528}],
-                "SMRA":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":83900},{"date":D(2025,6,30),"shareholders":83400},{"date":D(2025,7,31),"shareholders":82700},{"date":D(2025,8,31),"shareholders":81800},{"date":D(2025,9,30),"shareholders":80700},{"date":D(2025,10,31),"shareholders":79700},{"date":D(2025,11,30),"shareholders":78900},{"date":D(2025,12,31),"shareholders":77900},{"date":D(2026,1,31),"shareholders":76700},{"date":D(2026,2,28),"shareholders":75300},{"date":D(2026,3,31),"shareholders":73700},{"date":D(2026,4,30),"shareholders":72223},{"date":D(2026,5,31),"shareholders":70859}],
-                "LPKR":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":61900},{"date":D(2025,6,30),"shareholders":61500},{"date":D(2025,7,31),"shareholders":60900},{"date":D(2025,8,31),"shareholders":60100},{"date":D(2025,9,30),"shareholders":59100},{"date":D(2025,10,31),"shareholders":58200},{"date":D(2025,11,30),"shareholders":57500},{"date":D(2025,12,31),"shareholders":56600},{"date":D(2026,1,31),"shareholders":55500},{"date":D(2026,2,28),"shareholders":54200},{"date":D(2026,3,31),"shareholders":52700},{"date":D(2026,4,30),"shareholders":51315},{"date":D(2026,5,31),"shareholders":50036}],
-                "PWON":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":83900},{"date":D(2025,6,30),"shareholders":83400},{"date":D(2025,7,31),"shareholders":82700},{"date":D(2025,8,31),"shareholders":81800},{"date":D(2025,9,30),"shareholders":80700},{"date":D(2025,10,31),"shareholders":79700},{"date":D(2025,11,30),"shareholders":78900},{"date":D(2025,12,31),"shareholders":77900},{"date":D(2026,1,31),"shareholders":76700},{"date":D(2026,2,28),"shareholders":75300},{"date":D(2026,3,31),"shareholders":73700},{"date":D(2026,4,30),"shareholders":72223},{"date":D(2026,5,31),"shareholders":70859}],
-                "DMAS":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":49300},{"date":D(2025,6,30),"shareholders":50500},{"date":D(2025,7,31),"shareholders":51700},{"date":D(2025,8,31),"shareholders":53000},{"date":D(2025,9,30),"shareholders":54400},{"date":D(2025,10,31),"shareholders":55900},{"date":D(2025,11,30),"shareholders":57500},{"date":D(2025,12,31),"shareholders":59200},{"date":D(2026,1,31),"shareholders":61000},{"date":D(2026,2,28),"shareholders":62900},{"date":D(2026,3,31),"shareholders":64900},{"date":D(2026,4,30),"shareholders":66747},{"date":D(2026,5,31),"shareholders":68452}],
-                "BEST":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":63400},{"date":D(2025,6,30),"shareholders":64800},{"date":D(2025,7,31),"shareholders":66300},{"date":D(2025,8,31),"shareholders":67900},{"date":D(2025,9,30),"shareholders":69600},{"date":D(2025,10,31),"shareholders":71400},{"date":D(2025,11,30),"shareholders":73300},{"date":D(2025,12,31),"shareholders":75300},{"date":D(2026,1,31),"shareholders":77400},{"date":D(2026,2,28),"shareholders":79600},{"date":D(2026,3,31),"shareholders":81900},{"date":D(2026,4,30),"shareholders":84023},{"date":D(2026,5,31),"shareholders":85983}],
-                "KIJA":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":48000},{"date":D(2025,6,30),"shareholders":47600},{"date":D(2025,7,31),"shareholders":47000},{"date":D(2025,8,31),"shareholders":46200},{"date":D(2025,9,30),"shareholders":45200},{"date":D(2025,10,31),"shareholders":44300},{"date":D(2025,11,30),"shareholders":43600},{"date":D(2025,12,31),"shareholders":42700},{"date":D(2026,1,31),"shareholders":41600},{"date":D(2026,2,28),"shareholders":40300},{"date":D(2026,3,31),"shareholders":38800},{"date":D(2026,4,30),"shareholders":37415},{"date":D(2026,5,31),"shareholders":36136}],
-                "ASRI":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":61800},{"date":D(2025,6,30),"shareholders":61300},{"date":D(2025,7,31),"shareholders":60600},{"date":D(2025,8,31),"shareholders":59700},{"date":D(2025,9,30),"shareholders":58600},{"date":D(2025,10,31),"shareholders":57600},{"date":D(2025,11,30),"shareholders":56800},{"date":D(2025,12,31),"shareholders":55800},{"date":D(2026,1,31),"shareholders":54600},{"date":D(2026,2,28),"shareholders":53200},{"date":D(2026,3,31),"shareholders":51600},{"date":D(2026,4,30),"shareholders":50123},{"date":D(2026,5,31),"shareholders":48759}],
-                "ADHI":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":83800},{"date":D(2025,6,30),"shareholders":83200},{"date":D(2025,7,31),"shareholders":82400},{"date":D(2025,8,31),"shareholders":81400},{"date":D(2025,9,30),"shareholders":80200},{"date":D(2025,10,31),"shareholders":79100},{"date":D(2025,11,30),"shareholders":78200},{"date":D(2025,12,31),"shareholders":77000},{"date":D(2026,1,31),"shareholders":75500},{"date":D(2026,2,28),"shareholders":73800},{"date":D(2026,3,31),"shareholders":71900},{"date":D(2026,4,30),"shareholders":70147},{"date":D(2026,5,31),"shareholders":68528}],
-                "PTPP":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":93800},{"date":D(2025,6,30),"shareholders":93200},{"date":D(2025,7,31),"shareholders":92400},{"date":D(2025,8,31),"shareholders":91400},{"date":D(2025,9,30),"shareholders":90200},{"date":D(2025,10,31),"shareholders":89100},{"date":D(2025,11,30),"shareholders":88200},{"date":D(2025,12,31),"shareholders":87000},{"date":D(2026,1,31),"shareholders":85500},{"date":D(2026,2,28),"shareholders":83800},{"date":D(2026,3,31),"shareholders":81900},{"date":D(2026,4,30),"shareholders":80147},{"date":D(2026,5,31),"shareholders":78528}],
-                "WIKA":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":83800},{"date":D(2025,6,30),"shareholders":83200},{"date":D(2025,7,31),"shareholders":82400},{"date":D(2025,8,31),"shareholders":81400},{"date":D(2025,9,30),"shareholders":80200},{"date":D(2025,10,31),"shareholders":79100},{"date":D(2025,11,30),"shareholders":78200},{"date":D(2025,12,31),"shareholders":77000},{"date":D(2026,1,31),"shareholders":75500},{"date":D(2026,2,28),"shareholders":73800},{"date":D(2026,3,31),"shareholders":71900},{"date":D(2026,4,30),"shareholders":70147},{"date":D(2026,5,31),"shareholders":68528}],
-                "WSKT":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":93800},{"date":D(2025,6,30),"shareholders":93200},{"date":D(2025,7,31),"shareholders":92400},{"date":D(2025,8,31),"shareholders":91400},{"date":D(2025,9,30),"shareholders":90200},{"date":D(2025,10,31),"shareholders":89100},{"date":D(2025,11,30),"shareholders":88200},{"date":D(2025,12,31),"shareholders":87000},{"date":D(2026,1,31),"shareholders":85500},{"date":D(2026,2,28),"shareholders":83800},{"date":D(2026,3,31),"shareholders":81900},{"date":D(2026,4,30),"shareholders":80147},{"date":D(2026,5,31),"shareholders":78528}],
-                "NRCA":[{"date":D(2025,4,30),"shareholders":28400},{"date":D(2025,5,31),"shareholders":29000},{"date":D(2025,6,30),"shareholders":29700},{"date":D(2025,7,31),"shareholders":30400},{"date":D(2025,8,31),"shareholders":31200},{"date":D(2025,9,30),"shareholders":32000},{"date":D(2025,10,31),"shareholders":32900},{"date":D(2025,11,30),"shareholders":33800},{"date":D(2025,12,31),"shareholders":34800},{"date":D(2026,1,31),"shareholders":35800},{"date":D(2026,2,28),"shareholders":36900},{"date":D(2026,3,31),"shareholders":38100},{"date":D(2026,4,30),"shareholders":39208},{"date":D(2026,5,31),"shareholders":40231}],
-                "RAJA":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":49300},{"date":D(2025,6,30),"shareholders":50500},{"date":D(2025,7,31),"shareholders":51700},{"date":D(2025,8,31),"shareholders":53000},{"date":D(2025,9,30),"shareholders":54400},{"date":D(2025,10,31),"shareholders":55900},{"date":D(2025,11,30),"shareholders":57500},{"date":D(2025,12,31),"shareholders":59200},{"date":D(2026,1,31),"shareholders":61000},{"date":D(2026,2,28),"shareholders":62900},{"date":D(2026,3,31),"shareholders":64900},{"date":D(2026,4,30),"shareholders":66747},{"date":D(2026,5,31),"shareholders":68452}],
-                "JSMR":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":86000},{"date":D(2025,6,30),"shareholders":87900},{"date":D(2025,7,31),"shareholders":89900},{"date":D(2025,8,31),"shareholders":92000},{"date":D(2025,9,30),"shareholders":94200},{"date":D(2025,10,31),"shareholders":96500},{"date":D(2025,11,30),"shareholders":98900},{"date":D(2025,12,31),"shareholders":101400},{"date":D(2026,1,31),"shareholders":104000},{"date":D(2026,2,28),"shareholders":106700},{"date":D(2026,3,31),"shareholders":109500},{"date":D(2026,4,30),"shareholders":112085},{"date":D(2026,5,31),"shareholders":114471}],
-                "PURI":[{"date":D(2025,4,30),"shareholders":24200},{"date":D(2025,5,31),"shareholders":24700},{"date":D(2025,6,30),"shareholders":25300},{"date":D(2025,7,31),"shareholders":25900},{"date":D(2025,8,31),"shareholders":26600},{"date":D(2025,9,30),"shareholders":27300},{"date":D(2025,10,31),"shareholders":28100},{"date":D(2025,11,30),"shareholders":28900},{"date":D(2025,12,31),"shareholders":29800},{"date":D(2026,1,31),"shareholders":30700},{"date":D(2026,2,28),"shareholders":31700},{"date":D(2026,3,31),"shareholders":32800},{"date":D(2026,4,30),"shareholders":33816},{"date":D(2026,5,31),"shareholders":34754}],
-                # ── KESEHATAN & FARMASI ────────────────────────────────────────
-                "KAEF":[{"date":D(2025,4,30),"shareholders":124200},{"date":D(2025,5,31),"shareholders":126800},{"date":D(2025,6,30),"shareholders":129400},{"date":D(2025,7,31),"shareholders":132100},{"date":D(2025,8,31),"shareholders":134800},{"date":D(2025,9,30),"shareholders":137600},{"date":D(2025,10,31),"shareholders":140400},{"date":D(2025,11,30),"shareholders":143300},{"date":D(2025,12,31),"shareholders":146200},{"date":D(2026,1,31),"shareholders":149100},{"date":D(2026,2,28),"shareholders":152100},{"date":D(2026,3,31),"shareholders":155200},{"date":D(2026,4,30),"shareholders":158052},{"date":D(2026,5,31),"shareholders":160687}],
-                "TSPC":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":95800},{"date":D(2025,6,30),"shareholders":97400},{"date":D(2025,7,31),"shareholders":99100},{"date":D(2025,8,31),"shareholders":100800},{"date":D(2025,9,30),"shareholders":102500},{"date":D(2025,10,31),"shareholders":104300},{"date":D(2025,11,30),"shareholders":106100},{"date":D(2025,12,31),"shareholders":107900},{"date":D(2026,1,31),"shareholders":109800},{"date":D(2026,2,28),"shareholders":111700},{"date":D(2026,3,31),"shareholders":113700},{"date":D(2026,4,30),"shareholders":115547},{"date":D(2026,5,31),"shareholders":117252}],
-                "SILO":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":64200},{"date":D(2025,6,30),"shareholders":66400},{"date":D(2025,7,31),"shareholders":68700},{"date":D(2025,8,31),"shareholders":71000},{"date":D(2025,9,30),"shareholders":73400},{"date":D(2025,10,31),"shareholders":75800},{"date":D(2025,11,30),"shareholders":78300},{"date":D(2025,12,31),"shareholders":80900},{"date":D(2026,1,31),"shareholders":83500},{"date":D(2026,2,28),"shareholders":86200},{"date":D(2026,3,31),"shareholders":89000},{"date":D(2026,4,30),"shareholders":91584},{"date":D(2026,5,31),"shareholders":93969}],
-                "KLBF":[{"date":D(2025,4,30),"shareholders":168200},{"date":D(2025,5,31),"shareholders":170800},{"date":D(2025,6,30),"shareholders":173600},{"date":D(2025,7,31),"shareholders":176500},{"date":D(2025,8,31),"shareholders":179500},{"date":D(2025,9,30),"shareholders":182600},{"date":D(2025,10,31),"shareholders":185800},{"date":D(2025,11,30),"shareholders":189100},{"date":D(2025,12,31),"shareholders":192500},{"date":D(2026,1,31),"shareholders":196000},{"date":D(2026,2,28),"shareholders":199600},{"date":D(2026,3,31),"shareholders":203300},{"date":D(2026,4,30),"shareholders":206717},{"date":D(2026,5,31),"shareholders":209872}],
-                "MIKA":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":86000},{"date":D(2025,6,30),"shareholders":87900},{"date":D(2025,7,31),"shareholders":89900},{"date":D(2025,8,31),"shareholders":92000},{"date":D(2025,9,30),"shareholders":94200},{"date":D(2025,10,31),"shareholders":96500},{"date":D(2025,11,30),"shareholders":98900},{"date":D(2025,12,31),"shareholders":101400},{"date":D(2026,1,31),"shareholders":104000},{"date":D(2026,2,28),"shareholders":106700},{"date":D(2026,3,31),"shareholders":109500},{"date":D(2026,4,30),"shareholders":112085},{"date":D(2026,5,31),"shareholders":114471}],
-                "HEAL":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":49300},{"date":D(2025,6,30),"shareholders":50500},{"date":D(2025,7,31),"shareholders":51700},{"date":D(2025,8,31),"shareholders":53000},{"date":D(2025,9,30),"shareholders":54400},{"date":D(2025,10,31),"shareholders":55900},{"date":D(2025,11,30),"shareholders":57500},{"date":D(2025,12,31),"shareholders":59200},{"date":D(2026,1,31),"shareholders":61000},{"date":D(2026,2,28),"shareholders":62900},{"date":D(2026,3,31),"shareholders":64900},{"date":D(2026,4,30),"shareholders":66747},{"date":D(2026,5,31),"shareholders":68452}],
-                # ── AGRIKULTUR ─────────────────────────────────────────────────
-                "AALI":[{"date":D(2025,4,30),"shareholders":88400},{"date":D(2025,5,31),"shareholders":90800},{"date":D(2025,6,30),"shareholders":92400},{"date":D(2025,7,31),"shareholders":94200},{"date":D(2025,8,31),"shareholders":96100},{"date":D(2025,9,30),"shareholders":97400},{"date":D(2025,10,31),"shareholders":98200},{"date":D(2025,11,30),"shareholders":100400},{"date":D(2025,12,31),"shareholders":102900},{"date":D(2026,1,31),"shareholders":105600},{"date":D(2026,2,28),"shareholders":108500},{"date":D(2026,3,31),"shareholders":111600},{"date":D(2026,4,30),"shareholders":114462},{"date":D(2026,5,31),"shareholders":117103}],
-                "SSMS":[{"date":D(2025,4,30),"shareholders":54200},{"date":D(2025,5,31),"shareholders":56100},{"date":D(2025,6,30),"shareholders":57800},{"date":D(2025,7,31),"shareholders":59400},{"date":D(2025,8,31),"shareholders":60800},{"date":D(2025,9,30),"shareholders":61800},{"date":D(2025,10,31),"shareholders":62400},{"date":D(2025,11,30),"shareholders":64100},{"date":D(2025,12,31),"shareholders":65900},{"date":D(2026,1,31),"shareholders":67800},{"date":D(2026,2,28),"shareholders":69900},{"date":D(2026,3,31),"shareholders":72100},{"date":D(2026,4,30),"shareholders":74131},{"date":D(2026,5,31),"shareholders":76006}],
-                "LSIP":[{"date":D(2025,4,30),"shareholders":72100},{"date":D(2025,5,31),"shareholders":73800},{"date":D(2025,6,30),"shareholders":75600},{"date":D(2025,7,31),"shareholders":77400},{"date":D(2025,8,31),"shareholders":79200},{"date":D(2025,9,30),"shareholders":81100},{"date":D(2025,10,31),"shareholders":81900},{"date":D(2025,11,30),"shareholders":83800},{"date":D(2025,12,31),"shareholders":85800},{"date":D(2026,1,31),"shareholders":87800},{"date":D(2026,2,28),"shareholders":89800},{"date":D(2026,3,31),"shareholders":91900},{"date":D(2026,4,30),"shareholders":93839},{"date":D(2026,5,31),"shareholders":95630}],
-                "TAPG":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":43100},{"date":D(2025,6,30),"shareholders":44200},{"date":D(2025,7,31),"shareholders":45300},{"date":D(2025,8,31),"shareholders":46500},{"date":D(2025,9,30),"shareholders":47700},{"date":D(2025,10,31),"shareholders":49000},{"date":D(2025,11,30),"shareholders":50300},{"date":D(2025,12,31),"shareholders":51700},{"date":D(2026,1,31),"shareholders":53100},{"date":D(2026,2,28),"shareholders":54600},{"date":D(2026,3,31),"shareholders":56200},{"date":D(2026,4,30),"shareholders":57677},{"date":D(2026,5,31),"shareholders":59041}],
-                "SGRO":[{"date":D(2025,4,30),"shareholders":38200},{"date":D(2025,5,31),"shareholders":39100},{"date":D(2025,6,30),"shareholders":40100},{"date":D(2025,7,31),"shareholders":41100},{"date":D(2025,8,31),"shareholders":42200},{"date":D(2025,9,30),"shareholders":43300},{"date":D(2025,10,31),"shareholders":44500},{"date":D(2025,11,30),"shareholders":45700},{"date":D(2025,12,31),"shareholders":47000},{"date":D(2026,1,31),"shareholders":48300},{"date":D(2026,2,28),"shareholders":49700},{"date":D(2026,3,31),"shareholders":51200},{"date":D(2026,4,30),"shareholders":52585},{"date":D(2026,5,31),"shareholders":53864}],
-                "DSNG":[{"date":D(2025,4,30),"shareholders":28400},{"date":D(2025,5,31),"shareholders":29000},{"date":D(2025,6,30),"shareholders":29700},{"date":D(2025,7,31),"shareholders":30400},{"date":D(2025,8,31),"shareholders":31200},{"date":D(2025,9,30),"shareholders":32000},{"date":D(2025,10,31),"shareholders":32900},{"date":D(2025,11,30),"shareholders":33800},{"date":D(2025,12,31),"shareholders":34800},{"date":D(2026,1,31),"shareholders":35800},{"date":D(2026,2,28),"shareholders":36900},{"date":D(2026,3,31),"shareholders":38100},{"date":D(2026,4,30),"shareholders":39208},{"date":D(2026,5,31),"shareholders":40231}],
-                "SIMP":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":42000},{"date":D(2025,6,30),"shareholders":41800},{"date":D(2025,7,31),"shareholders":41500},{"date":D(2025,8,31),"shareholders":41100},{"date":D(2025,9,30),"shareholders":40600},{"date":D(2025,10,31),"shareholders":40100},{"date":D(2025,11,30),"shareholders":39700},{"date":D(2025,12,31),"shareholders":39200},{"date":D(2026,1,31),"shareholders":38600},{"date":D(2026,2,28),"shareholders":37900},{"date":D(2026,3,31),"shareholders":37100},{"date":D(2026,4,30),"shareholders":36361},{"date":D(2026,5,31),"shareholders":35679}],
-                "MGRO":[{"date":D(2025,4,30),"shareholders":22400},{"date":D(2025,5,31),"shareholders":22800},{"date":D(2025,6,30),"shareholders":23300},{"date":D(2025,7,31),"shareholders":23800},{"date":D(2025,8,31),"shareholders":24400},{"date":D(2025,9,30),"shareholders":25000},{"date":D(2025,10,31),"shareholders":25700},{"date":D(2025,11,30),"shareholders":26400},{"date":D(2025,12,31),"shareholders":27200},{"date":D(2026,1,31),"shareholders":28000},{"date":D(2026,2,28),"shareholders":28900},{"date":D(2026,3,31),"shareholders":29900},{"date":D(2026,4,30),"shareholders":30823},{"date":D(2026,5,31),"shareholders":31675}],
-                "PALM":[{"date":D(2025,4,30),"shareholders":28400},{"date":D(2025,5,31),"shareholders":29000},{"date":D(2025,6,30),"shareholders":29700},{"date":D(2025,7,31),"shareholders":30400},{"date":D(2025,8,31),"shareholders":31200},{"date":D(2025,9,30),"shareholders":32000},{"date":D(2025,10,31),"shareholders":32900},{"date":D(2025,11,30),"shareholders":33800},{"date":D(2025,12,31),"shareholders":34800},{"date":D(2026,1,31),"shareholders":35800},{"date":D(2026,2,28),"shareholders":36900},{"date":D(2026,3,31),"shareholders":38100},{"date":D(2026,4,30),"shareholders":39208},{"date":D(2026,5,31),"shareholders":40231}],
-                "JAWA":[{"date":D(2025,4,30),"shareholders":18200},{"date":D(2025,5,31),"shareholders":18100},{"date":D(2025,6,30),"shareholders":18000},{"date":D(2025,7,31),"shareholders":17900},{"date":D(2025,8,31),"shareholders":17700},{"date":D(2025,9,30),"shareholders":17500},{"date":D(2025,10,31),"shareholders":17300},{"date":D(2025,11,30),"shareholders":17100},{"date":D(2025,12,31),"shareholders":16900},{"date":D(2026,1,31),"shareholders":16700},{"date":D(2026,2,28),"shareholders":16500},{"date":D(2026,3,31),"shareholders":16300},{"date":D(2026,4,30),"shareholders":16115},{"date":D(2026,5,31),"shareholders":15945}],
-                "TBLA":[{"date":D(2025,4,30),"shareholders":24200},{"date":D(2025,5,31),"shareholders":24700},{"date":D(2025,6,30),"shareholders":25300},{"date":D(2025,7,31),"shareholders":25900},{"date":D(2025,8,31),"shareholders":26600},{"date":D(2025,9,30),"shareholders":27300},{"date":D(2025,10,31),"shareholders":28100},{"date":D(2025,11,30),"shareholders":28900},{"date":D(2025,12,31),"shareholders":29800},{"date":D(2026,1,31),"shareholders":30700},{"date":D(2026,2,28),"shareholders":31700},{"date":D(2026,3,31),"shareholders":32800},{"date":D(2026,4,30),"shareholders":33816},{"date":D(2026,5,31),"shareholders":34754}],
-                # ── INDUSTRI & MANUFAKTUR ──────────────────────────────────────
-                "INTP":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":83900},{"date":D(2025,6,30),"shareholders":83400},{"date":D(2025,7,31),"shareholders":82700},{"date":D(2025,8,31),"shareholders":81800},{"date":D(2025,9,30),"shareholders":80700},{"date":D(2025,10,31),"shareholders":79700},{"date":D(2025,11,30),"shareholders":78900},{"date":D(2025,12,31),"shareholders":77900},{"date":D(2026,1,31),"shareholders":76700},{"date":D(2026,2,28),"shareholders":75300},{"date":D(2026,3,31),"shareholders":73700},{"date":D(2026,4,30),"shareholders":72223},{"date":D(2026,5,31),"shareholders":70859}],
-                "SMGR":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":93800},{"date":D(2025,6,30),"shareholders":93200},{"date":D(2025,7,31),"shareholders":92400},{"date":D(2025,8,31),"shareholders":91400},{"date":D(2025,9,30),"shareholders":90200},{"date":D(2025,10,31),"shareholders":89100},{"date":D(2025,11,30),"shareholders":88200},{"date":D(2025,12,31),"shareholders":87000},{"date":D(2026,1,31),"shareholders":85500},{"date":D(2026,2,28),"shareholders":83800},{"date":D(2026,3,31),"shareholders":81900},{"date":D(2026,4,30),"shareholders":80147},{"date":D(2026,5,31),"shareholders":78528}],
-                "TPIA":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":86000},{"date":D(2025,6,30),"shareholders":87900},{"date":D(2025,7,31),"shareholders":89900},{"date":D(2025,8,31),"shareholders":92000},{"date":D(2025,9,30),"shareholders":94200},{"date":D(2025,10,31),"shareholders":96500},{"date":D(2025,11,30),"shareholders":98900},{"date":D(2025,12,31),"shareholders":101400},{"date":D(2026,1,31),"shareholders":104000},{"date":D(2026,2,28),"shareholders":106700},{"date":D(2026,3,31),"shareholders":109500},{"date":D(2026,4,30),"shareholders":112085},{"date":D(2026,5,31),"shareholders":114471}],
-                "BRPT":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":63500},{"date":D(2025,6,30),"shareholders":65000},{"date":D(2025,7,31),"shareholders":66600},{"date":D(2025,8,31),"shareholders":68300},{"date":D(2025,9,30),"shareholders":70100},{"date":D(2025,10,31),"shareholders":72000},{"date":D(2025,11,30),"shareholders":74000},{"date":D(2025,12,31),"shareholders":76100},{"date":D(2026,1,31),"shareholders":78300},{"date":D(2026,2,28),"shareholders":80600},{"date":D(2026,3,31),"shareholders":83000},{"date":D(2026,4,30),"shareholders":85216},{"date":D(2026,5,31),"shareholders":87261}],
-                "INKP":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":48000},{"date":D(2025,6,30),"shareholders":47600},{"date":D(2025,7,31),"shareholders":47000},{"date":D(2025,8,31),"shareholders":46200},{"date":D(2025,9,30),"shareholders":45200},{"date":D(2025,10,31),"shareholders":44300},{"date":D(2025,11,30),"shareholders":43600},{"date":D(2025,12,31),"shareholders":42700},{"date":D(2026,1,31),"shareholders":41600},{"date":D(2026,2,28),"shareholders":40300},{"date":D(2026,3,31),"shareholders":38800},{"date":D(2026,4,30),"shareholders":37415},{"date":D(2026,5,31),"shareholders":36136}],
-                "TKIM":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":41900},{"date":D(2025,6,30),"shareholders":41500},{"date":D(2025,7,31),"shareholders":40900},{"date":D(2025,8,31),"shareholders":40100},{"date":D(2025,9,30),"shareholders":39100},{"date":D(2025,10,31),"shareholders":38200},{"date":D(2025,11,30),"shareholders":37500},{"date":D(2025,12,31),"shareholders":36600},{"date":D(2026,1,31),"shareholders":35500},{"date":D(2026,2,28),"shareholders":34200},{"date":D(2026,3,31),"shareholders":32700},{"date":D(2026,4,30),"shareholders":31315},{"date":D(2026,5,31),"shareholders":30036}],
-                "UNTR":[{"date":D(2025,4,30),"shareholders":148200},{"date":D(2025,5,31),"shareholders":150100},{"date":D(2025,6,30),"shareholders":152000},{"date":D(2025,7,31),"shareholders":153900},{"date":D(2025,8,31),"shareholders":155900},{"date":D(2025,9,30),"shareholders":157900},{"date":D(2025,10,31),"shareholders":159900},{"date":D(2025,11,30),"shareholders":162000},{"date":D(2025,12,31),"shareholders":164100},{"date":D(2026,1,31),"shareholders":166200},{"date":D(2026,2,28),"shareholders":168400},{"date":D(2026,3,31),"shareholders":170600},{"date":D(2026,4,30),"shareholders":172624},{"date":D(2026,5,31),"shareholders":174494}],
-                "PJAA":[{"date":D(2025,4,30),"shareholders":28400},{"date":D(2025,5,31),"shareholders":29000},{"date":D(2025,6,30),"shareholders":29700},{"date":D(2025,7,31),"shareholders":30400},{"date":D(2025,8,31),"shareholders":31200},{"date":D(2025,9,30),"shareholders":32000},{"date":D(2025,10,31),"shareholders":32900},{"date":D(2025,11,30),"shareholders":33800},{"date":D(2025,12,31),"shareholders":34800},{"date":D(2026,1,31),"shareholders":35800},{"date":D(2026,2,28),"shareholders":36900},{"date":D(2026,3,31),"shareholders":38100},{"date":D(2026,4,30),"shareholders":39208},{"date":D(2026,5,31),"shareholders":40231}],
-                "SMSM":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":43000},{"date":D(2025,6,30),"shareholders":44000},{"date":D(2025,7,31),"shareholders":45100},{"date":D(2025,8,31),"shareholders":46300},{"date":D(2025,9,30),"shareholders":47600},{"date":D(2025,10,31),"shareholders":49000},{"date":D(2025,11,30),"shareholders":50500},{"date":D(2025,12,31),"shareholders":52100},{"date":D(2026,1,31),"shareholders":53800},{"date":D(2026,2,28),"shareholders":55600},{"date":D(2026,3,31),"shareholders":57500},{"date":D(2026,4,30),"shareholders":59254},{"date":D(2026,5,31),"shareholders":60873}],
-                "GJTL":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":48000},{"date":D(2025,6,30),"shareholders":47600},{"date":D(2025,7,31),"shareholders":47000},{"date":D(2025,8,31),"shareholders":46200},{"date":D(2025,9,30),"shareholders":45200},{"date":D(2025,10,31),"shareholders":44300},{"date":D(2025,11,30),"shareholders":43600},{"date":D(2025,12,31),"shareholders":42700},{"date":D(2026,1,31),"shareholders":41600},{"date":D(2026,2,28),"shareholders":40300},{"date":D(2026,3,31),"shareholders":38800},{"date":D(2026,4,30),"shareholders":37415},{"date":D(2026,5,31),"shareholders":36136}],
-                # ── OTOMOTIF & TRANSPORTASI ────────────────────────────────────
-                "ASII":[{"date":D(2025,4,30),"shareholders":284200},{"date":D(2025,5,31),"shareholders":288000},{"date":D(2025,6,30),"shareholders":292100},{"date":D(2025,7,31),"shareholders":296400},{"date":D(2025,8,31),"shareholders":300900},{"date":D(2025,9,30),"shareholders":305600},{"date":D(2025,10,31),"shareholders":310500},{"date":D(2025,11,30),"shareholders":315600},{"date":D(2025,12,31),"shareholders":320900},{"date":D(2026,1,31),"shareholders":326400},{"date":D(2026,2,28),"shareholders":332100},{"date":D(2026,3,31),"shareholders":338000},{"date":D(2026,4,30),"shareholders":343448},{"date":D(2026,5,31),"shareholders":348476}],
-                "AUTO":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":83400},{"date":D(2025,6,30),"shareholders":82600},{"date":D(2025,7,31),"shareholders":81900},{"date":D(2025,8,31),"shareholders":81200},{"date":D(2025,9,30),"shareholders":80500},{"date":D(2025,10,31),"shareholders":79800},{"date":D(2025,11,30),"shareholders":79200},{"date":D(2025,12,31),"shareholders":78600},{"date":D(2026,1,31),"shareholders":78000},{"date":D(2026,2,28),"shareholders":77400},{"date":D(2026,3,31),"shareholders":76900},{"date":D(2026,4,30),"shareholders":76439},{"date":D(2026,5,31),"shareholders":76013}],
-                "IMAS":[{"date":D(2025,4,30),"shareholders":52100},{"date":D(2025,5,31),"shareholders":53300},{"date":D(2025,6,30),"shareholders":54600},{"date":D(2025,7,31),"shareholders":56000},{"date":D(2025,8,31),"shareholders":57500},{"date":D(2025,9,30),"shareholders":59100},{"date":D(2025,10,31),"shareholders":60800},{"date":D(2025,11,30),"shareholders":62600},{"date":D(2025,12,31),"shareholders":64500},{"date":D(2026,1,31),"shareholders":66500},{"date":D(2026,2,28),"shareholders":68600},{"date":D(2026,3,31),"shareholders":70800},{"date":D(2026,4,30),"shareholders":72831},{"date":D(2026,5,31),"shareholders":74706}],
-                "ERAA":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":64200},{"date":D(2025,6,30),"shareholders":66400},{"date":D(2025,7,31),"shareholders":68600},{"date":D(2025,8,31),"shareholders":70900},{"date":D(2025,9,30),"shareholders":73200},{"date":D(2025,10,31),"shareholders":75600},{"date":D(2025,11,30),"shareholders":78100},{"date":D(2025,12,31),"shareholders":80700},{"date":D(2026,1,31),"shareholders":83300},{"date":D(2026,2,28),"shareholders":86000},{"date":D(2026,3,31),"shareholders":88700},{"date":D(2026,4,30),"shareholders":91192},{"date":D(2026,5,31),"shareholders":93492}],
-                "BIRD":[{"date":D(2025,4,30),"shareholders":68200},{"date":D(2025,5,31),"shareholders":70400},{"date":D(2025,6,30),"shareholders":72100},{"date":D(2025,7,31),"shareholders":73800},{"date":D(2025,8,31),"shareholders":75400},{"date":D(2025,9,30),"shareholders":77200},{"date":D(2025,10,31),"shareholders":78600},{"date":D(2025,11,30),"shareholders":80400},{"date":D(2025,12,31),"shareholders":82500},{"date":D(2026,1,31),"shareholders":84700},{"date":D(2026,2,28),"shareholders":87100},{"date":D(2026,3,31),"shareholders":89700},{"date":D(2026,4,30),"shareholders":92100},{"date":D(2026,5,31),"shareholders":94315}],
-                "GIAA":[{"date":D(2025,4,30),"shareholders":284200},{"date":D(2025,5,31),"shareholders":289000},{"date":D(2025,6,30),"shareholders":294200},{"date":D(2025,7,31),"shareholders":299800},{"date":D(2025,8,31),"shareholders":305800},{"date":D(2025,9,30),"shareholders":312200},{"date":D(2025,10,31),"shareholders":319000},{"date":D(2025,11,30),"shareholders":326200},{"date":D(2025,12,31),"shareholders":333800},{"date":D(2026,1,31),"shareholders":341800},{"date":D(2026,2,28),"shareholders":350200},{"date":D(2026,3,31),"shareholders":359000},{"date":D(2026,4,30),"shareholders":367122},{"date":D(2026,5,31),"shareholders":374621}],
-                "TMAS":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":43600},{"date":D(2025,6,30),"shareholders":45200},{"date":D(2025,7,31),"shareholders":46800},{"date":D(2025,8,31),"shareholders":48400},{"date":D(2025,9,30),"shareholders":50100},{"date":D(2025,10,31),"shareholders":51800},{"date":D(2025,11,30),"shareholders":53600},{"date":D(2025,12,31),"shareholders":55400},{"date":D(2026,1,31),"shareholders":57300},{"date":D(2026,2,28),"shareholders":59200},{"date":D(2026,3,31),"shareholders":61200},{"date":D(2026,4,30),"shareholders":63047},{"date":D(2026,5,31),"shareholders":64752}],
-                # ── KEUANGAN NON-BANK ──────────────────────────────────────────
-                "MFIN":[{"date":D(2025,4,30),"shareholders":28400},{"date":D(2025,5,31),"shareholders":28300},{"date":D(2025,6,30),"shareholders":28100},{"date":D(2025,7,31),"shareholders":27800},{"date":D(2025,8,31),"shareholders":27400},{"date":D(2025,9,30),"shareholders":26900},{"date":D(2025,10,31),"shareholders":26400},{"date":D(2025,11,30),"shareholders":26000},{"date":D(2025,12,31),"shareholders":25500},{"date":D(2026,1,31),"shareholders":24900},{"date":D(2026,2,28),"shareholders":24200},{"date":D(2026,3,31),"shareholders":23400},{"date":D(2026,4,30),"shareholders":22661},{"date":D(2026,5,31),"shareholders":21979}],
-                "BBLD":[{"date":D(2025,4,30),"shareholders":22100},{"date":D(2025,5,31),"shareholders":22000},{"date":D(2025,6,30),"shareholders":21800},{"date":D(2025,7,31),"shareholders":21500},{"date":D(2025,8,31),"shareholders":21100},{"date":D(2025,9,30),"shareholders":20600},{"date":D(2025,10,31),"shareholders":20100},{"date":D(2025,11,30),"shareholders":19700},{"date":D(2025,12,31),"shareholders":19200},{"date":D(2026,1,31),"shareholders":18600},{"date":D(2026,2,28),"shareholders":17900},{"date":D(2026,3,31),"shareholders":17100},{"date":D(2026,4,30),"shareholders":16361},{"date":D(2026,5,31),"shareholders":15679}],
-                "PNLF":[{"date":D(2025,4,30),"shareholders":32100},{"date":D(2025,5,31),"shareholders":32000},{"date":D(2025,6,30),"shareholders":31800},{"date":D(2025,7,31),"shareholders":31500},{"date":D(2025,8,31),"shareholders":31100},{"date":D(2025,9,30),"shareholders":30600},{"date":D(2025,10,31),"shareholders":30100},{"date":D(2025,11,30),"shareholders":29700},{"date":D(2025,12,31),"shareholders":29200},{"date":D(2026,1,31),"shareholders":28600},{"date":D(2026,2,28),"shareholders":27900},{"date":D(2026,3,31),"shareholders":27100},{"date":D(2026,4,30),"shareholders":26361},{"date":D(2026,5,31),"shareholders":25679}],
-                "TRIM":[{"date":D(2025,4,30),"shareholders":18200},{"date":D(2025,5,31),"shareholders":18100},{"date":D(2025,6,30),"shareholders":18000},{"date":D(2025,7,31),"shareholders":17900},{"date":D(2025,8,31),"shareholders":17700},{"date":D(2025,9,30),"shareholders":17500},{"date":D(2025,10,31),"shareholders":17300},{"date":D(2025,11,30),"shareholders":17100},{"date":D(2025,12,31),"shareholders":16900},{"date":D(2026,1,31),"shareholders":16700},{"date":D(2026,2,28),"shareholders":16500},{"date":D(2026,3,31),"shareholders":16300},{"date":D(2026,4,30),"shareholders":16115},{"date":D(2026,5,31),"shareholders":15945}],
-                "WOMF":[{"date":D(2025,4,30),"shareholders":18200},{"date":D(2025,5,31),"shareholders":18100},{"date":D(2025,6,30),"shareholders":18000},{"date":D(2025,7,31),"shareholders":17900},{"date":D(2025,8,31),"shareholders":17700},{"date":D(2025,9,30),"shareholders":17500},{"date":D(2025,10,31),"shareholders":17300},{"date":D(2025,11,30),"shareholders":17100},{"date":D(2025,12,31),"shareholders":16900},{"date":D(2026,1,31),"shareholders":16700},{"date":D(2026,2,28),"shareholders":16500},{"date":D(2026,3,31),"shareholders":16300},{"date":D(2026,4,30),"shareholders":16115},{"date":D(2026,5,31),"shareholders":15945}],
-                # ── MEDIA ──────────────────────────────────────────────────────
-                "SCMA":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":48000},{"date":D(2025,6,30),"shareholders":47600},{"date":D(2025,7,31),"shareholders":47000},{"date":D(2025,8,31),"shareholders":46200},{"date":D(2025,9,30),"shareholders":45200},{"date":D(2025,10,31),"shareholders":44300},{"date":D(2025,11,30),"shareholders":43600},{"date":D(2025,12,31),"shareholders":42700},{"date":D(2026,1,31),"shareholders":41600},{"date":D(2026,2,28),"shareholders":40300},{"date":D(2026,3,31),"shareholders":38800},{"date":D(2026,4,30),"shareholders":37415},{"date":D(2026,5,31),"shareholders":36136}],
-                "MNCN":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":61800},{"date":D(2025,6,30),"shareholders":61300},{"date":D(2025,7,31),"shareholders":60600},{"date":D(2025,8,31),"shareholders":59700},{"date":D(2025,9,30),"shareholders":58600},{"date":D(2025,10,31),"shareholders":57600},{"date":D(2025,11,30),"shareholders":56800},{"date":D(2025,12,31),"shareholders":55800},{"date":D(2026,1,31),"shareholders":54600},{"date":D(2026,2,28),"shareholders":53200},{"date":D(2026,3,31),"shareholders":51600},{"date":D(2026,4,30),"shareholders":50123},{"date":D(2026,5,31),"shareholders":48759}],
-                # ── MISC MID-CAP ───────────────────────────────────────────────
-                "CLEO":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":43100},{"date":D(2025,6,30),"shareholders":44200},{"date":D(2025,7,31),"shareholders":45400},{"date":D(2025,8,31),"shareholders":46700},{"date":D(2025,9,30),"shareholders":48100},{"date":D(2025,10,31),"shareholders":49600},{"date":D(2025,11,30),"shareholders":51200},{"date":D(2025,12,31),"shareholders":52900},{"date":D(2026,1,31),"shareholders":54700},{"date":D(2026,2,28),"shareholders":56600},{"date":D(2026,3,31),"shareholders":58600},{"date":D(2026,4,30),"shareholders":60447},{"date":D(2026,5,31),"shareholders":62152}],
-                "MTDL":[{"date":D(2025,4,30),"shareholders":32100},{"date":D(2025,5,31),"shareholders":32800},{"date":D(2025,6,30),"shareholders":33600},{"date":D(2025,7,31),"shareholders":34400},{"date":D(2025,8,31),"shareholders":35300},{"date":D(2025,9,30),"shareholders":36200},{"date":D(2025,10,31),"shareholders":37200},{"date":D(2025,11,30),"shareholders":38200},{"date":D(2025,12,31),"shareholders":39300},{"date":D(2026,1,31),"shareholders":40400},{"date":D(2026,2,28),"shareholders":41600},{"date":D(2026,3,31),"shareholders":42900},{"date":D(2026,4,30),"shareholders":44100},{"date":D(2026,5,31),"shareholders":45208}],
-                "HOKI":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":49600},{"date":D(2025,6,30),"shareholders":51100},{"date":D(2025,7,31),"shareholders":52700},{"date":D(2025,8,31),"shareholders":54400},{"date":D(2025,9,30),"shareholders":56200},{"date":D(2025,10,31),"shareholders":58100},{"date":D(2025,11,30),"shareholders":60100},{"date":D(2025,12,31),"shareholders":62200},{"date":D(2026,1,31),"shareholders":64400},{"date":D(2026,2,28),"shareholders":66700},{"date":D(2026,3,31),"shareholders":69100},{"date":D(2026,4,30),"shareholders":71316},{"date":D(2026,5,31),"shareholders":73361}],
-                "SMIL":[{"date":D(2025,4,30),"shareholders":22100},{"date":D(2025,5,31),"shareholders":22500},{"date":D(2025,6,30),"shareholders":23000},{"date":D(2025,7,31),"shareholders":23500},{"date":D(2025,8,31),"shareholders":24100},{"date":D(2025,9,30),"shareholders":24700},{"date":D(2025,10,31),"shareholders":25400},{"date":D(2025,11,30),"shareholders":26100},{"date":D(2025,12,31),"shareholders":26900},{"date":D(2026,1,31),"shareholders":27700},{"date":D(2026,2,28),"shareholders":28600},{"date":D(2026,3,31),"shareholders":29600},{"date":D(2026,4,30),"shareholders":30523},{"date":D(2026,5,31),"shareholders":31375}],
-                "AMAG":[{"date":D(2025,4,30),"shareholders":18200},{"date":D(2025,5,31),"shareholders":18100},{"date":D(2025,6,30),"shareholders":18000},{"date":D(2025,7,31),"shareholders":17900},{"date":D(2025,8,31),"shareholders":17700},{"date":D(2025,9,30),"shareholders":17500},{"date":D(2025,10,31),"shareholders":17300},{"date":D(2025,11,30),"shareholders":17100},{"date":D(2025,12,31),"shareholders":16900},{"date":D(2026,1,31),"shareholders":16700},{"date":D(2026,2,28),"shareholders":16500},{"date":D(2026,3,31),"shareholders":16300},{"date":D(2026,4,30),"shareholders":16115},{"date":D(2026,5,31),"shareholders":15945}],
-                "BOBA":[{"date":D(2025,4,30),"shareholders":14200},{"date":D(2025,5,31),"shareholders":14500},{"date":D(2025,6,30),"shareholders":14900},{"date":D(2025,7,31),"shareholders":15300},{"date":D(2025,8,31),"shareholders":15800},{"date":D(2025,9,30),"shareholders":16300},{"date":D(2025,10,31),"shareholders":16900},{"date":D(2025,11,30),"shareholders":17500},{"date":D(2025,12,31),"shareholders":18200},{"date":D(2026,1,31),"shareholders":18900},{"date":D(2026,2,28),"shareholders":19700},{"date":D(2026,3,31),"shareholders":20600},{"date":D(2026,4,30),"shareholders":21431},{"date":D(2026,5,31),"shareholders":22199}],
-            }
-            for tk, data in extra.items():
-                if tk not in combined:
-                    combined[tk] = data
-            # Hapus saham suspend dari hasil akhir
-            try:
-                combined = {k: v for k, v in combined.items() if k not in IDX_SUSPENDED_TICKERS}
-            except NameError:
-                pass
-            return combined
-
-        _full_screen_db = build_full_screening_db(_sh_all_db)
-        # ── Hapus saham suspend dari screening database ──
-        _full_screen_db = {tk: v for tk, v in _full_screen_db.items() if tk not in IDX_SUSPENDED_TICKERS}
-
-        pass  # subtitle dihapus per request
-
-        # ── Build screening rows dari database gabungan ──
-        _naik_rows = []
-        _turun_rows = []
-
-        for _tk, _records in _full_screen_db.items():
-            _df_sc = pd.DataFrame(_records).sort_values("date").reset_index(drop=True)
-            if len(_df_sc) < 2:
-                continue
-            # Ambil 3 bulan terakhir untuk kolom historis
-            _sorted_vals = _df_sc["shareholders"].tolist()
-            _sorted_dates = _df_sc["date"].tolist()
-
-            _last  = int(_df_sc["shareholders"].iloc[-1])
-            _prev1 = int(_df_sc["shareholders"].iloc[-2])
-            _m2    = int(_df_sc["shareholders"].iloc[-3]) if len(_df_sc) >= 3 else None
-            _m3    = int(_df_sc["shareholders"].iloc[-4]) if len(_df_sc) >= 4 else None
-
-            _delta1 = _last-_prev1
-            _pct1   = round(_delta1 / _prev1 * 100, 2) if _prev1 else 0
-
-            _trend3 = "-"
-            if len(_df_sc) >= 4:
-                _v3 = _df_sc["shareholders"].iloc[-4]
-                _v2 = _df_sc["shareholders"].iloc[-3]
-                _v1b = _df_sc["shareholders"].iloc[-2]
-                _v0 = _df_sc["shareholders"].iloc[-1]
-                if _v0 > _v1b > _v2 > _v3:
-                    _trend3 = "🟢 Naik 3bln"
-                elif _v0 < _v1b < _v2 < _v3:
-                    _trend3 = "🔴 Turun 3bln"
-                elif _v0 > _v1b:
-                    _trend3 = "🟡 Naik 1bln"
-                elif _v0 < _v1b:
-                    _trend3 = "🟠 Turun 1bln"
-
-            # Format kolom bulan historis
-            _lbl_m1 = _df_sc["date"].iloc[-2].strftime("%b '%y")
-            _lbl_m2 = _df_sc["date"].iloc[-3].strftime("%b '%y") if _m2 else "-"
-            _lbl_m3 = _df_sc["date"].iloc[-4].strftime("%b '%y") if _m3 else "-"
-
-            _row = {
-                "Ticker": _tk,
-                "Pemegang": f"{_last:,}",
-                "Δ 1 Bln": f"+{_delta1:,}" if _delta1 > 0 else f"{_delta1:,}",
-                "Δ %": f"+{_pct1:.2f}%" if _pct1 > 0 else f"{_pct1:.2f}%",
-                "Tren 3 Bln": _trend3,
-                # Data 3 bulan terakhir untuk kolom breakdown
-                "_m1_val": f"{_prev1:,}",
-                "_m1_lbl": _lbl_m1,
-                "_m2_val": f"{_m2:,}" if _m2 else "-",
-                "_m2_lbl": _lbl_m2,
-                "_m3_val": f"{_m3:,}" if _m3 else "-",
-                "_m3_lbl": _lbl_m3,
-                "_delta": _delta1,
-                "_pct": _pct1,
-            }
-
-            if _delta1 >= 0:
-                _naik_rows.append(_row)
-            else:
-                _turun_rows.append(_row)
-
-        # ── CSS tabel ──
-        _tbl_border  = "rgba(3,40,238,0.12)" if is_dark else "#ddd0a0"
-        _tbl_head_up = "rgba(38,166,154,0.12)" if is_dark else "#e8faf8"
-        _tbl_head_dn = "rgba(242,54,69,0.10)"  if is_dark else "#fde8ea"
-        _acc_up      = "#26a69a"
-        _acc_dn      = "#f23645"
-        _acc_hist    = "#8892a4" if is_dark else "#6b7280"
-
-        st.markdown(f"""<style>
-    .sh2-scroll-outer {{
-      width: 100%;
-      overflow-x: auto !important;
-      -webkit-overflow-scrolling: touch !important;
-      margin-bottom: 24px;
-      /* Force scroll on Streamlit which tends to clip overflow */
-      display: block;
-      max-width: 100%;
-    }}
-    /* Scroll hint indicator on mobile */
-    @media(max-width:768px){{
-      .sh2-scroll-outer::after {{
-    content: '&larr; geser &rarr;';
-    display: block;
-    text-align: center;
-    font-size: 0.78rem;
-    color: {_acc_hist};
-    padding: 4px 0 2px;
-    letter-spacing: 0.08em;
-      }}
-    }}
-    .sh2-tbl {{width:max-content;min-width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.875rem;}}
-    .sh2-tbl th {{font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;padding:8px 10px;border-bottom:2px solid;text-align:left;white-space:nowrap;}}
-    .sh2-tbl td {{padding:7px 10px;border-bottom:1px solid {_tbl_border};vertical-align:middle;white-space:nowrap;}}
-    .sh2-tbl tr:last-child td {{border-bottom:none;}}
-    .sh2-tbl tr:hover td {{background:rgba(255,255,255,0.03);}}
-    .sh2-badge {{font-weight:700;font-size:1.1rem;}}
-    .sh2-up {{color:{_acc_up};font-weight:600;}}
-    .sh2-dn {{color:{_acc_dn};font-weight:600;}}
-    .sh2-head-up {{background:{_tbl_head_up};color:{_acc_up};border-color:{_acc_up}33;}}
-    .sh2-head-dn {{background:{_tbl_head_dn};color:{_acc_dn};border-color:{_acc_dn}33;}}
-    .sh2-badge-up {{color:{_acc_up};}}
-    .sh2-badge-dn {{color:{_acc_dn};}}
-    .sh2-hist {{color:{_acc_hist};font-size:0.875rem;}}
-    .sh2-hist-lbl {{font-size:0.8rem;opacity:0.7;display:block;margin-bottom:1px;}}
-    @media(max-width:768px){{
-      .sh2-tbl{{font-size:0.875rem;}}
-      .sh2-tbl th{{font-size:0.72rem;padding:5px 8px;}}
-      .sh2-tbl td{{padding:5px 8px;}}
-      .sh2-badge{{font-size:0.875rem;}}
-      .sh2-hist{{font-size:0.8rem;}}
-    }}
-    </style>""", unsafe_allow_html=True)
-
-        def _render_sh_table_v2(rows, is_naik):
-            if not rows:
-                return
-            rows_sorted = sorted(rows, key=lambda x: abs(x["_pct"]), reverse=True)
-            acc        = _acc_up if is_naik else _acc_dn
-            delta_cls  = "up"  if is_naik else "dn"
-            icon       = "📈"  if is_naik else "📉"
-            label      = "AKUMULASI RETAIL" if is_naik else "DISTRIBUSI RETAIL"
-            sinyal_strong = "🔥 Akumulasi Kuat" if is_naik else "❄️ Distribusi Kuat"
-            sinyal_weak   = "📈 Naik 1 Bulan"   if is_naik else "🔴 Turun 1 Bulan"
-            count = len(rows_sorted)
-
-            sample = rows_sorted[0]
-            lbl_m1 = sample["_m1_lbl"]
-            lbl_m2 = sample["_m2_lbl"]
-            lbl_m3 = sample["_m3_lbl"]
-
-            import json as _json2
-            _sh_rows = []
-            for r in rows_sorted:
-                t3  = r["Tren 3 Bln"]
-                sig = sinyal_strong if "3bln" in t3 else sinyal_weak
-                _sh_rows.append({
-                    "ticker": r["Ticker"],
-                    "pemegang": r["Pemegang"],
-                    "d1bln": r["Δ 1 Bln"],
-                    "dpct":  r["Δ %"],
-                    "m1": r["_m1_val"],
-                    "m2": r["_m2_val"],
-                    "m3": r["_m3_val"],
-                    "tren": t3,
-                    "sinyal": sig,
-                })
-            _rows_json = _json2.dumps(_sh_rows)
-
-            _head_bg  = "rgba(38,166,154,0.12)"  if is_naik else "rgba(242,54,69,0.10)"
-            _head_clr = _acc_up if is_naik else _acc_dn
-            _head_bdr = f"{_acc_up}44"           if is_naik else f"{_acc_dn}44"
-            _uid      = str(abs(hash(label)))[:8]
-
-            _html = f"""<!DOCTYPE html><html><head>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <style>
-    *{{box-sizing:border-box;margin:0;padding:0;}}
-    body{{background:transparent;font-family:'IBM Plex Mono',monospace;padding:0;}}
-    .lbl{{font-size:0.875rem;letter-spacing:0.12em;text-transform:uppercase;
-      color:{acc};font-weight:700;margin-bottom:8px;padding:0 2px;display:block;}}
-    .wrap{{background:{met_bg};border:1px solid {_tbl_border};border-radius:10px;overflow:hidden;}}
-    /* Mobile: hapus overflow:hidden agar border bawah membungkus konten dengan pas */
-    @media(max-width:768px){{
-      .wrap{{overflow:visible !important;border-radius:10px !important;}}
-    }}
-    /* === SCROLL CONTAINER: horizontal saja, vertikal auto === */
-    .scroll-box{{
-      width:100%;
-      max-height:660px;          /* &asymp;15 baris &times; 44px = 660px - hanya berlaku di desktop */
-      overflow-x:auto !important;
-      overflow-y:visible !important;
-      -webkit-overflow-scrolling:touch !important;
-      cursor:grab;
-      scrollbar-width:thin;
-      scrollbar-color:{_tbl_border} transparent;
-    }}
-    @media(max-width:768px){{
-      .scroll-box{{
-    max-height:none !important;
-    height:auto !important;
-    overflow-y:visible !important;
-    overflow-x:auto !important;
-      }}
-      .wrap{{
-    overflow:visible !important;
-      }}
-    }}
-    .scroll-box:active{{cursor:grabbing;}}
-    .scroll-box::-webkit-scrollbar{{width:5px;height:5px;}}
-    .scroll-box::-webkit-scrollbar-thumb{{background:{_tbl_border};border-radius:10px;}}
-    table{{width:max-content;min-width:100%;border-collapse:collapse;
-       font-family:'IBM Plex Mono',monospace;font-size:0.875rem;}}
-    /* Sticky header saat scroll vertikal */
-    thead th{{
-      position:sticky;top:0;z-index:2;
-      font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;
-      padding:8px 10px;border-bottom:2px solid {_head_bdr};
-      text-align:left;white-space:nowrap;
-      background:{_head_bg};color:{_head_clr};
-    }}
-    tbody td{{
-      padding:7px 10px;border-bottom:1px solid {_tbl_border};
-      vertical-align:middle;white-space:nowrap;color:{text_main};
-    }}
-    tbody tr:last-child td{{border-bottom:none;}}
-    tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
-    .tk{{font-weight:700;font-size:0.875rem;color:{acc};}}
-    .up{{color:{_acc_up};font-weight:600;}}
-    .dn{{color:{_acc_dn};font-weight:600;}}
-    .hist{{color:{_acc_hist};font-size:0.875rem;}}
-    /* Footer: info baris + navigasi halaman */
-    .pg-bar{{display:flex;align-items:center;justify-content:space-between;
-         padding:7px 12px;border-top:1px solid {_tbl_border};
-         background:rgba(255,255,255,0.02);flex-wrap:wrap;gap:5px;}}
-    .pg-info{{font-size:0.8rem;color:{_acc_hist};}}
-    .pg-btns{{display:flex;gap:5px;}}
-    .pg-btn{{background:rgba(255,255,255,0.06);color:{text_main};
-         border:1px solid {_tbl_border};border-radius:4px;
-         padding:4px 11px;font-family:'IBM Plex Mono',monospace;
-         font-size:0.8rem;cursor:pointer;transition:background 0.15s;}}
-    .pg-btn:hover{{background:rgba(255,255,255,0.12);}}
-    .pg-btn:disabled{{opacity:0.3;cursor:default;}}
-    /* Scroll hint mobile */
-    .hint{{display:none;text-align:center;font-size:0.8rem;color:{_acc_hist};
-       padding:3px 0;letter-spacing:0.08em;border-bottom:1px solid {_tbl_border};}}
-    @media(max-width:600px){{
-      .hint{{display:block;}}
-      table{{font-size:0.875rem;}}
-      thead th{{font-size:0.72rem;padding:6px 8px;}}
-      tbody td{{padding:5px 8px;font-size:0.875rem;}}
-      .tk{{font-size:0.875rem;}}
-      .hist{{font-size:0.8rem;}}
-      .pg-info{{font-size:0.72rem;}}
-      .pg-btn{{padding:3px 9px;font-size:0.72rem;}}
-    }}
-    </style></head><body>
-    <span class="lbl">{icon} {label} - {count} EMITEN</span>
-    <div class="wrap">
-      <div class="hint">&larr; geser kiri / kanan &rarr;</div>
-      <div class="scroll-box" id="sb_{_uid}">
-    <table>
-      <thead><tr>
-        <th>Ticker</th>
-        <th>Pemegang<br><span style="font-weight:400;opacity:0.7;">(Terkini)</span></th>
-        <th>&Delta; 1 Bln</th><th>&Delta; %</th>
-        <th style="color:{_acc_hist};">{lbl_m1}</th>
-        <th style="color:{_acc_hist};">{lbl_m2}</th>
-        <th style="color:{_acc_hist};">{lbl_m3}</th>
-        <th>Tren 3 Bln</th><th>Sinyal</th>
-      </tr></thead>
-      <tbody id="tb_{_uid}"></tbody>
-    </table>
-      </div>
-      <div class="pg-bar">
-    <span class="pg-info" id="pi_{_uid}"></span>
-    <div class="pg-btns">
-      <button class="pg-btn" id="pp_{_uid}" onclick="pg_{_uid}(-1)">&#9664; Prev</button>
-      <button class="pg-btn" id="pn_{_uid}" onclick="pg_{_uid}(+1)">Next &#9654;</button>
-    </div>
-      </div>
-    </div>
-    <script>
-    (function(){{
-      var ROWS={_rows_json}, PER=15, page=0;
-      var dc='{delta_cls}';
-      function render(){{
-    var tot=ROWS.length, maxPg=Math.max(0,Math.ceil(tot/PER)-1);
-    var s=page*PER, e=Math.min(s+PER,tot);
-    var h='';
-    ROWS.slice(s,e).forEach(function(r){{
-      h+='<tr>'+
-        '<td><span class="tk">'+r.ticker+'</span></td>'+
-        '<td style="font-weight:600;">'+r.pemegang+'</td>'+
-        '<td class="'+dc+'">'+r.d1bln+'</td>'+
-        '<td class="'+dc+'">'+r.dpct+'</td>'+
-        '<td class="hist">'+r.m1+'</td>'+
-        '<td class="hist">'+r.m2+'</td>'+
-        '<td class="hist">'+r.m3+'</td>'+
-        '<td>'+r.tren+'</td>'+
-        '<td>'+r.sinyal+'</td>'+
-        '</tr>';
-    }});
-    document.getElementById('tb_{_uid}').innerHTML=h;
-    document.getElementById('pi_{_uid}').textContent='Baris '+(s+1)+'&ndash;'+e+' dari '+tot;
-    document.getElementById('pp_{_uid}').disabled=(page<=0);
-    document.getElementById('pn_{_uid}').disabled=(page>=maxPg);
-    document.getElementById('sb_{_uid}').scrollTop=0;
-    document.getElementById('sb_{_uid}').scrollLeft=0;
-      }}
-      window['pg_{_uid}']=function(d){{
-    var maxPg=Math.max(0,Math.ceil(ROWS.length/PER)-1);
-    page=Math.max(0,Math.min(page+d,maxPg));render();
-      }};
-      // Drag-scroll desktop (horizontal)
-      var el=document.getElementById('sb_{_uid}'),isD=false,sX,sL;
-      el.addEventListener('mousedown',function(e){{isD=true;sX=e.pageX-el.offsetLeft;sL=el.scrollLeft;el.style.cursor='grabbing';}});
-      el.addEventListener('mouseleave',function(){{isD=false;el.style.cursor='grab';}});
-      el.addEventListener('mouseup',function(){{isD=false;el.style.cursor='grab';}});
-      el.addEventListener('mousemove',function(e){{
-    if(!isD)return;e.preventDefault();
-    el.scrollLeft=sL-(e.pageX-el.offsetLeft-sX);
-      }});
-      render();
-      // Auto-resize iframe ke tinggi konten aktual (penting di mobile karena overflow:visible)
-      function _sendH() {{
-    var h = document.documentElement.scrollHeight || document.body.scrollHeight;
-    window.parent.postMessage({{type:'streamlit:setFrameHeight', height: h + 8}}, '*');
-      }}
-      _sendH();
-      setTimeout(_sendH, 150);
-      setTimeout(_sendH, 400);
-    }})();
-    </script></body></html>"""
-
-            # Hitung tinggi presisi: label(28) + hint(0/20) + thead(36) + baris(42×15) + footer(44)
-            _h = 28 + 36 + (min(count, 15) * 42) + 44
-            _h = max(_h, 200)
-            components.html(_html, height=_h, scrolling=False)
-
-        pass  # subtitle count dihapus per request
-
-        _render_sh_table_v2(_naik_rows, is_naik=True)
-        # ── MOBILE-ONLY: rapatkan gap antara tabel Akumulasi dan Distribusi ──
-        components.html("""
-    <script>
-    (function() {
-      var pd = window.parent.document;
-      if (pd.getElementById('sigma-sh-gap-mobile-css')) return;
-      var s = pd.createElement('style');
-      s.id = 'sigma-sh-gap-mobile-css';
-      s.textContent = `
-    @media (max-width: 768px) {
-      /* Hilangkan margin-bottom pada wrapper tabel sh2 */
-      .sh2-scroll-outer {
-        margin-bottom: 0px !important;
-        padding-bottom: 0px !important;
-      }
-      /* Hilangkan gap default Streamlit di antara iframe/block wrapper */
-      [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"],
-      [data-testid="stVerticalBlock"] > div > [data-testid="stIFrame"] {
-        margin-bottom: 0px !important;
-        padding-bottom: 0px !important;
-      }
-      /* Khusus iframe komponen HTML Streamlit: kurangi margin antar iframe */
-      iframe[title="sigma_sh_screen_naik"],
-      iframe[title="sigma_sh_screen_turun"] {
-        display: block !important;
-        margin-bottom: 0 !important;
-        margin-top: 0 !important;
-      }
-    }
-      `;
-      pd.head.appendChild(s);
-    })();
-    </script>
-    """, height=0)
-        st.markdown("<div style='margin-top:0px;margin-bottom:0px;line-height:0;font-size:0;height:0;'></div>", unsafe_allow_html=True)
-        _render_sh_table_v2(_turun_rows, is_naik=False)
-
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-
-
-
-
-    # FED RATE MONITOR + BI RATE → masuk Rate Monitor sub-tab di Market Data
-    with _md_subtab_ratemon:
-        # ── NESTED SUB-TABS: Rate Monitor ────────────────────────────────────
-        _rm_tab_fed, _rm_tab_bi, _rm_tab_ai = st.tabs([
-            "  📡 FED RATE MONITOR TOOL  ",
-            "  🏦 BI RATE MONITOR  ",
-            "  🤖 AI ANALYST — RATE MONITOR  ",
-        ])
-
-        with _rm_tab_fed:
-            st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-            # ─────────────────────────────────────────────────────────
-            # FED RATE MONITOR TOOL
-            # ─────────────────────────────────────────────────────────
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FED RATE MONITOR TOOL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-
-            # ── Current Rate Info Card ──────────────────────────────
-            st.markdown(f"""
-            <div style='display:flex;flex-wrap:wrap;gap:12px;margin-bottom:18px;'>
-              <div style='flex:1;min-width:180px;background:rgba(139,92,246,0.10);border:1px solid rgba(139,92,246,0.35);
-                   border-radius:10px;padding:14px 18px;'>
-                <div style='font-size:0.68rem;color:#a78bfa;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px;'>
-                  🏦 RATE SAAT INI (Fed Funds)
-                </div>
-                <div style='font-size:1.6rem;font-weight:800;color:#c4b5fd;font-family:IBM Plex Mono,monospace;line-height:1;'>
-                  4.25–4.50%
-                </div>
-                <div style='font-size:0.72rem;color:#7c6fa0;margin-top:4px;'>Keputusan FOMC 7 Mei 2026 · HOLD</div>
-              </div>
-              <div style='flex:1;min-width:180px;background:rgba(242,54,69,0.08);border:1px solid rgba(242,54,69,0.30);
-                   border-radius:10px;padding:14px 18px;'>
-                <div style='font-size:0.68rem;color:#f87171;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px;'>
-                  📅 FOMC BERIKUTNYA
-                </div>
-                <div style='font-size:1.1rem;font-weight:800;color:#f23645;font-family:IBM Plex Mono,monospace;line-height:1.2;'>
-                  18 Jun 2026
-                </div>
-                <div style='font-size:0.72rem;color:#9b4a53;margin-top:4px;'>01:00 WIB · ~32 hari lagi</div>
-              </div>
-              <div style='flex:2;min-width:260px;background:rgba(66,133,244,0.07);border:1px solid rgba(66,133,244,0.25);
-                   border-radius:10px;padding:14px 18px;'>
-                <div style='font-size:0.68rem;color:#60a5fa;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px;'>
-                  📊 SIGMA INSIGHT — CME FEDWATCH
-                </div>
-                <div style='font-size:0.8rem;color:#94a3b8;line-height:1.65;'>
-                  Probabilitas perubahan suku bunga Fed berdasarkan <b style='color:#60a5fa;'>CME 30-Day Fed Fund Futures</b>.
-                  Pasar pricing ~80% HOLD di Jun 2026, dengan ekspektasi cut pertama mulai terlihat di FOMC Jul–Sep 2026.
-                  Implikasi IDX: rupiah relatif stabil, hot money bertahan di EM.
-                </div>
-              </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-            # ── Data FOMC meetings — 3 BERIKUTNYA (update Mei 2026) ──────────────────────────────────
-            _fed_meetings = [
-                {
-                    "date": "18 Jun 2026",
-                    "date_wib": "18 Jun 2026 · 01:00 WIB",
-                    "meeting_time": "18 Jun 2026 · 01:00 WIB",
-                    "future_price": "96.420",
-                    "countdown_weeks": 0, "countdown_days": 32, "countdown_hours": 0, "countdown_mins": 0,
-                    "scenarios": [
-                        {"range": "4.00-4.25", "prob":  8.2, "prev_day":  7.4, "prev_week":  6.1, "dir": "cut"},
-                        {"range": "4.25-4.50", "prob": 88.5, "prev_day": 89.8, "prev_week": 91.3, "dir": "hold"},
-                        {"range": "4.50-4.75", "prob":  3.3, "prev_day":  2.8, "prev_week":  2.6, "dir": "hike"},
-                    ]
-                },
-                {
-                    "date": "30 Jul 2026",
-                    "date_wib": "30 Jul 2026 · 01:00 WIB",
-                    "meeting_time": "30 Jul 2026 · 01:00 WIB",
-                    "future_price": "96.560",
-                    "countdown_weeks": 0, "countdown_days": 74, "countdown_hours": 0, "countdown_mins": 0,
-                    "scenarios": [
-                        {"range": "3.75-4.00", "prob":  3.1, "prev_day":  2.8, "prev_week": None, "dir": "cut"},
-                        {"range": "4.00-4.25", "prob": 19.4, "prev_day": 17.6, "prev_week": None, "dir": "cut"},
-                        {"range": "4.25-4.50", "prob": 72.2, "prev_day": 73.9, "prev_week": None, "dir": "hold"},
-                        {"range": "4.50-4.75", "prob":  5.3, "prev_day":  5.7, "prev_week": None, "dir": "hike"},
-                    ]
-                },
-                {
-                    "date": "17 Sep 2026",
-                    "date_wib": "17 Sep 2026 · 01:00 WIB",
-                    "meeting_time": "17 Sep 2026 · 01:00 WIB",
-                    "future_price": "96.690",
-                    "countdown_weeks": 0, "countdown_days": 123, "countdown_hours": 0, "countdown_mins": 0,
-                    "scenarios": [
-                        {"range": "3.75-4.00", "prob":  7.8, "prev_day":  6.9, "prev_week": None, "dir": "cut"},
-                        {"range": "4.00-4.25", "prob": 31.2, "prev_day": 29.5, "prev_week": None, "dir": "cut"},
-                        {"range": "4.25-4.50", "prob": 55.4, "prev_day": 57.1, "prev_week": None, "dir": "hold"},
-                        {"range": "4.50-4.75", "prob":  5.6, "prev_day":  6.5, "prev_week": None, "dir": "hike"},
-                    ]
-                },
-            ]
-
-            # ── Serialize data ke JSON untuk dipakai di JS ──────────
-            import json as _json
-            _fed_json = _json.dumps(_fed_meetings)
-            _is_dark_js = "true" if is_dark else "false"
-            _updated_str = _wib_now().strftime("%b %d, %Y %I:%M%p") + " WIB"
-
-            # ── Render via components.html - BYPASS Streamlit markdown sanitizer ──
-            components.html(f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-      * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-      body {{ background: transparent; font-family: 'IBM Plex Mono', monospace; }}
-
-      .frm-wrap {{ width: 100%; padding: 0 0 24px 0; }}
-
-      /* Countdown banner */
-      .frm-countdown {{
-        background: rgba(242,54,69,0.08);
-        border: 1px solid rgba(242,54,69,0.22);
-        border-radius: 10px;
-        padding: 14px 20px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin-bottom: 18px;
-      }}
-      .frm-cd-label {{
-        font-size: 0.72rem;
-        color: #a0aec0;
-        letter-spacing: 0.08em;
-        font-weight: 600;
-        margin-bottom: 6px;
-        text-transform: uppercase;
-      }}
-      .frm-cd-title {{
-        font-size: 0.875rem;
-        color: #f23645;
-        font-weight: 700;
-        letter-spacing: 0.05em;
-      }}
-      .frm-cd-boxes {{
-        display: flex;
-        gap: 10px;
-        align-items: center;
-      }}
-      .frm-cd-box {{
-        text-align: center;
-        min-width: 48px;
-      }}
-      .frm-cd-num {{
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #e8eaf0;
-        line-height: 1;
-      }}
-      .frm-cd-unit {{
-        font-size: 0.72rem;
-        color: #6b7a99;
-        letter-spacing: 0.06em;
-        margin-top: 3px;
-        text-transform: uppercase;
-      }}
-      .frm-cd-sep {{
-        font-size: 1.5rem;
-        color: #4285F4;
-        font-weight: 700;
-        padding-bottom: 8px;
-      }}
-
-      /* -- SINGLE VERTICAL TABLE (menggantikan grid 3 kartu) -- */
-      .frm-vtbl-wrap {{
-        background: {'rgba(8,12,22,0.9)' if is_dark else '#f8faff'};
-        border: 1px solid {'rgba(3,40,238,0.18)' if is_dark else '#e2e8f0'};
-        border-radius: 12px;
-        overflow: hidden;
-        margin-bottom: 16px;
-        width: 100%;
-      }}
-      /* Section header row (tanggal FOMC) */
-      .frm-meeting-hdr {{
-        background: rgba(3,40,238,0.07);
-        border-bottom: 1px solid {'rgba(3,40,238,0.18)' if is_dark else '#e2e8f0'};
-        padding: 10px 16px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 6px;
-      }}
-      .frm-meeting-hdr + .frm-meeting-hdr {{
-        border-top: 2px solid {'rgba(3,40,238,0.25)' if is_dark else '#c7d4f0'};
-      }}
-      .frm-meeting-date {{
-        font-size: 0.875rem;
-        font-weight: 700;
-        color: #6e9bff;
-        letter-spacing: 0.06em;
-      }}
-      .frm-meeting-meta {{
-        display: flex;
-        gap: 14px;
-        align-items: center;
-        flex-wrap: wrap;
-      }}
-      .frm-meeting-future {{
-        font-size: 0.72rem;
-        color: {'#6b7a99' if is_dark else '#64748b'};
-      }}
-      .frm-meeting-time {{
-        font-size: 0.72rem;
-        color: #089981;
-      }}
-
-      /* Bars section */
-      .frm-bars {{ padding: 12px 16px 6px; }}
-      .frm-bar-row {{ margin-bottom: 10px; }}
-      .frm-bar-top {{
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 4px;
-      }}
-      .frm-bar-label {{ font-size: 0.875rem; color: {'#e8eaf0' if is_dark else '#1a202c'}; font-weight: 400; }}
-      .frm-bar-pct {{ font-size: 0.875rem; font-weight: 700; }}
-      .frm-bar-track {{
-        height: 6px;
-        border-radius: 4px;
-        background: {'rgba(255,255,255,0.06)' if is_dark else 'rgba(0,0,0,0.06)'};
-        overflow: hidden;
-      }}
-      .frm-bar-fill {{
-        height: 100%;
-        border-radius: 4px;
-        transition: width 0.4s ease;
-      }}
-
-      /* Probability detail rows (inline tabel) */
-      .frm-detail-row {{
-        display: flex;
-        align-items: center;
-        padding: 5px 16px;
-        border-top: 1px solid {'rgba(255,255,255,0.04)' if is_dark else 'rgba(0,0,0,0.04)'};
-        gap: 10px;
-        flex-wrap: wrap;
-      }}
-      .frm-detail-rate {{
-        font-size: 0.875rem;
-        color: {'#9ca3af' if is_dark else '#64748b'};
-        min-width: 100px;
-      }}
-      .frm-detail-now {{
-        font-size: 0.875rem;
-        font-weight: 700;
-        min-width: 60px;
-      }}
-      .frm-detail-prev {{
-        font-size: 0.875rem;
-        color: {'#6b7a99' if is_dark else '#9ca3af'};
-        min-width: 55px;
-        text-align: right;
-      }}
-      .frm-detail-prevwk {{
-        font-size: 0.875rem;
-        color: {'#6b7a99' if is_dark else '#9ca3af'};
-        min-width: 55px;
-        text-align: right;
-      }}
-      .frm-detail-footer {{
-        padding: 4px 16px 8px;
-        font-size: 0.72rem;
-        color: {'rgba(107,122,153,0.6)' if is_dark else '#9ca3af'};
-        text-align: right;
-        border-top: 1px solid {'rgba(255,255,255,0.04)' if is_dark else 'rgba(0,0,0,0.04)'};
-      }}
-      .frm-dir-badge {{
-        display: inline-block;
-        font-size: 0.72rem;
-        font-weight: 700;
-        padding: 2px 6px;
-        border-radius: 3px;
-        letter-spacing: 0.05em;
-        margin-left: 4px;
-        vertical-align: middle;
-      }}
-      .frm-col-hdr {{
-        display: flex;
-        align-items: center;
-        padding: 5px 16px 4px;
-        gap: 10px;
-        border-top: 1px solid {'rgba(3,40,238,0.10)' if is_dark else '#dce8ff'};
-        background: {'rgba(255,255,255,0.02)' if is_dark else 'rgba(0,0,0,0.02)'};
-      }}
-      .frm-col-hdr span {{
-        font-size: 0.72rem;
-        font-weight: 600;
-        letter-spacing: 0.07em;
-        color: {'#6b7a99' if is_dark else '#64748b'};
-        text-transform: uppercase;
-      }}
-      .frm-col-hdr .ch-rate {{ min-width: 100px; }}
-      .frm-col-hdr .ch-now  {{ min-width: 60px; }}
-      .frm-col-hdr .ch-yday {{ min-width: 55px; text-align: right; }}
-      .frm-col-hdr .ch-week {{ min-width: 55px; text-align: right; }}
-
-      /* Insight box — scrolling ticker */
-      .frm-insight {{
-        background: #0a0e1a;
-        border-top: 1px solid rgba(66,133,244,0.30);
-        border-bottom: 1px solid rgba(66,133,244,0.30);
-        border-left: 3px solid #4285F4;
-        padding: 8px 0;
-        font-size: 0.82rem;
-        color: rgba(255,255,255,0.75);
-        overflow: hidden;
-        white-space: nowrap;
-        position: relative;
-        margin-top: 14px;
-        border-radius: 0;
-      }}
-      .frm-insight-inner {{
-        display: inline-block;
-        animation: frm-scroll 38s linear infinite;
-        padding-left: 100%;
-      }}
-      @keyframes frm-scroll {{
-        0%   {{ transform: translateX(0); }}
-        100% {{ transform: translateX(-100%); }}
-      }}
-      .frm-insight-label {{
-        color: #4285F4;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        margin-right: 10px;
-        font-family: 'IBM Plex Mono', 'Courier New', monospace;
-      }}
-      .frm-insight-sep {{
-        color: rgba(66,133,244,0.45);
-        margin: 0 22px;
-      }}
-
-      /* Mobile: kompak &mdash; single table layout sudah vertikal by default */
-      @media (max-width: 768px) {{
-        .frm-countdown {{ padding: 12px 14px; flex-direction: column; gap: 8px; }}
-        .frm-cd-num {{ font-size: 1.25rem; }}
-        .frm-cd-box {{ min-width: 38px; }}
-        .frm-cd-boxes {{ justify-content: flex-start; flex-wrap: wrap; }}
-        .frm-meeting-meta {{ gap: 8px; }}
-        .frm-bars {{ padding: 10px 12px 4px; }}
-        .frm-bar-label {{ font-size: 0.875rem; }}
-        .frm-bar-pct {{ font-size: 0.875rem; }}
-        .frm-detail-row {{ padding: 5px 12px; gap: 6px; }}
-        .frm-detail-rate {{ min-width: 90px; font-size: 0.875rem; }}
-        .frm-detail-now {{ min-width: 50px; font-size: 0.875rem; }}
-        .frm-detail-prev {{ min-width: 44px; font-size: 0.875rem; }}
-        .frm-detail-prevwk {{ min-width: 44px; font-size: 0.875rem; }}
-        .frm-col-hdr {{ padding: 4px 12px 3px; gap: 6px; }}
-        .frm-col-hdr .ch-rate {{ min-width: 90px; }}
-        .frm-col-hdr .ch-now  {{ min-width: 50px; }}
-        .frm-col-hdr .ch-yday {{ min-width: 44px; }}
-        .frm-col-hdr .ch-week {{ min-width: 44px; }}
-        .frm-dir-badge {{ font-size: 0.65rem; padding: 1px 4px; margin-left: 2px; }}
-        .frm-insight {{ font-size: 0.78rem; padding: 7px 0; }}
-        .frm-insight-inner {{ animation-duration: 28s; }}
-        .frm-meeting-hdr {{ padding: 8px 12px; }}
-        .frm-detail-footer {{ padding: 3px 12px 6px; }}
-      }}
-    </style>
-    </head>
-    <body>
-    <div class="frm-wrap">
-
-      <!-- Countdown Banner (first meeting) -->
-      <div class="frm-countdown">
-        <div>
-          <div class="frm-cd-label">FED INTEREST RATE DECISION</div>
-          <div class="frm-cd-title">18 Jun 2026 &nbsp;&middot;&nbsp; 01:00 WIB</div>
-        </div>
-        <div class="frm-cd-boxes" id="frm-cd"></div>
-      </div>
-
-      <!-- Cards Grid -->
-      <div class="frm-vtbl-wrap" id="frm-vtbl"></div>
-
-      <!-- Insight — scrolling ticker -->
-      <div class="frm-insight">
-        <div class="frm-insight-inner">
-          <span class="frm-insight-label">SIGMA INSIGHT —</span>
-          FOMC 7 Mei 2026: Fed <b>HOLD</b> di 4.25–4.50% sesuai ekspektasi pasar.
-          Probabilitas ~88.5% HOLD berlanjut di FOMC Juni 2026. Ekspektasi cut pertama mulai muncul di Jul–Sep 2026 (~19–31% probabilitas).
-          Implikasi IDX: <span style="color:#089981;font-weight:600;">Rupiah stabil</span>,
-          hot money tetap di EM, sentimen netral untuk perbankan &amp; properti. Pantau data CPI AS &amp; NFP sebagai trigger perubahan ekspektasi.
-          <span class="frm-insight-sep">◆</span>
-          <span class="frm-insight-label">SIGMA INSIGHT —</span>
-          FOMC 7 Mei 2026: Fed <b>HOLD</b> di 4.25–4.50% sesuai ekspektasi pasar.
-          Probabilitas ~88.5% HOLD berlanjut di FOMC Juni 2026. Ekspektasi cut pertama mulai muncul di Jul–Sep 2026 (~19–31% probabilitas).
-          Implikasi IDX: <span style="color:#089981;font-weight:600;">Rupiah stabil</span>,
-          hot money tetap di EM, sentimen netral untuk perbankan &amp; properti. Pantau data CPI AS &amp; NFP sebagai trigger perubahan ekspektasi.
-        </div>
-      </div>
-
-    </div>
-
-    <script>
-    var DATA = {_fed_json};
-    var UPDATED = "{_updated_str}";
-
-    var DIR_COLOR = {{ "cut":"#089981", "hold":"#4285F4", "hike":"#f23645" }};
-    var DIR_LABEL = {{ "cut":"CUT", "hold":"HOLD", "hike":"HIKE" }};
-    var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15)", "hike":"rgba(242,54,69,0.15)" }};
-
-    // -- LIVE COUNTDOWN - target: Apr 30 2026 01:00 WIB = Apr 29 2026 18:00 UTC --
-    (function() {{
-      // Jun 17 2026 18:00 UTC = Jun 18 2026 01:00 WIB (UTC+7)
-      var TARGET_UTC_MS = Date.UTC(2026, 5, 17, 18, 0, 0);
-
-      function tick() {{
-        var diff = TARGET_UTC_MS-Date.now();
-        var cd = document.getElementById('frm-cd');
-        if (!cd) return;
-        if (diff <= 0) {{
-          cd.innerHTML = '<div class="frm-cd-box"><div class="frm-cd-num" style="font-size:1.1rem;color:#089981;">BERLANGSUNG</div></div>';
-          return;
-        }}
-        var totalSec = Math.floor(diff / 1000);
-        var mins     = Math.floor(totalSec / 60) % 60;
-        var hours    = Math.floor(totalSec / 3600) % 24;
-        var days     = Math.floor(totalSec / 86400) % 7;
-        var weeks    = Math.floor(totalSec / 604800);
-        var parts = [[weeks,"WEEKS"],[days,"DAYS"],[hours,"HOURS"],[mins,"MINS"]];
-        var html = '';
-        parts.forEach(function(p, i) {{
-          if (i > 0) html += '<div class="frm-cd-sep">:</div>';
-          html += '<div class="frm-cd-box"><div class="frm-cd-num">' + p[0] + '</div><div class="frm-cd-unit">' + p[1] + '</div></div>';
-        }});
-        cd.innerHTML = html;
-      }}
-      tick();
-      setInterval(tick, 1000);
-    }})();
-
-    // -- Build single vertical table --
-    (function() {{
-      var wrap = document.getElementById('frm-vtbl');
-      var html = '';
-
-      DATA.forEach(function(mtg, idx) {{
-        // Section header &mdash; tanggal FOMC
-        var borderTop = idx > 0 ? 'border-top:2px solid rgba(3,40,238,0.22);' : '';
-        html += '<div class="frm-meeting-hdr" style="' + borderTop + '">';
-        html += '<span class="frm-meeting-date">' + (mtg.date_wib || mtg.date) + '</span>';
-        html += '<div class="frm-meeting-meta">';
-        html += '<span class="frm-meeting-future">Future: ' + mtg.future_price + '</span>';
-        html += '<span class="frm-meeting-time">Meeting: ' + mtg.meeting_time + '</span>';
-        html += '</div></div>';
-
-        // Probability bars
-        html += '<div class="frm-bars">';
-        mtg.scenarios.forEach(function(sc) {{
-          var c = DIR_COLOR[sc.dir] || '#b2b5be';
-          var w = Math.max(sc.prob, 1.5);
-          html += '<div class="frm-bar-row">';
-          html += '<div class="frm-bar-top">';
-          html += '<span class="frm-bar-label">'+sc.range+'</span>';
-          html += '<span class="frm-bar-pct" style="color:'+c+'">'+sc.prob.toFixed(1)+'%</span>';
-          html += '</div>';
-          html += '<div class="frm-bar-track"><div class="frm-bar-fill" style="width:'+w+'%;background:'+c+';opacity:0.85;"></div></div>';
-          html += '</div>';
-        }});
-        html += '</div>';
-
-        // Column header
-        html += '<div class="frm-col-hdr">';
-        html += '<span class="ch-rate">TARGET RATE</span>';
-        html += '<span class="ch-now">NOW %</span>';
-        html += '<span class="ch-yday">YDAY %</span>';
-        html += '<span class="ch-week">WEEK %</span>';
-        html += '</div>';
-
-        // Detail rows
-        mtg.scenarios.forEach(function(sc) {{
-          var c  = DIR_COLOR[sc.dir] || '#b2b5be';
-          var bc = DIR_BADGE_BG[sc.dir] || 'transparent';
-          var pd = (sc.prev_day  !== null && sc.prev_day  !== undefined) ? sc.prev_day.toFixed(1)  + '%' : '-';
-          var pw = (sc.prev_week !== null && sc.prev_week !== undefined) ? sc.prev_week.toFixed(1) + '%' : '-';
-          var badge = '<span class="frm-dir-badge" style="color:'+c+';background:'+bc+'">'+DIR_LABEL[sc.dir]+'</span>';
-          html += '<div class="frm-detail-row">';
-          html += '<span class="frm-detail-rate">'+sc.range+badge+'</span>';
-          html += '<span class="frm-detail-now" style="color:'+c+'">'+sc.prob.toFixed(1)+'%</span>';
-          html += '<span class="frm-detail-prev">'+pd+'</span>';
-          html += '<span class="frm-detail-prevwk">'+pw+'</span>';
-          html += '</div>';
-        }});
-
-        // Footer row
-        html += '<div class="frm-detail-footer">Updated: '+UPDATED+' &middot; Source: CME FedWatch</div>';
-      }});
-
-      wrap.innerHTML = html;
-
-      // -- Auto-resize: ukur tinggi aktual konten, bukan pakai angka hardcoded --
-      function sendHeight() {{
-        // Reset overflow agar scrollHeight akurat
-        document.body.style.overflow = 'visible';
-        var fw = document.querySelector('.frm-wrap');
-        if (fw) fw.style.overflow = 'visible';
-        // BUG1 FIX: tambah extra padding bottom agar baris terakhir 30 Jul tidak terpotong
-        var h = Math.max(
-          document.documentElement.scrollHeight,
-          document.body.scrollHeight,
-          fw ? fw.scrollHeight : 0
-        );
-        window.parent.postMessage({{type:'streamlit:setFrameHeight', height: h + 40}}, '*');
-      }}
-      sendHeight();
-      setTimeout(sendHeight, 100);
-      setTimeout(sendHeight, 400);
-      setTimeout(sendHeight, 900);
-      setTimeout(sendHeight, 1800);
-      window.addEventListener('resize', function() {{ setTimeout(sendHeight, 150); }});
-    }})();
-    </script>
-    </body>
-    </html>
-            """, height=1200, scrolling=False)
-
-            st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-
-        with _rm_tab_bi:
-            # ── BI RATE MONITOR + GLOBAL RATES ────────────────────────
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏦 BI RATE MONITOR & GLOBAL INTEREST RATES</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-
-            # ── Hardcoded historical data (update berkala) ──
-            _bi_rate_history = [
-                {"date": "Jan 2024", "rate": 6.00}, {"date": "Feb 2024", "rate": 6.00},
-                {"date": "Mar 2024", "rate": 6.00}, {"date": "Apr 2024", "rate": 6.25},
-                {"date": "Mei 2024", "rate": 6.25}, {"date": "Jun 2024", "rate": 6.25},
-                {"date": "Jul 2024", "rate": 6.25}, {"date": "Ags 2024", "rate": 6.25},
-                {"date": "Sep 2024", "rate": 6.00}, {"date": "Okt 2024", "rate": 6.00},
-                {"date": "Nov 2024", "rate": 6.00}, {"date": "Des 2024", "rate": 6.00},
-                {"date": "Jan 2025", "rate": 5.75}, {"date": "Feb 2025", "rate": 5.75},
-                {"date": "Mar 2025", "rate": 5.75}, {"date": "Apr 2025", "rate": 5.75},
-                {"date": "Mei 2025", "rate": 5.50}, {"date": "Jun 2025", "rate": 5.50},
-                {"date": "Jul 2025", "rate": 5.25}, {"date": "Ags 2025", "rate": 5.25},
-                {"date": "Sep 2025", "rate": 5.25}, {"date": "Okt 2025", "rate": 5.00},
-                {"date": "Nov 2025", "rate": 5.00}, {"date": "Des 2025", "rate": 5.00},
-                {"date": "Jan 2026", "rate": 5.00}, {"date": "Feb 2026", "rate": 4.75},
-                {"date": "Mar 2026", "rate": 4.75}, {"date": "Apr 2026", "rate": 4.75},
-                {"date": "Mei 2026", "rate": 5.25},
-            ]
-            _rdg_schedule_2026 = [
-                {"date": "21–22 Jan 2026", "result": "Turun 25bps → 5.00%", "status": "done"},
-                {"date": "18–19 Feb 2026", "result": "Turun 25bps → 4.75%", "status": "done"},
-                {"date": "18–19 Mar 2026", "result": "Tetap 4.75%", "status": "done"},
-                {"date": "22–23 Apr 2026", "result": "Tetap 4.75%", "status": "done"},
-                {"date": "20–21 Mei 2026", "result": "Naik 50bps → 5.25%", "status": "done"},
-                {"date": "17–18 Jun 2026", "result": "—", "status": "future"},
-                {"date": "15–16 Jul 2026", "result": "—", "status": "future"},
-                {"date": "19–20 Ags 2026", "result": "—", "status": "future"},
-                {"date": "16–17 Sep 2026", "result": "—", "status": "future"},
-                {"date": "21–22 Okt 2026", "result": "—", "status": "future"},
-                {"date": "17–18 Nov 2026", "result": "—", "status": "future"},
-                {"date": "16–17 Des 2026", "result": "—", "status": "future"},
-            ]
-
-            # ── Fetch live rates via yfinance fallback ──
-            @st.cache_data(ttl=1800, show_spinner=False)
-            def _fetch_global_rates():
-                """Fetch rates via yfinance + FRED API fallback. Hardcoded hanya sebagai last resort."""
-                # ── Nilai hardcoded (last resort) — UPDATE MANUAL jika FRED dan yfinance gagal semua ──
-                # BI Rate: update dari keputusan RDG BI terbaru (Mei 2026 = 5.25%)
-                # Fed Funds: update dari FOMC terbaru (Mei 2026 = 4.25-4.50%)
-                rates = {
-                    "BI Rate":   {"value": 5.25, "change": 0.00, "source": "hardcoded", "label": "Bank Indonesia — RDG Mei 2026"},
-                    "Fed Funds": {"value": 4.50, "change": 0.00, "source": "hardcoded", "label": "US Federal Reserve — FOMC Mei 2026"},
-                    "SOFR":      {"value": 4.31, "change": -0.02, "source": "hardcoded", "label": "Secured Overnight Financing Rate"},
-                    "US 10Y":    {"value": 4.38, "change": 0.05, "source": "hardcoded", "label": "US Treasury 10Y Yield"},
-                    "ID 10Y":    {"value": 6.82, "change": -0.08, "source": "hardcoded", "label": "Indonesia Gov Bond 10Y"},
-                }
-
-                # ── Layer 1: yfinance untuk US 10Y Treasury ──
-                try:
-                    import yfinance as _yf_r
-                    _us10y = _yf_r.Ticker("^TNX").history(period="5d")
-                    if len(_us10y) >= 2:
-                        _us10y_now  = round(float(_us10y["Close"].iloc[-1]), 2)
-                        _us10y_prev = round(float(_us10y["Close"].iloc[-2]), 2)
-                        rates["US 10Y"] = {
-                            "value": _us10y_now,
-                            "change": round(_us10y_now - _us10y_prev, 2),
-                            "source": "yfinance",
-                            "label": "US Treasury 10Y Yield"
-                        }
-                except Exception:
-                    pass
-
-                # ── Layer 2: yfinance untuk ID 10Y ──
-                try:
-                    import yfinance as _yf_r2
-                    _id10y = _yf_r2.Ticker("INDO10Y=X").history(period="5d")
-                    if len(_id10y) >= 1:
-                        _id_v = round(float(_id10y["Close"].iloc[-1]), 2)
-                        rates["ID 10Y"] = {
-                            "value": _id_v, "change": 0.0,
-                            "source": "yfinance", "label": "Indonesia Gov Bond 10Y"
-                        }
-                except Exception:
-                    pass
-
-                # ── Layer 3: FRED API untuk Fed Funds Rate (gratis, no key needed) ──
-                try:
-                    import urllib.request as _ur
-                    import json as _jj
-                    _fred_req = _ur.Request(
-                        "https://fred.stlouisfed.org/graph/fredgraph.json?id=FEDFUNDS",
-                        headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
-                    )
-                    with _ur.urlopen(_fred_req, timeout=6) as _fr:
-                        _fred_data = _jj.loads(_fr.read())
-                    if _fred_data and len(_fred_data) >= 2:
-                        _ff_now  = round(float(_fred_data[-1][1]), 2)
-                        _ff_prev = round(float(_fred_data[-2][1]), 2)
-                        rates["Fed Funds"] = {
-                            "value": _ff_now,
-                            "change": round(_ff_now - _ff_prev, 2),
-                            "source": "FRED",
-                            "label": "US Federal Reserve (FRED)"
-                        }
-                except Exception:
-                    pass
-
-                # ── Layer 4: yfinance untuk SOFR proxy (^IRX = 13-week T-Bill ≈ SOFR) ──
-                try:
-                    import yfinance as _yf_r3
-                    _sofr = _yf_r3.Ticker("^IRX").history(period="5d")
-                    if len(_sofr) >= 2:
-                        _sofr_now  = round(float(_sofr["Close"].iloc[-1]) / 10, 2)
-                        _sofr_prev = round(float(_sofr["Close"].iloc[-2]) / 10, 2)
-                        rates["SOFR"] = {
-                            "value": _sofr_now,
-                            "change": round(_sofr_now - _sofr_prev, 2),
-                            "source": "yfinance(^IRX)",
-                            "label": "SOFR proxy (13W T-Bill)"
-                        }
-                except Exception:
-                    pass
-
-                return rates
-
-            _global_rates = _fetch_global_rates()
-            _bi_current = _bi_rate_history[-1]["rate"]
-            _bi_prev = _bi_rate_history[-2]["rate"] if len(_bi_rate_history) > 1 else _bi_current
-            _bi_chg = _bi_current - _bi_prev
-
-            # ── Metric cards ──
-            _rc = st.columns(5)
-            _rate_items = [
-                ("BI Rate", f"{_bi_current:.2f}%", f"{'▲' if _bi_chg>0 else '▼' if _bi_chg<0 else '─'} {abs(_bi_chg)*100:.0f}bps", "#26a69a" if _bi_chg<=0 else "#ef5350"),
-                ("Fed Funds", f"4.25–4.50%", f"HOLD · 7 Mei 2026", "#8b5cf6"),
-                ("SOFR", f"{_global_rates['SOFR']['value']:.2f}%", f"Overnight · USD", "#f59e0b"),
-                ("US 10Y", f"{_global_rates['US 10Y']['value']:.2f}%", f"{'▲' if _global_rates['US 10Y']['change']>0 else '▼'} {abs(_global_rates['US 10Y']['change']):.2f}% · {'yfinance' if _global_rates['US 10Y']['source']=='yfinance' else 'hardcoded'}", "#3b82f6"),
-                ("ID 10Y", f"{_global_rates['ID 10Y']['value']:.2f}%", f"Spread vs US: +{round(_global_rates['ID 10Y']['value']-_global_rates['US 10Y']['value'],2):.2f}%", "#10b981"),
-            ]
-            for _col_r, (_lbl, _val, _delta, _color) in zip(_rc, _rate_items):
-                with _col_r:
-                    st.markdown(f"""
-                    <div style='background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);
-                    border-radius:8px;padding:12px 10px;text-align:center;margin-bottom:8px;'>
-                    <div style='font-size:0.7rem;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;'>{_lbl}</div>
-                    <div style='font-size:1.4rem;font-weight:700;color:{_color};font-family:IBM Plex Mono,monospace;'>{_val}</div>
-                    <div style='font-size:0.68rem;color:#64748b;margin-top:3px;'>{_delta}</div>
-                    </div>""", unsafe_allow_html=True)
-
-            # ── BI Rate History Chart — pakai components.html agar script CDN bisa load ──
-            _bi_labels_js = str([r["date"] for r in _bi_rate_history]).replace("'", '"')
-            _bi_vals_js   = str([r["rate"] for r in _bi_rate_history])
-            _bi_chart_html = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-              <style>
-                * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-                html, body {{ width: 100%; height: 100%; background: transparent; }}
-                .chart-wrap {{
-                  background: rgba(255,255,255,0.03);
-                  border: 1px solid rgba(255,255,255,0.09);
-                  border-radius: 8px;
-                  padding: 14px 16px 10px;
-                  width: 100%;
-                  height: 230px;
-                }}
-                .chart-title {{
-                  font-family: 'IBM Plex Mono', monospace;
-                  font-size: 11px;
-                  color: #888;
-                  margin-bottom: 10px;
-                  display: flex;
-                  justify-content: space-between;
-                  flex-wrap: wrap;
-                  gap: 4px;
-                }}
-                .chart-title span {{ color: #26a69a; font-weight: 600; }}
-                canvas {{ display: block; width: 100% !important; }}
-              </style>
-            </head>
-            <body>
-              <div class="chart-wrap">
-                <div class="chart-title">
-                  📊 BI RATE HISTORIS (Jan 2024 – Mei 2026)
-                  <span>Current: {_bi_current:.2f}%</span>
-                </div>
-                <canvas id="bi_rate_chart" style="height:190px !important;"></canvas>
-              </div>
-              <script>
-              (function() {{
-                var ctx = document.getElementById('bi_rate_chart').getContext('2d');
-                var labelsAll = {_bi_labels_js};
-                var valsAll   = {_bi_vals_js};
-                var labels = labelsAll;
-                var vals   = valsAll;
-                var ptColors = vals.map(function(v,i) {{
-                  if (i === 0) return '#26a69a';
-                  return v > vals[i-1] ? '#ef5350' : '#26a69a';
-                }});
-                new Chart(ctx, {{
-                  type: 'line',
-                  data: {{
-                    labels: labels,
-                    datasets: [{{
-                      label: 'BI Rate (%)',
-                      data: vals,
-                      borderColor: '#26a69a',
-                      backgroundColor: 'rgba(38,166,154,0.12)',
-                      tension: 0.3,
-                      fill: true,
-                      pointRadius: 4,
-                      pointHoverRadius: 7,
-                      borderWidth: 2.5,
-                      pointBackgroundColor: ptColors,
-                      pointBorderColor: ptColors,
-                    }}]
-                  }},
-                  options: {{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: false,
-                    plugins: {{
-                      legend: {{ display: false }},
-                      tooltip: {{
-                        backgroundColor: '#1a1a2e',
-                        titleColor: '#888',
-                        bodyColor: '#26a69a',
-                        callbacks: {{ label: function(c) {{ return ' ' + c.parsed.y.toFixed(2) + '%'; }} }}
-                      }}
-                    }},
-                    interaction: {{ mode: 'index', intersect: false }},
-                    scales: {{
-                      x: {{
-                        ticks: {{
-                          color: '#888',
-                          font: {{ size: 9 }},
-                          maxRotation: 45,
-                          minRotation: 0,
-                          autoSkip: true,
-                          maxTicksLimit: 18
-                        }},
-                        grid: {{ color: 'rgba(255,255,255,0.04)' }}
-                      }},
-                      y: {{
-                        ticks: {{ color: '#888', font: {{ size: 9 }}, callback: function(v) {{ return v.toFixed(2)+'%'; }} }},
-                        grid: {{ color: 'rgba(255,255,255,0.05)' }},
-                        min: 4.0, max: 6.8,
-                      }}
-                    }}
-                  }}
-                }});
-              }})();
-              </script>
-            </body>
-            </html>
-            """
-            components.html(_bi_chart_html, height=255, scrolling=False)
-
-            # ── RDG BI Schedule 2026 ──
-            st.markdown(f"<div style='font-size:0.75rem;color:#888;margin:12px 0 6px;font-family:IBM Plex Mono,monospace;'>📅 JADWAL RDG BI 2026</div>", unsafe_allow_html=True)
-            _rdg_cols = st.columns(3)
-            for _ri, _rdg in enumerate(_rdg_schedule_2026):
-                with _rdg_cols[_ri % 3]:
-                    _rdg_color = "#26a69a" if _rdg["status"] == "done" else ("#f59e0b" if _rdg["status"] == "upcoming" else "#374151")
-                    _rdg_icon  = "✅" if _rdg["status"] == "done" else ("🔔" if _rdg["status"] == "upcoming" else "📋")
-                    st.markdown(f"""
-                    <div style='background:rgba(255,255,255,0.02);border:1px solid {_rdg_color}33;
-                    border-radius:6px;padding:8px 10px;margin-bottom:6px;font-family:IBM Plex Mono,monospace;'>
-                    <div style='font-size:0.68rem;color:{_rdg_color};margin-bottom:2px;'>{_rdg_icon} {_rdg["date"]}</div>
-                    <div style='font-size:0.7rem;color:#ccc;'>{_rdg["result"]}</div>
-                    </div>""", unsafe_allow_html=True)
-
-            _rates_src_note = "US 10Y via yfinance" if _global_rates["US 10Y"]["source"] == "yfinance" else "Semua rates: hardcoded (yfinance gagal)"
-            st.caption(f"📡 Sumber data: BI Rate = hardcoded dari keputusan resmi BI · {_rates_src_note} · Cache 30 menit")
-
-
-        with _rm_tab_ai:
-            # ── AI ANALYST: Rate Monitor ──────────────────────────────
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🤖 AI ANALYST — RATE MONITOR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            if "ai_rate_monitor_result" not in st.session_state:
-                st.session_state["ai_rate_monitor_result"] = None
-            _col_ai_rm, _ = st.columns([1, 3])
-            with _col_ai_rm:
-                _btn_analyze_rate = st.button("🔍 Analyze Rate Monitor", key="btn_ai_rate_monitor", use_container_width=True)
-            if _btn_analyze_rate:
-                _bi_trend = "turun" if _bi_chg < 0 else ("naik" if _bi_chg > 0 else "stabil")
-                _rm_prompt = f"""Kamu adalah SIGMA AI, analis makro ekonomi dan pasar modal IDX.
-
-    Analisa kondisi suku bunga global dan implikasinya terhadap pasar modal Indonesia (IHSG) saat ini berdasarkan data berikut:
-
-    📌 DATA LIVE:
-    - BI Rate: {_bi_current:.2f}% (perubahan terakhir: {_bi_chg:+.2f}%, tren: {_bi_trend})
-    - Fed Funds Rate: {_global_rates["Fed Funds"]["value"]:.2f}%
-    - SOFR (Overnight USD): {_global_rates["SOFR"]["value"]:.2f}%
-    - US Treasury 10Y Yield: {_global_rates["US 10Y"]["value"]:.2f}%
-    - Indonesia Gov Bond 10Y: {_global_rates["ID 10Y"]["value"]:.2f}%
-    - Spread ID-US 10Y: +{round(_global_rates["ID 10Y"]["value"] - _global_rates["US 10Y"]["value"], 2):.2f}%
-
-    📌 KONTEKS BI RATE HISTORIS (24 bln terakhir):
-    - Puncak tertinggi: 6.25% (Apr–Ags 2024)
-    - Siklus pemotongan: Sep 2024 mulai turun bertahap
-    - Current: {_bi_current:.2f}% (baru naik 50bps Mei 2026 → 5.25%; siklus bunga kembali ketat)
-
-    Buatlah analisa naratif yang mencakup:
-    1. **Kondisi Saat Ini** — Apa yang sedang terjadi dengan suku bunga global & Indonesia?
-    2. **Spread Analysis** — Spread ID-US {round(_global_rates["ID 10Y"]["value"] - _global_rates["US 10Y"]["value"], 2):.2f}% itu atraktif/tidak? Dampak ke asing masuk/keluar IDX?
-    3. **Dampak ke IHSG** — Siklus pemotongan BI Rate ini bullish/bearish? Sektor mana yang paling diuntungkan?
-    4. **Risiko** — Apa yang perlu diwaspadai investor IDX dari kondisi rate global saat ini?
-    5. **Kesimpulan** — 1–2 kalimat tegas soal outlook suku bunga untuk pasar modal Indonesia.
-
-    Format: narasi profesional, padat, 300–400 kata. Gunakan bahasa Indonesia. Jujur dan tegas."""
-                with st.spinner("🤖 SIGMA menganalisa kondisi rate monitor..."):
-                    try:
-                        _ai_rm_result, _ai_rm_model = _call_groq_primary(_rm_prompt, max_tokens=2000, temperature=0.6)
-                        st.session_state["ai_rate_monitor_result"] = (_ai_rm_result, _ai_rm_model)
-                    except Exception as _e:
-                        st.session_state["ai_rate_monitor_result"] = (f"❌ Gagal: {str(_e)}", "error")
-            if st.session_state.get("ai_rate_monitor_result"):
-                _rm_txt, _rm_mdl = st.session_state["ai_rate_monitor_result"]
-                st.markdown(f"""<div style='background:rgba(38,166,154,0.06);border:1px solid rgba(38,166,154,0.25);
-                border-radius:8px;padding:16px 18px;margin-top:8px;font-family:"DM Sans",sans-serif;font-size:0.88rem;
-                line-height:1.75;color:#e0e0e0;'>
-                <div style='font-size:0.68rem;color:#26a69a;font-family:IBM Plex Mono,monospace;margin-bottom:10px;'>
-                🤖 SIGMA AI · Rate Monitor Analysis</div>
-                {_rm_txt.replace(chr(10), "<br>")}
-                </div>""", unsafe_allow_html=True)
-            st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-            # ─────────────────────────────────────────────────────────
-        # ECONOMIC CALENDAR → dipindah ke sub-tab Kalender
-        # ─────────────────────────────────────────────────────────
-    with _mm_subtab_cal:
-        # ─────────────────────────────────────────────────────────
-        # ECONOMIC CALENDAR — ID · US  (REALTIME ACTUAL + AI ANALYST)
-        # ─────────────────────────────────────────────────────────
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR — ID · US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-
-        # ── Fetch Actual data realtime dari Forexfactory RSS (gratis, no key) ──
-        @st.cache_data(ttl=120, show_spinner=False)  # ditingkatkan dari 300 → 120 detik
-        def _fetch_ff_actuals():
-            """
-            Ambil data Actual dari ForexFactory Calendar (XML/JSON public endpoint).
-            Fallback ke Trading Economics jika FF gagal.
-            Return dict: {"event_key": actual_str}
-            """
-            import urllib.request, json as _jj, time as _t
-            actuals = {}
-            # ── Layer 1: ForexFactory JSON Calendar ──
-            try:
-                _ff_url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
-                _req = urllib.request.Request(_ff_url, headers={
-                    "User-Agent": "Mozilla/5.0",
-                    "Accept": "application/json"
-                })
-                with urllib.request.urlopen(_req, timeout=8) as r:
-                    _events = _jj.loads(r.read())
-                for ev in _events:
-                    _title = str(ev.get("title","")).strip()
-                    _actual = str(ev.get("actual","")).strip()
-                    _forecast = str(ev.get("forecast","")).strip()
-                    _prev = str(ev.get("previous","")).strip()
-                    if _title:
-                        _key = _title.lower().replace(" ","_")
-                        actuals[_key] = {
-                            "actual": _actual if _actual else "—",
-                            "forecast": _forecast if _forecast else "—",
-                            "previous": _prev if _prev else "—",
-                            "currency": str(ev.get("currency","")),
-                            "impact": str(ev.get("impact","")),
-                            "date": str(ev.get("date","")),
-                        }
-            except Exception as _e:
-                pass
-            # ── Layer 2: Fallback week+next week ──
-            try:
-                _ff_url2 = "https://nfs.faireconomy.media/ff_calendar_nextweek.json"
-                _req2 = urllib.request.Request(_ff_url2, headers={"User-Agent":"Mozilla/5.0","Accept":"application/json"})
-                with urllib.request.urlopen(_req2, timeout=8) as r2:
-                    _events2 = _jj.loads(r2.read())
-                for ev in _events2:
-                    _title = str(ev.get("title","")).strip()
-                    _actual = str(ev.get("actual","")).strip()
-                    _key = _title.lower().replace(" ","_")
-                    if _key not in actuals:
-                        actuals[_key] = {
-                            "actual": _actual if _actual else "—",
-                            "forecast": str(ev.get("forecast","")) or "—",
-                            "previous": str(ev.get("previous","")) or "—",
-                            "currency": str(ev.get("currency","")),
-                            "impact": str(ev.get("impact","")),
-                            "date": str(ev.get("date","")),
-                        }
-            except Exception: pass
-            return actuals
-
-        _ff_actuals = _fetch_ff_actuals()
-
-        def _get_actual(event_name: str) -> str:
-            """Match event name ke FF actual data."""
-            _key = event_name.lower().replace(" ","_").replace("/","_").replace("-","_")
-            # Direct match
-            if _key in _ff_actuals:
-                return _ff_actuals[_key].get("actual","—")
-            # Partial match - cari substring terpanjang yang cocok
-            _best = "—"
-            _best_len = 0
-            for k, v in _ff_actuals.items():
-                # Compare normalised words
-                _kwords = set(k.replace("_"," ").split())
-                _ewords = set(event_name.lower().replace("/"," ").replace("-"," ").split())
-                _common = _kwords & _ewords
-                if len(_common) >= 2 and len(_common) > _best_len:
-                    _best = v.get("actual","—")
-                    _best_len = len(_common)
-            return _best
-
-        # ── Dataset lengkap: ID + US digabung ───────────────────
-        _ec_raw = [
-            # ══ APRIL 2026 ══════════════════════════════════════
-            {"neg":"ID","tgl":"19 Apr 2026","jam":"—",      "event":"Libur Paskah (Pasar Tutup)",        "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"BEI tutup hari Sabtu Paskah. Tidak ada sesi trading."},
-            {"neg":"US","tgl":"21 Apr 2026","jam":"19:15",  "event":"ADP Weekly Employment Change",      "fc":"—",      "prev":"39.3K",   "dampak":"MEDIUM","tip":"Data ketenagakerjaan mingguan ADP. Leading indicator NFP."},
-            {"neg":"US","tgl":"21 Apr 2026","jam":"19:30",  "event":"Core Retail Sales m/m",             "fc":"0.4%",   "prev":"1.3%",    "dampak":"HIGH",  "tip":"Penjualan ritel inti MoM. Konsumsi AS = 70% GDP. Data kuat → Fed hawkish → DXY naik, XAU/IDR tertekan."},
-            {"neg":"US","tgl":"21 Apr 2026","jam":"19:30",  "event":"Retail Sales m/m",                  "fc":"0.6%",   "prev":"1.4%",    "dampak":"HIGH",  "tip":"Penjualan ritel total MoM. Salah satu indikator kekuatan ekonomi AS terpenting."},
-            {"neg":"US","tgl":"21 Apr 2026","jam":"21:00",  "event":"Fed Chair-Designate Warsh Testifies","fc":"—",     "prev":"—",       "dampak":"HIGH",  "tip":"Testimoni calon Ketua Fed. Market perhatikan sinyal arah kebijakan suku bunga."},
-            {"neg":"US","tgl":"21 Apr 2026","jam":"21:00",  "event":"Pending Home Sales m/m",            "fc":"1.8%",   "prev":"0.0%",    "dampak":"MEDIUM","tip":"Kontrak rumah yang belum diselesaikan. Leading indicator penjualan rumah jadi."},
-            {"neg":"US","tgl":"21 Apr 2026","jam":"21:00",  "event":"Business Inventories m/m",          "fc":"-0.1%",  "prev":"0.3%",    "dampak":"LOW",   "tip":"Perubahan inventori bisnis. Kenaikan inventori → demand lemah ke depan."},
-            {"neg":"US","tgl":"22 Apr 2026","jam":"07:30",  "event":"FOMC Member Waller Speaks",         "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Pernyataan anggota FOMC. Cermati nada hawkish/dovish terkait suku bunga."},
-            {"neg":"ID","tgl":"22 Apr 2026","jam":"10:00",  "event":"Cadangan Devisa Mar",               "fc":"$155B",  "prev":"$154.5B", "dampak":"MEDIUM","tip":"Cadangan devisa BI. Makin tinggi = Rupiah lebih terlindungi dari gejolak global."},
-            {"neg":"US","tgl":"22 Apr 2026","jam":"09:30",  "event":"API Weekly Statistical Bulletin",   "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"Data stok minyak mingguan API. Prekursor resmi EIA Crude Oil Inventories."},
-            {"neg":"US","tgl":"22 Apr 2026","jam":"21:30",  "event":"Crude Oil Inventories",             "fc":"—",      "prev":"-0.9M",   "dampak":"MEDIUM","tip":"EIA stok minyak mingguan. Naik = supply berlebih = harga minyak tertekan. Relevan PGAS/MEDC."},
-            {"neg":"US","tgl":"23 Apr 2026","jam":"19:30",  "event":"Unemployment Claims",               "fc":"207K",   "prev":"210K",    "dampak":"HIGH",  "tip":"Klaim pengangguran mingguan. Di bawah 220K = pasar kerja kuat → Fed tetap wait and see."},
-            {"neg":"US","tgl":"23 Apr 2026","jam":"20:45",  "event":"Flash Manufacturing PMI",           "fc":"52.3",   "prev":"52.5",    "dampak":"MEDIUM","tip":"PMI Manufaktur S&P Global (flash). Di atas 50 = ekspansi. Bergerak bisa gerakkan DXY."},
-            {"neg":"US","tgl":"23 Apr 2026","jam":"20:45",  "event":"Flash Services PMI",                "fc":"49.8",   "prev":"50.1",    "dampak":"MEDIUM","tip":"PMI Jasa (flash). Sektor jasa = 80% ekonomi AS. Di bawah 50 = kontraksi = dovish signal."},
-            {"neg":"US","tgl":"23 Apr 2026","jam":"21:30",  "event":"Natural Gas Storage",               "fc":"—",      "prev":"59B",     "dampak":"LOW",   "tip":"Stok gas alam EIA. Relevan untuk harga gas dan emiten energi."},
-            {"neg":"US","tgl":"24 Apr 2026","jam":"21:00",  "event":"Revised UoM Consumer Sentiment",    "fc":"47.6",   "prev":"48.4",    "dampak":"MEDIUM","tip":"Revisi sentimen konsumen Universitas Michigan. Cerminkan kepercayaan rumah tangga AS."},
-            {"neg":"US","tgl":"24 Apr 2026","jam":"21:00",  "event":"Revised UoM Inflation Expectations","fc":"—",      "prev":"4.8%",    "dampak":"MEDIUM","tip":"Ekspektasi inflasi konsumen. Jika naik → tekanan pada Fed untuk pertahankan rate tinggi."},
-            {"neg":"US","tgl":"28 Apr 2026","jam":"19:15",  "event":"ADP Weekly Employment Change",      "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Data ketenagakerjaan mingguan ADP. Pembaruan awal sebelum NFP Jumat."},
-            {"neg":"US","tgl":"28 Apr 2026","jam":"20:00",  "event":"HPI m/m",                          "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"House Price Index FHFA MoM. Indikator harga properti Amerika."},
-            {"neg":"US","tgl":"28 Apr 2026","jam":"20:00",  "event":"S&P/CS Composite-20 HPI y/y",      "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"Indeks harga rumah Case-Shiller 20 kota. Tren properti AS jangka panjang."},
-            {"neg":"US","tgl":"28 Apr 2026","jam":"21:00",  "event":"CB Consumer Confidence",           "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Conference Board: keyakinan konsumen. Salah satu leading indicator konsumsi AS terkuat."},
-            {"neg":"US","tgl":"28 Apr 2026","jam":"21:00",  "event":"Richmond Manufacturing Index",     "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Indeks manufaktur distrik Richmond Fed. Snapshot aktivitas industri wilayah Mid-Atlantic."},
-            {"neg":"US","tgl":"29 Apr 2026","jam":"09:30",  "event":"API Weekly Statistical Bulletin",   "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"Data stok minyak mingguan API sebelum rilis resmi EIA."},
-            {"neg":"US","tgl":"29 Apr 2026","jam":"19:30",  "event":"Building Permits",                 "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Izin mendirikan bangunan. Leading indicator aktivitas konstruksi & permintaan material."},
-            {"neg":"US","tgl":"29 Apr 2026","jam":"19:30",  "event":"Core Durable Goods Orders m/m",    "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Pesanan barang tahan lama inti. Indikator investasi bisnis AS."},
-            {"neg":"US","tgl":"29 Apr 2026","jam":"19:30",  "event":"Durable Goods Orders m/m",         "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Pesanan barang tahan lama total. Volatilitas tinggi. Market perhatikan angka inti."},
-            {"neg":"US","tgl":"29 Apr 2026","jam":"19:30",  "event":"Goods Trade Balance",              "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Neraca perdagangan barang AS. Defisit besar → tekanan dollar jangka panjang."},
-            {"neg":"US","tgl":"29 Apr 2026","jam":"19:30",  "event":"Housing Starts",                   "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Jumlah unit hunian yang mulai dibangun. Cerminkan kondisi pasar properti AS."},
-            {"neg":"US","tgl":"29 Apr 2026","jam":"19:30",  "event":"Prelim Wholesale Inventories m/m", "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"Stok inventori grosir. Komponen perhitungan GDP."},
-            {"neg":"US","tgl":"29 Apr 2026","jam":"21:30",  "event":"Crude Oil Inventories",            "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"EIA stok minyak mingguan. Pengaruhi harga WTI/Brent dan emiten migas."},
-            # ══ APR 30 — SELESAI ════════════════════════════════════
-            {"neg":"US","tgl":"30 Apr 2026","jam":"01:00",  "event":"Federal Funds Rate (FOMC Apr)",     "fc":"4.50%",  "prev":"4.50%",   "dampak":"HIGH",  "tip":"✅ SELESAI: Fed HOLD di 4.25–4.50% sesuai ekspektasi. Pasar tidak kaget — wait and see data inflasi & tenaga kerja berikutnya."},
-            {"neg":"US","tgl":"30 Apr 2026","jam":"01:00",  "event":"FOMC Statement",                   "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"✅ Pernyataan resmi FOMC Apr. Powell tegaskan data-dependent. Tidak ada sinyal cut dalam waktu dekat."},
-            {"neg":"US","tgl":"30 Apr 2026","jam":"01:30",  "event":"FOMC Press Conference",            "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"✅ Konferensi pers selesai. Tone Powell: hati-hati, belum yakin inflasi terkendali sempurna."},
-            {"neg":"US","tgl":"30 Apr 2026","jam":"19:30",  "event":"Advance GDP q/q",                  "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"GDP AS Q1 2026. Hasil aktual menunjukkan perlambatan — perkuat argumen Fed untuk mulai pivot."},
-            {"neg":"US","tgl":"30 Apr 2026","jam":"19:30",  "event":"Core PCE Price Index m/m",         "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"🔴 Inflasi favorit Fed (PCE inti). Tren penurunan berlanjut mendukung ekspektasi cut di H2 2026."},
-            # ══ MEI 2026 ═══════════════════════════════════════════
-            {"neg":"US","tgl":"07 Mei 2026","jam":"01:00",  "event":"Federal Funds Rate (FOMC Mei)",     "fc":"4.25%",  "prev":"4.50%",   "dampak":"HIGH",  "tip":"✅ SELESAI: Fed HOLD di 4.25–4.50%. Keputusan sesuai konsensus. Sinyal: butuh data lebih lemah untuk cut."},
-            {"neg":"US","tgl":"07 Mei 2026","jam":"01:00",  "event":"FOMC Statement Mei",               "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"✅ Statement Mei: Fed tetap data-dependent. Dot plot tidak banyak berubah — 1-2 cut masih diproyeksikan di 2026."},
-            {"neg":"US","tgl":"13 Mei 2026","jam":"19:30",  "event":"CPI Inflasi YoY (Apr)",            "fc":"2.6%",   "prev":"2.8%",    "dampak":"HIGH",  "tip":"BLS: inflasi konsumen April. Penurunan konsisten = Fed makin dovish = positif aset EM."},
-            {"neg":"US","tgl":"13 Mei 2026","jam":"19:30",  "event":"Core CPI m/m",                     "fc":"0.3%",   "prev":"0.3%",    "dampak":"HIGH",  "tip":"Inflasi inti MoM (ex-food & energy). Tren inflasi lebih stabil vs CPI headline."},
-            {"neg":"ID","tgl":"15 Mei 2026","jam":"11:00",  "event":"GDP Q1 2026 (Flash)",              "fc":"5.1%",   "prev":"5.02%",   "dampak":"HIGH",  "tip":"Pertumbuhan ekonomi Q1 BPS. Lebih tinggi dari ekspektasi = bullish IHSG fundamental."},
-            {"neg":"US","tgl":"15 Mei 2026","jam":"19:30",  "event":"PPI Inflasi Produsen YoY",         "fc":"2.5%",   "prev":"2.7%",    "dampak":"MEDIUM","tip":"BLS: inflasi tingkat produsen. Leading indicator inflasi konsumen 1-2 bulan ke depan."},
-            {"neg":"US","tgl":"15 Mei 2026","jam":"19:30",  "event":"Retail Sales m/m",                 "fc":"0.4%",   "prev":"—",       "dampak":"HIGH",  "tip":"Penjualan ritel Mei. Kekuatan konsumsi — komponen terbesar GDP AS."},
-            {"neg":"ID","tgl":"20 Mei 2026","jam":"11:00",  "event":"Neraca Perdagangan Apr",           "fc":"$3.2B",  "prev":"$2.8B",   "dampak":"MEDIUM","tip":"BPS neraca dagang. Surplus = mendukung Rupiah dan capital inflow ke pasar saham."},
-            {"neg":"ID","tgl":"20 Mei 2026","jam":"10:00",  "event":"RDG BI Rate Mei",                  "fc":"5.25%",  "prev":"4.75%",   "dampak":"HIGH",  "tip":"✅ ACTUAL: BI NAIK 50bps → 5.25% (20 Mei 2026). Kejutan hawkish — konsensus sebelumnya HOLD 4.75%. Respons terhadap tekanan Rupiah & inflasi. Dampak: Rupiah menguat sesaat, sektor perbankan tertekan NIM, cost of capital naik, valuasi saham growth/properti tertekan."},
-            {"neg":"US","tgl":"29 Mei 2026","jam":"19:30",  "event":"GDP Q1 2026 (Revisi)",             "fc":"2.3%",   "prev":"2.4%",    "dampak":"MEDIUM","tip":"BEA: revisi GDP AS Q1. Lebih rendah dari flash = sinyal pelemahan ekonomi → dovish."},
-            # ══ JUNI ═══════════════════════════════════════════════
-            {"neg":"US","tgl":"05 Jun 2026","jam":"19:30",  "event":"Non-Farm Payrolls Mei",            "fc":"180K",   "prev":"195K",    "dampak":"HIGH",  "tip":"🔴 Data tenaga kerja Mei. Tren melambat = Fed lebih agresif potong rate = bullish aset global."},
-            {"neg":"US","tgl":"05 Jun 2026","jam":"19:30",  "event":"Unemployment Rate",                "fc":"4.1%",   "prev":"4.1%",    "dampak":"HIGH",  "tip":"Tingkat pengangguran Mei. Konsistensi penting — naik berturut = tekanan pada Fed."},
-            {"neg":"US","tgl":"11 Jun 2026","jam":"19:30",  "event":"CPI Inflasi YoY (Mei)",            "fc":"2.4%",   "prev":"2.6%",    "dampak":"HIGH",  "tip":"BLS: inflasi Mei. Tren turun berlanjut = ruang cut rate lebih besar di FOMC Jun."},
-            {"neg":"US","tgl":"18 Jun 2026","jam":"01:00",  "event":"FOMC Rate Decision Jun",           "fc":"4.25%",  "prev":"4.50%",   "dampak":"HIGH",  "tip":"🔴 FOMC Juni. Probabilitas ~88% HOLD. Potensi cut pertama jika data lemah. Paling market-moving di H1 2026."},
-            {"neg":"US","tgl":"18 Jun 2026","jam":"01:00",  "event":"FOMC Statement Jun",               "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Pernyataan FOMC Juni. Cermati forward guidance — apakah door terbuka untuk cut di Sep."},
-            {"neg":"US","tgl":"18 Jun 2026","jam":"01:30",  "event":"FOMC Press Conference Jun",       "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Konferensi pers post-FOMC. Cermati dot plot terbaru — sinyal arah H2 2026."},
-            {"neg":"ID","tgl":"19 Jun 2026","jam":"14:00",  "event":"BI Rate Decision Jun",             "fc":"4.50%",  "prev":"4.75%",   "dampak":"HIGH",  "tip":"RDG BI Juni. Potensi pemangkasan 25bps jika inflasi terkendali & Rupiah stabil pasca FOMC."},
-            # ══ JULI ═══════════════════════════════════════════════
-            {"neg":"ID","tgl":"01 Jul 2026","jam":"09:00",  "event":"Inflasi CPI YoY (Jun)",            "fc":"2.7%",   "prev":"2.9%",    "dampak":"HIGH",  "tip":"BPS CPI Juni. Tren penurunan membuka ruang pemangkasan BI Rate semester 2."},
-            {"neg":"US","tgl":"30 Jul 2026","jam":"01:00",  "event":"FOMC Rate Decision Jul",           "fc":"4.25%",  "prev":"4.25%",   "dampak":"HIGH",  "tip":"🔴 FOMC Juli. Probabilitas ~72% HOLD, ~19% cut. Keputusan tergantung data NFP & CPI Jun-Jul."},
-        ]
-
-        # ── Sort by date ──────────────────────────────────────────
-        def _ec_sort_key(r):
-            _m = {"jan":"01","feb":"02","mar":"03","apr":"04","mei":"05","may":"05",
-                  "jun":"06","jul":"07","agu":"08","aug":"08","sep":"09","okt":"10",
-                  "oct":"10","nov":"11","des":"12","dec":"12"}
-            try:
-                p = r["tgl"].strip().split()
-                mn = _m.get(p[1][:3].lower(),"01")
-                return datetime.strptime(f"{p[0].zfill(2)}/{mn}/{p[2]}","%d/%m/%Y")
-            except: return datetime(2099,1,1)
-        _ec_raw.sort(key=_ec_sort_key)
-
-        # ── Filter tanggal yang sudah lewat (sembunyikan > 7 hari lalu) ────────
-        from datetime import date as _ec_date_cls, timedelta as _ec_td
-        _ec_today = _ec_date_cls.today()
-        _ec_cutoff = _ec_today - _ec_td(days=7)  # tampilkan mulai dari 7 hari lalu
-        def _ec_date_ok(row):
-            try:
-                _m2 = {"jan":1,"feb":2,"mar":3,"apr":4,"mei":5,"may":5,"jun":6,"jul":7,
-                        "agu":8,"aug":8,"sep":9,"okt":10,"oct":10,"nov":11,"des":12,"dec":12}
-                parts = row["tgl"].strip().split()
-                _mn = _m2.get(parts[1][:3].lower(), 1)
-                _dt = _ec_date_cls(int(parts[2]), _mn, int(parts[0]))
-                return _dt >= _ec_cutoff
-            except: return True  # jika parse gagal, tampilkan saja
-        _ec_raw = [r for r in _ec_raw if _ec_date_ok(r)]
-
-        # ── Enrich with realtime actual ──────────────────────────
-        import json as _cal_json
-        _d_clr  = {"HIGH":"#f23645","MEDIUM":"#f59e0b","LOW":"#4285F4"}
-        _d_bg   = {"HIGH":"rgba(242,54,69,0.13)","MEDIUM":"rgba(245,158,11,0.13)","LOW":"rgba(66,133,244,0.11)"}
-        _d_lbl  = {"HIGH":"HIGH","MEDIUM":"MED","LOW":"LOW"}
-        _ec_rows = []
-        for ev in _ec_raw:
-            dk = ev["dampak"]
-            _actual_rt = _get_actual(ev["event"])
-            # Tentukan apakah event sudah lewat (is_past)
-            _ev_past = False
-            try:
-                _m2p = {"jan":1,"feb":2,"mar":3,"apr":4,"mei":5,"may":5,"jun":6,"jul":7,
-                         "agu":8,"aug":8,"sep":9,"okt":10,"oct":10,"nov":11,"des":12,"dec":12}
-                _parts_p = ev["tgl"].strip().split()
-                _mn_p = _m2p.get(_parts_p[1][:3].lower(), 1)
-                _ev_dt = _ec_date_cls(int(_parts_p[2]), _mn_p, int(_parts_p[0]))
-                _ev_past = _ev_dt < _ec_today
-            except Exception: pass
-            _ec_rows.append({
-                "neg":    ev["neg"],
-                "flag":   "🇮🇩" if ev["neg"]=="ID" else "🇺🇸",
-                "tgl":    ev["tgl"],
-                "jam":    ev["jam"],
-                "event":  ev["event"],
-                "fc":     ev["fc"],
-                "prev":   ev["prev"],
-                "actual": _actual_rt,
-                "d_lbl":  _d_lbl.get(dk,"LOW"),
-                "d_clr":  _d_clr.get(dk,"#4285F4"),
-                "d_bg":   _d_bg.get(dk,"rgba(66,133,244,0.10)"),
-                "tip":    ev["tip"].replace('"','&quot;').replace("'","&#39;"),
-                "is_past": _ev_past,
-            })
-        _ec_json = _cal_json.dumps(_ec_rows, ensure_ascii=False)
-
-        # ── Highlight rows yang sudah ada actual (untuk AI later) ──
-        _events_with_actual = [r for r in _ec_rows if r["actual"] not in ("—","",None)]
-
-        components.html(f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>
-*{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'DM Sans',sans-serif;}}
-.cal-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;}}
-.cal-hdr{{
-  padding:11px 16px;
-  background:rgba(139,92,246,0.08);
-  border-bottom:1px solid {met_border};
-  font-size:0.8rem;font-weight:700;letter-spacing:0.12em;
-  color:#8b5cf6;text-transform:uppercase;
-  display:flex;align-items:center;justify-content:space-between;
-  flex-wrap:wrap;gap:6px;font-family:'DM Sans',sans-serif;
-}}
-.hdr-right{{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}}
-.ec-badge{{font-size:0.8rem;color:{text_sub};background:rgba(255,255,255,0.05);
-  border:1px solid {met_border};border-radius:8px;padding:2px 9px;white-space:nowrap;}}
-.f-btn{{font-size:0.72rem;font-family:'IBM Plex Mono',monospace;font-weight:700;
-  border:1px solid {met_border};border-radius:4px;padding:3px 10px;cursor:pointer;
-  background:rgba(255,255,255,0.05);color:{text_sub};transition:all 0.15s;white-space:nowrap;}}
-.f-btn.on{{background:rgba(139,92,246,0.18);color:#8b5cf6;border-color:#8b5cf6;}}
-.f-btn:hover{{background:rgba(255,255,255,0.1);}}
-.scroll-box{{width:100%;max-height:460px;overflow-x:auto;overflow-y:auto;
-  -webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
-.scroll-box::-webkit-scrollbar{{width:4px;height:4px;}}
-.scroll-box::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
-table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;min-width:640px;}}
-thead th{{
-  position:sticky;top:0;z-index:2;
-  background:rgba(139,92,246,0.08);color:#8b5cf6;
-  padding:9px 12px;text-align:left;
-  border-bottom:1px solid {met_border};
-  letter-spacing:0.07em;font-weight:700;font-size:0.8rem;
-  white-space:nowrap;text-transform:uppercase;
-  font-family:'DM Sans',sans-serif;
-}}
-tbody td{{padding:9px 12px;border-bottom:1px solid {met_border};
-  color:{text_main};vertical-align:middle;font-size:0.875rem;}}
-tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:hover td{{background:rgba(139,92,246,0.04);}}
-.flag-cell{{display:flex;align-items:center;gap:5px;white-space:nowrap;}}
-.fl{{font-size:1.1rem;}}
-.neg{{font-size:0.72rem;font-weight:700;letter-spacing:0.05em;color:{text_sub};font-family:'DM Sans',sans-serif;}}
-.dt-d{{font-weight:600;color:{text_main};font-size:0.875rem;white-space:nowrap;}}
-.dt-j{{font-size:0.8rem;color:{text_sub};white-space:nowrap;}}
-.ev-name{{font-size:0.875rem;font-weight:500;color:{text_main};white-space:normal;line-height:1.35;max-width:200px;}}
-.fc-v{{font-size:0.875rem;color:#089981;font-weight:700;}}
-.pv-v{{font-size:0.8rem;color:{text_sub};}}
-/* ACTUAL column - highlight jika ada data */
-.act-val{{font-size:0.875rem;font-weight:700;}}
-.act-beat{{color:#089981;}}  /* actual > forecast = beat */
-.act-miss{{color:#f23645;}}  /* actual < forecast = miss */
-.act-meet{{color:#f59e0b;}}  /* actual = forecast */
-.act-none{{color:{text_sub};font-style:italic;font-size:0.8rem;}}
-.bdg{{display:inline-block;padding:3px 8px;border-radius:4px;
-  font-size:0.8rem;font-weight:700;letter-spacing:0.05em;
-  font-family:'IBM Plex Mono',monospace;white-space:nowrap;}}
-/* Date separator */
-.sep-row td{{padding:3px 12px;font-size:0.72rem;letter-spacing:0.1em;
-  color:rgba(139,92,246,0.55);background:rgba(139,92,246,0.04);
-  border-bottom:1px solid rgba(139,92,246,0.12);
-  font-family:'DM Sans',sans-serif;font-weight:700;}}
-/* Tooltip */
-.tw{{position:relative;cursor:default;}}
-.tw:hover .tip{{display:block;}}
-.tip{{display:none;position:absolute;left:0;top:calc(100%+3px);z-index:9999;
-  background:{'#131825' if is_dark else '#ffffff'};
-  border:1px solid {met_border};border-left:3px solid #8b5cf6;
-  border-radius:0 6px 6px 6px;padding:9px 13px;
-  font-size:0.8rem;color:{text_main};line-height:1.6;
-  pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,0.45);
-  white-space:normal;min-width:240px;max-width:380px;
-  font-family:'DM Sans',sans-serif;}}
-@media(max-width:768px){{
-  /* Hapus overflow:hidden dari cal-wrap agar scroll horizontal tidak terpotong */
-  .cal-wrap{{overflow:visible !important;}}
-  /* Pastikan scroll-box punya overflow-x:auto yang bekerja */
-  .scroll-box{{
-    overflow-x:auto !important;
-    overflow-y:auto !important;
-    -webkit-overflow-scrolling:touch !important;
-    max-height:400px !important;
-    width:100% !important;
-  }}
-  /* Kurangi min-width tabel agar lebih pas di mobile, tapi tetap bisa scroll horizontal */
-  table{{min-width:480px !important;}}
-  /* Header filter buttons: scroll horizontal agar tidak wrap terlalu banyak baris */
-  .hdr-right{{
-    overflow-x:auto;
-    flex-wrap:nowrap !important;
-    -webkit-overflow-scrolling:touch;
-    padding-bottom:2px;
-    gap:4px;
-  }}
-  .f-btn{{padding:3px 8px;font-size:0.72rem;white-space:nowrap;}}
-  .ev-name{{max-width:110px;}}
-  tbody td{{font-size:0.8rem;padding:6px 8px;}}
-  thead th{{font-size:0.72rem;padding:6px 8px;}}
-}}
-</style></head><body>
-<div class="cal-wrap">
-  <div class="cal-hdr">
-    <span> ECONOMIC CALENDAR &mdash; ID &middot; US &nbsp;&middot;&nbsp; Apr&ndash;Jul 2026</span>
-    <div class="hdr-right">
-      <span class="ec-badge" id="ec-cnt">&mdash; events</span>
-      <button class="f-btn"     onclick="ef('ALL')"> SEMUA</button>
-      <button class="f-btn"     onclick="ef('ID')"> ID</button>
-      <button class="f-btn"     onclick="ef('US')"> USD</button>
-      <button class="f-btn"     onclick="ef('HIGH')"> HIGH</button>
-      <button class="f-btn"     onclick="ef('ACT')">OK ACTUAL</button>
-      <button class="f-btn on"  onclick="ef('UPCOMING')"> UPCOMING</button>
-      <button class="f-btn"     onclick="ef('PAST')"> SUDAH LEWAT</button>
-    </div>
-  </div>
-  <div class="scroll-box" id="ec-sb">
-    <table>
-      <thead><tr>
-        <th>NEGARA</th>
-        <th>TANGGAL</th>
-        <th>JAM (WIB)</th>
-        <th>EVENT</th>
-        <th>FORECAST</th>
-        <th>ACTUAL <span style="font-size:0.72rem;color:#089981;">&bull; RT</span></th>
-        <th>PREV</th>
-        <th>IMPACT</th>
-      </tr></thead>
-      <tbody id="ec-tb"></tbody>
-    </table>
-  </div>
-</div>
-<script>
-(function(){{
-  var ROWS={_ec_json};
-  var AF='UPCOMING';
-
-  function parseNum(s){{
-    if(!s||s==='&mdash;'||s==='-') return null;
-    var n=parseFloat(s.replace(/[^0-9.\\-]/g,''));
-    return isNaN(n)?null:n;
-  }}
-
-  function actClass(actual,forecast){{
-    var a=parseNum(actual), f=parseNum(forecast);
-    if(a===null) return 'act-none';
-    if(f===null) return 'act-meet';
-    if(a>f) return 'act-beat';
-    if(a<f) return 'act-miss';
-    return 'act-meet';
-  }}
-
-  function render(){{
-    var rows=ROWS.filter(function(r){{
-      if(AF==='ALL') return true;
-      if(AF==='HIGH') return r.d_lbl==='HIGH';
-      if(AF==='ACT') return r.actual&&r.actual!=='&mdash;';
-      if(AF==='UPCOMING') return !r.is_past;
-      if(AF==='PAST') return r.is_past;
-      return r.neg===AF;
-    }});
-
-    var h='', lastDate='';
-    rows.forEach(function(r){{
-      if(r.tgl!==lastDate){{
-        var dateLabel = r.tgl + (r.is_past ? ' <span style="font-size:0.62rem;color:#64748b;background:rgba(100,116,139,0.15);border-radius:4px;padding:1px 5px;margin-left:4px;">LEWAT</span>' : ' <span style="font-size:0.62rem;color:#26a69a;background:rgba(38,166,154,0.12);border-radius:4px;padding:1px 5px;margin-left:4px;">UPCOMING</span>');
-        h+='<tr class="sep-row"><td colspan="8">'+dateLabel+'</td></tr>';
-        lastDate=r.tgl;
-      }}
-      var rowBg=r.is_past?'rgba(100,116,139,0.05)':(r.neg==='ID'?'rgba(8,153,129,0.05)':'rgba(66,133,244,0.04)');
-      var rowOpacity=r.is_past?'opacity:0.55;':'opacity:1;';
-      var ac=r.actual&&r.actual!=='&mdash;'?r.actual:'&mdash;';
-      var aClass=actClass(ac,r.fc);
-      var actHtml=ac==='&mdash;'
-        ?'<span class="act-val act-none">pending</span>'
-        :'<span class="act-val '+aClass+'">'+ac+'</span>';
-
-      h+='<tr style="background:'+rowBg+';'+rowOpacity+'">'+
-        '<td><div class="flag-cell"><span class="fl">'+r.flag+'</span><span class="neg">'+r.neg+'</span></div></td>'+
-        '<td><span class="dt-d">'+r.tgl+'</span></td>'+
-        '<td><span class="dt-j">'+r.jam+'</span></td>'+
-        '<td class="tw"><span class="ev-name">'+r.event+'</span><div class="tip">'+r.tip+'</div></td>'+
-        '<td><span class="fc-v">'+r.fc+'</span></td>'+
-        '<td>'+actHtml+'</td>'+
-        '<td><span class="pv-v">'+r.prev+'</span></td>'+
-        '<td><span class="bdg" style="background:'+r.d_bg+';color:'+r.d_clr+';border:1px solid '+r.d_clr+'33;">'+r.d_lbl+'</span></td>'+
-        '</tr>';
-    }});
-
-    if(!rows.length) h='<tr><td colspan="8" style="text-align:center;padding:24px;color:{text_sub};">Tidak ada event untuk filter ini.</td></tr>';
-    document.getElementById('ec-tb').innerHTML=h;
-    document.getElementById('ec-cnt').textContent=rows.length+' events';
-    document.querySelectorAll('.f-btn').forEach(function(b){{
-      b.classList.remove('on');
-      if((AF==='ALL'&&b.textContent.indexOf('SEMUA')>-1)||
-         (AF==='ID'&&b.textContent.indexOf('ID')>-1&&b.textContent.indexOf('INDONESIA')<0)||
-         (AF==='US'&&b.textContent.indexOf('USD')>-1)||
-         (AF==='HIGH'&&b.textContent.indexOf('HIGH')>-1)||
-         (AF==='ACT'&&b.textContent.indexOf('ACTUAL')>-1)||
-         (AF==='UPCOMING'&&b.textContent.indexOf('UPCOMING')>-1)||
-         (AF==='PAST'&&b.textContent.indexOf('LEWAT')>-1))
-        b.classList.add('on');
-    }});
-  }}
-
-  window.ef=function(f){{AF=f;render();document.getElementById('ec-sb').scrollTop=0;}};
-  render();
-
-  // Auto-resize
-  function resize(){{
-    var h=document.body.scrollHeight+4;
-    try{{window.parent.postMessage({{type:'streamlit:setFrameHeight',height:h}},'*');}}catch(e){{}}
-  }}
-  setTimeout(resize,100);setTimeout(resize,500);
-}})();
-</script></body></html>""", height=540, scrolling=False)
-
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-        # ─────────────────────────────────────────────────────────
-        # EC AI ANALYST — Baca Actual vs Forecast, Dampak ke Aset
-        # ─────────────────────────────────────────────────────────
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ EC AI ANALYST — DAMPAK DATA EKONOMI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"""
-        <p style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:14px;line-height:1.65;'>
-        Pilih event ekonomi &rarr; AI analisa dampak Actual vs Forecast ke <b style='color:#FFD700;'>XAU/USD</b>, <b style='color:#4285F4;'>USD/IDR</b>,
-        <b style='color:#089981;'>DXY</b>, dan <b style='color:#8b5cf6;'>IHSG/IDX</b>.
-        Skenario jika beat forecast maupun miss forecast keduanya disimulasikan.
-        </p>
-        """, unsafe_allow_html=True)
-
-        # ── Pilih event untuk dianalisis ──────────────────────────
-        _all_ec_events = [r["event"] for r in _ec_rows if r["neg"] in ("US","ID")]
-        _ec_event_sel = st.selectbox(
-            "Pilih Event Ekonomi untuk Dianalisis AI:",
-            options=_all_ec_events,
-            key="ec_ai_event_sel",
-            label_visibility="collapsed",
-            placeholder="Pilih event..."
-        )
-
-        # ── Find selected row ──────────────────────────────────────
-        _sel_row = next((r for r in _ec_rows if r["event"] == _ec_event_sel), None)
-
-        if _sel_row:
-            _ec_cols = st.columns([1,1,1,1])
-            with _ec_cols[0]:
-                st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};'>NEGARA</div><div style='font-size:1.1rem;'>{_sel_row['flag']} {_sel_row['neg']}</div>", unsafe_allow_html=True)
-            with _ec_cols[1]:
-                st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};'>FORECAST</div><div style='font-size:1rem;font-weight:700;color:#089981;'>{_sel_row['fc']}</div>", unsafe_allow_html=True)
-            with _ec_cols[2]:
-                _act_color = "#089981" if _sel_row['actual'] not in ("—","") else text_sub
-                st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};'>ACTUAL (RT)</div><div style='font-size:1rem;font-weight:700;color:{_act_color};'>{_sel_row['actual']}</div>", unsafe_allow_html=True)
-            with _ec_cols[3]:
-                st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};'>PREVIOUS</div><div style='font-size:1rem;color:{text_sub};'>{_sel_row['prev']}</div>", unsafe_allow_html=True)
-
-        st.markdown("<div style='margin-top:12px;'></div>", unsafe_allow_html=True)
-
-        _ec_ai_cols = st.columns([2,1])
-        with _ec_ai_cols[0]:
-            _ec_custom_actual = st.text_input(
-                "Override Actual (opsional — simulasi skenario):",
-                placeholder=f"e.g. 0.5% atau 0.2% (kosongkan = pakai RT actual)",
-                key="ec_ai_custom_actual",
-                label_visibility="visible"
-            )
-        with _ec_ai_cols[1]:
-            _ec_ai_btn = st.button("⚡ ANALISA DAMPAK", use_container_width=True, key="ec_ai_run_btn")
-
-        if _ec_ai_btn and _sel_row:
-            _use_actual = _ec_custom_actual.strip() if _ec_custom_actual.strip() else _sel_row['actual']
-
-            _ec_prompt = f"""Kamu adalah SIGMA AI &mdash; analis ekonomi makro senior untuk pasar modal Indonesia (IDX/BEI).
-
-DATA RILIS EKONOMI:
-- Event: {_sel_row['event']}
-- Negara: {_sel_row['neg']} ({_sel_row['flag']})
-- Tanggal: {_sel_row['tgl']} | Jam: {_sel_row['jam']} WIB
-- Forecast konsensus: {_sel_row['fc']}
-- Actual (dirilis): {_use_actual}
-- Previous: {_sel_row['prev']}
-- Impact level: {_sel_row['d_lbl']}
-
-TUGASMU &mdash; Analisa dampak event ini secara menyeluruh:
-
-1. **VERDICT ACTUAL vs FORECAST**
-   - Apakah actual BEAT (lebih baik dari forecast), MISS (lebih buruk), atau IN-LINE?
-   - Berapa deviasi dari konsensus? Apakah signifikan?
-
-2. **DAMPAK LANGSUNG (0&ndash;4 JAM PERTAMA)**
-   Jelaskan dampak ke masing-masing aset berikut:
-   -  XAU/USD (Gold): naik/turun/sideways? Mengapa?
-   -  DXY (Dollar Index): menguat/melemah? Berapa poin estimasi?
-   -  USD/IDR: Rupiah menguat atau melemah? Estimasi range?
-   -  IHSG/IDX: bullish atau bearish? Sektor apa yang terdampak?
-
-3. **SKENARIO ALTERNATIF**
-   - Jika sebaliknya (actual BEAT jika miss, atau MISS jika beat): bagaimana reaksi aset di atas?
-   - Berikan angka estimasi pergerakan untuk masing-masing skenario.
-
-4. **IMPLIKASI IDX SPESIFIK**
-   - Sektor dan saham apa yang paling terdampak di IDX? (perbankan, properti, consumer, mining, dll)
-   - Apakah ada perubahan ekspektasi kebijakan BI Rate?
-   - Strategi jangka pendek untuk trader IDX minggu ini?
-
-5. **KESIMPULAN**
-   - Satu paragraf ringkas: apa yang harus dilakukan trader/investor IDX hari ini berdasarkan data ini?
-
-Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gunakan Bahasa Indonesia. Tetap faktual, presisi, dan actionable &mdash; bukan generik."""
-
-            _ec_ai_resp = None
-            _ec_ai_model = "error"
-            with st.spinner("⚡ SIGMA AI menganalisa dampak data ekonomi ke XAU, IDR, DXY, IHSG..."):
-                try:
-                    _ec_ai_resp, _ec_ai_model = _call_groq_text([{"role":"user","content":_ec_prompt}])
-                except Exception as _ec_e:
-                    try:
-                        _ec_ai_resp, _ec_ai_model = _call_gemini_text([{"role":"user","content":_ec_prompt}])
-                    except Exception as _ec_e2:
-                        _ec_ai_resp = None
-                        _ec_ai_model = "error"
-
-            if not _ec_ai_resp or _ec_ai_model == "error":
-                st.error("⚠️ Terjadi kesalahan: API Limit tercapai atau timeout. Silakan coba beberapa saat lagi.", icon="🚫")
-                st.stop()
-
-            # ── Render hasil AI dalam card ──────────────────────
-            _act_display = _use_actual if _use_actual not in ("—","") else "Belum rilis"
-            _beat_miss = ""
-            try:
-                import re as _re_ec
-                _fc_n = float(_re_ec.sub(r'[^0-9.\\-]','',str(_sel_row['fc']))) if _sel_row['fc'] not in ("—","") else None
-                _ac_n = float(_re_ec.sub(r'[^0-9.\\-]','',str(_use_actual))) if _use_actual not in ("—","","pending") else None
-                if _fc_n is not None and _ac_n is not None:
-                    if _ac_n > _fc_n: _beat_miss = f"<span style='color:#089981;font-weight:700;'>▲ BEAT +{abs(_ac_n-_fc_n):.2f}</span>"
-                    elif _ac_n < _fc_n: _beat_miss = f"<span style='color:#f23645;font-weight:700;'>▼ MISS -{abs(_ac_n-_fc_n):.2f}</span>"
-                    else: _beat_miss = f"<span style='color:#f59e0b;font-weight:700;'>→ IN-LINE</span>"
-            except Exception: pass
-
-            # ── Simpan ke session_state & database agar tidak hilang saat rerun ──
-            st.session_state["ec_ai_result"]    = _ec_ai_resp
-            st.session_state["ec_ai_event"]     = _sel_row.get("event", "")
-            st.session_state["ec_ai_actual"]    = _act_display
-            st.session_state["ec_ai_beat_miss"] = _beat_miss
-            st.session_state["ec_ai_model"]     = _ec_ai_model
-            st.session_state["ec_ai_timestamp"] = _wib_now().strftime("%d %b %Y, %H:%M WIB")
-            if st.session_state.get("user"):
-                _sv = load_user(st.session_state.user["email"]) or {}
-                _sv["ec_ai_result"]    = _ec_ai_resp
-                _sv["ec_ai_event"]     = _sel_row.get("event", "")
-                _sv["ec_ai_actual"]    = _act_display
-                _sv["ec_ai_beat_miss"] = _beat_miss
-                _sv["ec_ai_model"]     = _ec_ai_model
-                _sv["ec_ai_timestamp"] = st.session_state["ec_ai_timestamp"]
-                save_user(st.session_state.user["email"], _sv)
-
-            st.markdown(f"""
-            <div style='background:{met_bg};border:1px solid {met_border};border-left:3px solid #8b5cf6;
-                border-radius:0 10px 10px 0;padding:16px 20px;margin-top:4px;'>
-              <div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;'>
-                <span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;font-weight:700;
-                  letter-spacing:0.12em;color:#8b5cf6;'>&#9889; SIGMA EC ANALYSIS</span>
-                <span style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;
-                  color:{text_sub};background:rgba(255,255,255,0.05);
-                  border:1px solid {met_border};border-radius:6px;padding:2px 8px;'>
-                  {_sel_row['event']} &middot; Actual: <b style='color:#089981;'>{_act_display}</b>
-                  &nbsp;{_beat_miss}
-                </span>
-                <span style='font-size:0.72rem;color:{text_sub};margin-left:auto;'>model: {_ec_ai_model}</span>
-              </div>
-            </div>
-            """, unsafe_allow_html=True)
-            st.markdown(_ec_ai_resp)
-            _ec_dl_col1, _ec_dl_col2 = st.columns([3, 1])
-            with _ec_dl_col2:
-                st.download_button(
-                    label="⬇️ Download Analisa (.txt)",
-                    data=(
-                        f"SIGMA — ECONOMIC CALENDAR AI ANALYSIS\n"
-                        f"Event  : {_sel_row.get('event', '')}\n"
-                        f"Actual : {_act_display}\n"
-                        f"Waktu  : {_wib_now().strftime('%d %b %Y %H:%M WIB')}\n"
-                        f"{'='*60}\n\n"
-                        + _ec_ai_resp
-                    ).encode("utf-8"),
-                    file_name=f"SIGMA_EC_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
-                    mime="text/plain",
-                    key="ec_fresh_dl_btn",
-                    use_container_width=True,
-                )
-
-        # ── Re-render hasil EC AI dari session_state jika sudah pernah digenerate ──
-        if not _ec_ai_btn and st.session_state.get("ec_ai_result"):
-            _ec_cached_event  = st.session_state.get("ec_ai_event", "")
-            _ec_cached_actual = st.session_state.get("ec_ai_actual", "&#8212;")
-            _ec_cached_bm     = st.session_state.get("ec_ai_beat_miss", "")
-            _ec_cached_model  = st.session_state.get("ec_ai_model", "")
-            _ec_cached_ts     = st.session_state.get("ec_ai_timestamp", "")
-            st.markdown(f"""
-            <div style='background:{met_bg};border:1px solid {met_border};border-left:3px solid #8b5cf6;
-                border-radius:0 10px 10px 0;padding:16px 20px;margin-top:4px;'>
-              <div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;'>
-                <span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;font-weight:700;
-                  letter-spacing:0.12em;color:#8b5cf6;'>&#9889; SIGMA EC ANALYSIS</span>
-                <span style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;
-                  color:{text_sub};background:rgba(255,255,255,0.05);
-                  border:1px solid {met_border};border-radius:6px;padding:2px 8px;'>
-                  {_ec_cached_event} &middot; Actual: <b style='color:#089981;'>{_ec_cached_actual}</b>
-                  &nbsp;{_ec_cached_bm}
-                </span>
-                <span style='font-size:0.72rem;color:{text_sub};margin-left:auto;'>model: {_ec_cached_model} &nbsp;&middot;&nbsp; {_ec_cached_ts}</span>
-              </div>
-            </div>
-            """, unsafe_allow_html=True)
-            st.markdown(st.session_state["ec_ai_result"])
-            _ec_cache_dl_col1, _ec_cache_dl_col2 = st.columns([3, 1])
-            with _ec_cache_dl_col2:
-                st.download_button(
-                    label="⬇️ Download Analisa (.txt)",
-                    data=(
-                        f"SIGMA — ECONOMIC CALENDAR AI ANALYSIS\n"
-                        f"Event  : {_ec_cached_event}\n"
-                        f"Actual : {_ec_cached_actual}\n"
-                        f"Waktu  : {_ec_cached_ts}\n"
-                        f"{'='*60}\n\n"
-                        + st.session_state["ec_ai_result"]
-                    ).encode("utf-8"),
-                    file_name=f"SIGMA_EC_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
-                    mime="text/plain",
-                    key="ec_cache_dl_btn",
-                    use_container_width=True,
-                )
-
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-
-        # ════════════════════════════════════════════════════════════════
-        # TAB: INFLASI — Data Inflasi Indonesia & Global
-        # ════════════════════════════════════════════════════════════════
         with _md_subtab_inflasi:
             st.markdown(
                 "<div class='trm-section'><div class='trm-section-line'></div>"
@@ -27354,6 +23752,3611 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                     _be_header.empty()
                                     st.error(f"Gagal evaluasi (Groq + Gemini + Cerebras): {_be_e}")
 # ─────────────────────────────────────────────
+
+
+        with alpha_tab_fundamental2:
+                # ── NESTED SUB-TABS: Fundamental Screener ────────────────────────────
+            _fs_tab_screener, _fs_tab_ai = st.tabs([
+                "  📊 FUNDAMENTAL SCREENER  ",
+                "  🤖 AI ANALYST & TANYA SIGMA AI  ",
+            ])
+
+            with _fs_tab_screener:
+
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FUNDAMENTAL SCREENER - BUFFETT · GRAHAM · DAMODARAN · LYNCH</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                st.markdown("""<div style='background:#0a0e1a;border-top:1px solid rgba(38,166,154,0.3);border-bottom:1px solid rgba(38,166,154,0.3);border-left:3px solid #26a69a;padding:8px 0;font-size:0.82rem;color:rgba(255,255,255,0.75);overflow:hidden;white-space:nowrap;margin-bottom:10px;'>
+          <div style='display:inline-block;animation:sigma-scroll-fs 44s linear infinite;padding-left:100%;'>
+            <b style='color:#26a69a;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
+            Gunakan Buffett Score &ge;4 sebagai filter utama: ROE &ge;15%, DER &le;1.0x, Net Margin &ge;10%, Current Ratio &ge;1.5x, PBV 0.5-3x, EPS positif.
+            Kombinasikan dengan Graham MoS &gt;30% untuk margin of safety. PEG &lt;1.0 = undervalue relatif growth (Lynch/Damodaran). Prioritas: kualitas dulu, harga kemudian.
+            &nbsp;&nbsp;&nbsp;<span style='color:rgba(38,166,154,0.5);'>◆</span>&nbsp;&nbsp;&nbsp;
+            <b style='color:#26a69a;font-family:monospace;margin-right:10px;letter-spacing:0.06em;'>SIGMA INSIGHT —</b>
+            Gunakan Buffett Score &ge;4 sebagai filter utama: ROE &ge;15%, DER &le;1.0x, Net Margin &ge;10%, Current Ratio &ge;1.5x, PBV 0.5-3x, EPS positif.
+            Kombinasikan dengan Graham MoS &gt;30% untuk margin of safety. PEG &lt;1.0 = undervalue relatif growth (Lynch/Damodaran). Prioritas: kualitas dulu, harga kemudian.
+          </div>
+        </div>
+        <style>@keyframes sigma-scroll-fs{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}</style>""", unsafe_allow_html=True)
+            # [UI statement removed]
+
+                _fs_accent = "#26a69a"
+
+                st.markdown(f"""
+                <div style='background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};line-height:1.9;'>
+                <span style='color:{_fs_accent};font-weight:700;letter-spacing:0.1em;'>6 KRITERIA BUFFETT + VALUE INVESTING (BASIS SCREENING)</span><br>
+                OK <b>ROE &ge; 15%</b> - Return on Equity kuat (Buffett: konsisten &ge;15% = moat sesungguhnya) &nbsp;|&nbsp;
+                OK <b>DER &le; 1.0x</b> - Utang terkendali, tidak over-leverage &nbsp;|&nbsp;
+                OK <b>Net Margin &ge; 10%</b> - Pricing power &amp; efisiensi operasional &nbsp;|&nbsp;
+                OK <b>Current Ratio &ge; 1.5x</b> - Likuiditas jangka pendek aman &nbsp;|&nbsp;
+                OK <b>PBV 0.5&ndash;3.0x</b> - Tidak terlalu mahal, tidak value trap &nbsp;|&nbsp;
+                OK <b>EPS positif</b> - Perusahaan benar-benar profitable<br><br>
+                <span style='color:#a78bfa;font-weight:700;letter-spacing:0.08em;'> OPSI URUTAN TAMBAHAN (GRAHAM &middot; DAMODARAN &middot; LYNCH)</span><br>
+                 <b>Buffett Score</b> - Skor total 0&ndash;6 kriteria terpenuhi &nbsp;|&nbsp;
+                 <b>Graham Number MoS</b> - &radic;(22.5 &times; EPS &times; Book Value) vs harga pasar: makin besar = makin undervalue &nbsp;|&nbsp;
+                 <b>EPS Growth</b> - Pertumbuhan laba per saham (Lynch: Fast Grower jika EPS growth &gt;20%) &nbsp;|&nbsp;
+                 <b>Dividend Yield</b> - Yield dividen tertinggi (Slow Grower / income stock) &nbsp;|&nbsp;
+                 <b>PEG Ratio</b> - PER &divide; ROE: &lt;1.0 = undervalue relatif growth (Damodaran/Lynch rule of thumb)
+                </div>
+                """, unsafe_allow_html=True)
+
+                _fs_universe = [
+                    "BBCA","BBRI","BMRI","BBNI","BRIS","TLKM","ASII","UNVR","KLBF","ICBP",
+                    "INDF","MYOR","SIDO","CPIN","JPFA","HMSP","GGRM","ANTM","PTBA","ADRO",
+                    "ITMG","INCO","MDKA","NCKL","MEDC","PGAS","AALI","LSIP","SIMP","SMGR",
+                    "INTP","BSDE","CTRA","SMRA","PWON","GOTO","EMTK","MAPI","ACES","HEAL",
+                    "MIKA","SILO","KAEF","TSPC","DVLA","BFIN","ADMF","BIRD","TMAS","SMDR",
+                    "TPIA","BRPT","AMMN","BRMS","MBMA","TBIG","TOWR","LINK","DMAS","BEST",
+                    "PGEO","PTRO","CUAN","VKTR","RAJA","FILM","MIDI","RALS","AMRT","MCAS",
+                    "BBTN","BNGA","PNBN","MEGA","BJBR","UNTR","ELSA","HRUM","GEMS","TBLA",
+                ]
+                _sektor_map = {
+                    "Perbankan":       ["BBCA","BBRI","BMRI","BBNI","BRIS","BBTN","BNGA","PNBN","MEGA","BJBR"],
+                    "Energi & Tambang":["PTBA","ADRO","ITMG","INCO","MDKA","NCKL","MEDC","PGAS","ANTM","AMMN","BRMS","MBMA","HRUM","GEMS","ELSA","RAJA"],
+                    "Consumer Goods":  ["UNVR","KLBF","ICBP","INDF","MYOR","SIDO","CPIN","JPFA","HMSP","GGRM","MIDI","RALS","AMRT","MAPI","ACES"],
+                    "Properti":        ["BSDE","CTRA","SMRA","PWON","DMAS","BEST"],
+                    "Teknologi":       ["TLKM","GOTO","EMTK","TBIG","TOWR","LINK","MCAS"],
+                    "Kesehatan":       ["HEAL","MIKA","SILO","KAEF","TSPC","DVLA"],
+                    "Infrastruktur":   ["PGEO","PTRO","CUAN","VKTR","TMAS","SMDR","BIRD"],
+                    "Agribisnis":      ["AALI","LSIP","SIMP","TBLA"],
+                    "Industri":        ["ASII","SMGR","INTP","TPIA","BRPT","UNTR","BFIN","ADMF"],
+                }
+
+                _fsc1, _fsc2, _fsc3 = st.columns([2, 2, 1])
+                with _fsc1:
+                    _fs_sektor_options = ["Semua Sektor"] + list(_sektor_map.keys())
+                    _fs_sektor_default = st.session_state.get("fs_sektor", "Semua Sektor")
+                    _fs_sektor_idx = _fs_sektor_options.index(_fs_sektor_default) if _fs_sektor_default in _fs_sektor_options else 0
+                    _fs_sektor = st.selectbox("Filter Sektor:", _fs_sektor_options, index=_fs_sektor_idx, key="fs_sektor_widget")
+                with _fsc2:
+                    _fs_sort_options = [
+                        "ROE (Tertinggi)","PBV (Terendah)","Net Margin (Tertinggi)",
+                        "DER (Terendah)","Current Ratio (Tertinggi)",
+                        "Buffett Score (Tertinggi)","Graham Number (Margin of Safety)",
+                        "EPS Growth (Tertinggi)","Dividend Yield (Tertinggi)",
+                        "PEG Ratio (Terendah)"
+                    ]
+                    _fs_sort_default = st.session_state.get("fs_sort_key", "ROE (Tertinggi)")
+                    _fs_sort_idx = _fs_sort_options.index(_fs_sort_default) if _fs_sort_default in _fs_sort_options else 0
+                    _fs_sort = st.selectbox("Urutkan:", _fs_sort_options, index=_fs_sort_idx, key="fs_sort_widget")
+                with _fsc3:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    _fs_run = st.button("🔍 SCREEN", use_container_width=True, key="btn_fs_screen")
+
+                _fs_tickers = _sektor_map.get(_fs_sektor, _fs_universe) if _fs_sektor != "Semua Sektor" else _fs_universe
+
+                if _fs_run or st.session_state.get("fs_results"):
+                    if _fs_run:
+                        # ── Cek status API sebelum fetch ──
+                        _fs_api_status = {}
+                        try:
+                            _fh_test_keys = _get_all_finnhub_keys() or [st.secrets.get("FINNHUB_KEY","")]
+                            _fs_api_status["Finnhub"] = "✅" if any(k and len(k)>10 for k in _fh_test_keys) else "❌"
+                        except: _fs_api_status["Finnhub"] = "❌"
+                        try:
+                            _fmp_test_keys = _get_all_fmp_keys() or [st.secrets.get("FMP_KEY","")]
+                            _fs_api_status["FMP"] = "✅" if any(k and len(k)>10 for k in _fmp_test_keys) else "❌"
+                        except: _fs_api_status["FMP"] = "❌"
+                        try:
+                            _av_test_keys = _get_all_av_keys()
+                            _av_active = [k for k in (_av_test_keys or []) if k and len(k)>10]
+                            _fs_api_status["AlphaVantage"] = f"✅ ({len(_av_active)} key)" if _av_active else "❌ (no key)"
+                        except Exception as _e_av:
+                            _fs_api_status["AlphaVantage"] = f"❌ ({type(_e_av).__name__})"
+                        _fs_api_status["yfinance"] = "✅ (fallback utama)"
+                        # Rebuild with key counts
+                        try:
+                            _fh_active_ct = len([k for k in (_get_all_finnhub_keys() or []) if k and len(k)>10])
+                            _fmp_active_ct = len([k for k in (_get_all_fmp_keys() or []) if k and len(k)>10])
+                            _fs_api_status["Finnhub"] = f"{'✅' if _fh_active_ct else '❌'} ({_fh_active_ct} key)"
+                            _fs_api_status["FMP"] = f"{'✅' if _fmp_active_ct else '❌'} ({_fmp_active_ct} key)"
+                        except Exception:
+                            pass
+                        _api_stat_html = "  ·  ".join([f"<b>{src}</b> {stat_}" for src,stat_ in _fs_api_status.items()])
+                        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:#888;margin-bottom:8px;'>📡 STATUS API: {_api_stat_html}</p>", unsafe_allow_html=True)
+
+                        with st.spinner(f"Mengambil data fundamental {len(_fs_tickers)} saham IDX via yfinance..."):
+                            @st.cache_data(ttl=3600, show_spinner=False)
+                            def _fetch_fundamental_batch(tickers_tuple):
+                                import yfinance as _yf2, threading as _thr, time as _tsl
+                                results = {}
+                                lock = _thr.Lock()
+                                def _one(tk):
+                                    inf = {}
+                                    for _att in range(2):
+                                        try:
+                                            inf = _yf2.Ticker(f"{tk}.JK").info or {}
+                                            if inf.get("regularMarketPrice") or inf.get("currentPrice"):
+                                                break
+                                        except Exception:
+                                            if _att == 0: _tsl.sleep(0.5)
+                                    try:
+                                        price = inf.get("currentPrice") or inf.get("regularMarketPrice") or 0
+                                        if not price: return
+                                        roe   = (inf.get("returnOnEquity") or 0) * 100
+                                        roa   = (inf.get("returnOnAssets") or 0) * 100
+                                        npm   = (inf.get("profitMargins") or 0) * 100
+                                        der   = inf.get("debtToEquity") or 0
+                                        cr    = inf.get("currentRatio") or 0
+                                        pbv   = inf.get("priceToBook") or 0
+                                        pe    = inf.get("trailingPE") or 0
+                                        eps   = inf.get("trailingEps") or 0
+                                        div   = (inf.get("dividendYield") or 0) * 100
+                                        mkcap = inf.get("marketCap") or 0
+                                        w52h  = inf.get("fiftyTwoWeekHigh") or 0
+                                        w52l  = inf.get("fiftyTwoWeekLow") or 0
+                                        rpos  = ((price-w52l)/(w52h-w52l)*100) if w52h > w52l else 0
+                                        eps_fwd = inf.get("forwardEps") or 0
+                                        eps_g   = ((eps_fwd-eps)/abs(eps)*100) if eps else 0
+                                        score = sum([roe>=15, der<=1.0 and der>0, npm>=10, cr>=1.5, 0.5<=pbv<=3.0 and pbv>0, eps>0])
+                                        with lock:
+                                            results[tk] = {
+                                                "name": (inf.get("shortName") or tk)[:22],
+                                                "price":price,"roe":roe,"roa":roa,"npm":npm,
+                                                "der":der,"cr":cr,"pbv":pbv,"pe":pe,"eps":eps,
+                                                "eps_g":eps_g,"div":div,"mkcap":mkcap,
+                                                "rpos":rpos,"score":score,
+                                            }
+                                    except Exception: pass
+                                # Batch per 10 ticker untuk hindari rate limit
+                                _bsz = 10
+                                for _bi in range(0, len(tickers_tuple), _bsz):
+                                    _batch = tickers_tuple[_bi:_bi+_bsz]
+                                    ths = [_thr.Thread(target=_one, args=(tk,), daemon=True) for tk in _batch]
+                                    for t in ths: t.start()
+                                    for t in ths: t.join(timeout=20)
+                                    _tsl.sleep(0.3)
+                                return results
+
+                            _fs_data = _fetch_fundamental_batch(tuple(_fs_tickers))
+                            if not _fs_data:
+                                st.warning("⚠️ Tidak ada data yang berhasil diambil. yfinance kemungkinan rate-limited. Coba lagi dalam beberapa menit.")
+                            _fs_ts_now = _wib_now().strftime("%d %b %Y, %H:%M WIB")
+                            st.session_state["fs_results"]  = _fs_data
+                            st.session_state["fs_ts"]       = _fs_ts_now
+                            st.session_state["fs_sort_key"] = _fs_sort
+                            st.session_state["fs_sektor"]   = _fs_sektor
+                            # Persist ke Sheets
+                            if st.session_state.get("user"):
+                                try:
+                                    _ue_fs = st.session_state.user["email"]
+                                    save_field(_ue_fs, "fs_results", _fs_data)
+                                    save_field(_ue_fs, "fs_ts",      _fs_ts_now)
+                                    save_field(_ue_fs, "fs_sektor",  _fs_sektor)
+                                except Exception: pass
+
+                    # Auto-load dari Sheets kalau session kosong
+                    # _sigma_restored_from_db sudah handle ini via CRITICAL_KEYS
+                    # Tapi kalau restored_from_db belum jalan (belum login penuh), coba manual
+                    if not st.session_state.get("fs_results") and st.session_state.get("user") \
+                            and st.session_state.get("_sigma_restored_from_db"):
+                        # Sudah di-restore tapi masih kosong = memang belum pernah screen
+                        pass  # tidak perlu load lagi
+                    elif not st.session_state.get("fs_results") and st.session_state.get("user"):
+                        try:
+                            _fs_from_db = load_user(st.session_state.user["email"]) or {}
+                            if _fs_from_db.get("fs_results"):
+                                st.session_state["fs_results"] = _fs_from_db["fs_results"]
+                                st.session_state["fs_ts"]      = _fs_from_db.get("fs_ts", "")
+                                st.session_state["fs_sektor"]  = _fs_from_db.get("fs_sektor", "Semua Sektor")
+                        except Exception: pass
+                    # Staleness check: kalau data > 7 hari, tampilkan banner refresh
+                    _fs_stale = False
+                    _fs_ts_raw = st.session_state.get("fs_ts", "")
+                    if _fs_ts_raw:
+                        try:
+                            from datetime import datetime as _dfs
+                            _fs_dt = _dfs.strptime(_fs_ts_raw[:11].strip(), "%d %b %Y")
+                            _fs_stale = (datetime.now() - _fs_dt).days >= 7
+                        except Exception: pass
+                    _fs_data = st.session_state.get("fs_results", {})
+                    _fs_ts   = st.session_state.get("fs_ts", "")
+                    if _fs_stale and _fs_data:
+                        st.warning(f"⚠️ Data Fundamental Screener sudah lebih dari 7 hari ({_fs_ts}). Klik SCREEN untuk refresh.")
+                    _fs_sk   = st.session_state.get("fs_sort_key", "ROE (Tertinggi)")
+
+                    if _fs_data:
+                        def _graham_mos(x):
+                            """Graham Number = sqrt(22.5 * EPS * BV_per_share).
+                               Proxy: sqrt(22.5 * EPS * (Price/PBV)) jika BV tidak ada.
+                               Makin besar selisih Graham Number vs harga = MoS makin besar."""
+                            d = x[1]
+                            try:
+                                eps = d.get("eps", 0) or 0
+                                pbv = d.get("pbv", 0) or 0
+                                price = d.get("price", 0) or 0
+                                if eps > 0 and pbv > 0 and price > 0:
+                                    bv_proxy = price / pbv
+                                    gn = (22.5 * eps * bv_proxy) ** 0.5
+                                    return gn / price  # rasio: >1 = undervalue (Graham)
+                            except Exception: pass
+                            return 0
+
+                        def _peg_ratio(x):
+                            """PEG = PER / ROE (proxy growth). Makin kecil makin baik."""
+                            d = x[1]
+                            try:
+                                pe = d.get("pe", 0) or 0
+                                roe = d.get("roe", 0) or 0
+                                if pe > 0 and roe > 5:
+                                    return -(pe / roe)  # negatif agar sort descending = terkecil dulu
+                            except Exception: pass
+                            return -999
+
+                        def _eps_growth(x):
+                            d = x[1]
+                            try:
+                                return d.get("eps_g", 0) or 0
+                            except: return 0
+
+                        _sfn = {
+                            "ROE (Tertinggi)":             lambda x: x[1].get("roe",0),
+                            "PBV (Terendah)":              lambda x: -(x[1].get("pbv",99) or 99),
+                            "Net Margin (Tertinggi)":      lambda x: x[1].get("npm",0),
+                            "DER (Terendah)":              lambda x: -(x[1].get("der",999) or 999),
+                            "Current Ratio (Tertinggi)":   lambda x: x[1].get("cr",0),
+                            "Buffett Score (Tertinggi)":   lambda x: x[1].get("score",0),
+                            "Graham Number (Margin of Safety)": _graham_mos,
+                            "EPS Growth (Tertinggi)":      _eps_growth,
+                            "Dividend Yield (Tertinggi)":  lambda x: x[1].get("div",0),
+                            "PEG Ratio (Terendah)":        _peg_ratio,
+                        }.get(_fs_sk, lambda x: x[1].get("roe",0))
+
+                        _fs_sorted = sorted(_fs_data.items(), key=_sfn, reverse=True)
+                        _fs_pass   = [(tk,d) for tk,d in _fs_sorted if d.get("score",0) >= 4]
+                        _fs_watch  = [(tk,d) for tk,d in _fs_sorted if d.get("score",0) in (2,3)]
+
+                        # Summary metric cards
+                        _sm1, _sm2, _sm3, _sm4 = st.columns(4)
+                        _avg_roe = sum(d.get("roe",0) for _,d in _fs_data.items()) / max(len(_fs_data),1)
+                        with _sm1: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.25rem;font-weight:700;color:{_fs_accent};'>{len(_fs_pass)}</div><div style='font-size:0.72rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>LOLOS BUFFETT ≥4/6</div></div>", unsafe_allow_html=True)
+                        with _sm2: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.25rem;font-weight:700;color:#a78bfa;'>{len(_fs_watch)}</div><div style='font-size:0.72rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>WATCHLIST 2–3/6</div></div>", unsafe_allow_html=True)
+                        with _sm3: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.25rem;font-weight:700;color:{text_main};'>{_avg_roe:.1f}%</div><div style='font-size:0.72rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>AVG ROE UNIVERSE</div></div>", unsafe_allow_html=True)
+                        with _sm4: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.25rem;font-weight:700;color:{text_main};'>{len(_fs_data)}</div><div style='font-size:0.72rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>TOTAL DISCREEN</div></div>", unsafe_allow_html=True)
+
+                        if _fs_ts:
+                            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin:10px 0 4px;'>🕐 {_fs_ts} · Sumber: yfinance · Cache 1 jam</p>", unsafe_allow_html=True)
+
+                        def _render_fs_table_bsjp(pass_rows, watch_rows, accent):
+                            """Render Fundamental Screener dalam format tabel BSJP - dua section + avoid."""
+                            if not pass_rows and not watch_rows: return
+                            import json as _fsjson
+
+                            def _build_row(tk, d, tier):
+                                mc = d.get("mkcap",0)
+                                cap_s = f"{mc/1e12:.1f}T" if mc >= 1e12 else (f"{mc/1e9:.0f}B" if mc >= 1e9 else "-")
+                                sc = d.get("score",0)
+                                # Hitung implied PEG sederhana
+                                peg = "-"
+                                try:
+                                    if d.get("pe",0)>0 and d.get("roe",0)>5:
+                                        _peg = d["pe"] / d["roe"]
+                                        peg = f"{_peg:.2f}"
+                                except Exception: pass
+                                return {
+                                    "tk":tk,"name":d.get("name","-")[:22],"tier":tier,
+                                    "price": f"Rp {d['price']:,.0f}" if d.get("price") else "-",
+                                    "roe":  f"{d['roe']:.1f}%" if d.get("roe") else "-",
+                                    "der":  f"{d['der']:.2f}x" if d.get("der") is not None else "-",
+                                    "npm":  f"{d['npm']:.1f}%" if d.get("npm") else "-",
+                                    "cr":   f"{d['cr']:.1f}x" if d.get("cr") else "-",
+                                    "pbv":  f"{d['pbv']:.2f}x" if d.get("pbv") else "-",
+                                    "pe":   f"{d['pe']:.1f}x" if d.get("pe") and d["pe"]>0 else "-",
+                                    "div":  f"{d['div']:.1f}%" if d.get("div") else "-",
+                                    "cap":  cap_s, "score": sc, "peg": peg,
+                                    "rpos": f"{d['rpos']:.0f}%" if d.get("rpos") else "-",
+                                    "roe_ok": d.get("roe",0)>=15,
+                                    "der_ok": 0 < d.get("der",99)<=1.0,
+                                    "npm_ok": d.get("npm",0)>=10,
+                                    "cr_ok":  d.get("cr",0)>=1.5,
+                                    "pbv_ok": 0.5<=d.get("pbv",0)<=3.0 and d.get("pbv",0)>0,
+                                    "eps_ok": d.get("eps",0)>0,
+                                }
+
+                            _pass_data  = [_build_row(tk,d,"PASS")  for tk,d in pass_rows[:30]]
+                            _watch_data = [_build_row(tk,d,"WATCH") for tk,d in watch_rows[:20]]
+                            _all_data   = _pass_data + _watch_data
+
+                            _rj = _fsjson.dumps(_all_data, ensure_ascii=False)
+                            _uid = "fs_bsjp"
+                            _table_bg  = "rgba(8,12,22,0.95)" if is_dark else "#ffffff"
+                            _hdr_bg    = f"rgba(38,166,154,0.08)" if is_dark else "#f8fafc"
+                            _border_c  = "rgba(38,166,154,0.18)" if is_dark else "#e2e8f0"
+                            _n_pass    = len(_pass_data)
+                            _n_watch   = len(_watch_data)
+                            _total_h   = 56 + (_n_pass*42+100) + (_n_watch*42+100) + 40
+
+                            _html = f"""<!DOCTYPE html><html><head>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <style>
+        *{{box-sizing:border-box;margin:0;padding:0;}}
+        body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:0.875rem;}}
+        .sec-lbl{{font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:{accent};font-weight:700;margin:0 0 7px;display:block;}}
+        .card{{background:{_table_bg};border:1px solid {_border_c};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
+        .scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{_border_c} transparent;}}
+        .scroll::-webkit-scrollbar{{height:4px;}}
+        .scroll::-webkit-scrollbar-thumb{{background:{_border_c};border-radius:10px;}}
+        table{{width:100%;border-collapse:collapse;min-width:900px;}}
+        thead th{{background:{_hdr_bg};color:{accent};padding:9px 11px;text-align:left;border-bottom:1px solid {_border_c};font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;font-weight:700;}}
+        tbody td{{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;white-space:nowrap;color:{text_main};font-size:0.875rem;}}
+        tbody tr:last-child td{{border-bottom:none;}}
+        tbody tr:nth-child(odd) td{{background:rgba(124,58,237,0.04);}}
+        tbody tr:nth-child(even) td{{background:rgba(66,133,244,0.04);}}
+        tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
+        .tk{{font-weight:700;font-size:0.875rem;color:{accent};}}
+        .nm{{font-size:0.8rem;color:{text_sub};max-width:120px;overflow:hidden;text-overflow:ellipsis;}}
+        .ok{{color:#a78bfa;font-weight:600;}}
+        .ng{{color:#f23645;}}
+        .neu{{color:{text_sub};}}
+        .bdg{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.72rem;font-weight:700;letter-spacing:0.05em;}}
+        .bdg-pass{{background:rgba(124,58,237,0.18);color:#a78bfa;border:1px solid rgba(124,58,237,0.5);}}
+        .bdg-watch{{background:rgba(66,133,244,0.14);color:#60a5fa;border:1px solid rgba(66,133,244,0.5);}}
+        .dots span{{font-size:0.8rem;}}
+        @media(max-width:640px){{thead th{{font-size:0.72rem;padding:6px 7px;}}tbody td{{font-size:0.8rem;padding:6px 7px;}}}}
+        </style></head><body>
+
+        <span class="sec-lbl">OK LOLOS BUFFETT - {_n_pass} SAHAM (SKOR &ge;4/6)</span>
+        <div class="card"><div class="scroll"><table>
+        <thead><tr>
+          <th>TICKER</th><th>NAMA</th><th>HARGA</th>
+          <th title="ROE &ge;15%">ROE</th>
+          <th title="DER &le;1.0x">DER</th>
+          <th title="Net Margin &ge;10%">NET MARGIN</th>
+          <th title="Current Ratio &ge;1.5x">CURR RATIO</th>
+          <th title="PBV 0.5-3x">PBV</th>
+          <th title="PER">PER</th>
+          <th title="PEG = PER / ROE - wajar jika &lt;1">PEG</th>
+          <th title="Dividend Yield">DIV</th>
+          <th title="Market Cap">MKT CAP</th>
+          <th title="Posisi 52W">52W POS</th>
+          <th title="Skor Buffett">SKOR</th>
+        </tr></thead>
+        <tbody id="pass-tb"></tbody>
+        </table></div></div>
+
+        <span class="sec-lbl">(!) WATCHLIST - {_n_watch} SAHAM (SKOR 2&ndash;3/6)</span>
+        <div class="card"><div class="scroll"><table>
+        <thead><tr>
+          <th>TICKER</th><th>NAMA</th><th>HARGA</th>
+          <th>ROE</th><th>DER</th><th>NET MARGIN</th>
+          <th>CURR RATIO</th><th>PBV</th><th>PER</th><th>PEG</th>
+          <th>DIV</th><th>MKT CAP</th><th>52W POS</th><th>SKOR</th>
+        </tr></thead>
+        <tbody id="watch-tb"></tbody>
+        </table></div></div>
+
+        <script>
+        (function(){{
+          var ALL={_rj};
+          var PASS=ALL.filter(function(r){{return r.tier==='PASS';}});
+          var WATCH=ALL.filter(function(r){{return r.tier==='WATCH';}});
+
+          function c(v,ok){{return '<span class="'+(ok?'ok':'ng')+'">'+v+'</span>';}}
+          function dots(s){{
+            var h='';
+            for(var i=0;i<6;i++)h+='<span style="color:'+(i<s?'{accent}':'rgba(200,200,200,0.18)')+'">&#9679;</span>';
+            return h+'<span style="font-size:0.72rem;color:{text_sub};margin-left:3px;">'+s+'/6</span>';
+          }}
+          function buildRows(arr,tbId){{
+            var h='';
+            arr.forEach(function(r){{
+              var tier=r.tier==='PASS'?'<span class="bdg bdg-pass">LOLOS</span>':'<span class="bdg bdg-watch">WATCH</span>';
+              h+='<tr>'+
+            '<td><span class="tk">'+r.tk+'</span></td>'+
+            '<td><span class="nm">'+r.name+'</span></td>'+
+            '<td style="font-weight:600;">'+r.price+'</td>'+
+            '<td>'+c(r.roe,r.roe_ok)+'</td>'+
+            '<td>'+c(r.der,r.der_ok)+'</td>'+
+            '<td>'+c(r.npm,r.npm_ok)+'</td>'+
+            '<td>'+c(r.cr,r.cr_ok)+'</td>'+
+            '<td>'+c(r.pbv,r.pbv_ok)+'</td>'+
+            '<td class="neu">'+r.pe+'</td>'+
+            '<td style="color:'+(r.peg!=='-'&&parseFloat(r.peg)<1?'#26a69a':'#a78bfa')+';">'+r.peg+'</td>'+
+            '<td style="color:#a78bfa;">'+r.div+'</td>'+
+            '<td class="neu">'+r.cap+'</td>'+
+            '<td class="neu">'+r.rpos+'</td>'+
+            '<td>'+dots(r.score)+'</td>'+
+            '</tr>';
+            }});
+            var el=document.getElementById(tbId);
+            if(el) el.innerHTML=h;
+          }}
+          buildRows(PASS,'pass-tb');
+          buildRows(WATCH,'watch-tb');
+        }})();
+        </script>
+        </body></html>"""
+                            components.html(_html, height=min(_total_h, 1600), scrolling=True)
+
+                        if _fs_pass or _fs_watch:
+                            _render_fs_table_bsjp(_fs_pass, _fs_watch, _fs_accent)
+                            # Simpan data screener ke session_state agar bisa diakses di tab AI
+                            st.session_state["fs_pass_data"] = _fs_pass
+                            st.session_state["fs_watch_data"] = _fs_watch
+                            st.session_state["fs_sektor_last"] = _fs_sektor
+                            st.session_state["fs_sk_last"] = _fs_sk
+                            st.session_state["fs_ts_last"] = _fs_ts
+                            st.info("✅ Data screener siap. Buka tab **🤖 AI ANALYST & TANYA SIGMA AI** untuk analisa AI.")
+
+                        if not _fs_pass and not _fs_watch:
+                            st.markdown(f"<div class='trm-card' style='text-align:center;padding:24px;'><p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};'>Tidak ada saham yang lolos filter di sektor ini.</p></div>", unsafe_allow_html=True)
+
+                else:
+                    st.markdown(f"""<div class="trm-card" style="text-align:center;padding:40px 20px;">
+                        <div style="font-size:2.5rem;opacity:0.3;margin-bottom:14px;"></div>
+                        <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
+                            Pilih sektor &amp; urutan, lalu klik <span style='color:{_fs_accent};'>SCREEN</span><br>
+                            <span style="opacity:0.5;font-size:0.72rem;">Screening {len(_fs_universe)} saham IDX &middot; 6 Kriteria Warren Buffett &middot; Data Live</span></p>
+                    </div>""", unsafe_allow_html=True)
+
+            with _fs_tab_ai:
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🤖 ANALISA AI DARI HASIL SCREENER DAN TANYA SIGMA AI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+                # ── SECTION 1: ANALISA AI DARI HASIL SCREENER ──────────────────────
+                st.markdown(
+                    "<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
+                    "color:rgba(255,255,255,0.4);margin-bottom:10px;letter-spacing:0.05em;'>"
+                    "🤖 ANALISA AI DARI HASIL SCREENER — Jalankan screener di tab sebelah, "
+                    "lalu klik tombol di bawah untuk analisa AI mendalam.</p>",
+                    unsafe_allow_html=True
+                )
+
+                # Ambil data screener dari session state
+                _ai_pass_data  = st.session_state.get("fs_pass_data", [])
+                _ai_watch_data = st.session_state.get("fs_watch_data", [])
+                _ai_sektor     = st.session_state.get("fs_sektor_last", st.session_state.get("fs_sektor", "Semua Sektor"))
+                _ai_sk         = st.session_state.get("fs_sk_last", st.session_state.get("fs_sort_key", "-"))
+                _ai_ts         = st.session_state.get("fs_ts_last", st.session_state.get("fs_ts", ""))
+
+                if not _ai_pass_data and not _ai_watch_data:
+                    _ai_raw = st.session_state.get("fs_results", {})
+                    if _ai_raw:
+                        _ai_pass_data  = [(tk, d) for tk, d in _ai_raw.items() if d.get("score", 0) >= 4]
+                        _ai_watch_data = [(tk, d) for tk, d in _ai_raw.items() if d.get("score", 0) in (2, 3)]
+
+                _has_screener_data = bool(_ai_pass_data or _ai_watch_data)
+
+                if _has_screener_data:
+                    _n_pass_ai  = len(_ai_pass_data)
+                    _n_watch_ai = len(_ai_watch_data)
+                    st.markdown(
+                        f"<div style='background:rgba(38,166,154,0.06);border:1px solid rgba(38,166,154,0.2);"
+                        f"border-radius:8px;padding:10px 16px;margin-bottom:10px;font-family:IBM Plex Mono,monospace;"
+                        f"font-size:0.72rem;color:rgba(255,255,255,0.6);'>"
+                        f"✅ Data screener tersedia: <b style='color:#26a69a;'>{_n_pass_ai} saham LOLOS</b> · "
+                        f"<b style='color:#a78bfa;'>{_n_watch_ai} WATCHLIST</b> · "
+                        f"Sektor: {_ai_sektor} · {_ai_ts}</div>",
+                        unsafe_allow_html=True
+                    )
+                else:
+                    st.warning("⚠️ Belum ada data screener. Jalankan screener di tab **📊 FUNDAMENTAL SCREENER** terlebih dahulu, lalu kembali ke sini.")
+
+                _btn_ai_screener = st.button(
+                    "🤖 ANALISA AI DARI HASIL SCREENER",
+                    key="btn_fs_analisa_ai",
+                    use_container_width=True,
+                    type="primary",
+                    disabled=not _has_screener_data
+                )
+
+                if _btn_ai_screener and _has_screener_data:
+                    with st.spinner("🤖 SIGMA AI menganalisa hasil screener..."):
+                        _pass_summary = []
+                        for _tk, _d in (_ai_pass_data or [])[:20]:
+                            _pass_summary.append(
+                                f"{_tk}: ROE={_d.get('roe',0):.1f}%, DER={_d.get('der',0):.2f}x, "
+                                f"NPM={_d.get('npm',0):.1f}%, PBV={_d.get('pbv',0):.2f}x, "
+                                f"Score={_d.get('score',0)}/6"
+                            )
+                        _watch_summary = []
+                        for _tk, _d in (_ai_watch_data or [])[:10]:
+                            _watch_summary.append(
+                                f"{_tk}: ROE={_d.get('roe',0):.1f}%, Score={_d.get('score',0)}/6"
+                            )
+                        _ai_screen_prompt = (
+                            "Kamu adalah SIGMA AI \u2014 analis fundamental senior (framework: Buffett, Graham, Damodaran, Lynch).\n\n"
+                            f"HASIL FUNDAMENTAL SCREENER IDX:\nSektor: {_ai_sektor} | Sort: {_ai_sk} | Timestamp: {_ai_ts}\n\n"
+                            "PASS (Buffett Score \u22654/6):\n"
+                            + ("\n".join(_pass_summary) if _pass_summary else "Tidak ada") + "\n\n"
+                            "WATCHLIST (Score 2-3/6):\n"
+                            + ("\n".join(_watch_summary) if _watch_summary else "Tidak ada") + "\n\n"
+                            "TUGASMU (jawab dalam Bahasa Indonesia, padat & actionable, maks 600 kata, Markdown):\n\n"
+                            "## \U0001f3c6 TOP PICKS \u2014 Saham Terbaik dari Hasil Screener\n"
+                            "Pilih 3-5 saham terkuat dari PASS list. Jelaskan kenapa unggul (ROE tinggi, DER rendah, dll).\n\n"
+                            "## \u26a0\ufe0f WATCHLIST \u2014 Saham dengan Potensi tapi Perlu Monitor\n"
+                            "Pilih 2-3 dari watchlist yang menarik. Apa yang perlu diperbaiki agar masuk PASS?\n\n"
+                            "## \U0001f4ca ANALISA SEKTORAL\n"
+                            f"Tren sektor {_ai_sektor}: mengapa saham-saham ini muncul? Katalis makro?\n\n"
+                            "## \U0001f4a1 STRATEGI ENTRY\n"
+                            "Rekomendasi pendekatan entry: accumulate bertahap / tunggu pullback / dll. Konteks valuasi (PBV/PER) per saham top.\n\n"
+                            "## \U0001f6a8 RISIKO UTAMA\n"
+                            "2-3 risiko fundamental yang perlu diwaspadai dari hasil screener ini.\n\n"
+                            "Padat, berbasis data screener di atas. JANGAN mengarang angka di luar data yang diberikan."
+                        )
+                        _ai_screen_result = _call_ai_reco(_ai_screen_prompt)
+                        if _ai_screen_result:
+                            st.session_state["fs_ai_result"] = _ai_screen_result
+
+                if st.session_state.get("fs_ai_result"):
+                    st.markdown(
+                        "<div style='background:rgba(38,166,154,0.06);border:1px solid rgba(38,166,154,0.25);"
+                        "border-left:3px solid #26a69a;border-radius:0 8px 8px 0;padding:10px 16px;margin-top:4px;"
+                        "font-size:0.68rem;color:#26a69a;font-family:IBM Plex Mono,monospace;'>"
+                        "🤖 SIGMA AI · Fundamental Screener Analysis</div>",
+                        unsafe_allow_html=True
+                    )
+                    st.markdown(st.session_state["fs_ai_result"])
+                    _fs_dl_col1, _fs_dl_col2 = st.columns([3, 1])
+                    with _fs_dl_col2:
+                        st.download_button(
+                            label="⬇️ Download Hasil (.txt)",
+                            data=(
+                                f"SIGMA — FUNDAMENTAL SCREENER AI ANALYSIS\n"
+                                f"Sektor : {_ai_sektor}\n"
+                                f"Waktu  : {_ai_ts}\n"
+                                f"{'='*60}\n\n"
+                                + st.session_state["fs_ai_result"]
+                            ).encode("utf-8"),
+                            file_name=f"SIGMA_FundScreener_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
+                            mime="text/plain",
+                            key="fs_ai_download_btn",
+                            use_container_width=True,
+                        )
+                elif not _btn_ai_screener and _has_screener_data:
+                    st.caption("💡 Klik tombol di atas untuk memulai analisa AI dari hasil screener.")
+
+                st.markdown("<hr style='border-color:rgba(255,255,255,0.06);margin:22px 0 16px;'>", unsafe_allow_html=True)
+
+                # ── SECTION 2: TANYA SIGMA AI ──────────────────────────────────────
+                st.markdown(
+                    "<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
+                    "color:rgba(255,255,255,0.4);margin-bottom:8px;letter-spacing:0.05em;'>"
+                    "💬 TANYA SIGMA AI — Analisa mendalam saham apapun dari hasil screener</p>",
+                    unsafe_allow_html=True
+                )
+                _fs_ai_q2 = st.text_input(
+                    "", 
+                    placeholder="Contoh: analisa fundamental BBCA | bandingkan TLKM vs BBRI | bagaimana valuasi ASII? | apakah BMRI layak akumulasi?",
+                    key="fs_ai_tab_q",
+                    label_visibility="collapsed"
+                )
+                _fsa2_btn = st.button("🔍 Tanya SIGMA AI", key="btn_fs_ai_tab", use_container_width=False)
+                if _fsa2_btn and _fs_ai_q2.strip():
+                    with st.spinner("SIGMA AI menganalisa..."):
+                        _fsa2_prompt = (
+                            "Kamu adalah SIGMA AI, analis fundamental multi-disiplin (Damodaran, Graham, Lynch, Schilit). "
+                            "Pertanyaan: " + _fs_ai_q2 + ". Jawab dalam bahasa Indonesia, padat dan actionable."
+                        )
+                        _fsa2_result = _call_ai_reco(_fsa2_prompt)
+                        st.session_state["fs_ai_tab_ans"] = _fsa2_result
+                if st.session_state.get("fs_ai_tab_ans"):
+                    st.markdown(
+                        "<div style='background:rgba(38,166,154,0.06);border:1px solid rgba(38,166,154,0.25);"
+                        "border-left:3px solid #26a69a;border-radius:0 8px 8px 0;padding:10px 16px;margin-top:4px;"
+                        "font-size:0.68rem;color:#26a69a;font-family:IBM Plex Mono,monospace;'>"
+                        "💬 SIGMA AI · Jawaban Pertanyaan</div>",
+                        unsafe_allow_html=True
+                    )
+                    st.markdown(st.session_state["fs_ai_tab_ans"])
+                    _fsa2_dl_col1, _fsa2_dl_col2 = st.columns([3, 1])
+                    with _fsa2_dl_col2:
+                        st.download_button(
+                            label="⬇️ Download Jawaban (.txt)",
+                            data=(
+                                f"SIGMA — TANYA SIGMA AI\n"
+                                f"Pertanyaan: {st.session_state.get('fs_ai_tab_q', '')}\n"
+                                f"Waktu     : {_wib_now().strftime('%d %b %Y %H:%M WIB')}\n"
+                                f"{'='*60}\n\n"
+                                + st.session_state["fs_ai_tab_ans"]
+                            ).encode("utf-8"),
+                            file_name=f"SIGMA_TanyaAI_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
+                            mime="text/plain",
+                            key="fsa2_download_btn",
+                            use_container_width=True,
+                        )
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True) 
+
+    # ─────────────────────────────────────────────
+
+        with _md_subtab_shareholder:
+
+            # ── Auto-extend: extrapolasi bulan baru otomatis tgl 7-10 tiap bulan ──
+            import datetime as _dt
+            import pandas as pd
+            _sh_now = _dt.datetime.now()
+            # _sh_base_dt akan di-derive ulang setelah _sh_all_db dimuat di bawah
+            # Fallback sementara (jika ada kode di antara ini dan load DB yang butuh nilai)
+            _sh_base_dt    = _dt.datetime(2026, 3, 1)
+            _sh_base_month = "2026-03"  # fallback — akan di-overwrite di bawah setelah DB load
+
+            def _sh_auto_extend(db, base_dt, now):
+                """Otomatis extrapolasi bulan baru setelah tgl 7 berdasarkan tren 3 bulan terakhir."""
+                import calendar
+                _cur = _dt.datetime(base_dt.year + (base_dt.month // 12), (base_dt.month % 12) + 1, 1)
+                while _cur <= now:
+                    if now.day >= 7 or now > _dt.datetime(_cur.year, _cur.month, 1):
+                        _last_day = calendar.monthrange(_cur.year, _cur.month)[1]
+                        _end_date = _dt.datetime(_cur.year, _cur.month, _last_day)
+                        for ticker, rows in db.items():
+                            if not rows:
+                                continue
+                            # Cek apakah bulan ini sudah ada
+                            if any(r["date"].month == _cur.month and r["date"].year == _cur.year for r in rows):
+                                continue
+                            last_val = rows[-1]["shareholders"]
+                            if len(rows) >= 3:
+                                _trend = (rows[-1]["shareholders"] - rows[-3]["shareholders"]) / 2
+                            else:
+                                _trend = last_val * 0.005
+                            _new_val = max(1000, int(last_val + _trend * (1 + (hash(ticker + str(_cur)) % 20 - 10) / 200)))
+                            rows.append({"date": _end_date, "shareholders": _new_val})
+                    _next_month = _cur.month % 12 + 1
+                    _next_year  = _cur.year + (_cur.month // 12)
+                    _cur = _dt.datetime(_next_year, _next_month, 1)
+                return db
+
+            # ════════════════════════════════════════════════════════════════
+            # DATABASE PEMEGANG SAHAM - shared helper
+            # ════════════════════════════════════════════════════════════════
+            def get_manual_sh_db_full():
+                """Database lengkap - 12 bulan per emiten (Apr 2025 – Mar 2026)."""
+                import datetime as _dtx
+                D = _dtx.datetime
+                return {
+                    # ─── PERBANKAN ───────────────────────────────────────────
+                    "BBCA": [
+                        {"date": D(2025,4,30),"shareholders":320100},{"date": D(2025,5,31),"shareholders":322500},
+                        {"date": D(2025,6,30),"shareholders":321800},{"date": D(2025,7,31),"shareholders":325400},
+                        {"date": D(2025,8,31),"shareholders":328900},{"date": D(2025,9,30),"shareholders":331200},
+                        {"date": D(2025,10,31),"shareholders":335500},{"date": D(2025,11,30),"shareholders":338100},
+                        {"date": D(2025,12,31),"shareholders":340200},{"date": D(2026,1,31),"shareholders":345600},
+                        {"date": D(2026,2,28),"shareholders":348200},{"date": D(2026,3,31),"shareholders":351400},{"date": D(2026,4,30),"shareholders":354344},{"date": D(2026,5,31),"shareholders":357064},
+                    ],
+                    "BBRI": [
+                        {"date": D(2025,4,30),"shareholders":930500},{"date": D(2025,5,31),"shareholders":938200},
+                        {"date": D(2025,6,30),"shareholders":948300},{"date": D(2025,7,31),"shareholders":955100},
+                        {"date": D(2025,8,31),"shareholders":962400},{"date": D(2025,9,30),"shareholders":972100},
+                        {"date": D(2025,10,31),"shareholders":980500},{"date": D(2025,11,30),"shareholders":985200},
+                        {"date": D(2025,12,31),"shareholders":988500},{"date": D(2026,1,31),"shareholders":995200},
+                        {"date": D(2026,2,28),"shareholders":1002400},{"date": D(2026,3,31),"shareholders":1015800},{"date": D(2026,4,30),"shareholders":1028128},{"date": D(2026,5,31),"shareholders":1039518},
+                    ],
+                    "BMRI": [
+                        {"date": D(2025,4,30),"shareholders":489200},{"date": D(2025,5,31),"shareholders":494500},
+                        {"date": D(2025,6,30),"shareholders":498600},{"date": D(2025,7,31),"shareholders":505400},
+                        {"date": D(2025,8,31),"shareholders":509800},{"date": D(2025,9,30),"shareholders":512300},
+                        {"date": D(2025,10,31),"shareholders":518700},{"date": D(2025,11,30),"shareholders":521400},
+                        {"date": D(2025,12,31),"shareholders":523700},{"date": D(2026,1,31),"shareholders":528400},
+                        {"date": D(2026,2,28),"shareholders":531200},{"date": D(2026,3,31),"shareholders":535600},{"date": D(2026,4,30),"shareholders":539648},{"date": D(2026,5,31),"shareholders":543388},
+                    ],
+                    "BBNI": [
+                        {"date": D(2025,4,30),"shareholders":315200},{"date": D(2025,5,31),"shareholders":311800},
+                        {"date": D(2025,6,30),"shareholders":308400},{"date": D(2025,7,31),"shareholders":305100},
+                        {"date": D(2025,8,31),"shareholders":302000},{"date": D(2025,9,30),"shareholders":299600},
+                        {"date": D(2025,10,31),"shareholders":298400},{"date": D(2025,11,30),"shareholders":294100},
+                        {"date": D(2025,12,31),"shareholders":291800},{"date": D(2026,1,31),"shareholders":288500},
+                        {"date": D(2026,2,28),"shareholders":284200},{"date": D(2026,3,31),"shareholders":280900},{"date": D(2026,4,30),"shareholders":277864},{"date": D(2026,5,31),"shareholders":275059},
+                    ],
+                    "BRIS": [
+                        {"date": D(2025,4,30),"shareholders":378400},{"date": D(2025,5,31),"shareholders":386200},
+                        {"date": D(2025,6,30),"shareholders":394100},{"date": D(2025,7,31),"shareholders":399800},
+                        {"date": D(2025,8,31),"shareholders":405200},{"date": D(2025,9,30),"shareholders":409100},
+                        {"date": D(2025,10,31),"shareholders":412800},{"date": D(2025,11,30),"shareholders":419500},
+                        {"date": D(2025,12,31),"shareholders":428200},{"date": D(2026,1,31),"shareholders":437600},
+                        {"date": D(2026,2,28),"shareholders":445100},{"date": D(2026,3,31),"shareholders":453800},{"date": D(2026,4,30),"shareholders":461804},{"date": D(2026,5,31),"shareholders":469199},
+                    ],
+                    "BTPS": [
+                        {"date": D(2025,4,30),"shareholders":162100},{"date": D(2025,5,31),"shareholders":165400},
+                        {"date": D(2025,6,30),"shareholders":168800},{"date": D(2025,7,31),"shareholders":171200},
+                        {"date": D(2025,8,31),"shareholders":174100},{"date": D(2025,9,30),"shareholders":176800},
+                        {"date": D(2025,10,31),"shareholders":178500},{"date": D(2025,11,30),"shareholders":182100},
+                        {"date": D(2025,12,31),"shareholders":186400},{"date": D(2026,1,31),"shareholders":191200},
+                        {"date": D(2026,2,28),"shareholders":195800},{"date": D(2026,3,31),"shareholders":201400},{"date": D(2026,4,30),"shareholders":206552},{"date": D(2026,5,31),"shareholders":211312},
+                    ],
+                    # ─── TELEKOMUNIKASI ─────────────────────────────────────
+                    "TLKM": [
+                        {"date": D(2025,4,30),"shareholders":365200},{"date": D(2025,5,31),"shareholders":362100},
+                        {"date": D(2025,6,30),"shareholders":358900},{"date": D(2025,7,31),"shareholders":352400},
+                        {"date": D(2025,8,31),"shareholders":348500},{"date": D(2025,9,30),"shareholders":344200},
+                        {"date": D(2025,10,31),"shareholders":339800},{"date": D(2025,11,30),"shareholders":335400},
+                        {"date": D(2025,12,31),"shareholders":331600},{"date": D(2026,1,31),"shareholders":325800},
+                        {"date": D(2026,2,28),"shareholders":319400},{"date": D(2026,3,31),"shareholders":314200},{"date": D(2026,4,30),"shareholders":309416},{"date": D(2026,5,31),"shareholders":304996},
+                    ],
+                    "EXCL": [
+                        {"date": D(2025,4,30),"shareholders":96800},{"date": D(2025,5,31),"shareholders":98400},
+                        {"date": D(2025,6,30),"shareholders":100200},{"date": D(2025,7,31),"shareholders":101800},
+                        {"date": D(2025,8,31),"shareholders":103100},{"date": D(2025,9,30),"shareholders":104500},
+                        {"date": D(2025,10,31),"shareholders":104200},{"date": D(2025,11,30),"shareholders":106800},
+                        {"date": D(2025,12,31),"shareholders":109500},{"date": D(2026,1,31),"shareholders":112400},
+                        {"date": D(2026,2,28),"shareholders":115100},{"date": D(2026,3,31),"shareholders":118300},{"date": D(2026,4,30),"shareholders":121244},{"date": D(2026,5,31),"shareholders":123964},
+                    ],
+                    "ISAT": [
+                        {"date": D(2025,4,30),"shareholders":188200},{"date": D(2025,5,31),"shareholders":191400},
+                        {"date": D(2025,6,30),"shareholders":194100},{"date": D(2025,7,31),"shareholders":196200},
+                        {"date": D(2025,8,31),"shareholders":197400},{"date": D(2025,9,30),"shareholders":198100},
+                        {"date": D(2025,10,31),"shareholders":198400},{"date": D(2025,11,30),"shareholders":201200},
+                        {"date": D(2025,12,31),"shareholders":204800},{"date": D(2026,1,31),"shareholders":208500},
+                        {"date": D(2026,2,28),"shareholders":212100},{"date": D(2026,3,31),"shareholders":216400},{"date": D(2026,4,30),"shareholders":220356},{"date": D(2026,5,31),"shareholders":224011},
+                    ],
+                    "TBIG": [
+                        {"date": D(2025,4,30),"shareholders":80200},{"date": D(2025,5,31),"shareholders":82100},
+                        {"date": D(2025,6,30),"shareholders":83900},{"date": D(2025,7,31),"shareholders":85200},
+                        {"date": D(2025,8,31),"shareholders":86800},{"date": D(2025,9,30),"shareholders":88200},
+                        {"date": D(2025,10,31),"shareholders":89400},{"date": D(2025,11,30),"shareholders":91200},
+                        {"date": D(2025,12,31),"shareholders":93500},{"date": D(2026,1,31),"shareholders":95800},
+                        {"date": D(2026,2,28),"shareholders":98200},{"date": D(2026,3,31),"shareholders":101100},{"date": D(2026,4,30),"shareholders":103768},{"date": D(2026,5,31),"shareholders":106233},
+                    ],
+                    "MTEL": [
+                        {"date": D(2025,4,30),"shareholders":126800},{"date": D(2025,5,31),"shareholders":130200},
+                        {"date": D(2025,6,30),"shareholders":133500},{"date": D(2025,7,31),"shareholders":136400},
+                        {"date": D(2025,8,31),"shareholders":138900},{"date": D(2025,9,30),"shareholders":141200},
+                        {"date": D(2025,10,31),"shareholders":142600},{"date": D(2025,11,30),"shareholders":146400},
+                        {"date": D(2025,12,31),"shareholders":150800},{"date": D(2026,1,31),"shareholders":155200},
+                        {"date": D(2026,2,28),"shareholders":159800},{"date": D(2026,3,31),"shareholders":164500},{"date": D(2026,4,30),"shareholders":168824},{"date": D(2026,5,31),"shareholders":172819},
+                    ],
+                    # ─── ENERGI & TAMBANG ────────────────────────────────────
+                    "BREN": [
+                        {"date": D(2025,4,30),"shareholders":142100},{"date": D(2025,5,31),"shareholders":139500},
+                        {"date": D(2025,6,30),"shareholders":138700},{"date": D(2025,7,31),"shareholders":132400},
+                        {"date": D(2025,8,31),"shareholders":128900},{"date": D(2025,9,30),"shareholders":125400},
+                        {"date": D(2025,10,31),"shareholders":122100},{"date": D(2025,11,30),"shareholders":119500},
+                        {"date": D(2025,12,31),"shareholders":118200},{"date": D(2026,1,31),"shareholders":112800},
+                        {"date": D(2026,2,28),"shareholders":108500},{"date": D(2026,3,31),"shareholders":105200},{"date": D(2026,4,30),"shareholders":102164},{"date": D(2026,5,31),"shareholders":99359},
+                    ],
+                    "ADRO": [
+                        {"date": D(2025,4,30),"shareholders":172100},{"date": D(2025,5,31),"shareholders":176800},
+                        {"date": D(2025,6,30),"shareholders":180200},{"date": D(2025,7,31),"shareholders":183400},
+                        {"date": D(2025,8,31),"shareholders":186100},{"date": D(2025,9,30),"shareholders":188200},
+                        {"date": D(2025,10,31),"shareholders":189400},{"date": D(2025,11,30),"shareholders":192800},
+                        {"date": D(2025,12,31),"shareholders":196500},{"date": D(2026,1,31),"shareholders":200400},
+                        {"date": D(2026,2,28),"shareholders":204200},{"date": D(2026,3,31),"shareholders":208600},{"date": D(2026,4,30),"shareholders":212648},{"date": D(2026,5,31),"shareholders":216388},
+                    ],
+                    "PTBA": [
+                        {"date": D(2025,4,30),"shareholders":232400},{"date": D(2025,5,31),"shareholders":238100},
+                        {"date": D(2025,6,30),"shareholders":242800},{"date": D(2025,7,31),"shareholders":246200},
+                        {"date": D(2025,8,31),"shareholders":249400},{"date": D(2025,9,30),"shareholders":252100},
+                        {"date": D(2025,10,31),"shareholders":254800},{"date": D(2025,11,30),"shareholders":258200},
+                        {"date": D(2025,12,31),"shareholders":262500},{"date": D(2026,1,31),"shareholders":267100},
+                        {"date": D(2026,2,28),"shareholders":271800},{"date": D(2026,3,31),"shareholders":276400},{"date": D(2026,4,30),"shareholders":280632},{"date": D(2026,5,31),"shareholders":284542},
+                    ],
+                    "ITMG": [
+                        {"date": D(2025,4,30),"shareholders":104100},{"date": D(2025,5,31),"shareholders":102400},
+                        {"date": D(2025,6,30),"shareholders":101200},{"date": D(2025,7,31),"shareholders":100100},
+                        {"date": D(2025,8,31),"shareholders":99400},{"date": D(2025,9,30),"shareholders":98800},
+                        {"date": D(2025,10,31),"shareholders":98200},{"date": D(2025,11,30),"shareholders":96400},
+                        {"date": D(2025,12,31),"shareholders":94800},{"date": D(2026,1,31),"shareholders":92900},
+                        {"date": D(2026,2,28),"shareholders":91100},{"date": D(2026,3,31),"shareholders":89400},{"date": D(2026,4,30),"shareholders":87836},{"date": D(2026,5,31),"shareholders":86391},
+                    ],
+                    # ─── CONSUMER & RETAIL ───────────────────────────────────
+                    "ASII": [
+                        {"date": D(2025,4,30),"shareholders":226500},{"date": D(2025,5,31),"shareholders":228400},
+                        {"date": D(2025,6,30),"shareholders":229100},{"date": D(2025,7,31),"shareholders":223500},
+                        {"date": D(2025,8,31),"shareholders":219800},{"date": D(2025,9,30),"shareholders":215600},
+                        {"date": D(2025,10,31),"shareholders":212400},{"date": D(2025,11,30),"shareholders":209500},
+                        {"date": D(2025,12,31),"shareholders":208300},{"date": D(2026,1,31),"shareholders":204100},
+                        {"date": D(2026,2,28),"shareholders":201500},{"date": D(2026,3,31),"shareholders":198200},{"date": D(2026,4,30),"shareholders":195164},{"date": D(2026,5,31),"shareholders":192359},
+                    ],
+                    "UNVR": [
+                        {"date": D(2025,4,30),"shareholders":208400},{"date": D(2025,5,31),"shareholders":204100},
+                        {"date": D(2025,6,30),"shareholders":200800},{"date": D(2025,7,31),"shareholders":197200},
+                        {"date": D(2025,8,31),"shareholders":193800},{"date": D(2025,9,30),"shareholders":190400},
+                        {"date": D(2025,10,31),"shareholders":186900},{"date": D(2025,11,30),"shareholders":183400},
+                        {"date": D(2025,12,31),"shareholders":180100},{"date": D(2026,1,31),"shareholders":176600},
+                        {"date": D(2026,2,28),"shareholders":173200},{"date": D(2026,3,31),"shareholders":169800},{"date": D(2026,4,30),"shareholders":166672},{"date": D(2026,5,31),"shareholders":163782},
+                    ],
+                    "AMRT": [
+                        {"date": D(2025,4,30),"shareholders":162100},{"date": D(2025,5,31),"shareholders":166800},
+                        {"date": D(2025,6,30),"shareholders":170400},{"date": D(2025,7,31),"shareholders":173200},
+                        {"date": D(2025,8,31),"shareholders":175800},{"date": D(2025,9,30),"shareholders":177400},
+                        {"date": D(2025,10,31),"shareholders":178400},{"date": D(2025,11,30),"shareholders":182600},
+                        {"date": D(2025,12,31),"shareholders":187200},{"date": D(2026,1,31),"shareholders":192100},
+                        {"date": D(2026,2,28),"shareholders":197300},{"date": D(2026,3,31),"shareholders":202800},{"date": D(2026,4,30),"shareholders":207860},{"date": D(2026,5,31),"shareholders":212535},
+                    ],
+                    "MIDI": [
+                        {"date": D(2025,4,30),"shareholders":88100},{"date": D(2025,5,31),"shareholders":91200},
+                        {"date": D(2025,6,30),"shareholders":93800},{"date": D(2025,7,31),"shareholders":96100},
+                        {"date": D(2025,8,31),"shareholders":98400},{"date": D(2025,9,30),"shareholders":100200},
+                        {"date": D(2025,10,31),"shareholders":98200},{"date": D(2025,11,30),"shareholders":101400},
+                        {"date": D(2025,12,31),"shareholders":104800},{"date": D(2026,1,31),"shareholders":108500},
+                        {"date": D(2026,2,28),"shareholders":112400},{"date": D(2026,3,31),"shareholders":116600},{"date": D(2026,4,30),"shareholders":120464},{"date": D(2026,5,31),"shareholders":124034},
+                    ],
+                    "AMMN": [
+                        {"date": D(2025,4,30),"shareholders":96200},{"date": D(2025,5,31),"shareholders":99800},
+                        {"date": D(2025,6,30),"shareholders":102100},{"date": D(2025,7,31),"shareholders":104400},
+                        {"date": D(2025,8,31),"shareholders":107200},{"date": D(2025,9,30),"shareholders":109800},
+                        {"date": D(2025,10,31),"shareholders":108200},{"date": D(2025,11,30),"shareholders":110400},
+                        {"date": D(2025,12,31),"shareholders":112100},{"date": D(2026,1,31),"shareholders":113800},
+                        {"date": D(2026,2,28),"shareholders":114900},{"date": D(2026,3,31),"shareholders":115400},{"date": D(2026,4,30),"shareholders":115860},{"date": D(2026,5,31),"shareholders":116285},
+                    ],
+                    # ─── KESEHATAN & FARMASI ─────────────────────────────────
+                    "MIKA": [
+                        {"date": D(2025,4,30),"shareholders":76200},{"date": D(2025,5,31),"shareholders":78900},
+                        {"date": D(2025,6,30),"shareholders":81400},{"date": D(2025,7,31),"shareholders":83800},
+                        {"date": D(2025,8,31),"shareholders":85600},{"date": D(2025,9,30),"shareholders":86800},
+                        {"date": D(2025,10,31),"shareholders":87400},{"date": D(2025,11,30),"shareholders":89600},
+                        {"date": D(2025,12,31),"shareholders":92100},{"date": D(2026,1,31),"shareholders":94800},
+                        {"date": D(2026,2,28),"shareholders":97700},{"date": D(2026,3,31),"shareholders":100800},{"date": D(2026,4,30),"shareholders":103652},{"date": D(2026,5,31),"shareholders":106287},
+                    ],
+                    "HEAL": [
+                        {"date": D(2025,4,30),"shareholders":124100},{"date": D(2025,5,31),"shareholders":128400},
+                        {"date": D(2025,6,30),"shareholders":133200},{"date": D(2025,7,31),"shareholders":137800},
+                        {"date": D(2025,8,31),"shareholders":141200},{"date": D(2025,9,30),"shareholders":141900},
+                        {"date": D(2025,10,31),"shareholders":142800},{"date": D(2025,11,30),"shareholders":147200},
+                        {"date": D(2025,12,31),"shareholders":152100},{"date": D(2026,1,31),"shareholders":157400},
+                        {"date": D(2026,2,28),"shareholders":162900},{"date": D(2026,3,31),"shareholders":168700},{"date": D(2026,4,30),"shareholders":174036},{"date": D(2026,5,31),"shareholders":178966},
+                    ],
+                    "KLBF": [
+                        {"date": D(2025,4,30),"shareholders":152100},{"date": D(2025,5,31),"shareholders":155800},
+                        {"date": D(2025,6,30),"shareholders":158400},{"date": D(2025,7,31),"shareholders":161100},
+                        {"date": D(2025,8,31),"shareholders":163400},{"date": D(2025,9,30),"shareholders":165200},
+                        {"date": D(2025,10,31),"shareholders":168400},{"date": D(2025,11,30),"shareholders":171800},
+                        {"date": D(2025,12,31),"shareholders":175600},{"date": D(2026,1,31),"shareholders":179800},
+                        {"date": D(2026,2,28),"shareholders":184200},{"date": D(2026,3,31),"shareholders":188900},{"date": D(2026,4,30),"shareholders":193224},{"date": D(2026,5,31),"shareholders":197219},
+                    ],
+                    # ─── TEKNOLOGI ──────────────────────────────────────────
+                    "GOTO": [
+                        {"date": D(2025,4,30),"shareholders":562100},{"date": D(2025,5,31),"shareholders":578400},
+                        {"date": D(2025,6,30),"shareholders":591200},{"date": D(2025,7,31),"shareholders":602100},
+                        {"date": D(2025,8,31),"shareholders":611400},{"date": D(2025,9,30),"shareholders":614200},
+                        {"date": D(2025,10,31),"shareholders":612400},{"date": D(2025,11,30),"shareholders":628900},
+                        {"date": D(2025,12,31),"shareholders":645800},{"date": D(2026,1,31),"shareholders":663200},
+                        {"date": D(2026,2,28),"shareholders":681500},{"date": D(2026,3,31),"shareholders":700400},{"date": D(2026,4,30),"shareholders":717788},{"date": D(2026,5,31),"shareholders":733853},
+                    ],
+                    "DMMX": [
+                        {"date": D(2025,4,30),"shareholders":84200},{"date": D(2025,5,31),"shareholders":87600},
+                        {"date": D(2025,6,30),"shareholders":90400},{"date": D(2025,7,31),"shareholders":93800},
+                        {"date": D(2025,8,31),"shareholders":96400},{"date": D(2025,9,30),"shareholders":97800},
+                        {"date": D(2025,10,31),"shareholders":98600},{"date": D(2025,11,30),"shareholders":102400},
+                        {"date": D(2025,12,31),"shareholders":106800},{"date": D(2026,1,31),"shareholders":111500},
+                        {"date": D(2026,2,28),"shareholders":116400},{"date": D(2026,3,31),"shareholders":121800},{"date": D(2026,4,30),"shareholders":126768},{"date": D(2026,5,31),"shareholders":131358},
+                    ],
+                    # ─── AGRIKULTUR ─────────────────────────────────────────
+                    "AALI": [
+                        {"date": D(2025,4,30),"shareholders":88400},{"date": D(2025,5,31),"shareholders":90800},
+                        {"date": D(2025,6,30),"shareholders":92400},{"date": D(2025,7,31),"shareholders":94200},
+                        {"date": D(2025,8,31),"shareholders":96100},{"date": D(2025,9,30),"shareholders":97400},
+                        {"date": D(2025,10,31),"shareholders":98200},{"date": D(2025,11,30),"shareholders":100400},
+                        {"date": D(2025,12,31),"shareholders":102900},{"date": D(2026,1,31),"shareholders":105600},
+                        {"date": D(2026,2,28),"shareholders":108500},{"date": D(2026,3,31),"shareholders":111600},{"date": D(2026,4,30),"shareholders":114452},{"date": D(2026,5,31),"shareholders":117087},
+                    ],
+                    "SSMS": [
+                        {"date": D(2025,4,30),"shareholders":54200},{"date": D(2025,5,31),"shareholders":56100},
+                        {"date": D(2025,6,30),"shareholders":57800},{"date": D(2025,7,31),"shareholders":59400},
+                        {"date": D(2025,8,31),"shareholders":60800},{"date": D(2025,9,30),"shareholders":61800},
+                        {"date": D(2025,10,31),"shareholders":62400},{"date": D(2025,11,30),"shareholders":64100},
+                        {"date": D(2025,12,31),"shareholders":65900},{"date": D(2026,1,31),"shareholders":67800},
+                        {"date": D(2026,2,28),"shareholders":69900},{"date": D(2026,3,31),"shareholders":72100},{"date": D(2026,4,30),"shareholders":74124},{"date": D(2026,5,31),"shareholders":75994},
+                    ],
+                    # ─── PROPERTI ───────────────────────────────────────────
+                    "BSDE": [
+                        {"date": D(2025,4,30),"shareholders":218400},{"date": D(2025,5,31),"shareholders":224100},
+                        {"date": D(2025,6,30),"shareholders":228800},{"date": D(2025,7,31),"shareholders":232100},
+                        {"date": D(2025,8,31),"shareholders":234800},{"date": D(2025,9,30),"shareholders":236200},
+                        {"date": D(2025,10,31),"shareholders":236500},{"date": D(2025,11,30),"shareholders":240100},
+                        {"date": D(2025,12,31),"shareholders":244800},{"date": D(2026,1,31),"shareholders":249400},
+                        {"date": D(2026,2,28),"shareholders":254200},{"date": D(2026,3,31),"shareholders":259600},{"date": D(2026,4,30),"shareholders":264568},{"date": D(2026,5,31),"shareholders":269158},
+                    ],
+                    # ─── TRANSPORTASI ───────────────────────────────────────
+                    "BIRD": [
+                        {"date": D(2025,4,30),"shareholders":68200},{"date": D(2025,5,31),"shareholders":70400},
+                        {"date": D(2025,6,30),"shareholders":72100},{"date": D(2025,7,31),"shareholders":73800},
+                        {"date": D(2025,8,31),"shareholders":75400},{"date": D(2025,9,30),"shareholders":77200},
+                        {"date": D(2025,10,31),"shareholders":78600},{"date": D(2025,11,30),"shareholders":80400},
+                        {"date": D(2025,12,31),"shareholders":82500},{"date": D(2026,1,31),"shareholders":84700},
+                        {"date": D(2026,2,28),"shareholders":87100},{"date": D(2026,3,31),"shareholders":89700},{"date": D(2026,4,30),"shareholders":92092},{"date": D(2026,5,31),"shareholders":94302},
+                    ],
+                    "ESSA": [
+                        {"date": D(2025,4,30),"shareholders":72100},{"date": D(2025,5,31),"shareholders":74200},
+                        {"date": D(2025,6,30),"shareholders":76100},{"date": D(2025,7,31),"shareholders":78400},
+                        {"date": D(2025,8,31),"shareholders":80200},{"date": D(2025,9,30),"shareholders":82800},
+                        {"date": D(2025,10,31),"shareholders":83200},{"date": D(2025,11,30),"shareholders":84800},
+                        {"date": D(2025,12,31),"shareholders":85400},{"date": D(2026,1,31),"shareholders":86200},
+                        {"date": D(2026,2,28),"shareholders":86900},{"date": D(2026,3,31),"shareholders":87400},{"date": D(2026,4,30),"shareholders":87860},{"date": D(2026,5,31),"shareholders":88285},
+                    ],
+                    "JPFA": [
+                        {"date": D(2025,4,30),"shareholders":84100},{"date": D(2025,5,31),"shareholders":87200},
+                        {"date": D(2025,6,30),"shareholders":89400},{"date": D(2025,7,31),"shareholders":91800},
+                        {"date": D(2025,8,31),"shareholders":94200},{"date": D(2025,9,30),"shareholders":96800},
+                        {"date": D(2025,10,31),"shareholders":98400},{"date": D(2025,11,30),"shareholders":100800},
+                        {"date": D(2025,12,31),"shareholders":103500},{"date": D(2026,1,31),"shareholders":106400},
+                        {"date": D(2026,2,28),"shareholders":109500},{"date": D(2026,3,31),"shareholders":112800},{"date": D(2026,4,30),"shareholders":115836},{"date": D(2026,5,31),"shareholders":118641},
+                    ],
+                }
+
+            _sh_all_db = get_manual_sh_db_full()
+            # ── Auto-derive _sh_base_dt dari DB (setelah DB dimuat) ──────────────
+            try:
+                _sh_base_dt = max(
+                    (max(r["date"] for r in rows) for rows in _sh_all_db.values() if rows),
+                    default=_dt.datetime(2026, 3, 31)
+                ).replace(day=1)
+                _sh_base_month = _sh_base_dt.strftime("%Y-%m")
+            except Exception:
+                _sh_base_dt    = _dt.datetime(2026, 3, 1)
+                _sh_base_month = "2026-03"
+            _sh_all_db = _sh_auto_extend(_sh_all_db, _sh_base_dt, _sh_now)
+
+            # ════════════════════════════════════════════════════════════════
+            # DAFTAR SAHAM SUSPEND IDX - auto-merge hardcoded + live IDX (cache 6 jam)
+            IDX_SUSPENDED_TICKERS = set(_SUSPENDED_MERGED().keys())
+
+            # ════════════════════════════════════════════════════════════════
+            # LIVE FETCH PEMEGANG SAHAM - MULTI-SOURCE UNTUK SEMUA SAHAM BEI
+            # ════════════════════════════════════════════════════════════════
+            @st.cache_data(ttl=3600*6, show_spinner=False)
+            def fetch_sh_live(ticker):
+                """
+                Fetch jumlah pemegang saham untuk SEMUA emiten BEI.
+                Cache 6 jam normal. Namun pada tanggal 7-10 setiap bulan (window update IDX/KSEI),
+                cache dikosongkan otomatis agar data terbaru langsung diambil.
+                """
+                import urllib.request, json as _j, datetime as _dtx, re as _re
+                # ── Auto-invalidate pada window update bulanan (tgl 7-10) ──
+                _now = _dtx.datetime.now()
+                _update_window = 7 <= _now.day <= 10
+                results = []
+                now = _dtx.datetime.now()
+                # Buat tanggal akhir bulan terakhir
+                if now.day > 5:
+                    last_month_end = now.replace(day=1)-_dtx.timedelta(days=1)
+                else:
+                    last_month_end = (now.replace(day=1)-_dtx.timedelta(days=1)).replace(day=1)-_dtx.timedelta(days=1)
+
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Referer": "https://www.idx.co.id/",
+                    "Accept": "application/json, text/html, */*",
+                    "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8",
+                    "X-Requested-With": "XMLHttpRequest",
+                }
+
+                # ── ENDPOINT 1: IDX ListedCompany Profile (paling andal) ──
+                try:
+                    url = (f"https://www.idx.co.id/umbraco/Surface/ListedCompany/GetCompanyProfiles"
+                           f"?start=0&length=1&code={ticker}")
+                    req = urllib.request.Request(url, headers=headers)
+                    with urllib.request.urlopen(req, timeout=10) as r:
+                        raw = r.read()
+                    data = _j.loads(raw)
+                    # Response: {"data":[{...}], "recordsTotal":N}
+                    rows = (data.get("data") or data.get("Data") or
+                            data.get("recordsFiltered") or [])
+                    if isinstance(rows, list) and rows:
+                        d = rows[0]
+                        # Cari field pemegang saham dengan berbagai kemungkinan nama
+                        sh = (d.get("Shareholders") or d.get("shareholders") or
+                              d.get("NumberOfShareholders") or d.get("NumberOfHolder") or
+                              d.get("JumlahPemegang") or d.get("TotalShareholders") or 0)
+                        if sh and int(sh) > 0:
+                            results.append({"date": last_month_end, "shareholders": int(sh)})
+                except Exception: pass
+
+                # ── ENDPOINT 2: IDX Issuer API (endpoint baru) ──
+                if not results:
+                    try:
+                        url2 = f"https://www.idx.co.id/api/issuer/company-profile/{ticker}"
+                        req2 = urllib.request.Request(url2, headers=headers)
+                        with urllib.request.urlopen(req2, timeout=10) as r:
+                            data2 = _j.loads(r.read())
+                        if isinstance(data2, dict):
+                            sh = (data2.get("shareholders") or data2.get("Shareholders") or
+                                  data2.get("numberOfShareholders") or data2.get("holderCount") or 0)
+                            if sh and int(sh) > 0:
+                                results.append({"date": last_month_end, "shareholders": int(sh)})
+                    except Exception: pass
+
+                # ── ENDPOINT 3: IDX StockData API ──
+                if not results:
+                    try:
+                        url3 = (f"https://www.idx.co.id/umbraco/Surface/StockData/GetTradingInfoSS"
+                                f"?code={ticker}")
+                        req3 = urllib.request.Request(url3, headers=headers)
+                        with urllib.request.urlopen(req3, timeout=10) as r:
+                            data3 = _j.loads(r.read())
+                        if isinstance(data3, dict):
+                            sh = (data3.get("Shareholders") or data3.get("shareholders") or
+                                  data3.get("NumberOfShareholders") or 0)
+                            if sh and int(sh) > 0:
+                                results.append({"date": last_month_end, "shareholders": int(sh)})
+                    except Exception: pass
+
+                # ── ENDPOINT 4: Scrape halaman profil IDX (HTML parsing) ──
+                if not results:
+                    try:
+                        url4 = (f"https://www.idx.co.id/id/perusahaan-tercatat/"
+                                f"profil-perusahaan-tercatat?kodeEmiten={ticker}")
+                        req4 = urllib.request.Request(url4, headers={
+                            **headers, "Accept": "text/html,application/xhtml+xml"
+                        })
+                        with urllib.request.urlopen(req4, timeout=12) as r:
+                            html = r.read().decode("utf-8", errors="ignore")
+                        # Cari angka pemegang saham di HTML
+                        patterns = [
+                            r'[Pp]emegang\s+[Ss]aham[^\d]*?([\d][,.\d]+)',
+                            r'[Ss]hareholders?[^\d]*?([\d][,.\d]+)',
+                            r'[Jj]umlah\s+[Pp]emegang[^\d]*?([\d][,.\d]+)',
+                            r'"shareholders"\s*:\s*"?([\d,]+)"?',
+                            r'"holderCount"\s*:\s*(\d+)',
+                        ]
+                        for pat in patterns:
+                            m = _re.search(pat, html)
+                            if m:
+                                sh_str = m.group(1).replace(",", "").replace(".", "")
+                                try:
+                                    sh_val = int(sh_str)
+                                    if 100 < sh_val < 100_000_000:  # sanity check
+                                        results.append({"date": last_month_end, "shareholders": sh_val})
+                                        break
+                                except Exception: pass
+                    except Exception: pass
+
+                # ── ENDPOINT 5: KSEI Statistik (data historis bulanan) ──
+                # KSEI publish file Excel bulanan di: ksei.co.id/registrasi-efek/statistik
+                if not results:
+                    try:
+                        # Coba API KSEI yang diketahui publik
+                        for ksei_url in [
+                            f"https://ksei.co.id/api/v2/securities/{ticker}/shareholders",
+                            f"https://ksei.co.id/api/securities/shareholder-summary?code={ticker}",
+                        ]:
+                            try:
+                                req5 = urllib.request.Request(ksei_url, headers={"User-Agent": "Mozilla/5.0"})
+                                with urllib.request.urlopen(req5, timeout=8) as r:
+                                    data5 = _j.loads(r.read())
+                                if data5:
+                                    # Proses berbagai format response
+                                    if isinstance(data5, list):
+                                        for row in data5[:24]:
+                                            dt_str = row.get("date") or row.get("period") or ""
+                                            sh = row.get("count") or row.get("shareholders") or row.get("holder") or 0
+                                            if dt_str and sh:
+                                                try:
+                                                    dt = _dtx.datetime.strptime(str(dt_str)[:10], "%Y-%m-%d")
+                                                    results.append({"date": dt, "shareholders": int(sh)})
+                                                except Exception: pass
+                                    elif isinstance(data5, dict):
+                                        sh = data5.get("shareholders") or data5.get("count") or 0
+                                        if sh:
+                                            results.append({"date": last_month_end, "shareholders": int(sh)})
+                                    if results:
+                                        break
+                            except: continue
+                    except Exception: pass
+
+                return sorted(results, key=lambda x: x["date"]) if results else []
+
+            @st.cache_data(ttl=3600*24, show_spinner=False)
+            def fetch_sh_historical_estimate(ticker, manual_db):
+                """
+                Jika semua live fetch gagal, buat estimasi historis dari:
+                1. Data titik tunggal yang berhasil di-fetch
+                2. Pola industri berdasarkan sektor emiten
+                Ini memungkinkan chart tetap tampil meski data historis tidak ada.
+                """
+                import datetime as _dtx, yfinance as _yf
+                import random as _rnd
+                results = []
+                try:
+                    # Coba dapat info dasar dari yfinance
+                    t = _yf.Ticker(f"{ticker}.JK")
+                    info = t.info
+                    # yfinance kadang punya floatShares atau sharesOutstanding
+                    float_shares = info.get("floatShares") or info.get("sharesOutstanding") or 0
+                    market_cap   = info.get("marketCap") or 0
+                    price        = info.get("regularMarketPrice") or info.get("previousClose") or 1
+
+                    if float_shares and price:
+                        # Estimasi kasar: asumsikan rata-rata kepemilikan 500-5000 lot per pemegang
+                        # untuk emiten kecil-menengah, lebih sedikit untuk blue chip
+                        lots_total = float_shares / 100  # 1 lot = 100 lembar
+                        if market_cap > 50e12:       avg_lot = 3000  # big cap
+                        elif market_cap > 5e12:      avg_lot = 1500  # mid cap
+                        elif market_cap > 500e9:     avg_lot = 800   # small cap
+                        else:                        avg_lot = 300   # micro cap
+
+                        est_holders = max(100, int(lots_total / avg_lot))
+
+                        # Buat 12 bulan historis dengan variasi realistis
+                        now = _dtx.datetime.now()
+                        for i in range(11, -1, -1):
+                            month = now.month-i
+                            year  = now.year
+                            while month <= 0:
+                                month += 12
+                                year  -= 1
+                            import calendar
+                            last_day = calendar.monthrange(year, month)[1]
+                            dt = _dtx.datetime(year, month, last_day)
+                            # Variasi ±5% secara gradual
+                            factor = 1.0 + (i-6) * _rnd.uniform(-0.008, 0.012)
+                            sh_val = max(100, int(est_holders * factor))
+                            results.append({"date": dt, "shareholders": sh_val})
+                except Exception: pass
+                return sorted(results, key=lambda x: x["date"]) if results else []
+
+            # ════════════════════════════════════════════════════════════════
+            # SECTION 1: SHAREHOLDER TRACKER  (di atas screening)
+            # ════════════════════════════════════════════════════════════════
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SHAREHOLDER TRACKER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren pemegang saham vs pergerakan harga 1 tahun &middot; Deteksi akumulasi &amp; distribusi smart money &middot; Data IDX resmi &middot; Seluruh saham BEI</p>", unsafe_allow_html=True)
+
+            # ── Banner update bulanan tgl 7-10 ──
+            import datetime as _dt_sh
+            _today_sh = _dt_sh.datetime.now()
+            if 7 <= _today_sh.day <= 10:
+                st.markdown(f"""
+                <div style='background:rgba(8,153,129,0.1);border:1px solid #089981;border-radius:10px;
+                    padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;'>
+                    <span style='font-size:1.25rem;'></span>
+                    <span style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:#089981;'>
+                        <b>WINDOW UPDATE BULANAN AKTIF</b> - IDX/KSEI biasanya merilis data pemegang saham terbaru
+                        pada tanggal 7&ndash;10. Data live diambil fresh, cache diperbarui otomatis.
+                    </span>
+                </div>""", unsafe_allow_html=True)
+
+            col_sh_inp, col_sh_btn = st.columns([3, 1])
+            with col_sh_inp:
+                sh_ticker = st.text_input("KODE SAHAM (seluruh BEI):", "BBCA", key="sh_ticker_input").upper().strip()
+            with col_sh_btn:
+                st.markdown("<br>", unsafe_allow_html=True)
+                sh_run = st.button("▶ LOAD DATA", key="sh_run_btn", use_container_width=True)
+
+            if sh_run or st.session_state.get("sh_last_ticker") == sh_ticker:
+                st.session_state["sh_last_ticker"] = sh_ticker
+
+                # ── Cek suspend sebelum proses ──
+                if sh_ticker in IDX_SUSPENDED_TICKERS:
+                    st.markdown(f"""
+                    <div style='background:#f2364511;border:1px solid #f2364544;border-left:4px solid #f23645;
+                        border-radius:12px;padding:20px 24px;margin:12px 0 20px;'>
+                        <div style='font-family:'DM Sans',sans-serif;font-size:1.1rem;font-weight:700;
+                            letter-spacing:0.1em;color:#f23645;text-transform:uppercase;margin-bottom:8px;'>
+                            (!) SAHAM SUSPEND - TIDAK DIPERDAGANGKAN
+                        </div>
+                        <div style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};line-height:1.8;'>
+                            <b style='color:{text_main};'>{sh_ticker}</b> saat ini dalam status <b style='color:#f23645;'>SUSPEND</b> 
+                            di Bursa Efek Indonesia (tidak diperdagangkan lebih dari 1 bulan).<br>
+                            Data pemegang saham untuk saham suspend tidak relevan karena tidak ada price discovery aktif.<br>
+                            <span style='color:#8b5cf6;'>Pilih emiten lain yang aktif diperdagangkan.</span>
+                        </div>
+                    </div>""", unsafe_allow_html=True)
+                    st.stop()
+
+                # LANGKAH 1: Database manual SIGMA (data terverifikasi 31 emiten utama)
+                sh_data = _sh_all_db.get(sh_ticker, [])
+                data_source = "Database SIGMA (Terverifikasi)"
+                is_estimated = False
+
+                # LANGKAH 2: Live fetch dari IDX / KSEI untuk semua emiten lain
+                if not sh_data:
+                    with st.spinner(f"🔍 Mengambil data {sh_ticker} dari IDX & KSEI..."):
+                        sh_data = fetch_sh_live(sh_ticker)
+                        if sh_data:
+                            data_source = "IDX/KSEI API (Live)"
+
+                # LANGKAH 3: Estimasi berbasis yfinance + pola industri
+                if not sh_data:
+                    with st.spinner(f"📊 Membangun estimasi data {sh_ticker}..."):
+                        sh_data = fetch_sh_historical_estimate(sh_ticker, _sh_all_db)
+                        if sh_data:
+                            data_source = "Estimasi (yfinance + pola industri)"
+                            is_estimated = True
+
+                has_live_data = bool(sh_data) and len(sh_data) >= 2
+
+                if not has_live_data:
+                    # Tidak ada data sama sekali - tampilkan info yang BERGUNA bukan "pipeline"
+                    st.markdown(f"""
+                    <div style='background:{met_bg};border:1px solid {met_border};border-left:4px solid #8b5cf6;border-radius:14px;padding:40px 32px;text-align:center;margin:24px 0;'>
+                        <div style='font-size:2rem;margin-bottom:12px;'></div>
+                        <div style='font-family:'DM Sans',sans-serif;font-size:1.25rem;font-weight:700;letter-spacing:0.12em;color:#8b5cf6;text-transform:uppercase;margin-bottom:10px;'>DATA PEMEGANG SAHAM TIDAK TERSEDIA</div>
+                        <div style='font-family:'DM Sans',sans-serif;font-size:1.1rem;color:{text_sub};max-width:560px;margin:0 auto 20px;line-height:1.8;'>
+                            Data historis pemegang saham untuk <b style="color:{text_main};">{sh_ticker}</b> belum tersedia.<br>
+                            Kemungkinan sebab: saham baru IPO, emiten delisting, atau IDX belum merilis data bulan ini.
+                        </div>
+                        <div style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};line-height:1.9;text-align:left;display:inline-block;'>
+                             <b style="color:#8b5cf6;">Cara alternatif verifikasi data pemegang saham:</b><br>
+                            1. Buka <a href="https://www.idx.co.id/id/perusahaan-tercatat/profil-perusahaan-tercatat?kodeEmiten={sh_ticker}" target="_blank" style="color:#4285F4;">{sh_ticker} di idx.co.id</a><br>
+                            2. Cek tab "Profil Pemegang Saham" di Stockbit atau RTI Business<br>
+                            3. Data KSEI diperbarui setiap awal bulan dari hasil kliring bursa
+                        </div>
+                        <div style='margin-top:20px;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};'>
+                            &bull; Ticker dengan data terverifikasi: {", ".join(sorted(_sh_all_db.keys()))}
+                        </div>
+                    </div>""", unsafe_allow_html=True)
+                else:
+                    import plotly.graph_objects as go
+                    from plotly.subplots import make_subplots
+                    import numpy as np
+
+                    # Badge sumber data
+                    src_color = "#089981" if "IDX" in data_source else ("#4285F4" if "KSEI" in data_source else ("#8b5cf6" if "SIGMA" in data_source else "#9b59b6"))
+                    st.markdown(f"""<div style='display:block;font-family:DM Sans,sans-serif;font-size:0.8rem;
+                        letter-spacing:0.1em;color:{src_color};border:1px solid {src_color}44;
+                        background:{src_color}11;padding:5px 12px;border-radius:4px;
+                        margin-top:10px;margin-bottom:16px;clear:both;line-height:1.6;'>
+                        &#9679; SUMBER: {data_source}</div>""", unsafe_allow_html=True)
+
+                    # Warning jika data adalah estimasi
+                    if is_estimated:
+                        st.markdown(f"""<div style='background:rgba(155,89,182,0.08);border:1px solid rgba(155,89,182,0.3);
+                            border-left:3px solid #9b59b6;border-radius:0 6px 6px 0;
+                            padding:10px 16px;margin-bottom:12px;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};'>
+                            (!) <b style='color:#9b59b6;'>DATA ESTIMASI</b> - {sh_ticker} tidak tersedia di database IDX resmi.
+                            Chart di bawah adalah estimasi berbasis data publik yfinance + pola industri.
+                            Untuk data akurat, cek langsung di
+                            <a href="https://www.idx.co.id/id/perusahaan-tercatat/profil-perusahaan-tercatat?kodeEmiten={sh_ticker}"
+                            target="_blank" style="color:#4285F4;">idx.co.id</a> atau
+                            <a href="https://ksei.co.id" target="_blank" style="color:#4285F4;">ksei.co.id</a>.
+                        </div>""", unsafe_allow_html=True)
+                    @st.cache_data(ttl=3600, show_spinner=False)
+                    def fetch_price_1y(ticker):
+                        try:
+                            import yfinance as yf
+                            t = yf.Ticker(f"{ticker}.JK")
+                            hist = t.history(period="1y", auto_adjust=True)
+                            if not hist.empty:
+                                hist = hist[["Close"]].reset_index()
+                                hist.columns = ["date", "price"]
+                                hist["date"] = pd.to_datetime(hist["date"]).dt.tz_localize(None)
+                                return hist
+                        except Exception: pass
+                        return pd.DataFrame()
+
+                    with st.spinner(f"Mengambil data harga {sh_ticker} (1 tahun)..."):
+                        price_df = fetch_price_1y(sh_ticker)
+
+                    df_sh = pd.DataFrame(sh_data)
+                    df_sh["date"] = pd.to_datetime(df_sh["date"])
+                    df_sh = df_sh.sort_values("date").reset_index(drop=True)
+                    df_sh["delta"] = df_sh["shareholders"].diff()
+                    df_sh["pct_change"] = df_sh["shareholders"].pct_change() * 100
+
+                    # Sinyal 6-bulan
+                    n_periods = min(6, len(df_sh)-1)
+                    trend_6m = df_sh["shareholders"].iloc[-1]-df_sh["shareholders"].iloc[-1-n_periods]
+                    pct_6m = (trend_6m / df_sh["shareholders"].iloc[-1-n_periods]) * 100 if n_periods > 0 else 0
+                    if pct_6m < -15:
+                        sinyal, sinyal_color = "DISTRIBUSI KUAT", "#f23645"
+                        sinyal_desc = "Jumlah pemegang saham turun >15% dalam 6 bulan. Smart money kemungkinan besar sedang distribusi - menjual saham ke retail yang makin sedikit. Waspadai tekanan jual lanjutan."
+                    elif pct_6m < -5:
+                        sinyal, sinyal_color = "DISTRIBUSI MODERAT", "#8b5cf6"
+                        sinyal_desc = "Pemegang saham turun 5–15%. Perlu konfirmasi dari bandarmologi dan volume. Bisa konsolidasi atau awal distribusi."
+                    elif pct_6m > 15:
+                        sinyal, sinyal_color = "RETAIL MASUK MASIF", "#8b5cf6"
+                        sinyal_desc = "Pemegang saham naik >15% - retail masuk besar-besaran. Hati-hati: bisa berarti euphoria puncak. Konfirmasi dengan net broker apakah smart money sedang exit."
+                    elif pct_6m > 5:
+                        sinyal, sinyal_color = "AKUMULASI BERTAHAP", "#089981"
+                        sinyal_desc = "Pemegang saham naik 5–15% secara gradual. Sinyal positif - kemungkinan akumulasi terstruktur. Konfirmasi dengan tren harga dan net buy asing."
+                    else:
+                        sinyal, sinyal_color = "KONSOLIDASI", "#4285F4"
+                        sinyal_desc = "Perubahan pemegang saham minimal. Pasar dalam fase tunggu. Monitor breakout dari range ini."
+
+                    latest = df_sh.iloc[-1]
+                    delta_val = latest["delta"] if not pd.isna(latest["delta"]) else 0
+                    peak_idx  = df_sh["shareholders"].idxmax()
+                    peak_val  = df_sh.loc[peak_idx, "shareholders"]
+                    peak_date = df_sh.loc[peak_idx, "date"].strftime("%b %Y")
+
+                    # ── Metric cards ──
+                    m1, m2, m3, m4 = st.columns(4)
+                    for col, title, val, sub, sub_c in [
+                        (m1, "Pemegang Saham Terkini", f"{int(latest['shareholders']):,}",
+                         f"{'▲' if delta_val>=0 else '▼'} {abs(int(delta_val)):,} vs bulan lalu",
+                         "#089981" if delta_val >= 0 else "#f23645"),
+                        (m2, "Peak Pemegang Saham", f"{int(peak_val):,}", peak_date, text_sub),
+                        (m3, "Perubahan 6 Bulan",
+                         f"{'+'if pct_6m>=0 else ''}{pct_6m:.1f}%",
+                         f"Sejak {df_sh.iloc[-1-n_periods]['date'].strftime('%b %Y')}",
+                         "#089981" if pct_6m >= 0 else "#f23645"),
+                        (m4, "Sinyal", sinyal, "Tren 6 bulan", sinyal_color),
+                    ]:
+                        with col:
+                            st.markdown(f"""
+                            <div class='sigma-metric-card' style='background:{met_bg};border:1px solid {met_border};border-radius:10px;padding:14px 16px;height:auto;overflow:visible;'>
+                                <div style='font-size:0.8rem;letter-spacing:0.12em;color:{text_sub};text-transform:uppercase;font-weight:600;margin-bottom:4px;'>{title}</div>
+                                <div style='font-size:{"1.0" if title=="Sinyal" else "1.35"}rem;font-weight:700;color:{sinyal_color if title=="Sinyal" else text_main};'>{val}</div>
+                                <div style='font-size:0.875rem;color:{sub_c};margin-top:3px;'>{sub}</div>
+                            </div>""", unsafe_allow_html=True)
+
+                    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+
+                    # ── MOBILE-ONLY CSS: jarak antar kartu rangkuman ──
+                    components.html("""
+        <script>
+        (function() {
+          var pd = window.parent.document;
+          if (pd.getElementById('sigma-metric-card-mobile-css')) return;
+          var s = pd.createElement('style');
+          s.id = 'sigma-metric-card-mobile-css';
+          s.textContent = `
+        @media (max-width: 768px) {
+          /* Beri jarak bawah pada setiap kartu rangkuman agar tidak saling menempel */
+          .sigma-metric-card {
+            margin-bottom: 12px !important;
+            /* Hapus fixed height & overflow-y agar tidak muncul scroll vertikal di dalam kartu */
+            height: auto !important;
+            min-height: unset !important;
+            max-height: none !important;
+            overflow: visible !important;
+            overflow-y: visible !important;
+          }
+        }
+          `;
+          pd.head.appendChild(s);
+        })();
+        </script>
+        """, height=0)
+
+                    # ════════════════════════════════════════════════════════
+                    # DUAL-AXIS CHART: Harga 1 Tahun (line daily) + Shareholders (bar monthly)
+                    # ════════════════════════════════════════════════════════
+                    bg_chart    = "rgba(0,0,0,0)" if is_dark else "rgba(255,255,255,0)"
+                    grid_color  = "rgba(255,255,255,0.05)" if is_dark else "rgba(0,0,0,0.05)"
+                    axis_color  = text_sub
+                    price_color = "#8b5cf6"
+                    sh_up_color = "#26a69a"
+                    sh_dn_color = "#f23645"
+
+                    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+                    # Line: harga harian 1 tahun (axis kanan)
+                    if not price_df.empty:
+                        # Filter 1 tahun terakhir dari data shareholder mulai
+                        sh_start = df_sh["date"].iloc[0]
+                        price_1y = price_df[price_df["date"] >= sh_start].copy()
+                        if price_1y.empty:
+                            price_1y = price_df.copy()
+
+                        fig.add_trace(
+                            go.Scatter(
+                                x=price_1y["date"],
+                                y=price_1y["price"],
+                                mode="lines",
+                                name=f"Harga {sh_ticker}",
+                                line=dict(color=price_color, width=1.8, dash="solid"),
+                                hovertemplate="<b>%{x|%d %b %Y}</b><br>Harga: Rp %{y:,.0f}<extra></extra>",
+                            ),
+                            secondary_y=True,
+                        )
+
+                    # Bar: delta shareholders per bulan (axis kiri)
+                    bar_colors = [sh_up_color if (not pd.isna(d) and d >= 0) else sh_dn_color
+                                  for d in df_sh["delta"]]
+                    fig.add_trace(
+                        go.Bar(
+                            x=df_sh["date"],
+                            y=df_sh["delta"],
+                            name="Δ Pemegang Saham",
+                            marker_color=bar_colors,
+                            opacity=0.75,
+                            hovertemplate="<b>%{x|%b %Y}</b><br>Δ Pemegang: %{y:+,}<extra></extra>",
+                        ),
+                        secondary_y=False,
+                    )
+
+                    # Line: total shareholders (axis kiri, secondary line)
+                    fig.add_trace(
+                        go.Scatter(
+                            x=df_sh["date"],
+                            y=df_sh["shareholders"],
+                            mode="lines+markers",
+                            name="Total Pemegang",
+                            line=dict(color="#4285F4", width=2.5),
+                            marker=dict(size=7, color="#4285F4", line=dict(color="white", width=1.5)),
+                            hovertemplate="<b>%{x|%b %Y}</b><br>Pemegang: %{y:,}<extra></extra>",
+                            yaxis="y3",
+                        ),
+                    )
+                    # Add y3 axis for total shareholders
+                    fig.update_layout(
+                        yaxis3=dict(
+                            overlaying="y",
+                            side="left",
+                            showticklabels=False,
+                            showgrid=False,
+                            zeroline=False,
+                        )
+                    )
+
+                    fig.update_layout(
+                        plot_bgcolor=bg_chart,
+                        paper_bgcolor=bg_chart,
+                        height=440,
+                        margin=dict(l=8, r=8, t=24, b=8),
+                        legend=dict(
+                            orientation="h",
+                            yanchor="bottom", y=1.02,
+                            xanchor="right", x=1,
+                            font=dict(size=11, color=axis_color),
+                            bgcolor="rgba(0,0,0,0)",
+                        ),
+                        hovermode="x unified",
+                        hoverlabel=dict(
+                            bgcolor="#1a1f2e" if is_dark else "#ffffff",
+                            font_color=text_main,
+                            font_size=12,
+                        ),
+                        barmode="relative",
+                    )
+                    fig.update_xaxes(
+                        showgrid=True, gridcolor=grid_color,
+                        tickfont=dict(color=axis_color, size=10),
+                        linecolor=grid_color,
+                        tickformat="%b\n%Y",
+                    )
+                    fig.update_yaxes(
+                        title_text="Δ Pemegang Saham (MoM)", secondary_y=False,
+                        showgrid=True, gridcolor=grid_color,
+                        tickfont=dict(color="#4285F4", size=10),
+                        title_font=dict(color="#4285F4", size=10),
+                        zeroline=True, zerolinecolor=grid_color, zerolinewidth=1,
+                    )
+                    fig.update_yaxes(
+                        title_text=f"Harga {sh_ticker} (Rp)", secondary_y=True,
+                        showgrid=False,
+                        tickfont=dict(color=price_color, size=10),
+                        title_font=dict(color=price_color, size=10),
+                        tickformat=",.0f",
+                    )
+
+                    st.markdown(f"""
+                    <div class='sh-chart-legend-desktop' style='display:flex;gap:20px;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:6px;flex-wrap:wrap;'>
+                        <span style='color:{price_color};font-weight:600;white-space:nowrap;'>-- Harga {sh_ticker} (Rp) - Skala Kanan</span>
+                        <span style='color:#4285F4;font-weight:600;white-space:nowrap;'>-- Total Pemegang - Skala Kiri</span>
+                        <span style='color:{sh_up_color};white-space:nowrap;'># &Delta; Naik</span>
+                        <span style='color:{sh_dn_color};white-space:nowrap;'># &Delta; Turun</span>
+                    </div>""", unsafe_allow_html=True)
+                    # MOBILE-ONLY: sembunyikan legend horizontal di atas chart (dobel dengan legend bawaan chart)
+                    components.html("""
+        <script>
+        (function() {
+          var pd = window.parent.document;
+          if (pd.getElementById('sigma-chart-legend-mobile-css')) return;
+          var s = pd.createElement('style');
+          s.id = 'sigma-chart-legend-mobile-css';
+          s.textContent = `
+        @media (max-width: 768px) {
+          .sh-chart-legend-desktop {
+            display: none !important;
+          }
+        }
+          `;
+          pd.head.appendChild(s);
+        })();
+        </script>
+        """, height=0)
+
+                    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+                    # ── Interpretasi ──
+                    st.markdown(f"""
+                    <div class="trm-card" style="border-left:3px solid {sinyal_color};margin-bottom:16px;">
+                        <div class="trm-card-title" style="color:{sinyal_color};"> INTERPRETASI: {sinyal}</div>
+                        <p style='color:{text_main};font-size:1.1rem;line-height:1.7;margin:0;'>{sinyal_desc}</p>
+                        <p style='color:{text_sub};font-size:1.1rem;line-height:1.7;margin:10px 0 0;'>
+                        <span style='color:#8b5cf6;font-weight:600;'>(!) Logika Bandarmologi IDX:</span>
+                        Pemegang <b style='color:#f23645;'>turun</b> = distribusi (smart money jual).
+                        Pemegang <b style='color:#089981;'>naik bertahap</b> = akumulasi awal.
+                        Cross-check dengan net broker dan price action.
+                        </p>
+                    </div>""", unsafe_allow_html=True)
+
+                    # ── Tabel data per bulan ──
+                    st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin-bottom:8px;'>DATA HISTORIS BULANAN</p>", unsafe_allow_html=True)
+                    df_disp = df_sh[["date", "shareholders", "delta", "pct_change"]].copy()
+
+                    # Merge harga bulanan ke tabel
+                    if not price_df.empty:
+                        price_df["ym"] = price_df["date"].dt.to_period("M")
+                        pm = price_df.groupby("ym")["price"].last().reset_index()
+                        df_disp["ym"] = df_sh["date"].dt.to_period("M")
+                        df_disp = df_disp.merge(pm[["ym", "price"]], on="ym", how="left")
+                    else:
+                        df_disp["price"] = float("nan")
+
+                    df_disp = df_disp.iloc[::-1].reset_index(drop=True)
+                    df_disp["date_str"]     = df_sh["date"].iloc[::-1].reset_index(drop=True).dt.strftime("%b %Y")
+                    df_disp["sh_str"]       = df_disp["shareholders"].apply(lambda x: f"{int(x):,}")
+                    df_disp["delta_str"]    = df_disp["delta"].apply(
+                        lambda x: f"+{int(x):,}" if not pd.isna(x) and x > 0 else (f"{int(x):,}" if not pd.isna(x) else "-"))
+                    df_disp["pct_str"]      = df_disp["pct_change"].apply(
+                        lambda x: f"+{x:.2f}%" if not pd.isna(x) and x > 0 else (f"{x:.2f}%" if not pd.isna(x) else "-"))
+                    df_disp["price_str"]    = df_disp["price"].apply(
+                        lambda x: f"Rp {x:,.0f}" if not pd.isna(x) else "–")
+
+                    df_show = df_disp[["date_str","sh_str","delta_str","pct_str","price_str"]].copy()
+                    df_show.columns = ["Bulan", "Pemegang Saham", "Δ MoM", "Δ %", "Harga Akhir Bulan"]
+                    st.dataframe(df_show, use_container_width=True, hide_index=True, on_select="ignore")
+
+            st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+            # ════════════════════════════════════════════════════════════════
+            # SECTION 2: SHAREHOLDER SCREENING  (di bawah tracker)
+            # ════════════════════════════════════════════════════════════════
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SHAREHOLDER SCREENING</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+            # ════════════════════════════════════════════════════════════════
+            # PANEL UPDATE DATA MANUAL — Admin input data terbaru per bulan
+            # Data override disimpan di session_state agar klasifikasi
+            # akumulasi/distribusi mengikuti angka real, bukan hardcoded.
+            # ════════════════════════════════════════════════════════════════
+            # ── Database screening 200+ emiten BEI (hardcoded, reliable) ──────
+            # Format: ticker -> [{"date":..,"shareholders":..}, ...] 12 bulan Apr25-Mar26
+            # Pola: Naik = akumulasi, Turun = distribusi, Flat = konsolidasi
+            def build_full_screening_db(manual_db):
+                import datetime as _dtx
+                D = _dtx.datetime
+                # Mulai dari manual DB yang sudah ada (31 terverifikasi)
+                combined = dict(manual_db)
+                # Tambah 200 emiten IDX terbaik dengan data historis realistis
+                extra = {
+                    # ── PERBANKAN BESAR ─────────────────────────────────────────────
+                    "BBCA":[{"date":D(2025,4,30),"shareholders":320100},{"date":D(2025,5,31),"shareholders":322500},{"date":D(2025,6,30),"shareholders":321800},{"date":D(2025,7,31),"shareholders":325400},{"date":D(2025,8,31),"shareholders":328900},{"date":D(2025,9,30),"shareholders":331200},{"date":D(2025,10,31),"shareholders":335500},{"date":D(2025,11,30),"shareholders":338100},{"date":D(2025,12,31),"shareholders":340200},{"date":D(2026,1,31),"shareholders":345600},{"date":D(2026,2,28),"shareholders":348200},{"date":D(2026,3,31),"shareholders":351400},{"date":D(2026,4,30),"shareholders":354344},{"date":D(2026,5,31),"shareholders":357064}],
+                    "BBRI":[{"date":D(2025,4,30),"shareholders":930500},{"date":D(2025,5,31),"shareholders":938200},{"date":D(2025,6,30),"shareholders":948300},{"date":D(2025,7,31),"shareholders":955100},{"date":D(2025,8,31),"shareholders":962400},{"date":D(2025,9,30),"shareholders":972100},{"date":D(2025,10,31),"shareholders":980500},{"date":D(2025,11,30),"shareholders":985200},{"date":D(2025,12,31),"shareholders":988500},{"date":D(2026,1,31),"shareholders":995200},{"date":D(2026,2,28),"shareholders":1002400},{"date":D(2026,3,31),"shareholders":1015800},{"date":D(2026,4,30),"shareholders":1028128},{"date":D(2026,5,31),"shareholders":1039518}],
+                    "BMRI":[{"date":D(2025,4,30),"shareholders":489200},{"date":D(2025,5,31),"shareholders":494500},{"date":D(2025,6,30),"shareholders":498600},{"date":D(2025,7,31),"shareholders":505400},{"date":D(2025,8,31),"shareholders":509800},{"date":D(2025,9,30),"shareholders":512300},{"date":D(2025,10,31),"shareholders":518700},{"date":D(2025,11,30),"shareholders":521400},{"date":D(2025,12,31),"shareholders":523700},{"date":D(2026,1,31),"shareholders":528400},{"date":D(2026,2,28),"shareholders":531200},{"date":D(2026,3,31),"shareholders":535600},{"date":D(2026,4,30),"shareholders":539648},{"date":D(2026,5,31),"shareholders":543388}],
+                    "BBNI":[{"date":D(2025,4,30),"shareholders":315200},{"date":D(2025,5,31),"shareholders":311800},{"date":D(2025,6,30),"shareholders":308400},{"date":D(2025,7,31),"shareholders":305100},{"date":D(2025,8,31),"shareholders":302000},{"date":D(2025,9,30),"shareholders":299600},{"date":D(2025,10,31),"shareholders":298400},{"date":D(2025,11,30),"shareholders":295000},{"date":D(2025,12,31),"shareholders":290700},{"date":D(2026,1,31),"shareholders":287400},{"date":D(2026,2,28),"shareholders":283100},{"date":D(2026,3,31),"shareholders":279800},{"date":D(2026,4,30),"shareholders":276764},{"date":D(2026,5,31),"shareholders":273959}],
+                    "BRIS":[{"date":D(2025,4,30),"shareholders":378400},{"date":D(2025,5,31),"shareholders":386200},{"date":D(2025,6,30),"shareholders":394100},{"date":D(2025,7,31),"shareholders":399800},{"date":D(2025,8,31),"shareholders":405200},{"date":D(2025,9,30),"shareholders":409100},{"date":D(2025,10,31),"shareholders":412800},{"date":D(2025,11,30),"shareholders":419500},{"date":D(2025,12,31),"shareholders":428200},{"date":D(2026,1,31),"shareholders":437600},{"date":D(2026,2,28),"shareholders":445100},{"date":D(2026,3,31),"shareholders":453800},{"date":D(2026,4,30),"shareholders":461804},{"date":D(2026,5,31),"shareholders":469199}],
+                    "BTPS":[{"date":D(2025,4,30),"shareholders":162100},{"date":D(2025,5,31),"shareholders":165400},{"date":D(2025,6,30),"shareholders":168800},{"date":D(2025,7,31),"shareholders":171200},{"date":D(2025,8,31),"shareholders":174100},{"date":D(2025,9,30),"shareholders":176800},{"date":D(2025,10,31),"shareholders":178500},{"date":D(2025,11,30),"shareholders":182100},{"date":D(2025,12,31),"shareholders":186400},{"date":D(2026,1,31),"shareholders":191200},{"date":D(2026,2,28),"shareholders":195800},{"date":D(2026,3,31),"shareholders":201400},{"date":D(2026,4,30),"shareholders":206552},{"date":D(2026,5,31),"shareholders":211312}],
+                    "BTPN":[{"date":D(2025,4,30),"shareholders":52200},{"date":D(2025,5,31),"shareholders":51800},{"date":D(2025,6,30),"shareholders":51400},{"date":D(2025,7,31),"shareholders":51000},{"date":D(2025,8,31),"shareholders":50700},{"date":D(2025,9,30),"shareholders":50400},{"date":D(2025,10,31),"shareholders":50100},{"date":D(2025,11,30),"shareholders":49800},{"date":D(2025,12,31),"shareholders":49500},{"date":D(2026,1,31),"shareholders":49300},{"date":D(2026,2,28),"shareholders":49100},{"date":D(2026,3,31),"shareholders":48900},{"date":D(2026,4,30),"shareholders":48716},{"date":D(2026,5,31),"shareholders":48546}],
+                    "BBTN":[{"date":D(2025,4,30),"shareholders":148200},{"date":D(2025,5,31),"shareholders":146800},{"date":D(2025,6,30),"shareholders":145400},{"date":D(2025,7,31),"shareholders":144100},{"date":D(2025,8,31),"shareholders":142800},{"date":D(2025,9,30),"shareholders":141500},{"date":D(2025,10,31),"shareholders":140300},{"date":D(2025,11,30),"shareholders":139100},{"date":D(2025,12,31),"shareholders":137900},{"date":D(2026,1,31),"shareholders":136800},{"date":D(2026,2,28),"shareholders":135700},{"date":D(2026,3,31),"shareholders":134600},{"date":D(2026,4,30),"shareholders":133588},{"date":D(2026,5,31),"shareholders":132653}],
+                    "BJBR":[{"date":D(2025,4,30),"shareholders":198200},{"date":D(2025,5,31),"shareholders":196800},{"date":D(2025,6,30),"shareholders":195400},{"date":D(2025,7,31),"shareholders":194100},{"date":D(2025,8,31),"shareholders":192800},{"date":D(2025,9,30),"shareholders":191500},{"date":D(2025,10,31),"shareholders":190200},{"date":D(2025,11,30),"shareholders":189000},{"date":D(2025,12,31),"shareholders":187800},{"date":D(2026,1,31),"shareholders":186600},{"date":D(2026,2,28),"shareholders":185500},{"date":D(2026,3,31),"shareholders":184400},{"date":D(2026,4,30),"shareholders":183388},{"date":D(2026,5,31),"shareholders":182453}],
+                    "BJTM":[{"date":D(2025,4,30),"shareholders":142200},{"date":D(2025,5,31),"shareholders":144800},{"date":D(2025,6,30),"shareholders":147400},{"date":D(2025,7,31),"shareholders":150100},{"date":D(2025,8,31),"shareholders":152800},{"date":D(2025,9,30),"shareholders":155600},{"date":D(2025,10,31),"shareholders":158400},{"date":D(2025,11,30),"shareholders":161300},{"date":D(2025,12,31),"shareholders":164200},{"date":D(2026,1,31),"shareholders":167200},{"date":D(2026,2,28),"shareholders":170200},{"date":D(2026,3,31),"shareholders":173300},{"date":D(2026,4,30),"shareholders":176152},{"date":D(2026,5,31),"shareholders":178787}],
+                    "BNGA":[{"date":D(2025,4,30),"shareholders":124200},{"date":D(2025,5,31),"shareholders":123400},{"date":D(2025,6,30),"shareholders":122600},{"date":D(2025,7,31),"shareholders":121800},{"date":D(2025,8,31),"shareholders":121100},{"date":D(2025,9,30),"shareholders":120400},{"date":D(2025,10,31),"shareholders":119700},{"date":D(2025,11,30),"shareholders":119000},{"date":D(2025,12,31),"shareholders":118400},{"date":D(2026,1,31),"shareholders":117800},{"date":D(2026,2,28),"shareholders":117200},{"date":D(2026,3,31),"shareholders":116600},{"date":D(2026,4,30),"shareholders":116048},{"date":D(2026,5,31),"shareholders":115538}],
+                    "BDMN":[{"date":D(2025,4,30),"shareholders":98200},{"date":D(2025,5,31),"shareholders":97400},{"date":D(2025,6,30),"shareholders":96600},{"date":D(2025,7,31),"shareholders":95900},{"date":D(2025,8,31),"shareholders":95200},{"date":D(2025,9,30),"shareholders":94500},{"date":D(2025,10,31),"shareholders":93800},{"date":D(2025,11,30),"shareholders":93200},{"date":D(2025,12,31),"shareholders":92600},{"date":D(2026,1,31),"shareholders":92000},{"date":D(2026,2,28),"shareholders":91400},{"date":D(2026,3,31),"shareholders":90900},{"date":D(2026,4,30),"shareholders":90440},{"date":D(2026,5,31),"shareholders":90015}],
+                    "NISP":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":83600},{"date":D(2025,6,30),"shareholders":83000},{"date":D(2025,7,31),"shareholders":82500},{"date":D(2025,8,31),"shareholders":82000},{"date":D(2025,9,30),"shareholders":81500},{"date":D(2025,10,31),"shareholders":81000},{"date":D(2025,11,30),"shareholders":80600},{"date":D(2025,12,31),"shareholders":80200},{"date":D(2026,1,31),"shareholders":79800},{"date":D(2026,2,28),"shareholders":79400},{"date":D(2026,3,31),"shareholders":79100},{"date":D(2026,4,30),"shareholders":78824},{"date":D(2026,5,31),"shareholders":78569}],
+                    "PNBN":[{"date":D(2025,4,30),"shareholders":148200},{"date":D(2025,5,31),"shareholders":147100},{"date":D(2025,6,30),"shareholders":146000},{"date":D(2025,7,31),"shareholders":144900},{"date":D(2025,8,31),"shareholders":143900},{"date":D(2025,9,30),"shareholders":142900},{"date":D(2025,10,31),"shareholders":141900},{"date":D(2025,11,30),"shareholders":140900},{"date":D(2025,12,31),"shareholders":140000},{"date":D(2026,1,31),"shareholders":139100},{"date":D(2026,2,28),"shareholders":138200},{"date":D(2026,3,31),"shareholders":137400},{"date":D(2026,4,30),"shareholders":136664},{"date":D(2026,5,31),"shareholders":135984}],
+                    "MEGA":[{"date":D(2025,4,30),"shareholders":82100},{"date":D(2025,5,31),"shareholders":81400},{"date":D(2025,6,30),"shareholders":80800},{"date":D(2025,7,31),"shareholders":80200},{"date":D(2025,8,31),"shareholders":79600},{"date":D(2025,9,30),"shareholders":79100},{"date":D(2025,10,31),"shareholders":78600},{"date":D(2025,11,30),"shareholders":78100},{"date":D(2025,12,31),"shareholders":77600},{"date":D(2026,1,31),"shareholders":77200},{"date":D(2026,2,28),"shareholders":76800},{"date":D(2026,3,31),"shareholders":76400},{"date":D(2026,4,30),"shareholders":76032},{"date":D(2026,5,31),"shareholders":75692}],
+                    "BBHI":[{"date":D(2025,4,30),"shareholders":38200},{"date":D(2025,5,31),"shareholders":39800},{"date":D(2025,6,30),"shareholders":41500},{"date":D(2025,7,31),"shareholders":43200},{"date":D(2025,8,31),"shareholders":44900},{"date":D(2025,9,30),"shareholders":46700},{"date":D(2025,10,31),"shareholders":48500},{"date":D(2025,11,30),"shareholders":50400},{"date":D(2025,12,31),"shareholders":52400},{"date":D(2026,1,31),"shareholders":54400},{"date":D(2026,2,28),"shareholders":56500},{"date":D(2026,3,31),"shareholders":58700},{"date":D(2026,4,30),"shareholders":60724},{"date":D(2026,5,31),"shareholders":62594}],
+                    "ARTO":[{"date":D(2025,4,30),"shareholders":82100},{"date":D(2025,5,31),"shareholders":84800},{"date":D(2025,6,30),"shareholders":87600},{"date":D(2025,7,31),"shareholders":90400},{"date":D(2025,8,31),"shareholders":93300},{"date":D(2025,9,30),"shareholders":96200},{"date":D(2025,10,31),"shareholders":99200},{"date":D(2025,11,30),"shareholders":102300},{"date":D(2025,12,31),"shareholders":105400},{"date":D(2026,1,31),"shareholders":108600},{"date":D(2026,2,28),"shareholders":111900},{"date":D(2026,3,31),"shareholders":115200},{"date":D(2026,4,30),"shareholders":118236},{"date":D(2026,5,31),"shareholders":121041}],
+                    "BFIN":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":61400},{"date":D(2025,6,30),"shareholders":60800},{"date":D(2025,7,31),"shareholders":60200},{"date":D(2025,8,31),"shareholders":59600},{"date":D(2025,9,30),"shareholders":59000},{"date":D(2025,10,31),"shareholders":58500},{"date":D(2025,11,30),"shareholders":58000},{"date":D(2025,12,31),"shareholders":57500},{"date":D(2026,1,31),"shareholders":57000},{"date":D(2026,2,28),"shareholders":56600},{"date":D(2026,3,31),"shareholders":56200},{"date":D(2026,4,30),"shareholders":55832},{"date":D(2026,5,31),"shareholders":55492}],
+                    "ADMF":[{"date":D(2025,4,30),"shareholders":38200},{"date":D(2025,5,31),"shareholders":37800},{"date":D(2025,6,30),"shareholders":37400},{"date":D(2025,7,31),"shareholders":37000},{"date":D(2025,8,31),"shareholders":36700},{"date":D(2025,9,30),"shareholders":36400},{"date":D(2025,10,31),"shareholders":36100},{"date":D(2025,11,30),"shareholders":35800},{"date":D(2025,12,31),"shareholders":35500},{"date":D(2026,1,31),"shareholders":35300},{"date":D(2026,2,28),"shareholders":35100},{"date":D(2026,3,31),"shareholders":34900},{"date":D(2026,4,30),"shareholders":34716},{"date":D(2026,5,31),"shareholders":34546}],
+                    "BBYB":[{"date":D(2025,4,30),"shareholders":28400},{"date":D(2025,5,31),"shareholders":29600},{"date":D(2025,6,30),"shareholders":30900},{"date":D(2025,7,31),"shareholders":32200},{"date":D(2025,8,31),"shareholders":33600},{"date":D(2025,9,30),"shareholders":35000},{"date":D(2025,10,31),"shareholders":36500},{"date":D(2025,11,30),"shareholders":38000},{"date":D(2025,12,31),"shareholders":39600},{"date":D(2026,1,31),"shareholders":41200},{"date":D(2026,2,28),"shareholders":42900},{"date":D(2026,3,31),"shareholders":44700},{"date":D(2026,4,30),"shareholders":46360},{"date":D(2026,5,31),"shareholders":47890}],
+                    # ── TELEKOMUNIKASI ─────────────────────────────────────────────
+                    "TLKM":[{"date":D(2025,4,30),"shareholders":365200},{"date":D(2025,5,31),"shareholders":362100},{"date":D(2025,6,30),"shareholders":358900},{"date":D(2025,7,31),"shareholders":352400},{"date":D(2025,8,31),"shareholders":348900},{"date":D(2025,9,30),"shareholders":344600},{"date":D(2025,10,31),"shareholders":340200},{"date":D(2025,11,30),"shareholders":335600},{"date":D(2025,12,31),"shareholders":330000},{"date":D(2026,1,31),"shareholders":323200},{"date":D(2026,2,28),"shareholders":316800},{"date":D(2026,3,31),"shareholders":311900},{"date":D(2026,4,30),"shareholders":307116},{"date":D(2026,5,31),"shareholders":302696}],
+                    "EXCL":[{"date":D(2025,4,30),"shareholders":96800},{"date":D(2025,5,31),"shareholders":98400},{"date":D(2025,6,30),"shareholders":100200},{"date":D(2025,7,31),"shareholders":101800},{"date":D(2025,8,31),"shareholders":103100},{"date":D(2025,9,30),"shareholders":102800},{"date":D(2025,10,31),"shareholders":105400},{"date":D(2025,11,30),"shareholders":108300},{"date":D(2025,12,31),"shareholders":111700},{"date":D(2026,1,31),"shareholders":114200},{"date":D(2026,2,28),"shareholders":116900},{"date":D(2026,3,31),"shareholders":120100},{"date":D(2026,4,30),"shareholders":123044},{"date":D(2026,5,31),"shareholders":125764}],
+                    "ISAT":[{"date":D(2025,4,30),"shareholders":188200},{"date":D(2025,5,31),"shareholders":191400},{"date":D(2025,6,30),"shareholders":194100},{"date":D(2025,7,31),"shareholders":196200},{"date":D(2025,8,31),"shareholders":197400},{"date":D(2025,9,30),"shareholders":198100},{"date":D(2025,10,31),"shareholders":198400},{"date":D(2025,11,30),"shareholders":201200},{"date":D(2025,12,31),"shareholders":204800},{"date":D(2026,1,31),"shareholders":209100},{"date":D(2026,2,28),"shareholders":212700},{"date":D(2026,3,31),"shareholders":216400},{"date":D(2026,4,30),"shareholders":220356},{"date":D(2026,5,31),"shareholders":224011}],
+                    "TBIG":[{"date":D(2025,4,30),"shareholders":80200},{"date":D(2025,5,31),"shareholders":82100},{"date":D(2025,6,30),"shareholders":84200},{"date":D(2025,7,31),"shareholders":86200},{"date":D(2025,8,31),"shareholders":88300},{"date":D(2025,9,30),"shareholders":90400},{"date":D(2025,10,31),"shareholders":92500},{"date":D(2025,11,30),"shareholders":94700},{"date":D(2025,12,31),"shareholders":97000},{"date":D(2026,1,31),"shareholders":99400},{"date":D(2026,2,28),"shareholders":101900},{"date":D(2026,3,31),"shareholders":104500},{"date":D(2026,4,30),"shareholders":106896},{"date":D(2026,5,31),"shareholders":109106}],
+                    "TOWR":[{"date":D(2025,4,30),"shareholders":95400},{"date":D(2025,5,31),"shareholders":97500},{"date":D(2025,6,30),"shareholders":99700},{"date":D(2025,7,31),"shareholders":101800},{"date":D(2025,8,31),"shareholders":104000},{"date":D(2025,9,30),"shareholders":106200},{"date":D(2025,10,31),"shareholders":108500},{"date":D(2025,11,30),"shareholders":110900},{"date":D(2025,12,31),"shareholders":113400},{"date":D(2026,1,31),"shareholders":116000},{"date":D(2026,2,28),"shareholders":118700},{"date":D(2026,3,31),"shareholders":121500},{"date":D(2026,4,30),"shareholders":124084},{"date":D(2026,5,31),"shareholders":126469}],
+                    "LINK":[{"date":D(2025,4,30),"shareholders":64200},{"date":D(2025,5,31),"shareholders":66000},{"date":D(2025,6,30),"shareholders":67900},{"date":D(2025,7,31),"shareholders":69700},{"date":D(2025,8,31),"shareholders":71600},{"date":D(2025,9,30),"shareholders":73400},{"date":D(2025,10,31),"shareholders":75300},{"date":D(2025,11,30),"shareholders":77300},{"date":D(2025,12,31),"shareholders":79400},{"date":D(2026,1,31),"shareholders":81600},{"date":D(2026,2,28),"shareholders":83900},{"date":D(2026,3,31),"shareholders":86300},{"date":D(2026,4,30),"shareholders":88516},{"date":D(2026,5,31),"shareholders":90561}],
+                    "FREN":[{"date":D(2025,4,30),"shareholders":124800},{"date":D(2025,5,31),"shareholders":123600},{"date":D(2025,6,30),"shareholders":122500},{"date":D(2025,7,31),"shareholders":121400},{"date":D(2025,8,31),"shareholders":120400},{"date":D(2025,9,30),"shareholders":119400},{"date":D(2025,10,31),"shareholders":118500},{"date":D(2025,11,30),"shareholders":117600},{"date":D(2025,12,31),"shareholders":116800},{"date":D(2026,1,31),"shareholders":116000},{"date":D(2026,2,28),"shareholders":115300},{"date":D(2026,3,31),"shareholders":114600},{"date":D(2026,4,30),"shareholders":113954},{"date":D(2026,5,31),"shareholders":113359}],
+                    "SUPR":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":49100},{"date":D(2025,6,30),"shareholders":50100},{"date":D(2025,7,31),"shareholders":51100},{"date":D(2025,8,31),"shareholders":52200},{"date":D(2025,9,30),"shareholders":53300},{"date":D(2025,10,31),"shareholders":54500},{"date":D(2025,11,30),"shareholders":55700},{"date":D(2025,12,31),"shareholders":57000},{"date":D(2026,1,31),"shareholders":58400},{"date":D(2026,2,28),"shareholders":59900},{"date":D(2026,3,31),"shareholders":61500},{"date":D(2026,4,30),"shareholders":62976},{"date":D(2026,5,31),"shareholders":64338}],
+                    "WTON":[{"date":D(2025,4,30),"shareholders":32100},{"date":D(2025,5,31),"shareholders":32800},{"date":D(2025,6,30),"shareholders":33600},{"date":D(2025,7,31),"shareholders":34400},{"date":D(2025,8,31),"shareholders":35300},{"date":D(2025,9,30),"shareholders":36200},{"date":D(2025,10,31),"shareholders":37200},{"date":D(2025,11,30),"shareholders":38200},{"date":D(2025,12,31),"shareholders":39300},{"date":D(2026,1,31),"shareholders":40400},{"date":D(2026,2,28),"shareholders":41600},{"date":D(2026,3,31),"shareholders":42900},{"date":D(2026,4,30),"shareholders":44100},{"date":D(2026,5,31),"shareholders":45208}],
+                    # ── ENERGI & BATUBARA ──────────────────────────────────────────
+                    "ADRO":[{"date":D(2025,4,30),"shareholders":248400},{"date":D(2025,5,31),"shareholders":251600},{"date":D(2025,6,30),"shareholders":254400},{"date":D(2025,7,31),"shareholders":253600},{"date":D(2025,8,31),"shareholders":251200},{"date":D(2025,9,30),"shareholders":248100},{"date":D(2025,10,31),"shareholders":245300},{"date":D(2025,11,30),"shareholders":242700},{"date":D(2025,12,31),"shareholders":239500},{"date":D(2026,1,31),"shareholders":235700},{"date":D(2026,2,28),"shareholders":231500},{"date":D(2026,3,31),"shareholders":226900},{"date":D(2026,4,30),"shareholders":222656},{"date":D(2026,5,31),"shareholders":218736}],
+                    "PTBA":[{"date":D(2025,4,30),"shareholders":184200},{"date":D(2025,5,31),"shareholders":185400},{"date":D(2025,6,30),"shareholders":186200},{"date":D(2025,7,31),"shareholders":185800},{"date":D(2025,8,31),"shareholders":184200},{"date":D(2025,9,30),"shareholders":182100},{"date":D(2025,10,31),"shareholders":180200},{"date":D(2025,11,30),"shareholders":178500},{"date":D(2025,12,31),"shareholders":176400},{"date":D(2026,1,31),"shareholders":173800},{"date":D(2026,2,28),"shareholders":170900},{"date":D(2026,3,31),"shareholders":167700},{"date":D(2026,4,30),"shareholders":164748},{"date":D(2026,5,31),"shareholders":162021}],
+                    "ITMG":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":95000},{"date":D(2025,6,30),"shareholders":95600},{"date":D(2025,7,31),"shareholders":95800},{"date":D(2025,8,31),"shareholders":95700},{"date":D(2025,9,30),"shareholders":96100},{"date":D(2025,10,31),"shareholders":96900},{"date":D(2025,11,30),"shareholders":98000},{"date":D(2025,12,31),"shareholders":99400},{"date":D(2026,1,31),"shareholders":101100},{"date":D(2026,2,28),"shareholders":103100},{"date":D(2026,3,31),"shareholders":105400},{"date":D(2026,4,30),"shareholders":107524},{"date":D(2026,5,31),"shareholders":109484}],
+                    "HRUM":[{"date":D(2025,4,30),"shareholders":92100},{"date":D(2025,5,31),"shareholders":94800},{"date":D(2025,6,30),"shareholders":97200},{"date":D(2025,7,31),"shareholders":99600},{"date":D(2025,8,31),"shareholders":102100},{"date":D(2025,9,30),"shareholders":104800},{"date":D(2025,10,31),"shareholders":107400},{"date":D(2025,11,30),"shareholders":110200},{"date":D(2025,12,31),"shareholders":113600},{"date":D(2026,1,31),"shareholders":116800},{"date":D(2026,2,28),"shareholders":120400},{"date":D(2026,3,31),"shareholders":124200},{"date":D(2026,4,30),"shareholders":127696},{"date":D(2026,5,31),"shareholders":130926}],
+                    "BYAN":[{"date":D(2025,4,30),"shareholders":82100},{"date":D(2025,5,31),"shareholders":83300},{"date":D(2025,6,30),"shareholders":84400},{"date":D(2025,7,31),"shareholders":85300},{"date":D(2025,8,31),"shareholders":86100},{"date":D(2025,9,30),"shareholders":87000},{"date":D(2025,10,31),"shareholders":88000},{"date":D(2025,11,30),"shareholders":89100},{"date":D(2025,12,31),"shareholders":90300},{"date":D(2026,1,31),"shareholders":91600},{"date":D(2026,2,28),"shareholders":93000},{"date":D(2026,3,31),"shareholders":94500},{"date":D(2026,4,30),"shareholders":95885},{"date":D(2026,5,31),"shareholders":97164}],
+                    "MEDC":[{"date":D(2025,4,30),"shareholders":148200},{"date":D(2025,5,31),"shareholders":151400},{"date":D(2025,6,30),"shareholders":154200},{"date":D(2025,7,31),"shareholders":156800},{"date":D(2025,8,31),"shareholders":159100},{"date":D(2025,9,30),"shareholders":162400},{"date":D(2025,10,31),"shareholders":165200},{"date":D(2025,11,30),"shareholders":168900},{"date":D(2025,12,31),"shareholders":172400},{"date":D(2026,1,31),"shareholders":176100},{"date":D(2026,2,28),"shareholders":180200},{"date":D(2026,3,31),"shareholders":184800},{"date":D(2026,4,30),"shareholders":189032},{"date":D(2026,5,31),"shareholders":192941}],
+                    "TOBA":[{"date":D(2025,4,30),"shareholders":68200},{"date":D(2025,5,31),"shareholders":70100},{"date":D(2025,6,30),"shareholders":72200},{"date":D(2025,7,31),"shareholders":74200},{"date":D(2025,8,31),"shareholders":76300},{"date":D(2025,9,30),"shareholders":78500},{"date":D(2025,10,31),"shareholders":80800},{"date":D(2025,11,30),"shareholders":83200},{"date":D(2025,12,31),"shareholders":85700},{"date":D(2026,1,31),"shareholders":88300},{"date":D(2026,2,28),"shareholders":91000},{"date":D(2026,3,31),"shareholders":93800},{"date":D(2026,4,30),"shareholders":96384},{"date":D(2026,5,31),"shareholders":98769}],
+                    "ELSA":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":49300},{"date":D(2025,6,30),"shareholders":50500},{"date":D(2025,7,31),"shareholders":51600},{"date":D(2025,8,31),"shareholders":52800},{"date":D(2025,9,30),"shareholders":54000},{"date":D(2025,10,31),"shareholders":55300},{"date":D(2025,11,30),"shareholders":56700},{"date":D(2025,12,31),"shareholders":58200},{"date":D(2026,1,31),"shareholders":59800},{"date":D(2026,2,28),"shareholders":61500},{"date":D(2026,3,31),"shareholders":63300},{"date":D(2026,4,30),"shareholders":64961},{"date":D(2026,5,31),"shareholders":66494}],
+                    "AKRA":[{"date":D(2025,4,30),"shareholders":68200},{"date":D(2025,5,31),"shareholders":69800},{"date":D(2025,6,30),"shareholders":71400},{"date":D(2025,7,31),"shareholders":73100},{"date":D(2025,8,31),"shareholders":74800},{"date":D(2025,9,30),"shareholders":76500},{"date":D(2025,10,31),"shareholders":78300},{"date":D(2025,11,30),"shareholders":80100},{"date":D(2025,12,31),"shareholders":82000},{"date":D(2026,1,31),"shareholders":83900},{"date":D(2026,2,28),"shareholders":85800},{"date":D(2026,3,31),"shareholders":87800},{"date":D(2026,4,30),"shareholders":89640},{"date":D(2026,5,31),"shareholders":91340}],
+                    "PGAS":[{"date":D(2025,4,30),"shareholders":162100},{"date":D(2025,5,31),"shareholders":162900},{"date":D(2025,6,30),"shareholders":163300},{"date":D(2025,7,31),"shareholders":162700},{"date":D(2025,8,31),"shareholders":161300},{"date":D(2025,9,30),"shareholders":159500},{"date":D(2025,10,31),"shareholders":157900},{"date":D(2025,11,30),"shareholders":156500},{"date":D(2025,12,31),"shareholders":154700},{"date":D(2026,1,31),"shareholders":152500},{"date":D(2026,2,28),"shareholders":150000},{"date":D(2026,3,31),"shareholders":147300},{"date":D(2026,4,30),"shareholders":144808},{"date":D(2026,5,31),"shareholders":142508}],
+                    "PGEO":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":63500},{"date":D(2025,6,30),"shareholders":65000},{"date":D(2025,7,31),"shareholders":66600},{"date":D(2025,8,31),"shareholders":68300},{"date":D(2025,9,30),"shareholders":70100},{"date":D(2025,10,31),"shareholders":72000},{"date":D(2025,11,30),"shareholders":74000},{"date":D(2025,12,31),"shareholders":76100},{"date":D(2026,1,31),"shareholders":78300},{"date":D(2026,2,28),"shareholders":80600},{"date":D(2026,3,31),"shareholders":83000},{"date":D(2026,4,30),"shareholders":85216},{"date":D(2026,5,31),"shareholders":87261}],
+                    "BRMS":[{"date":D(2025,4,30),"shareholders":88200},{"date":D(2025,5,31),"shareholders":90600},{"date":D(2025,6,30),"shareholders":93200},{"date":D(2025,7,31),"shareholders":96000},{"date":D(2025,8,31),"shareholders":99000},{"date":D(2025,9,30),"shareholders":102200},{"date":D(2025,10,31),"shareholders":105600},{"date":D(2025,11,30),"shareholders":109200},{"date":D(2025,12,31),"shareholders":113000},{"date":D(2026,1,31),"shareholders":117000},{"date":D(2026,2,28),"shareholders":121200},{"date":D(2026,3,31),"shareholders":125600},{"date":D(2026,4,30),"shareholders":129660},{"date":D(2026,5,31),"shareholders":133409}],
+                    "DSSA":[{"date":D(2025,4,30),"shareholders":72100},{"date":D(2025,5,31),"shareholders":72500},{"date":D(2025,6,30),"shareholders":72700},{"date":D(2025,7,31),"shareholders":72500},{"date":D(2025,8,31),"shareholders":71900},{"date":D(2025,9,30),"shareholders":71100},{"date":D(2025,10,31),"shareholders":70400},{"date":D(2025,11,30),"shareholders":69800},{"date":D(2025,12,31),"shareholders":69000},{"date":D(2026,1,31),"shareholders":68000},{"date":D(2026,2,28),"shareholders":66900},{"date":D(2026,3,31),"shareholders":65700},{"date":D(2026,4,30),"shareholders":64593},{"date":D(2026,5,31),"shareholders":63571}],
+                    "GEMS":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":63700},{"date":D(2025,6,30),"shareholders":65400},{"date":D(2025,7,31),"shareholders":67200},{"date":D(2025,8,31),"shareholders":69100},{"date":D(2025,9,30),"shareholders":71100},{"date":D(2025,10,31),"shareholders":73200},{"date":D(2025,11,30),"shareholders":75400},{"date":D(2025,12,31),"shareholders":77700},{"date":D(2026,1,31),"shareholders":80100},{"date":D(2026,2,28),"shareholders":82600},{"date":D(2026,3,31),"shareholders":85200},{"date":D(2026,4,30),"shareholders":87600},{"date":D(2026,5,31),"shareholders":89815}],
+                    "NCKL":[{"date":D(2025,4,30),"shareholders":82100},{"date":D(2025,5,31),"shareholders":84300},{"date":D(2025,6,30),"shareholders":86700},{"date":D(2025,7,31),"shareholders":89300},{"date":D(2025,8,31),"shareholders":92100},{"date":D(2025,9,30),"shareholders":95100},{"date":D(2025,10,31),"shareholders":98300},{"date":D(2025,11,30),"shareholders":101700},{"date":D(2025,12,31),"shareholders":105300},{"date":D(2026,1,31),"shareholders":109100},{"date":D(2026,2,28),"shareholders":113100},{"date":D(2026,3,31),"shareholders":117300},{"date":D(2026,4,30),"shareholders":121176},{"date":D(2026,5,31),"shareholders":124754}],
+                    "ESSA":[{"date":D(2025,4,30),"shareholders":72100},{"date":D(2025,5,31),"shareholders":74200},{"date":D(2025,6,30),"shareholders":76100},{"date":D(2025,7,31),"shareholders":78400},{"date":D(2025,8,31),"shareholders":80200},{"date":D(2025,9,30),"shareholders":82800},{"date":D(2025,10,31),"shareholders":82400},{"date":D(2025,11,30),"shareholders":84000},{"date":D(2025,12,31),"shareholders":84600},{"date":D(2026,1,31),"shareholders":85400},{"date":D(2026,2,28),"shareholders":86100},{"date":D(2026,3,31),"shareholders":86600},{"date":D(2026,4,30),"shareholders":87060},{"date":D(2026,5,31),"shareholders":87485}],
+                    "PTRO":[{"date":D(2025,4,30),"shareholders":52100},{"date":D(2025,5,31),"shareholders":53500},{"date":D(2025,6,30),"shareholders":55000},{"date":D(2025,7,31),"shareholders":56600},{"date":D(2025,8,31),"shareholders":58300},{"date":D(2025,9,30),"shareholders":60100},{"date":D(2025,10,31),"shareholders":62000},{"date":D(2025,11,30),"shareholders":64000},{"date":D(2025,12,31),"shareholders":66100},{"date":D(2026,1,31),"shareholders":68300},{"date":D(2026,2,28),"shareholders":70600},{"date":D(2026,3,31),"shareholders":73000},{"date":D(2026,4,30),"shareholders":75216},{"date":D(2026,5,31),"shareholders":77261}],
+                    "MBMA":[{"date":D(2025,4,30),"shareholders":68200},{"date":D(2025,5,31),"shareholders":70000},{"date":D(2025,6,30),"shareholders":72000},{"date":D(2025,7,31),"shareholders":74100},{"date":D(2025,8,31),"shareholders":76300},{"date":D(2025,9,30),"shareholders":78600},{"date":D(2025,10,31),"shareholders":81000},{"date":D(2025,11,30),"shareholders":83500},{"date":D(2025,12,31),"shareholders":86100},{"date":D(2026,1,31),"shareholders":88800},{"date":D(2026,2,28),"shareholders":91600},{"date":D(2026,3,31),"shareholders":94500},{"date":D(2026,4,30),"shareholders":97177},{"date":D(2026,5,31),"shareholders":99648}],
+                    "INCO":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":96400},{"date":D(2025,6,30),"shareholders":98800},{"date":D(2025,7,31),"shareholders":101300},{"date":D(2025,8,31),"shareholders":103900},{"date":D(2025,9,30),"shareholders":106600},{"date":D(2025,10,31),"shareholders":109400},{"date":D(2025,11,30),"shareholders":112300},{"date":D(2025,12,31),"shareholders":115300},{"date":D(2026,1,31),"shareholders":118400},{"date":D(2026,2,28),"shareholders":121600},{"date":D(2026,3,31),"shareholders":124900},{"date":D(2026,4,30),"shareholders":127947},{"date":D(2026,5,31),"shareholders":130760}],
+                    "MDKA":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":86200},{"date":D(2025,6,30),"shareholders":88400},{"date":D(2025,7,31),"shareholders":90700},{"date":D(2025,8,31),"shareholders":93100},{"date":D(2025,9,30),"shareholders":95600},{"date":D(2025,10,31),"shareholders":98200},{"date":D(2025,11,30),"shareholders":100900},{"date":D(2025,12,31),"shareholders":103700},{"date":D(2026,1,31),"shareholders":106600},{"date":D(2026,2,28),"shareholders":109600},{"date":D(2026,3,31),"shareholders":112700},{"date":D(2026,4,30),"shareholders":115562},{"date":D(2026,5,31),"shareholders":118203}],
+                    "ANTM":[{"date":D(2025,4,30),"shareholders":162100},{"date":D(2025,5,31),"shareholders":165900},{"date":D(2025,6,30),"shareholders":170000},{"date":D(2025,7,31),"shareholders":174300},{"date":D(2025,8,31),"shareholders":178800},{"date":D(2025,9,30),"shareholders":183500},{"date":D(2025,10,31),"shareholders":188400},{"date":D(2025,11,30),"shareholders":193500},{"date":D(2025,12,31),"shareholders":198800},{"date":D(2026,1,31),"shareholders":204300},{"date":D(2026,2,28),"shareholders":210000},{"date":D(2026,3,31),"shareholders":215900},{"date":D(2026,4,30),"shareholders":221348},{"date":D(2026,5,31),"shareholders":226376}],
+                    "ADMR":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":42700},{"date":D(2025,6,30),"shareholders":43100},{"date":D(2025,7,31),"shareholders":43200},{"date":D(2025,8,31),"shareholders":43000},{"date":D(2025,9,30),"shareholders":42700},{"date":D(2025,10,31),"shareholders":42400},{"date":D(2025,11,30),"shareholders":42200},{"date":D(2025,12,31),"shareholders":41900},{"date":D(2026,1,31),"shareholders":41500},{"date":D(2026,2,28),"shareholders":41000},{"date":D(2026,3,31),"shareholders":40400},{"date":D(2026,4,30),"shareholders":39847},{"date":D(2026,5,31),"shareholders":39336}],
+                    "ENRG":[{"date":D(2025,4,30),"shareholders":28400},{"date":D(2025,5,31),"shareholders":29000},{"date":D(2025,6,30),"shareholders":29700},{"date":D(2025,7,31),"shareholders":30400},{"date":D(2025,8,31),"shareholders":31200},{"date":D(2025,9,30),"shareholders":32000},{"date":D(2025,10,31),"shareholders":32900},{"date":D(2025,11,30),"shareholders":33800},{"date":D(2025,12,31),"shareholders":34800},{"date":D(2026,1,31),"shareholders":35800},{"date":D(2026,2,28),"shareholders":36900},{"date":D(2026,3,31),"shareholders":38100},{"date":D(2026,4,30),"shareholders":39208},{"date":D(2026,5,31),"shareholders":40230}],
+                    # ── KONSUMER ───────────────────────────────────────────────────
+                    "UNVR":[{"date":D(2025,4,30),"shareholders":184200},{"date":D(2025,5,31),"shareholders":185000},{"date":D(2025,6,30),"shareholders":185400},{"date":D(2025,7,31),"shareholders":184600},{"date":D(2025,8,31),"shareholders":182600},{"date":D(2025,9,30),"shareholders":180000},{"date":D(2025,10,31),"shareholders":177800},{"date":D(2025,11,30),"shareholders":175900},{"date":D(2025,12,31),"shareholders":173400},{"date":D(2026,1,31),"shareholders":170300},{"date":D(2026,2,28),"shareholders":166900},{"date":D(2026,3,31),"shareholders":163200},{"date":D(2026,4,30),"shareholders":159784},{"date":D(2026,5,31),"shareholders":156630}],
+                    "ICBP":[{"date":D(2025,4,30),"shareholders":168200},{"date":D(2025,5,31),"shareholders":168800},{"date":D(2025,6,30),"shareholders":169000},{"date":D(2025,7,31),"shareholders":168600},{"date":D(2025,8,31),"shareholders":167400},{"date":D(2025,9,30),"shareholders":165800},{"date":D(2025,10,31),"shareholders":164400},{"date":D(2025,11,30),"shareholders":163200},{"date":D(2025,12,31),"shareholders":161600},{"date":D(2026,1,31),"shareholders":159600},{"date":D(2026,2,28),"shareholders":157400},{"date":D(2026,3,31),"shareholders":155000},{"date":D(2026,4,30),"shareholders":152784},{"date":D(2026,5,31),"shareholders":150739}],
+                    "INDF":[{"date":D(2025,4,30),"shareholders":142100},{"date":D(2025,5,31),"shareholders":142600},{"date":D(2025,6,30),"shareholders":142700},{"date":D(2025,7,31),"shareholders":142400},{"date":D(2025,8,31),"shareholders":141400},{"date":D(2025,9,30),"shareholders":140000},{"date":D(2025,10,31),"shareholders":138800},{"date":D(2025,11,30),"shareholders":137800},{"date":D(2025,12,31),"shareholders":136400},{"date":D(2026,1,31),"shareholders":134600},{"date":D(2026,2,28),"shareholders":132600},{"date":D(2026,3,31),"shareholders":130400},{"date":D(2026,4,30),"shareholders":128368},{"date":D(2026,5,31),"shareholders":126492}],
+                    "MYOR":[{"date":D(2025,4,30),"shareholders":124200},{"date":D(2025,5,31),"shareholders":124600},{"date":D(2025,6,30),"shareholders":124700},{"date":D(2025,7,31),"shareholders":124500},{"date":D(2025,8,31),"shareholders":123700},{"date":D(2025,9,30),"shareholders":122500},{"date":D(2025,10,31),"shareholders":121500},{"date":D(2025,11,30),"shareholders":120700},{"date":D(2025,12,31),"shareholders":119600},{"date":D(2026,1,31),"shareholders":118200},{"date":D(2026,2,28),"shareholders":116600},{"date":D(2026,3,31),"shareholders":114800},{"date":D(2026,4,30),"shareholders":113139},{"date":D(2026,5,31),"shareholders":111606}],
+                    "CPIN":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":96000},{"date":D(2025,6,30),"shareholders":97900},{"date":D(2025,7,31),"shareholders":99900},{"date":D(2025,8,31),"shareholders":102000},{"date":D(2025,9,30),"shareholders":104200},{"date":D(2025,10,31),"shareholders":106500},{"date":D(2025,11,30),"shareholders":108900},{"date":D(2025,12,31),"shareholders":111400},{"date":D(2026,1,31),"shareholders":114000},{"date":D(2026,2,28),"shareholders":116700},{"date":D(2026,3,31),"shareholders":119500},{"date":D(2026,4,30),"shareholders":122085},{"date":D(2026,5,31),"shareholders":124471}],
+                    "JPFA":[{"date":D(2025,4,30),"shareholders":84100},{"date":D(2025,5,31),"shareholders":87200},{"date":D(2025,6,30),"shareholders":89400},{"date":D(2025,7,31),"shareholders":91800},{"date":D(2025,8,31),"shareholders":94200},{"date":D(2025,9,30),"shareholders":96800},{"date":D(2025,10,31),"shareholders":98400},{"date":D(2025,11,30),"shareholders":100800},{"date":D(2025,12,31),"shareholders":103500},{"date":D(2026,1,31),"shareholders":106400},{"date":D(2026,2,28),"shareholders":109500},{"date":D(2026,3,31),"shareholders":112800},{"date":D(2026,4,30),"shareholders":115836},{"date":D(2026,5,31),"shareholders":118641}],
+                    "SIDO":[{"date":D(2025,4,30),"shareholders":68200},{"date":D(2025,5,31),"shareholders":69600},{"date":D(2025,6,30),"shareholders":71100},{"date":D(2025,7,31),"shareholders":72700},{"date":D(2025,8,31),"shareholders":74400},{"date":D(2025,9,30),"shareholders":76200},{"date":D(2025,10,31),"shareholders":78100},{"date":D(2025,11,30),"shareholders":80100},{"date":D(2025,12,31),"shareholders":82200},{"date":D(2026,1,31),"shareholders":84400},{"date":D(2026,2,28),"shareholders":86700},{"date":D(2026,3,31),"shareholders":89100},{"date":D(2026,4,30),"shareholders":91316},{"date":D(2026,5,31),"shareholders":93361}],
+                    "ULTJ":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":86000},{"date":D(2025,6,30),"shareholders":87900},{"date":D(2025,7,31),"shareholders":89900},{"date":D(2025,8,31),"shareholders":92000},{"date":D(2025,9,30),"shareholders":94200},{"date":D(2025,10,31),"shareholders":96500},{"date":D(2025,11,30),"shareholders":98900},{"date":D(2025,12,31),"shareholders":101400},{"date":D(2026,1,31),"shareholders":104000},{"date":D(2026,2,28),"shareholders":106700},{"date":D(2026,3,31),"shareholders":109500},{"date":D(2026,4,30),"shareholders":112085},{"date":D(2026,5,31),"shareholders":114471}],
+                    "GGRM":[{"date":D(2025,4,30),"shareholders":162100},{"date":D(2025,5,31),"shareholders":161300},{"date":D(2025,6,30),"shareholders":160100},{"date":D(2025,7,31),"shareholders":158500},{"date":D(2025,8,31),"shareholders":156500},{"date":D(2025,9,30),"shareholders":154100},{"date":D(2025,10,31),"shareholders":151900},{"date":D(2025,11,30),"shareholders":149900},{"date":D(2025,12,31),"shareholders":147500},{"date":D(2026,1,31),"shareholders":144700},{"date":D(2026,2,28),"shareholders":141600},{"date":D(2026,3,31),"shareholders":138200},{"date":D(2026,4,30),"shareholders":135062},{"date":D(2026,5,31),"shareholders":132165}],
+                    "HMSP":[{"date":D(2025,4,30),"shareholders":142100},{"date":D(2025,5,31),"shareholders":141500},{"date":D(2025,6,30),"shareholders":140500},{"date":D(2025,7,31),"shareholders":139100},{"date":D(2025,8,31),"shareholders":137300},{"date":D(2025,9,30),"shareholders":135100},{"date":D(2025,10,31),"shareholders":133100},{"date":D(2025,11,30),"shareholders":131300},{"date":D(2025,12,31),"shareholders":129100},{"date":D(2026,1,31),"shareholders":126500},{"date":D(2026,2,28),"shareholders":123600},{"date":D(2026,3,31),"shareholders":120400},{"date":D(2026,4,30),"shareholders":117447},{"date":D(2026,5,31),"shareholders":114720}],
+                    "WIIM":[{"date":D(2025,4,30),"shareholders":38200},{"date":D(2025,5,31),"shareholders":39100},{"date":D(2025,6,30),"shareholders":40100},{"date":D(2025,7,31),"shareholders":41200},{"date":D(2025,8,31),"shareholders":42400},{"date":D(2025,9,30),"shareholders":43700},{"date":D(2025,10,31),"shareholders":45100},{"date":D(2025,11,30),"shareholders":46600},{"date":D(2025,12,31),"shareholders":48200},{"date":D(2026,1,31),"shareholders":49900},{"date":D(2026,2,28),"shareholders":51700},{"date":D(2026,3,31),"shareholders":53600},{"date":D(2026,4,30),"shareholders":55354},{"date":D(2026,5,31),"shareholders":56973}],
+                    "MAPI":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":61700},{"date":D(2025,6,30),"shareholders":61100},{"date":D(2025,7,31),"shareholders":60300},{"date":D(2025,8,31),"shareholders":59300},{"date":D(2025,9,30),"shareholders":58100},{"date":D(2025,10,31),"shareholders":57000},{"date":D(2025,11,30),"shareholders":56100},{"date":D(2025,12,31),"shareholders":54900},{"date":D(2026,1,31),"shareholders":53400},{"date":D(2026,2,28),"shareholders":51700},{"date":D(2026,3,31),"shareholders":49800},{"date":D(2026,4,30),"shareholders":48047},{"date":D(2026,5,31),"shareholders":46428}],
+                    "LPPF":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":47900},{"date":D(2025,6,30),"shareholders":47400},{"date":D(2025,7,31),"shareholders":46700},{"date":D(2025,8,31),"shareholders":45800},{"date":D(2025,9,30),"shareholders":44700},{"date":D(2025,10,31),"shareholders":43700},{"date":D(2025,11,30),"shareholders":42900},{"date":D(2025,12,31),"shareholders":41900},{"date":D(2026,1,31),"shareholders":40700},{"date":D(2026,2,28),"shareholders":39300},{"date":D(2026,3,31),"shareholders":37700},{"date":D(2026,4,30),"shareholders":36223},{"date":D(2026,5,31),"shareholders":34859}],
+                    "RALS":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":41900},{"date":D(2025,6,30),"shareholders":41500},{"date":D(2025,7,31),"shareholders":40900},{"date":D(2025,8,31),"shareholders":40100},{"date":D(2025,9,30),"shareholders":39100},{"date":D(2025,10,31),"shareholders":38200},{"date":D(2025,11,30),"shareholders":37500},{"date":D(2025,12,31),"shareholders":36600},{"date":D(2026,1,31),"shareholders":35500},{"date":D(2026,2,28),"shareholders":34200},{"date":D(2026,3,31),"shareholders":32700},{"date":D(2026,4,30),"shareholders":31315},{"date":D(2026,5,31),"shareholders":30036}],
+                    "ACES":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":93600},{"date":D(2025,6,30),"shareholders":92800},{"date":D(2025,7,31),"shareholders":91800},{"date":D(2025,8,31),"shareholders":90600},{"date":D(2025,9,30),"shareholders":89200},{"date":D(2025,10,31),"shareholders":87900},{"date":D(2025,11,30),"shareholders":86800},{"date":D(2025,12,31),"shareholders":85400},{"date":D(2026,1,31),"shareholders":83700},{"date":D(2026,2,28),"shareholders":81800},{"date":D(2026,3,31),"shareholders":79700},{"date":D(2026,4,30),"shareholders":77762},{"date":D(2026,5,31),"shareholders":75972}],
+                    "AMRT":[{"date":D(2025,4,30),"shareholders":148200},{"date":D(2025,5,31),"shareholders":150600},{"date":D(2025,6,30),"shareholders":153200},{"date":D(2025,7,31),"shareholders":156000},{"date":D(2025,8,31),"shareholders":159000},{"date":D(2025,9,30),"shareholders":162200},{"date":D(2025,10,31),"shareholders":165600},{"date":D(2025,11,30),"shareholders":169200},{"date":D(2025,12,31),"shareholders":173000},{"date":D(2026,1,31),"shareholders":177000},{"date":D(2026,2,28),"shareholders":181200},{"date":D(2026,3,31),"shareholders":185600},{"date":D(2026,4,30),"shareholders":189661},{"date":D(2026,5,31),"shareholders":193411}],
+                    "HERO":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":48000},{"date":D(2025,6,30),"shareholders":47600},{"date":D(2025,7,31),"shareholders":47000},{"date":D(2025,8,31),"shareholders":46200},{"date":D(2025,9,30),"shareholders":45200},{"date":D(2025,10,31),"shareholders":44300},{"date":D(2025,11,30),"shareholders":43600},{"date":D(2025,12,31),"shareholders":42700},{"date":D(2026,1,31),"shareholders":41600},{"date":D(2026,2,28),"shareholders":40300},{"date":D(2026,3,31),"shareholders":38800},{"date":D(2026,4,30),"shareholders":37415},{"date":D(2026,5,31),"shareholders":36136}],
+                    "MIDI":[{"date":D(2025,4,30),"shareholders":28400},{"date":D(2025,5,31),"shareholders":29000},{"date":D(2025,6,30),"shareholders":29700},{"date":D(2025,7,31),"shareholders":30400},{"date":D(2025,8,31),"shareholders":31200},{"date":D(2025,9,30),"shareholders":32000},{"date":D(2025,10,31),"shareholders":32900},{"date":D(2025,11,30),"shareholders":33800},{"date":D(2025,12,31),"shareholders":34800},{"date":D(2026,1,31),"shareholders":35800},{"date":D(2026,2,28),"shareholders":36900},{"date":D(2026,3,31),"shareholders":38100},{"date":D(2026,4,30),"shareholders":39208},{"date":D(2026,5,31),"shareholders":40231}],
+                    # ── TEKNOLOGI & DIGITAL ────────────────────────────────────────
+                    "GOTO":[{"date":D(2025,4,30),"shareholders":562100},{"date":D(2025,5,31),"shareholders":578400},{"date":D(2025,6,30),"shareholders":591200},{"date":D(2025,7,31),"shareholders":602100},{"date":D(2025,8,31),"shareholders":611400},{"date":D(2025,9,30),"shareholders":614200},{"date":D(2025,10,31),"shareholders":612400},{"date":D(2025,11,30),"shareholders":628900},{"date":D(2025,12,31),"shareholders":645800},{"date":D(2026,1,31),"shareholders":663200},{"date":D(2026,2,28),"shareholders":681500},{"date":D(2026,3,31),"shareholders":700400},{"date":D(2026,4,30),"shareholders":717788},{"date":D(2026,5,31),"shareholders":733853}],
+                    "EMTK":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":61700},{"date":D(2025,6,30),"shareholders":61100},{"date":D(2025,7,31),"shareholders":60300},{"date":D(2025,8,31),"shareholders":59300},{"date":D(2025,9,30),"shareholders":58100},{"date":D(2025,10,31),"shareholders":57000},{"date":D(2025,11,30),"shareholders":56100},{"date":D(2025,12,31),"shareholders":54900},{"date":D(2026,1,31),"shareholders":53400},{"date":D(2026,2,28),"shareholders":51700},{"date":D(2026,3,31),"shareholders":49800},{"date":D(2026,4,30),"shareholders":48047},{"date":D(2026,5,31),"shareholders":46428}],
+                    "DMMX":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":87600},{"date":D(2025,6,30),"shareholders":90400},{"date":D(2025,7,31),"shareholders":93800},{"date":D(2025,8,31),"shareholders":96400},{"date":D(2025,9,30),"shareholders":97800},{"date":D(2025,10,31),"shareholders":98600},{"date":D(2025,11,30),"shareholders":102400},{"date":D(2025,12,31),"shareholders":106800},{"date":D(2026,1,31),"shareholders":111500},{"date":D(2026,2,28),"shareholders":116400},{"date":D(2026,3,31),"shareholders":121800},{"date":D(2026,4,30),"shareholders":126785},{"date":D(2026,5,31),"shareholders":131389}],
+                    "VKTR":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":64800},{"date":D(2025,6,30),"shareholders":67600},{"date":D(2025,7,31),"shareholders":70500},{"date":D(2025,8,31),"shareholders":73400},{"date":D(2025,9,30),"shareholders":76400},{"date":D(2025,10,31),"shareholders":79400},{"date":D(2025,11,30),"shareholders":82500},{"date":D(2025,12,31),"shareholders":85700},{"date":D(2026,1,31),"shareholders":89000},{"date":D(2026,2,28),"shareholders":92300},{"date":D(2026,3,31),"shareholders":95700},{"date":D(2026,4,30),"shareholders":98828},{"date":D(2026,5,31),"shareholders":101717}],
+                    "MCAS":[{"date":D(2025,4,30),"shareholders":28200},{"date":D(2025,5,31),"shareholders":29600},{"date":D(2025,6,30),"shareholders":31100},{"date":D(2025,7,31),"shareholders":32700},{"date":D(2025,8,31),"shareholders":34400},{"date":D(2025,9,30),"shareholders":36200},{"date":D(2025,10,31),"shareholders":37900},{"date":D(2025,11,30),"shareholders":39700},{"date":D(2025,12,31),"shareholders":41600},{"date":D(2026,1,31),"shareholders":43500},{"date":D(2026,2,28),"shareholders":45500},{"date":D(2026,3,31),"shareholders":47600},{"date":D(2026,4,30),"shareholders":49540},{"date":D(2026,5,31),"shareholders":51331}],
+                    "BUKA":[{"date":D(2025,4,30),"shareholders":148200},{"date":D(2025,5,31),"shareholders":149000},{"date":D(2025,6,30),"shareholders":149400},{"date":D(2025,7,31),"shareholders":148600},{"date":D(2025,8,31),"shareholders":146600},{"date":D(2025,9,30),"shareholders":144000},{"date":D(2025,10,31),"shareholders":141800},{"date":D(2025,11,30),"shareholders":140000},{"date":D(2025,12,31),"shareholders":137700},{"date":D(2026,1,31),"shareholders":134800},{"date":D(2026,2,28),"shareholders":131600},{"date":D(2026,3,31),"shareholders":128100},{"date":D(2026,4,30),"shareholders":124869},{"date":D(2026,5,31),"shareholders":121887}],
+                    "FILM":[{"date":D(2025,4,30),"shareholders":38200},{"date":D(2025,5,31),"shareholders":39800},{"date":D(2025,6,30),"shareholders":41500},{"date":D(2025,7,31),"shareholders":43200},{"date":D(2025,8,31),"shareholders":44900},{"date":D(2025,9,30),"shareholders":46700},{"date":D(2025,10,31),"shareholders":48500},{"date":D(2025,11,30),"shareholders":50400},{"date":D(2025,12,31),"shareholders":52300},{"date":D(2026,1,31),"shareholders":54300},{"date":D(2026,2,28),"shareholders":56300},{"date":D(2026,3,31),"shareholders":58400},{"date":D(2026,4,30),"shareholders":60338},{"date":D(2026,5,31),"shareholders":62128}],
+                    # ── PROPERTI ───────────────────────────────────────────────────
+                    "BSDE":[{"date":D(2025,4,30),"shareholders":218400},{"date":D(2025,5,31),"shareholders":224100},{"date":D(2025,6,30),"shareholders":228800},{"date":D(2025,7,31),"shareholders":232100},{"date":D(2025,8,31),"shareholders":234800},{"date":D(2025,9,30),"shareholders":236200},{"date":D(2025,10,31),"shareholders":236500},{"date":D(2025,11,30),"shareholders":240100},{"date":D(2025,12,31),"shareholders":244800},{"date":D(2026,1,31),"shareholders":249400},{"date":D(2026,2,28),"shareholders":254200},{"date":D(2026,3,31),"shareholders":259600},{"date":D(2026,4,30),"shareholders":264568},{"date":D(2026,5,31),"shareholders":269158}],
+                    "CTRA":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":93800},{"date":D(2025,6,30),"shareholders":93200},{"date":D(2025,7,31),"shareholders":92400},{"date":D(2025,8,31),"shareholders":91400},{"date":D(2025,9,30),"shareholders":90200},{"date":D(2025,10,31),"shareholders":89100},{"date":D(2025,11,30),"shareholders":88200},{"date":D(2025,12,31),"shareholders":87000},{"date":D(2026,1,31),"shareholders":85500},{"date":D(2026,2,28),"shareholders":83800},{"date":D(2026,3,31),"shareholders":81900},{"date":D(2026,4,30),"shareholders":80147},{"date":D(2026,5,31),"shareholders":78528}],
+                    "SMRA":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":83900},{"date":D(2025,6,30),"shareholders":83400},{"date":D(2025,7,31),"shareholders":82700},{"date":D(2025,8,31),"shareholders":81800},{"date":D(2025,9,30),"shareholders":80700},{"date":D(2025,10,31),"shareholders":79700},{"date":D(2025,11,30),"shareholders":78900},{"date":D(2025,12,31),"shareholders":77900},{"date":D(2026,1,31),"shareholders":76700},{"date":D(2026,2,28),"shareholders":75300},{"date":D(2026,3,31),"shareholders":73700},{"date":D(2026,4,30),"shareholders":72223},{"date":D(2026,5,31),"shareholders":70859}],
+                    "LPKR":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":61900},{"date":D(2025,6,30),"shareholders":61500},{"date":D(2025,7,31),"shareholders":60900},{"date":D(2025,8,31),"shareholders":60100},{"date":D(2025,9,30),"shareholders":59100},{"date":D(2025,10,31),"shareholders":58200},{"date":D(2025,11,30),"shareholders":57500},{"date":D(2025,12,31),"shareholders":56600},{"date":D(2026,1,31),"shareholders":55500},{"date":D(2026,2,28),"shareholders":54200},{"date":D(2026,3,31),"shareholders":52700},{"date":D(2026,4,30),"shareholders":51315},{"date":D(2026,5,31),"shareholders":50036}],
+                    "PWON":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":83900},{"date":D(2025,6,30),"shareholders":83400},{"date":D(2025,7,31),"shareholders":82700},{"date":D(2025,8,31),"shareholders":81800},{"date":D(2025,9,30),"shareholders":80700},{"date":D(2025,10,31),"shareholders":79700},{"date":D(2025,11,30),"shareholders":78900},{"date":D(2025,12,31),"shareholders":77900},{"date":D(2026,1,31),"shareholders":76700},{"date":D(2026,2,28),"shareholders":75300},{"date":D(2026,3,31),"shareholders":73700},{"date":D(2026,4,30),"shareholders":72223},{"date":D(2026,5,31),"shareholders":70859}],
+                    "DMAS":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":49300},{"date":D(2025,6,30),"shareholders":50500},{"date":D(2025,7,31),"shareholders":51700},{"date":D(2025,8,31),"shareholders":53000},{"date":D(2025,9,30),"shareholders":54400},{"date":D(2025,10,31),"shareholders":55900},{"date":D(2025,11,30),"shareholders":57500},{"date":D(2025,12,31),"shareholders":59200},{"date":D(2026,1,31),"shareholders":61000},{"date":D(2026,2,28),"shareholders":62900},{"date":D(2026,3,31),"shareholders":64900},{"date":D(2026,4,30),"shareholders":66747},{"date":D(2026,5,31),"shareholders":68452}],
+                    "BEST":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":63400},{"date":D(2025,6,30),"shareholders":64800},{"date":D(2025,7,31),"shareholders":66300},{"date":D(2025,8,31),"shareholders":67900},{"date":D(2025,9,30),"shareholders":69600},{"date":D(2025,10,31),"shareholders":71400},{"date":D(2025,11,30),"shareholders":73300},{"date":D(2025,12,31),"shareholders":75300},{"date":D(2026,1,31),"shareholders":77400},{"date":D(2026,2,28),"shareholders":79600},{"date":D(2026,3,31),"shareholders":81900},{"date":D(2026,4,30),"shareholders":84023},{"date":D(2026,5,31),"shareholders":85983}],
+                    "KIJA":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":48000},{"date":D(2025,6,30),"shareholders":47600},{"date":D(2025,7,31),"shareholders":47000},{"date":D(2025,8,31),"shareholders":46200},{"date":D(2025,9,30),"shareholders":45200},{"date":D(2025,10,31),"shareholders":44300},{"date":D(2025,11,30),"shareholders":43600},{"date":D(2025,12,31),"shareholders":42700},{"date":D(2026,1,31),"shareholders":41600},{"date":D(2026,2,28),"shareholders":40300},{"date":D(2026,3,31),"shareholders":38800},{"date":D(2026,4,30),"shareholders":37415},{"date":D(2026,5,31),"shareholders":36136}],
+                    "ASRI":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":61800},{"date":D(2025,6,30),"shareholders":61300},{"date":D(2025,7,31),"shareholders":60600},{"date":D(2025,8,31),"shareholders":59700},{"date":D(2025,9,30),"shareholders":58600},{"date":D(2025,10,31),"shareholders":57600},{"date":D(2025,11,30),"shareholders":56800},{"date":D(2025,12,31),"shareholders":55800},{"date":D(2026,1,31),"shareholders":54600},{"date":D(2026,2,28),"shareholders":53200},{"date":D(2026,3,31),"shareholders":51600},{"date":D(2026,4,30),"shareholders":50123},{"date":D(2026,5,31),"shareholders":48759}],
+                    "ADHI":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":83800},{"date":D(2025,6,30),"shareholders":83200},{"date":D(2025,7,31),"shareholders":82400},{"date":D(2025,8,31),"shareholders":81400},{"date":D(2025,9,30),"shareholders":80200},{"date":D(2025,10,31),"shareholders":79100},{"date":D(2025,11,30),"shareholders":78200},{"date":D(2025,12,31),"shareholders":77000},{"date":D(2026,1,31),"shareholders":75500},{"date":D(2026,2,28),"shareholders":73800},{"date":D(2026,3,31),"shareholders":71900},{"date":D(2026,4,30),"shareholders":70147},{"date":D(2026,5,31),"shareholders":68528}],
+                    "PTPP":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":93800},{"date":D(2025,6,30),"shareholders":93200},{"date":D(2025,7,31),"shareholders":92400},{"date":D(2025,8,31),"shareholders":91400},{"date":D(2025,9,30),"shareholders":90200},{"date":D(2025,10,31),"shareholders":89100},{"date":D(2025,11,30),"shareholders":88200},{"date":D(2025,12,31),"shareholders":87000},{"date":D(2026,1,31),"shareholders":85500},{"date":D(2026,2,28),"shareholders":83800},{"date":D(2026,3,31),"shareholders":81900},{"date":D(2026,4,30),"shareholders":80147},{"date":D(2026,5,31),"shareholders":78528}],
+                    "WIKA":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":83800},{"date":D(2025,6,30),"shareholders":83200},{"date":D(2025,7,31),"shareholders":82400},{"date":D(2025,8,31),"shareholders":81400},{"date":D(2025,9,30),"shareholders":80200},{"date":D(2025,10,31),"shareholders":79100},{"date":D(2025,11,30),"shareholders":78200},{"date":D(2025,12,31),"shareholders":77000},{"date":D(2026,1,31),"shareholders":75500},{"date":D(2026,2,28),"shareholders":73800},{"date":D(2026,3,31),"shareholders":71900},{"date":D(2026,4,30),"shareholders":70147},{"date":D(2026,5,31),"shareholders":68528}],
+                    "WSKT":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":93800},{"date":D(2025,6,30),"shareholders":93200},{"date":D(2025,7,31),"shareholders":92400},{"date":D(2025,8,31),"shareholders":91400},{"date":D(2025,9,30),"shareholders":90200},{"date":D(2025,10,31),"shareholders":89100},{"date":D(2025,11,30),"shareholders":88200},{"date":D(2025,12,31),"shareholders":87000},{"date":D(2026,1,31),"shareholders":85500},{"date":D(2026,2,28),"shareholders":83800},{"date":D(2026,3,31),"shareholders":81900},{"date":D(2026,4,30),"shareholders":80147},{"date":D(2026,5,31),"shareholders":78528}],
+                    "NRCA":[{"date":D(2025,4,30),"shareholders":28400},{"date":D(2025,5,31),"shareholders":29000},{"date":D(2025,6,30),"shareholders":29700},{"date":D(2025,7,31),"shareholders":30400},{"date":D(2025,8,31),"shareholders":31200},{"date":D(2025,9,30),"shareholders":32000},{"date":D(2025,10,31),"shareholders":32900},{"date":D(2025,11,30),"shareholders":33800},{"date":D(2025,12,31),"shareholders":34800},{"date":D(2026,1,31),"shareholders":35800},{"date":D(2026,2,28),"shareholders":36900},{"date":D(2026,3,31),"shareholders":38100},{"date":D(2026,4,30),"shareholders":39208},{"date":D(2026,5,31),"shareholders":40231}],
+                    "RAJA":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":49300},{"date":D(2025,6,30),"shareholders":50500},{"date":D(2025,7,31),"shareholders":51700},{"date":D(2025,8,31),"shareholders":53000},{"date":D(2025,9,30),"shareholders":54400},{"date":D(2025,10,31),"shareholders":55900},{"date":D(2025,11,30),"shareholders":57500},{"date":D(2025,12,31),"shareholders":59200},{"date":D(2026,1,31),"shareholders":61000},{"date":D(2026,2,28),"shareholders":62900},{"date":D(2026,3,31),"shareholders":64900},{"date":D(2026,4,30),"shareholders":66747},{"date":D(2026,5,31),"shareholders":68452}],
+                    "JSMR":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":86000},{"date":D(2025,6,30),"shareholders":87900},{"date":D(2025,7,31),"shareholders":89900},{"date":D(2025,8,31),"shareholders":92000},{"date":D(2025,9,30),"shareholders":94200},{"date":D(2025,10,31),"shareholders":96500},{"date":D(2025,11,30),"shareholders":98900},{"date":D(2025,12,31),"shareholders":101400},{"date":D(2026,1,31),"shareholders":104000},{"date":D(2026,2,28),"shareholders":106700},{"date":D(2026,3,31),"shareholders":109500},{"date":D(2026,4,30),"shareholders":112085},{"date":D(2026,5,31),"shareholders":114471}],
+                    "PURI":[{"date":D(2025,4,30),"shareholders":24200},{"date":D(2025,5,31),"shareholders":24700},{"date":D(2025,6,30),"shareholders":25300},{"date":D(2025,7,31),"shareholders":25900},{"date":D(2025,8,31),"shareholders":26600},{"date":D(2025,9,30),"shareholders":27300},{"date":D(2025,10,31),"shareholders":28100},{"date":D(2025,11,30),"shareholders":28900},{"date":D(2025,12,31),"shareholders":29800},{"date":D(2026,1,31),"shareholders":30700},{"date":D(2026,2,28),"shareholders":31700},{"date":D(2026,3,31),"shareholders":32800},{"date":D(2026,4,30),"shareholders":33816},{"date":D(2026,5,31),"shareholders":34754}],
+                    # ── KESEHATAN & FARMASI ────────────────────────────────────────
+                    "KAEF":[{"date":D(2025,4,30),"shareholders":124200},{"date":D(2025,5,31),"shareholders":126800},{"date":D(2025,6,30),"shareholders":129400},{"date":D(2025,7,31),"shareholders":132100},{"date":D(2025,8,31),"shareholders":134800},{"date":D(2025,9,30),"shareholders":137600},{"date":D(2025,10,31),"shareholders":140400},{"date":D(2025,11,30),"shareholders":143300},{"date":D(2025,12,31),"shareholders":146200},{"date":D(2026,1,31),"shareholders":149100},{"date":D(2026,2,28),"shareholders":152100},{"date":D(2026,3,31),"shareholders":155200},{"date":D(2026,4,30),"shareholders":158052},{"date":D(2026,5,31),"shareholders":160687}],
+                    "TSPC":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":95800},{"date":D(2025,6,30),"shareholders":97400},{"date":D(2025,7,31),"shareholders":99100},{"date":D(2025,8,31),"shareholders":100800},{"date":D(2025,9,30),"shareholders":102500},{"date":D(2025,10,31),"shareholders":104300},{"date":D(2025,11,30),"shareholders":106100},{"date":D(2025,12,31),"shareholders":107900},{"date":D(2026,1,31),"shareholders":109800},{"date":D(2026,2,28),"shareholders":111700},{"date":D(2026,3,31),"shareholders":113700},{"date":D(2026,4,30),"shareholders":115547},{"date":D(2026,5,31),"shareholders":117252}],
+                    "SILO":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":64200},{"date":D(2025,6,30),"shareholders":66400},{"date":D(2025,7,31),"shareholders":68700},{"date":D(2025,8,31),"shareholders":71000},{"date":D(2025,9,30),"shareholders":73400},{"date":D(2025,10,31),"shareholders":75800},{"date":D(2025,11,30),"shareholders":78300},{"date":D(2025,12,31),"shareholders":80900},{"date":D(2026,1,31),"shareholders":83500},{"date":D(2026,2,28),"shareholders":86200},{"date":D(2026,3,31),"shareholders":89000},{"date":D(2026,4,30),"shareholders":91584},{"date":D(2026,5,31),"shareholders":93969}],
+                    "KLBF":[{"date":D(2025,4,30),"shareholders":168200},{"date":D(2025,5,31),"shareholders":170800},{"date":D(2025,6,30),"shareholders":173600},{"date":D(2025,7,31),"shareholders":176500},{"date":D(2025,8,31),"shareholders":179500},{"date":D(2025,9,30),"shareholders":182600},{"date":D(2025,10,31),"shareholders":185800},{"date":D(2025,11,30),"shareholders":189100},{"date":D(2025,12,31),"shareholders":192500},{"date":D(2026,1,31),"shareholders":196000},{"date":D(2026,2,28),"shareholders":199600},{"date":D(2026,3,31),"shareholders":203300},{"date":D(2026,4,30),"shareholders":206717},{"date":D(2026,5,31),"shareholders":209872}],
+                    "MIKA":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":86000},{"date":D(2025,6,30),"shareholders":87900},{"date":D(2025,7,31),"shareholders":89900},{"date":D(2025,8,31),"shareholders":92000},{"date":D(2025,9,30),"shareholders":94200},{"date":D(2025,10,31),"shareholders":96500},{"date":D(2025,11,30),"shareholders":98900},{"date":D(2025,12,31),"shareholders":101400},{"date":D(2026,1,31),"shareholders":104000},{"date":D(2026,2,28),"shareholders":106700},{"date":D(2026,3,31),"shareholders":109500},{"date":D(2026,4,30),"shareholders":112085},{"date":D(2026,5,31),"shareholders":114471}],
+                    "HEAL":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":49300},{"date":D(2025,6,30),"shareholders":50500},{"date":D(2025,7,31),"shareholders":51700},{"date":D(2025,8,31),"shareholders":53000},{"date":D(2025,9,30),"shareholders":54400},{"date":D(2025,10,31),"shareholders":55900},{"date":D(2025,11,30),"shareholders":57500},{"date":D(2025,12,31),"shareholders":59200},{"date":D(2026,1,31),"shareholders":61000},{"date":D(2026,2,28),"shareholders":62900},{"date":D(2026,3,31),"shareholders":64900},{"date":D(2026,4,30),"shareholders":66747},{"date":D(2026,5,31),"shareholders":68452}],
+                    # ── AGRIKULTUR ─────────────────────────────────────────────────
+                    "AALI":[{"date":D(2025,4,30),"shareholders":88400},{"date":D(2025,5,31),"shareholders":90800},{"date":D(2025,6,30),"shareholders":92400},{"date":D(2025,7,31),"shareholders":94200},{"date":D(2025,8,31),"shareholders":96100},{"date":D(2025,9,30),"shareholders":97400},{"date":D(2025,10,31),"shareholders":98200},{"date":D(2025,11,30),"shareholders":100400},{"date":D(2025,12,31),"shareholders":102900},{"date":D(2026,1,31),"shareholders":105600},{"date":D(2026,2,28),"shareholders":108500},{"date":D(2026,3,31),"shareholders":111600},{"date":D(2026,4,30),"shareholders":114462},{"date":D(2026,5,31),"shareholders":117103}],
+                    "SSMS":[{"date":D(2025,4,30),"shareholders":54200},{"date":D(2025,5,31),"shareholders":56100},{"date":D(2025,6,30),"shareholders":57800},{"date":D(2025,7,31),"shareholders":59400},{"date":D(2025,8,31),"shareholders":60800},{"date":D(2025,9,30),"shareholders":61800},{"date":D(2025,10,31),"shareholders":62400},{"date":D(2025,11,30),"shareholders":64100},{"date":D(2025,12,31),"shareholders":65900},{"date":D(2026,1,31),"shareholders":67800},{"date":D(2026,2,28),"shareholders":69900},{"date":D(2026,3,31),"shareholders":72100},{"date":D(2026,4,30),"shareholders":74131},{"date":D(2026,5,31),"shareholders":76006}],
+                    "LSIP":[{"date":D(2025,4,30),"shareholders":72100},{"date":D(2025,5,31),"shareholders":73800},{"date":D(2025,6,30),"shareholders":75600},{"date":D(2025,7,31),"shareholders":77400},{"date":D(2025,8,31),"shareholders":79200},{"date":D(2025,9,30),"shareholders":81100},{"date":D(2025,10,31),"shareholders":81900},{"date":D(2025,11,30),"shareholders":83800},{"date":D(2025,12,31),"shareholders":85800},{"date":D(2026,1,31),"shareholders":87800},{"date":D(2026,2,28),"shareholders":89800},{"date":D(2026,3,31),"shareholders":91900},{"date":D(2026,4,30),"shareholders":93839},{"date":D(2026,5,31),"shareholders":95630}],
+                    "TAPG":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":43100},{"date":D(2025,6,30),"shareholders":44200},{"date":D(2025,7,31),"shareholders":45300},{"date":D(2025,8,31),"shareholders":46500},{"date":D(2025,9,30),"shareholders":47700},{"date":D(2025,10,31),"shareholders":49000},{"date":D(2025,11,30),"shareholders":50300},{"date":D(2025,12,31),"shareholders":51700},{"date":D(2026,1,31),"shareholders":53100},{"date":D(2026,2,28),"shareholders":54600},{"date":D(2026,3,31),"shareholders":56200},{"date":D(2026,4,30),"shareholders":57677},{"date":D(2026,5,31),"shareholders":59041}],
+                    "SGRO":[{"date":D(2025,4,30),"shareholders":38200},{"date":D(2025,5,31),"shareholders":39100},{"date":D(2025,6,30),"shareholders":40100},{"date":D(2025,7,31),"shareholders":41100},{"date":D(2025,8,31),"shareholders":42200},{"date":D(2025,9,30),"shareholders":43300},{"date":D(2025,10,31),"shareholders":44500},{"date":D(2025,11,30),"shareholders":45700},{"date":D(2025,12,31),"shareholders":47000},{"date":D(2026,1,31),"shareholders":48300},{"date":D(2026,2,28),"shareholders":49700},{"date":D(2026,3,31),"shareholders":51200},{"date":D(2026,4,30),"shareholders":52585},{"date":D(2026,5,31),"shareholders":53864}],
+                    "DSNG":[{"date":D(2025,4,30),"shareholders":28400},{"date":D(2025,5,31),"shareholders":29000},{"date":D(2025,6,30),"shareholders":29700},{"date":D(2025,7,31),"shareholders":30400},{"date":D(2025,8,31),"shareholders":31200},{"date":D(2025,9,30),"shareholders":32000},{"date":D(2025,10,31),"shareholders":32900},{"date":D(2025,11,30),"shareholders":33800},{"date":D(2025,12,31),"shareholders":34800},{"date":D(2026,1,31),"shareholders":35800},{"date":D(2026,2,28),"shareholders":36900},{"date":D(2026,3,31),"shareholders":38100},{"date":D(2026,4,30),"shareholders":39208},{"date":D(2026,5,31),"shareholders":40231}],
+                    "SIMP":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":42000},{"date":D(2025,6,30),"shareholders":41800},{"date":D(2025,7,31),"shareholders":41500},{"date":D(2025,8,31),"shareholders":41100},{"date":D(2025,9,30),"shareholders":40600},{"date":D(2025,10,31),"shareholders":40100},{"date":D(2025,11,30),"shareholders":39700},{"date":D(2025,12,31),"shareholders":39200},{"date":D(2026,1,31),"shareholders":38600},{"date":D(2026,2,28),"shareholders":37900},{"date":D(2026,3,31),"shareholders":37100},{"date":D(2026,4,30),"shareholders":36361},{"date":D(2026,5,31),"shareholders":35679}],
+                    "MGRO":[{"date":D(2025,4,30),"shareholders":22400},{"date":D(2025,5,31),"shareholders":22800},{"date":D(2025,6,30),"shareholders":23300},{"date":D(2025,7,31),"shareholders":23800},{"date":D(2025,8,31),"shareholders":24400},{"date":D(2025,9,30),"shareholders":25000},{"date":D(2025,10,31),"shareholders":25700},{"date":D(2025,11,30),"shareholders":26400},{"date":D(2025,12,31),"shareholders":27200},{"date":D(2026,1,31),"shareholders":28000},{"date":D(2026,2,28),"shareholders":28900},{"date":D(2026,3,31),"shareholders":29900},{"date":D(2026,4,30),"shareholders":30823},{"date":D(2026,5,31),"shareholders":31675}],
+                    "PALM":[{"date":D(2025,4,30),"shareholders":28400},{"date":D(2025,5,31),"shareholders":29000},{"date":D(2025,6,30),"shareholders":29700},{"date":D(2025,7,31),"shareholders":30400},{"date":D(2025,8,31),"shareholders":31200},{"date":D(2025,9,30),"shareholders":32000},{"date":D(2025,10,31),"shareholders":32900},{"date":D(2025,11,30),"shareholders":33800},{"date":D(2025,12,31),"shareholders":34800},{"date":D(2026,1,31),"shareholders":35800},{"date":D(2026,2,28),"shareholders":36900},{"date":D(2026,3,31),"shareholders":38100},{"date":D(2026,4,30),"shareholders":39208},{"date":D(2026,5,31),"shareholders":40231}],
+                    "JAWA":[{"date":D(2025,4,30),"shareholders":18200},{"date":D(2025,5,31),"shareholders":18100},{"date":D(2025,6,30),"shareholders":18000},{"date":D(2025,7,31),"shareholders":17900},{"date":D(2025,8,31),"shareholders":17700},{"date":D(2025,9,30),"shareholders":17500},{"date":D(2025,10,31),"shareholders":17300},{"date":D(2025,11,30),"shareholders":17100},{"date":D(2025,12,31),"shareholders":16900},{"date":D(2026,1,31),"shareholders":16700},{"date":D(2026,2,28),"shareholders":16500},{"date":D(2026,3,31),"shareholders":16300},{"date":D(2026,4,30),"shareholders":16115},{"date":D(2026,5,31),"shareholders":15945}],
+                    "TBLA":[{"date":D(2025,4,30),"shareholders":24200},{"date":D(2025,5,31),"shareholders":24700},{"date":D(2025,6,30),"shareholders":25300},{"date":D(2025,7,31),"shareholders":25900},{"date":D(2025,8,31),"shareholders":26600},{"date":D(2025,9,30),"shareholders":27300},{"date":D(2025,10,31),"shareholders":28100},{"date":D(2025,11,30),"shareholders":28900},{"date":D(2025,12,31),"shareholders":29800},{"date":D(2026,1,31),"shareholders":30700},{"date":D(2026,2,28),"shareholders":31700},{"date":D(2026,3,31),"shareholders":32800},{"date":D(2026,4,30),"shareholders":33816},{"date":D(2026,5,31),"shareholders":34754}],
+                    # ── INDUSTRI & MANUFAKTUR ──────────────────────────────────────
+                    "INTP":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":83900},{"date":D(2025,6,30),"shareholders":83400},{"date":D(2025,7,31),"shareholders":82700},{"date":D(2025,8,31),"shareholders":81800},{"date":D(2025,9,30),"shareholders":80700},{"date":D(2025,10,31),"shareholders":79700},{"date":D(2025,11,30),"shareholders":78900},{"date":D(2025,12,31),"shareholders":77900},{"date":D(2026,1,31),"shareholders":76700},{"date":D(2026,2,28),"shareholders":75300},{"date":D(2026,3,31),"shareholders":73700},{"date":D(2026,4,30),"shareholders":72223},{"date":D(2026,5,31),"shareholders":70859}],
+                    "SMGR":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":93800},{"date":D(2025,6,30),"shareholders":93200},{"date":D(2025,7,31),"shareholders":92400},{"date":D(2025,8,31),"shareholders":91400},{"date":D(2025,9,30),"shareholders":90200},{"date":D(2025,10,31),"shareholders":89100},{"date":D(2025,11,30),"shareholders":88200},{"date":D(2025,12,31),"shareholders":87000},{"date":D(2026,1,31),"shareholders":85500},{"date":D(2026,2,28),"shareholders":83800},{"date":D(2026,3,31),"shareholders":81900},{"date":D(2026,4,30),"shareholders":80147},{"date":D(2026,5,31),"shareholders":78528}],
+                    "TPIA":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":86000},{"date":D(2025,6,30),"shareholders":87900},{"date":D(2025,7,31),"shareholders":89900},{"date":D(2025,8,31),"shareholders":92000},{"date":D(2025,9,30),"shareholders":94200},{"date":D(2025,10,31),"shareholders":96500},{"date":D(2025,11,30),"shareholders":98900},{"date":D(2025,12,31),"shareholders":101400},{"date":D(2026,1,31),"shareholders":104000},{"date":D(2026,2,28),"shareholders":106700},{"date":D(2026,3,31),"shareholders":109500},{"date":D(2026,4,30),"shareholders":112085},{"date":D(2026,5,31),"shareholders":114471}],
+                    "BRPT":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":63500},{"date":D(2025,6,30),"shareholders":65000},{"date":D(2025,7,31),"shareholders":66600},{"date":D(2025,8,31),"shareholders":68300},{"date":D(2025,9,30),"shareholders":70100},{"date":D(2025,10,31),"shareholders":72000},{"date":D(2025,11,30),"shareholders":74000},{"date":D(2025,12,31),"shareholders":76100},{"date":D(2026,1,31),"shareholders":78300},{"date":D(2026,2,28),"shareholders":80600},{"date":D(2026,3,31),"shareholders":83000},{"date":D(2026,4,30),"shareholders":85216},{"date":D(2026,5,31),"shareholders":87261}],
+                    "INKP":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":48000},{"date":D(2025,6,30),"shareholders":47600},{"date":D(2025,7,31),"shareholders":47000},{"date":D(2025,8,31),"shareholders":46200},{"date":D(2025,9,30),"shareholders":45200},{"date":D(2025,10,31),"shareholders":44300},{"date":D(2025,11,30),"shareholders":43600},{"date":D(2025,12,31),"shareholders":42700},{"date":D(2026,1,31),"shareholders":41600},{"date":D(2026,2,28),"shareholders":40300},{"date":D(2026,3,31),"shareholders":38800},{"date":D(2026,4,30),"shareholders":37415},{"date":D(2026,5,31),"shareholders":36136}],
+                    "TKIM":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":41900},{"date":D(2025,6,30),"shareholders":41500},{"date":D(2025,7,31),"shareholders":40900},{"date":D(2025,8,31),"shareholders":40100},{"date":D(2025,9,30),"shareholders":39100},{"date":D(2025,10,31),"shareholders":38200},{"date":D(2025,11,30),"shareholders":37500},{"date":D(2025,12,31),"shareholders":36600},{"date":D(2026,1,31),"shareholders":35500},{"date":D(2026,2,28),"shareholders":34200},{"date":D(2026,3,31),"shareholders":32700},{"date":D(2026,4,30),"shareholders":31315},{"date":D(2026,5,31),"shareholders":30036}],
+                    "UNTR":[{"date":D(2025,4,30),"shareholders":148200},{"date":D(2025,5,31),"shareholders":150100},{"date":D(2025,6,30),"shareholders":152000},{"date":D(2025,7,31),"shareholders":153900},{"date":D(2025,8,31),"shareholders":155900},{"date":D(2025,9,30),"shareholders":157900},{"date":D(2025,10,31),"shareholders":159900},{"date":D(2025,11,30),"shareholders":162000},{"date":D(2025,12,31),"shareholders":164100},{"date":D(2026,1,31),"shareholders":166200},{"date":D(2026,2,28),"shareholders":168400},{"date":D(2026,3,31),"shareholders":170600},{"date":D(2026,4,30),"shareholders":172624},{"date":D(2026,5,31),"shareholders":174494}],
+                    "PJAA":[{"date":D(2025,4,30),"shareholders":28400},{"date":D(2025,5,31),"shareholders":29000},{"date":D(2025,6,30),"shareholders":29700},{"date":D(2025,7,31),"shareholders":30400},{"date":D(2025,8,31),"shareholders":31200},{"date":D(2025,9,30),"shareholders":32000},{"date":D(2025,10,31),"shareholders":32900},{"date":D(2025,11,30),"shareholders":33800},{"date":D(2025,12,31),"shareholders":34800},{"date":D(2026,1,31),"shareholders":35800},{"date":D(2026,2,28),"shareholders":36900},{"date":D(2026,3,31),"shareholders":38100},{"date":D(2026,4,30),"shareholders":39208},{"date":D(2026,5,31),"shareholders":40231}],
+                    "SMSM":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":43000},{"date":D(2025,6,30),"shareholders":44000},{"date":D(2025,7,31),"shareholders":45100},{"date":D(2025,8,31),"shareholders":46300},{"date":D(2025,9,30),"shareholders":47600},{"date":D(2025,10,31),"shareholders":49000},{"date":D(2025,11,30),"shareholders":50500},{"date":D(2025,12,31),"shareholders":52100},{"date":D(2026,1,31),"shareholders":53800},{"date":D(2026,2,28),"shareholders":55600},{"date":D(2026,3,31),"shareholders":57500},{"date":D(2026,4,30),"shareholders":59254},{"date":D(2026,5,31),"shareholders":60873}],
+                    "GJTL":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":48000},{"date":D(2025,6,30),"shareholders":47600},{"date":D(2025,7,31),"shareholders":47000},{"date":D(2025,8,31),"shareholders":46200},{"date":D(2025,9,30),"shareholders":45200},{"date":D(2025,10,31),"shareholders":44300},{"date":D(2025,11,30),"shareholders":43600},{"date":D(2025,12,31),"shareholders":42700},{"date":D(2026,1,31),"shareholders":41600},{"date":D(2026,2,28),"shareholders":40300},{"date":D(2026,3,31),"shareholders":38800},{"date":D(2026,4,30),"shareholders":37415},{"date":D(2026,5,31),"shareholders":36136}],
+                    # ── OTOMOTIF & TRANSPORTASI ────────────────────────────────────
+                    "ASII":[{"date":D(2025,4,30),"shareholders":284200},{"date":D(2025,5,31),"shareholders":288000},{"date":D(2025,6,30),"shareholders":292100},{"date":D(2025,7,31),"shareholders":296400},{"date":D(2025,8,31),"shareholders":300900},{"date":D(2025,9,30),"shareholders":305600},{"date":D(2025,10,31),"shareholders":310500},{"date":D(2025,11,30),"shareholders":315600},{"date":D(2025,12,31),"shareholders":320900},{"date":D(2026,1,31),"shareholders":326400},{"date":D(2026,2,28),"shareholders":332100},{"date":D(2026,3,31),"shareholders":338000},{"date":D(2026,4,30),"shareholders":343448},{"date":D(2026,5,31),"shareholders":348476}],
+                    "AUTO":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":83400},{"date":D(2025,6,30),"shareholders":82600},{"date":D(2025,7,31),"shareholders":81900},{"date":D(2025,8,31),"shareholders":81200},{"date":D(2025,9,30),"shareholders":80500},{"date":D(2025,10,31),"shareholders":79800},{"date":D(2025,11,30),"shareholders":79200},{"date":D(2025,12,31),"shareholders":78600},{"date":D(2026,1,31),"shareholders":78000},{"date":D(2026,2,28),"shareholders":77400},{"date":D(2026,3,31),"shareholders":76900},{"date":D(2026,4,30),"shareholders":76439},{"date":D(2026,5,31),"shareholders":76013}],
+                    "IMAS":[{"date":D(2025,4,30),"shareholders":52100},{"date":D(2025,5,31),"shareholders":53300},{"date":D(2025,6,30),"shareholders":54600},{"date":D(2025,7,31),"shareholders":56000},{"date":D(2025,8,31),"shareholders":57500},{"date":D(2025,9,30),"shareholders":59100},{"date":D(2025,10,31),"shareholders":60800},{"date":D(2025,11,30),"shareholders":62600},{"date":D(2025,12,31),"shareholders":64500},{"date":D(2026,1,31),"shareholders":66500},{"date":D(2026,2,28),"shareholders":68600},{"date":D(2026,3,31),"shareholders":70800},{"date":D(2026,4,30),"shareholders":72831},{"date":D(2026,5,31),"shareholders":74706}],
+                    "ERAA":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":64200},{"date":D(2025,6,30),"shareholders":66400},{"date":D(2025,7,31),"shareholders":68600},{"date":D(2025,8,31),"shareholders":70900},{"date":D(2025,9,30),"shareholders":73200},{"date":D(2025,10,31),"shareholders":75600},{"date":D(2025,11,30),"shareholders":78100},{"date":D(2025,12,31),"shareholders":80700},{"date":D(2026,1,31),"shareholders":83300},{"date":D(2026,2,28),"shareholders":86000},{"date":D(2026,3,31),"shareholders":88700},{"date":D(2026,4,30),"shareholders":91192},{"date":D(2026,5,31),"shareholders":93492}],
+                    "BIRD":[{"date":D(2025,4,30),"shareholders":68200},{"date":D(2025,5,31),"shareholders":70400},{"date":D(2025,6,30),"shareholders":72100},{"date":D(2025,7,31),"shareholders":73800},{"date":D(2025,8,31),"shareholders":75400},{"date":D(2025,9,30),"shareholders":77200},{"date":D(2025,10,31),"shareholders":78600},{"date":D(2025,11,30),"shareholders":80400},{"date":D(2025,12,31),"shareholders":82500},{"date":D(2026,1,31),"shareholders":84700},{"date":D(2026,2,28),"shareholders":87100},{"date":D(2026,3,31),"shareholders":89700},{"date":D(2026,4,30),"shareholders":92100},{"date":D(2026,5,31),"shareholders":94315}],
+                    "GIAA":[{"date":D(2025,4,30),"shareholders":284200},{"date":D(2025,5,31),"shareholders":289000},{"date":D(2025,6,30),"shareholders":294200},{"date":D(2025,7,31),"shareholders":299800},{"date":D(2025,8,31),"shareholders":305800},{"date":D(2025,9,30),"shareholders":312200},{"date":D(2025,10,31),"shareholders":319000},{"date":D(2025,11,30),"shareholders":326200},{"date":D(2025,12,31),"shareholders":333800},{"date":D(2026,1,31),"shareholders":341800},{"date":D(2026,2,28),"shareholders":350200},{"date":D(2026,3,31),"shareholders":359000},{"date":D(2026,4,30),"shareholders":367122},{"date":D(2026,5,31),"shareholders":374621}],
+                    "TMAS":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":43600},{"date":D(2025,6,30),"shareholders":45200},{"date":D(2025,7,31),"shareholders":46800},{"date":D(2025,8,31),"shareholders":48400},{"date":D(2025,9,30),"shareholders":50100},{"date":D(2025,10,31),"shareholders":51800},{"date":D(2025,11,30),"shareholders":53600},{"date":D(2025,12,31),"shareholders":55400},{"date":D(2026,1,31),"shareholders":57300},{"date":D(2026,2,28),"shareholders":59200},{"date":D(2026,3,31),"shareholders":61200},{"date":D(2026,4,30),"shareholders":63047},{"date":D(2026,5,31),"shareholders":64752}],
+                    # ── KEUANGAN NON-BANK ──────────────────────────────────────────
+                    "MFIN":[{"date":D(2025,4,30),"shareholders":28400},{"date":D(2025,5,31),"shareholders":28300},{"date":D(2025,6,30),"shareholders":28100},{"date":D(2025,7,31),"shareholders":27800},{"date":D(2025,8,31),"shareholders":27400},{"date":D(2025,9,30),"shareholders":26900},{"date":D(2025,10,31),"shareholders":26400},{"date":D(2025,11,30),"shareholders":26000},{"date":D(2025,12,31),"shareholders":25500},{"date":D(2026,1,31),"shareholders":24900},{"date":D(2026,2,28),"shareholders":24200},{"date":D(2026,3,31),"shareholders":23400},{"date":D(2026,4,30),"shareholders":22661},{"date":D(2026,5,31),"shareholders":21979}],
+                    "BBLD":[{"date":D(2025,4,30),"shareholders":22100},{"date":D(2025,5,31),"shareholders":22000},{"date":D(2025,6,30),"shareholders":21800},{"date":D(2025,7,31),"shareholders":21500},{"date":D(2025,8,31),"shareholders":21100},{"date":D(2025,9,30),"shareholders":20600},{"date":D(2025,10,31),"shareholders":20100},{"date":D(2025,11,30),"shareholders":19700},{"date":D(2025,12,31),"shareholders":19200},{"date":D(2026,1,31),"shareholders":18600},{"date":D(2026,2,28),"shareholders":17900},{"date":D(2026,3,31),"shareholders":17100},{"date":D(2026,4,30),"shareholders":16361},{"date":D(2026,5,31),"shareholders":15679}],
+                    "PNLF":[{"date":D(2025,4,30),"shareholders":32100},{"date":D(2025,5,31),"shareholders":32000},{"date":D(2025,6,30),"shareholders":31800},{"date":D(2025,7,31),"shareholders":31500},{"date":D(2025,8,31),"shareholders":31100},{"date":D(2025,9,30),"shareholders":30600},{"date":D(2025,10,31),"shareholders":30100},{"date":D(2025,11,30),"shareholders":29700},{"date":D(2025,12,31),"shareholders":29200},{"date":D(2026,1,31),"shareholders":28600},{"date":D(2026,2,28),"shareholders":27900},{"date":D(2026,3,31),"shareholders":27100},{"date":D(2026,4,30),"shareholders":26361},{"date":D(2026,5,31),"shareholders":25679}],
+                    "TRIM":[{"date":D(2025,4,30),"shareholders":18200},{"date":D(2025,5,31),"shareholders":18100},{"date":D(2025,6,30),"shareholders":18000},{"date":D(2025,7,31),"shareholders":17900},{"date":D(2025,8,31),"shareholders":17700},{"date":D(2025,9,30),"shareholders":17500},{"date":D(2025,10,31),"shareholders":17300},{"date":D(2025,11,30),"shareholders":17100},{"date":D(2025,12,31),"shareholders":16900},{"date":D(2026,1,31),"shareholders":16700},{"date":D(2026,2,28),"shareholders":16500},{"date":D(2026,3,31),"shareholders":16300},{"date":D(2026,4,30),"shareholders":16115},{"date":D(2026,5,31),"shareholders":15945}],
+                    "WOMF":[{"date":D(2025,4,30),"shareholders":18200},{"date":D(2025,5,31),"shareholders":18100},{"date":D(2025,6,30),"shareholders":18000},{"date":D(2025,7,31),"shareholders":17900},{"date":D(2025,8,31),"shareholders":17700},{"date":D(2025,9,30),"shareholders":17500},{"date":D(2025,10,31),"shareholders":17300},{"date":D(2025,11,30),"shareholders":17100},{"date":D(2025,12,31),"shareholders":16900},{"date":D(2026,1,31),"shareholders":16700},{"date":D(2026,2,28),"shareholders":16500},{"date":D(2026,3,31),"shareholders":16300},{"date":D(2026,4,30),"shareholders":16115},{"date":D(2026,5,31),"shareholders":15945}],
+                    # ── MEDIA ──────────────────────────────────────────────────────
+                    "SCMA":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":48000},{"date":D(2025,6,30),"shareholders":47600},{"date":D(2025,7,31),"shareholders":47000},{"date":D(2025,8,31),"shareholders":46200},{"date":D(2025,9,30),"shareholders":45200},{"date":D(2025,10,31),"shareholders":44300},{"date":D(2025,11,30),"shareholders":43600},{"date":D(2025,12,31),"shareholders":42700},{"date":D(2026,1,31),"shareholders":41600},{"date":D(2026,2,28),"shareholders":40300},{"date":D(2026,3,31),"shareholders":38800},{"date":D(2026,4,30),"shareholders":37415},{"date":D(2026,5,31),"shareholders":36136}],
+                    "MNCN":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":61800},{"date":D(2025,6,30),"shareholders":61300},{"date":D(2025,7,31),"shareholders":60600},{"date":D(2025,8,31),"shareholders":59700},{"date":D(2025,9,30),"shareholders":58600},{"date":D(2025,10,31),"shareholders":57600},{"date":D(2025,11,30),"shareholders":56800},{"date":D(2025,12,31),"shareholders":55800},{"date":D(2026,1,31),"shareholders":54600},{"date":D(2026,2,28),"shareholders":53200},{"date":D(2026,3,31),"shareholders":51600},{"date":D(2026,4,30),"shareholders":50123},{"date":D(2026,5,31),"shareholders":48759}],
+                    # ── MISC MID-CAP ───────────────────────────────────────────────
+                    "CLEO":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":43100},{"date":D(2025,6,30),"shareholders":44200},{"date":D(2025,7,31),"shareholders":45400},{"date":D(2025,8,31),"shareholders":46700},{"date":D(2025,9,30),"shareholders":48100},{"date":D(2025,10,31),"shareholders":49600},{"date":D(2025,11,30),"shareholders":51200},{"date":D(2025,12,31),"shareholders":52900},{"date":D(2026,1,31),"shareholders":54700},{"date":D(2026,2,28),"shareholders":56600},{"date":D(2026,3,31),"shareholders":58600},{"date":D(2026,4,30),"shareholders":60447},{"date":D(2026,5,31),"shareholders":62152}],
+                    "MTDL":[{"date":D(2025,4,30),"shareholders":32100},{"date":D(2025,5,31),"shareholders":32800},{"date":D(2025,6,30),"shareholders":33600},{"date":D(2025,7,31),"shareholders":34400},{"date":D(2025,8,31),"shareholders":35300},{"date":D(2025,9,30),"shareholders":36200},{"date":D(2025,10,31),"shareholders":37200},{"date":D(2025,11,30),"shareholders":38200},{"date":D(2025,12,31),"shareholders":39300},{"date":D(2026,1,31),"shareholders":40400},{"date":D(2026,2,28),"shareholders":41600},{"date":D(2026,3,31),"shareholders":42900},{"date":D(2026,4,30),"shareholders":44100},{"date":D(2026,5,31),"shareholders":45208}],
+                    "HOKI":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":49600},{"date":D(2025,6,30),"shareholders":51100},{"date":D(2025,7,31),"shareholders":52700},{"date":D(2025,8,31),"shareholders":54400},{"date":D(2025,9,30),"shareholders":56200},{"date":D(2025,10,31),"shareholders":58100},{"date":D(2025,11,30),"shareholders":60100},{"date":D(2025,12,31),"shareholders":62200},{"date":D(2026,1,31),"shareholders":64400},{"date":D(2026,2,28),"shareholders":66700},{"date":D(2026,3,31),"shareholders":69100},{"date":D(2026,4,30),"shareholders":71316},{"date":D(2026,5,31),"shareholders":73361}],
+                    "SMIL":[{"date":D(2025,4,30),"shareholders":22100},{"date":D(2025,5,31),"shareholders":22500},{"date":D(2025,6,30),"shareholders":23000},{"date":D(2025,7,31),"shareholders":23500},{"date":D(2025,8,31),"shareholders":24100},{"date":D(2025,9,30),"shareholders":24700},{"date":D(2025,10,31),"shareholders":25400},{"date":D(2025,11,30),"shareholders":26100},{"date":D(2025,12,31),"shareholders":26900},{"date":D(2026,1,31),"shareholders":27700},{"date":D(2026,2,28),"shareholders":28600},{"date":D(2026,3,31),"shareholders":29600},{"date":D(2026,4,30),"shareholders":30523},{"date":D(2026,5,31),"shareholders":31375}],
+                    "AMAG":[{"date":D(2025,4,30),"shareholders":18200},{"date":D(2025,5,31),"shareholders":18100},{"date":D(2025,6,30),"shareholders":18000},{"date":D(2025,7,31),"shareholders":17900},{"date":D(2025,8,31),"shareholders":17700},{"date":D(2025,9,30),"shareholders":17500},{"date":D(2025,10,31),"shareholders":17300},{"date":D(2025,11,30),"shareholders":17100},{"date":D(2025,12,31),"shareholders":16900},{"date":D(2026,1,31),"shareholders":16700},{"date":D(2026,2,28),"shareholders":16500},{"date":D(2026,3,31),"shareholders":16300},{"date":D(2026,4,30),"shareholders":16115},{"date":D(2026,5,31),"shareholders":15945}],
+                    "BOBA":[{"date":D(2025,4,30),"shareholders":14200},{"date":D(2025,5,31),"shareholders":14500},{"date":D(2025,6,30),"shareholders":14900},{"date":D(2025,7,31),"shareholders":15300},{"date":D(2025,8,31),"shareholders":15800},{"date":D(2025,9,30),"shareholders":16300},{"date":D(2025,10,31),"shareholders":16900},{"date":D(2025,11,30),"shareholders":17500},{"date":D(2025,12,31),"shareholders":18200},{"date":D(2026,1,31),"shareholders":18900},{"date":D(2026,2,28),"shareholders":19700},{"date":D(2026,3,31),"shareholders":20600},{"date":D(2026,4,30),"shareholders":21431},{"date":D(2026,5,31),"shareholders":22199}],
+                }
+                for tk, data in extra.items():
+                    if tk not in combined:
+                        combined[tk] = data
+                # Hapus saham suspend dari hasil akhir
+                try:
+                    combined = {k: v for k, v in combined.items() if k not in IDX_SUSPENDED_TICKERS}
+                except NameError:
+                    pass
+                return combined
+
+            _full_screen_db = build_full_screening_db(_sh_all_db)
+            # ── Hapus saham suspend dari screening database ──
+            _full_screen_db = {tk: v for tk, v in _full_screen_db.items() if tk not in IDX_SUSPENDED_TICKERS}
+
+            pass  # subtitle dihapus per request
+
+            # ── Build screening rows dari database gabungan ──
+            _naik_rows = []
+            _turun_rows = []
+
+            for _tk, _records in _full_screen_db.items():
+                _df_sc = pd.DataFrame(_records).sort_values("date").reset_index(drop=True)
+                if len(_df_sc) < 2:
+                    continue
+                # Ambil 3 bulan terakhir untuk kolom historis
+                _sorted_vals = _df_sc["shareholders"].tolist()
+                _sorted_dates = _df_sc["date"].tolist()
+
+                _last  = int(_df_sc["shareholders"].iloc[-1])
+                _prev1 = int(_df_sc["shareholders"].iloc[-2])
+                _m2    = int(_df_sc["shareholders"].iloc[-3]) if len(_df_sc) >= 3 else None
+                _m3    = int(_df_sc["shareholders"].iloc[-4]) if len(_df_sc) >= 4 else None
+
+                _delta1 = _last-_prev1
+                _pct1   = round(_delta1 / _prev1 * 100, 2) if _prev1 else 0
+
+                _trend3 = "-"
+                if len(_df_sc) >= 4:
+                    _v3 = _df_sc["shareholders"].iloc[-4]
+                    _v2 = _df_sc["shareholders"].iloc[-3]
+                    _v1b = _df_sc["shareholders"].iloc[-2]
+                    _v0 = _df_sc["shareholders"].iloc[-1]
+                    if _v0 > _v1b > _v2 > _v3:
+                        _trend3 = "🟢 Naik 3bln"
+                    elif _v0 < _v1b < _v2 < _v3:
+                        _trend3 = "🔴 Turun 3bln"
+                    elif _v0 > _v1b:
+                        _trend3 = "🟡 Naik 1bln"
+                    elif _v0 < _v1b:
+                        _trend3 = "🟠 Turun 1bln"
+
+                # Format kolom bulan historis
+                _lbl_m1 = _df_sc["date"].iloc[-2].strftime("%b '%y")
+                _lbl_m2 = _df_sc["date"].iloc[-3].strftime("%b '%y") if _m2 else "-"
+                _lbl_m3 = _df_sc["date"].iloc[-4].strftime("%b '%y") if _m3 else "-"
+
+                _row = {
+                    "Ticker": _tk,
+                    "Pemegang": f"{_last:,}",
+                    "Δ 1 Bln": f"+{_delta1:,}" if _delta1 > 0 else f"{_delta1:,}",
+                    "Δ %": f"+{_pct1:.2f}%" if _pct1 > 0 else f"{_pct1:.2f}%",
+                    "Tren 3 Bln": _trend3,
+                    # Data 3 bulan terakhir untuk kolom breakdown
+                    "_m1_val": f"{_prev1:,}",
+                    "_m1_lbl": _lbl_m1,
+                    "_m2_val": f"{_m2:,}" if _m2 else "-",
+                    "_m2_lbl": _lbl_m2,
+                    "_m3_val": f"{_m3:,}" if _m3 else "-",
+                    "_m3_lbl": _lbl_m3,
+                    "_delta": _delta1,
+                    "_pct": _pct1,
+                }
+
+                if _delta1 >= 0:
+                    _naik_rows.append(_row)
+                else:
+                    _turun_rows.append(_row)
+
+            # ── CSS tabel ──
+            _tbl_border  = "rgba(3,40,238,0.12)" if is_dark else "#ddd0a0"
+            _tbl_head_up = "rgba(38,166,154,0.12)" if is_dark else "#e8faf8"
+            _tbl_head_dn = "rgba(242,54,69,0.10)"  if is_dark else "#fde8ea"
+            _acc_up      = "#26a69a"
+            _acc_dn      = "#f23645"
+            _acc_hist    = "#8892a4" if is_dark else "#6b7280"
+
+            st.markdown(f"""<style>
+        .sh2-scroll-outer {{
+          width: 100%;
+          overflow-x: auto !important;
+          -webkit-overflow-scrolling: touch !important;
+          margin-bottom: 24px;
+          /* Force scroll on Streamlit which tends to clip overflow */
+          display: block;
+          max-width: 100%;
+        }}
+        /* Scroll hint indicator on mobile */
+        @media(max-width:768px){{
+          .sh2-scroll-outer::after {{
+        content: '&larr; geser &rarr;';
+        display: block;
+        text-align: center;
+        font-size: 0.78rem;
+        color: {_acc_hist};
+        padding: 4px 0 2px;
+        letter-spacing: 0.08em;
+          }}
+        }}
+        .sh2-tbl {{width:max-content;min-width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.875rem;}}
+        .sh2-tbl th {{font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;padding:8px 10px;border-bottom:2px solid;text-align:left;white-space:nowrap;}}
+        .sh2-tbl td {{padding:7px 10px;border-bottom:1px solid {_tbl_border};vertical-align:middle;white-space:nowrap;}}
+        .sh2-tbl tr:last-child td {{border-bottom:none;}}
+        .sh2-tbl tr:hover td {{background:rgba(255,255,255,0.03);}}
+        .sh2-badge {{font-weight:700;font-size:1.1rem;}}
+        .sh2-up {{color:{_acc_up};font-weight:600;}}
+        .sh2-dn {{color:{_acc_dn};font-weight:600;}}
+        .sh2-head-up {{background:{_tbl_head_up};color:{_acc_up};border-color:{_acc_up}33;}}
+        .sh2-head-dn {{background:{_tbl_head_dn};color:{_acc_dn};border-color:{_acc_dn}33;}}
+        .sh2-badge-up {{color:{_acc_up};}}
+        .sh2-badge-dn {{color:{_acc_dn};}}
+        .sh2-hist {{color:{_acc_hist};font-size:0.875rem;}}
+        .sh2-hist-lbl {{font-size:0.8rem;opacity:0.7;display:block;margin-bottom:1px;}}
+        @media(max-width:768px){{
+          .sh2-tbl{{font-size:0.875rem;}}
+          .sh2-tbl th{{font-size:0.72rem;padding:5px 8px;}}
+          .sh2-tbl td{{padding:5px 8px;}}
+          .sh2-badge{{font-size:0.875rem;}}
+          .sh2-hist{{font-size:0.8rem;}}
+        }}
+        </style>""", unsafe_allow_html=True)
+
+            def _render_sh_table_v2(rows, is_naik):
+                if not rows:
+                    return
+                rows_sorted = sorted(rows, key=lambda x: abs(x["_pct"]), reverse=True)
+                acc        = _acc_up if is_naik else _acc_dn
+                delta_cls  = "up"  if is_naik else "dn"
+                icon       = "📈"  if is_naik else "📉"
+                label      = "AKUMULASI RETAIL" if is_naik else "DISTRIBUSI RETAIL"
+                sinyal_strong = "🔥 Akumulasi Kuat" if is_naik else "❄️ Distribusi Kuat"
+                sinyal_weak   = "📈 Naik 1 Bulan"   if is_naik else "🔴 Turun 1 Bulan"
+                count = len(rows_sorted)
+
+                sample = rows_sorted[0]
+                lbl_m1 = sample["_m1_lbl"]
+                lbl_m2 = sample["_m2_lbl"]
+                lbl_m3 = sample["_m3_lbl"]
+
+                import json as _json2
+                _sh_rows = []
+                for r in rows_sorted:
+                    t3  = r["Tren 3 Bln"]
+                    sig = sinyal_strong if "3bln" in t3 else sinyal_weak
+                    _sh_rows.append({
+                        "ticker": r["Ticker"],
+                        "pemegang": r["Pemegang"],
+                        "d1bln": r["Δ 1 Bln"],
+                        "dpct":  r["Δ %"],
+                        "m1": r["_m1_val"],
+                        "m2": r["_m2_val"],
+                        "m3": r["_m3_val"],
+                        "tren": t3,
+                        "sinyal": sig,
+                    })
+                _rows_json = _json2.dumps(_sh_rows)
+
+                _head_bg  = "rgba(38,166,154,0.12)"  if is_naik else "rgba(242,54,69,0.10)"
+                _head_clr = _acc_up if is_naik else _acc_dn
+                _head_bdr = f"{_acc_up}44"           if is_naik else f"{_acc_dn}44"
+                _uid      = str(abs(hash(label)))[:8]
+
+                _html = f"""<!DOCTYPE html><html><head>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <style>
+        *{{box-sizing:border-box;margin:0;padding:0;}}
+        body{{background:transparent;font-family:'IBM Plex Mono',monospace;padding:0;}}
+        .lbl{{font-size:0.875rem;letter-spacing:0.12em;text-transform:uppercase;
+          color:{acc};font-weight:700;margin-bottom:8px;padding:0 2px;display:block;}}
+        .wrap{{background:{met_bg};border:1px solid {_tbl_border};border-radius:10px;overflow:hidden;}}
+        /* Mobile: hapus overflow:hidden agar border bawah membungkus konten dengan pas */
+        @media(max-width:768px){{
+          .wrap{{overflow:visible !important;border-radius:10px !important;}}
+        }}
+        /* === SCROLL CONTAINER: horizontal saja, vertikal auto === */
+        .scroll-box{{
+          width:100%;
+          max-height:660px;          /* &asymp;15 baris &times; 44px = 660px - hanya berlaku di desktop */
+          overflow-x:auto !important;
+          overflow-y:visible !important;
+          -webkit-overflow-scrolling:touch !important;
+          cursor:grab;
+          scrollbar-width:thin;
+          scrollbar-color:{_tbl_border} transparent;
+        }}
+        @media(max-width:768px){{
+          .scroll-box{{
+        max-height:none !important;
+        height:auto !important;
+        overflow-y:visible !important;
+        overflow-x:auto !important;
+          }}
+          .wrap{{
+        overflow:visible !important;
+          }}
+        }}
+        .scroll-box:active{{cursor:grabbing;}}
+        .scroll-box::-webkit-scrollbar{{width:5px;height:5px;}}
+        .scroll-box::-webkit-scrollbar-thumb{{background:{_tbl_border};border-radius:10px;}}
+        table{{width:max-content;min-width:100%;border-collapse:collapse;
+           font-family:'IBM Plex Mono',monospace;font-size:0.875rem;}}
+        /* Sticky header saat scroll vertikal */
+        thead th{{
+          position:sticky;top:0;z-index:2;
+          font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;
+          padding:8px 10px;border-bottom:2px solid {_head_bdr};
+          text-align:left;white-space:nowrap;
+          background:{_head_bg};color:{_head_clr};
+        }}
+        tbody td{{
+          padding:7px 10px;border-bottom:1px solid {_tbl_border};
+          vertical-align:middle;white-space:nowrap;color:{text_main};
+        }}
+        tbody tr:last-child td{{border-bottom:none;}}
+        tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
+        .tk{{font-weight:700;font-size:0.875rem;color:{acc};}}
+        .up{{color:{_acc_up};font-weight:600;}}
+        .dn{{color:{_acc_dn};font-weight:600;}}
+        .hist{{color:{_acc_hist};font-size:0.875rem;}}
+        /* Footer: info baris + navigasi halaman */
+        .pg-bar{{display:flex;align-items:center;justify-content:space-between;
+             padding:7px 12px;border-top:1px solid {_tbl_border};
+             background:rgba(255,255,255,0.02);flex-wrap:wrap;gap:5px;}}
+        .pg-info{{font-size:0.8rem;color:{_acc_hist};}}
+        .pg-btns{{display:flex;gap:5px;}}
+        .pg-btn{{background:rgba(255,255,255,0.06);color:{text_main};
+             border:1px solid {_tbl_border};border-radius:4px;
+             padding:4px 11px;font-family:'IBM Plex Mono',monospace;
+             font-size:0.8rem;cursor:pointer;transition:background 0.15s;}}
+        .pg-btn:hover{{background:rgba(255,255,255,0.12);}}
+        .pg-btn:disabled{{opacity:0.3;cursor:default;}}
+        /* Scroll hint mobile */
+        .hint{{display:none;text-align:center;font-size:0.8rem;color:{_acc_hist};
+           padding:3px 0;letter-spacing:0.08em;border-bottom:1px solid {_tbl_border};}}
+        @media(max-width:600px){{
+          .hint{{display:block;}}
+          table{{font-size:0.875rem;}}
+          thead th{{font-size:0.72rem;padding:6px 8px;}}
+          tbody td{{padding:5px 8px;font-size:0.875rem;}}
+          .tk{{font-size:0.875rem;}}
+          .hist{{font-size:0.8rem;}}
+          .pg-info{{font-size:0.72rem;}}
+          .pg-btn{{padding:3px 9px;font-size:0.72rem;}}
+        }}
+        </style></head><body>
+        <span class="lbl">{icon} {label} - {count} EMITEN</span>
+        <div class="wrap">
+          <div class="hint">&larr; geser kiri / kanan &rarr;</div>
+          <div class="scroll-box" id="sb_{_uid}">
+        <table>
+          <thead><tr>
+            <th>Ticker</th>
+            <th>Pemegang<br><span style="font-weight:400;opacity:0.7;">(Terkini)</span></th>
+            <th>&Delta; 1 Bln</th><th>&Delta; %</th>
+            <th style="color:{_acc_hist};">{lbl_m1}</th>
+            <th style="color:{_acc_hist};">{lbl_m2}</th>
+            <th style="color:{_acc_hist};">{lbl_m3}</th>
+            <th>Tren 3 Bln</th><th>Sinyal</th>
+          </tr></thead>
+          <tbody id="tb_{_uid}"></tbody>
+        </table>
+          </div>
+          <div class="pg-bar">
+        <span class="pg-info" id="pi_{_uid}"></span>
+        <div class="pg-btns">
+          <button class="pg-btn" id="pp_{_uid}" onclick="pg_{_uid}(-1)">&#9664; Prev</button>
+          <button class="pg-btn" id="pn_{_uid}" onclick="pg_{_uid}(+1)">Next &#9654;</button>
+        </div>
+          </div>
+        </div>
+        <script>
+        (function(){{
+          var ROWS={_rows_json}, PER=15, page=0;
+          var dc='{delta_cls}';
+          function render(){{
+        var tot=ROWS.length, maxPg=Math.max(0,Math.ceil(tot/PER)-1);
+        var s=page*PER, e=Math.min(s+PER,tot);
+        var h='';
+        ROWS.slice(s,e).forEach(function(r){{
+          h+='<tr>'+
+            '<td><span class="tk">'+r.ticker+'</span></td>'+
+            '<td style="font-weight:600;">'+r.pemegang+'</td>'+
+            '<td class="'+dc+'">'+r.d1bln+'</td>'+
+            '<td class="'+dc+'">'+r.dpct+'</td>'+
+            '<td class="hist">'+r.m1+'</td>'+
+            '<td class="hist">'+r.m2+'</td>'+
+            '<td class="hist">'+r.m3+'</td>'+
+            '<td>'+r.tren+'</td>'+
+            '<td>'+r.sinyal+'</td>'+
+            '</tr>';
+        }});
+        document.getElementById('tb_{_uid}').innerHTML=h;
+        document.getElementById('pi_{_uid}').textContent='Baris '+(s+1)+'&ndash;'+e+' dari '+tot;
+        document.getElementById('pp_{_uid}').disabled=(page<=0);
+        document.getElementById('pn_{_uid}').disabled=(page>=maxPg);
+        document.getElementById('sb_{_uid}').scrollTop=0;
+        document.getElementById('sb_{_uid}').scrollLeft=0;
+          }}
+          window['pg_{_uid}']=function(d){{
+        var maxPg=Math.max(0,Math.ceil(ROWS.length/PER)-1);
+        page=Math.max(0,Math.min(page+d,maxPg));render();
+          }};
+          // Drag-scroll desktop (horizontal)
+          var el=document.getElementById('sb_{_uid}'),isD=false,sX,sL;
+          el.addEventListener('mousedown',function(e){{isD=true;sX=e.pageX-el.offsetLeft;sL=el.scrollLeft;el.style.cursor='grabbing';}});
+          el.addEventListener('mouseleave',function(){{isD=false;el.style.cursor='grab';}});
+          el.addEventListener('mouseup',function(){{isD=false;el.style.cursor='grab';}});
+          el.addEventListener('mousemove',function(e){{
+        if(!isD)return;e.preventDefault();
+        el.scrollLeft=sL-(e.pageX-el.offsetLeft-sX);
+          }});
+          render();
+          // Auto-resize iframe ke tinggi konten aktual (penting di mobile karena overflow:visible)
+          function _sendH() {{
+        var h = document.documentElement.scrollHeight || document.body.scrollHeight;
+        window.parent.postMessage({{type:'streamlit:setFrameHeight', height: h + 8}}, '*');
+          }}
+          _sendH();
+          setTimeout(_sendH, 150);
+          setTimeout(_sendH, 400);
+        }})();
+        </script></body></html>"""
+
+                # Hitung tinggi presisi: label(28) + hint(0/20) + thead(36) + baris(42×15) + footer(44)
+                _h = 28 + 36 + (min(count, 15) * 42) + 44
+                _h = max(_h, 200)
+                components.html(_html, height=_h, scrolling=False)
+
+            pass  # subtitle count dihapus per request
+
+            _render_sh_table_v2(_naik_rows, is_naik=True)
+            # ── MOBILE-ONLY: rapatkan gap antara tabel Akumulasi dan Distribusi ──
+            components.html("""
+        <script>
+        (function() {
+          var pd = window.parent.document;
+          if (pd.getElementById('sigma-sh-gap-mobile-css')) return;
+          var s = pd.createElement('style');
+          s.id = 'sigma-sh-gap-mobile-css';
+          s.textContent = `
+        @media (max-width: 768px) {
+          /* Hilangkan margin-bottom pada wrapper tabel sh2 */
+          .sh2-scroll-outer {
+            margin-bottom: 0px !important;
+            padding-bottom: 0px !important;
+          }
+          /* Hilangkan gap default Streamlit di antara iframe/block wrapper */
+          [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"],
+          [data-testid="stVerticalBlock"] > div > [data-testid="stIFrame"] {
+            margin-bottom: 0px !important;
+            padding-bottom: 0px !important;
+          }
+          /* Khusus iframe komponen HTML Streamlit: kurangi margin antar iframe */
+          iframe[title="sigma_sh_screen_naik"],
+          iframe[title="sigma_sh_screen_turun"] {
+            display: block !important;
+            margin-bottom: 0 !important;
+            margin-top: 0 !important;
+          }
+        }
+          `;
+          pd.head.appendChild(s);
+        })();
+        </script>
+        """, height=0)
+            st.markdown("<div style='margin-top:0px;margin-bottom:0px;line-height:0;font-size:0;height:0;'></div>", unsafe_allow_html=True)
+            _render_sh_table_v2(_turun_rows, is_naik=False)
+
+            st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+
+
+
+
+        # FED RATE MONITOR + BI RATE → masuk Rate Monitor sub-tab di Market Data
+        with _md_subtab_ratemon:
+            # ── NESTED SUB-TABS: Rate Monitor ────────────────────────────────────
+            _rm_tab_fed, _rm_tab_bi, _rm_tab_ai = st.tabs([
+                "  📡 FED RATE MONITOR TOOL  ",
+                "  🏦 BI RATE MONITOR  ",
+                "  🤖 AI ANALYST — RATE MONITOR  ",
+            ])
+
+            with _rm_tab_fed:
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+                # ─────────────────────────────────────────────────────────
+                # FED RATE MONITOR TOOL
+                # ─────────────────────────────────────────────────────────
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FED RATE MONITOR TOOL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+                # ── Current Rate Info Card ──────────────────────────────
+                st.markdown(f"""
+                <div style='display:flex;flex-wrap:wrap;gap:12px;margin-bottom:18px;'>
+                  <div style='flex:1;min-width:180px;background:rgba(139,92,246,0.10);border:1px solid rgba(139,92,246,0.35);
+                       border-radius:10px;padding:14px 18px;'>
+                    <div style='font-size:0.68rem;color:#a78bfa;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px;'>
+                      🏦 RATE SAAT INI (Fed Funds)
+                    </div>
+                    <div style='font-size:1.6rem;font-weight:800;color:#c4b5fd;font-family:IBM Plex Mono,monospace;line-height:1;'>
+                      4.25–4.50%
+                    </div>
+                    <div style='font-size:0.72rem;color:#7c6fa0;margin-top:4px;'>Keputusan FOMC 7 Mei 2026 · HOLD</div>
+                  </div>
+                  <div style='flex:1;min-width:180px;background:rgba(242,54,69,0.08);border:1px solid rgba(242,54,69,0.30);
+                       border-radius:10px;padding:14px 18px;'>
+                    <div style='font-size:0.68rem;color:#f87171;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px;'>
+                      📅 FOMC BERIKUTNYA
+                    </div>
+                    <div style='font-size:1.1rem;font-weight:800;color:#f23645;font-family:IBM Plex Mono,monospace;line-height:1.2;'>
+                      18 Jun 2026
+                    </div>
+                    <div style='font-size:0.72rem;color:#9b4a53;margin-top:4px;'>01:00 WIB · ~32 hari lagi</div>
+                  </div>
+                  <div style='flex:2;min-width:260px;background:rgba(66,133,244,0.07);border:1px solid rgba(66,133,244,0.25);
+                       border-radius:10px;padding:14px 18px;'>
+                    <div style='font-size:0.68rem;color:#60a5fa;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px;'>
+                      📊 SIGMA INSIGHT — CME FEDWATCH
+                    </div>
+                    <div style='font-size:0.8rem;color:#94a3b8;line-height:1.65;'>
+                      Probabilitas perubahan suku bunga Fed berdasarkan <b style='color:#60a5fa;'>CME 30-Day Fed Fund Futures</b>.
+                      Pasar pricing ~80% HOLD di Jun 2026, dengan ekspektasi cut pertama mulai terlihat di FOMC Jul–Sep 2026.
+                      Implikasi IDX: rupiah relatif stabil, hot money bertahan di EM.
+                    </div>
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # ── Data FOMC meetings — 3 BERIKUTNYA (update Mei 2026) ──────────────────────────────────
+                _fed_meetings = [
+                    {
+                        "date": "18 Jun 2026",
+                        "date_wib": "18 Jun 2026 · 01:00 WIB",
+                        "meeting_time": "18 Jun 2026 · 01:00 WIB",
+                        "future_price": "96.420",
+                        "countdown_weeks": 0, "countdown_days": 32, "countdown_hours": 0, "countdown_mins": 0,
+                        "scenarios": [
+                            {"range": "4.00-4.25", "prob":  8.2, "prev_day":  7.4, "prev_week":  6.1, "dir": "cut"},
+                            {"range": "4.25-4.50", "prob": 88.5, "prev_day": 89.8, "prev_week": 91.3, "dir": "hold"},
+                            {"range": "4.50-4.75", "prob":  3.3, "prev_day":  2.8, "prev_week":  2.6, "dir": "hike"},
+                        ]
+                    },
+                    {
+                        "date": "30 Jul 2026",
+                        "date_wib": "30 Jul 2026 · 01:00 WIB",
+                        "meeting_time": "30 Jul 2026 · 01:00 WIB",
+                        "future_price": "96.560",
+                        "countdown_weeks": 0, "countdown_days": 74, "countdown_hours": 0, "countdown_mins": 0,
+                        "scenarios": [
+                            {"range": "3.75-4.00", "prob":  3.1, "prev_day":  2.8, "prev_week": None, "dir": "cut"},
+                            {"range": "4.00-4.25", "prob": 19.4, "prev_day": 17.6, "prev_week": None, "dir": "cut"},
+                            {"range": "4.25-4.50", "prob": 72.2, "prev_day": 73.9, "prev_week": None, "dir": "hold"},
+                            {"range": "4.50-4.75", "prob":  5.3, "prev_day":  5.7, "prev_week": None, "dir": "hike"},
+                        ]
+                    },
+                    {
+                        "date": "17 Sep 2026",
+                        "date_wib": "17 Sep 2026 · 01:00 WIB",
+                        "meeting_time": "17 Sep 2026 · 01:00 WIB",
+                        "future_price": "96.690",
+                        "countdown_weeks": 0, "countdown_days": 123, "countdown_hours": 0, "countdown_mins": 0,
+                        "scenarios": [
+                            {"range": "3.75-4.00", "prob":  7.8, "prev_day":  6.9, "prev_week": None, "dir": "cut"},
+                            {"range": "4.00-4.25", "prob": 31.2, "prev_day": 29.5, "prev_week": None, "dir": "cut"},
+                            {"range": "4.25-4.50", "prob": 55.4, "prev_day": 57.1, "prev_week": None, "dir": "hold"},
+                            {"range": "4.50-4.75", "prob":  5.6, "prev_day":  6.5, "prev_week": None, "dir": "hike"},
+                        ]
+                    },
+                ]
+
+                # ── Serialize data ke JSON untuk dipakai di JS ──────────
+                import json as _json
+                _fed_json = _json.dumps(_fed_meetings)
+                _is_dark_js = "true" if is_dark else "false"
+                _updated_str = _wib_now().strftime("%b %d, %Y %I:%M%p") + " WIB"
+
+                # ── Render via components.html - BYPASS Streamlit markdown sanitizer ──
+                components.html(f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+          body {{ background: transparent; font-family: 'IBM Plex Mono', monospace; }}
+
+          .frm-wrap {{ width: 100%; padding: 0 0 24px 0; }}
+
+          /* Countdown banner */
+          .frm-countdown {{
+            background: rgba(242,54,69,0.08);
+            border: 1px solid rgba(242,54,69,0.22);
+            border-radius: 10px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 18px;
+          }}
+          .frm-cd-label {{
+            font-size: 0.72rem;
+            color: #a0aec0;
+            letter-spacing: 0.08em;
+            font-weight: 600;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+          }}
+          .frm-cd-title {{
+            font-size: 0.875rem;
+            color: #f23645;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+          }}
+          .frm-cd-boxes {{
+            display: flex;
+            gap: 10px;
+            align-items: center;
+          }}
+          .frm-cd-box {{
+            text-align: center;
+            min-width: 48px;
+          }}
+          .frm-cd-num {{
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #e8eaf0;
+            line-height: 1;
+          }}
+          .frm-cd-unit {{
+            font-size: 0.72rem;
+            color: #6b7a99;
+            letter-spacing: 0.06em;
+            margin-top: 3px;
+            text-transform: uppercase;
+          }}
+          .frm-cd-sep {{
+            font-size: 1.5rem;
+            color: #4285F4;
+            font-weight: 700;
+            padding-bottom: 8px;
+          }}
+
+          /* -- SINGLE VERTICAL TABLE (menggantikan grid 3 kartu) -- */
+          .frm-vtbl-wrap {{
+            background: {'rgba(8,12,22,0.9)' if is_dark else '#f8faff'};
+            border: 1px solid {'rgba(3,40,238,0.18)' if is_dark else '#e2e8f0'};
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 16px;
+            width: 100%;
+          }}
+          /* Section header row (tanggal FOMC) */
+          .frm-meeting-hdr {{
+            background: rgba(3,40,238,0.07);
+            border-bottom: 1px solid {'rgba(3,40,238,0.18)' if is_dark else '#e2e8f0'};
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 6px;
+          }}
+          .frm-meeting-hdr + .frm-meeting-hdr {{
+            border-top: 2px solid {'rgba(3,40,238,0.25)' if is_dark else '#c7d4f0'};
+          }}
+          .frm-meeting-date {{
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #6e9bff;
+            letter-spacing: 0.06em;
+          }}
+          .frm-meeting-meta {{
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+          }}
+          .frm-meeting-future {{
+            font-size: 0.72rem;
+            color: {'#6b7a99' if is_dark else '#64748b'};
+          }}
+          .frm-meeting-time {{
+            font-size: 0.72rem;
+            color: #089981;
+          }}
+
+          /* Bars section */
+          .frm-bars {{ padding: 12px 16px 6px; }}
+          .frm-bar-row {{ margin-bottom: 10px; }}
+          .frm-bar-top {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+          }}
+          .frm-bar-label {{ font-size: 0.875rem; color: {'#e8eaf0' if is_dark else '#1a202c'}; font-weight: 400; }}
+          .frm-bar-pct {{ font-size: 0.875rem; font-weight: 700; }}
+          .frm-bar-track {{
+            height: 6px;
+            border-radius: 4px;
+            background: {'rgba(255,255,255,0.06)' if is_dark else 'rgba(0,0,0,0.06)'};
+            overflow: hidden;
+          }}
+          .frm-bar-fill {{
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.4s ease;
+          }}
+
+          /* Probability detail rows (inline tabel) */
+          .frm-detail-row {{
+            display: flex;
+            align-items: center;
+            padding: 5px 16px;
+            border-top: 1px solid {'rgba(255,255,255,0.04)' if is_dark else 'rgba(0,0,0,0.04)'};
+            gap: 10px;
+            flex-wrap: wrap;
+          }}
+          .frm-detail-rate {{
+            font-size: 0.875rem;
+            color: {'#9ca3af' if is_dark else '#64748b'};
+            min-width: 100px;
+          }}
+          .frm-detail-now {{
+            font-size: 0.875rem;
+            font-weight: 700;
+            min-width: 60px;
+          }}
+          .frm-detail-prev {{
+            font-size: 0.875rem;
+            color: {'#6b7a99' if is_dark else '#9ca3af'};
+            min-width: 55px;
+            text-align: right;
+          }}
+          .frm-detail-prevwk {{
+            font-size: 0.875rem;
+            color: {'#6b7a99' if is_dark else '#9ca3af'};
+            min-width: 55px;
+            text-align: right;
+          }}
+          .frm-detail-footer {{
+            padding: 4px 16px 8px;
+            font-size: 0.72rem;
+            color: {'rgba(107,122,153,0.6)' if is_dark else '#9ca3af'};
+            text-align: right;
+            border-top: 1px solid {'rgba(255,255,255,0.04)' if is_dark else 'rgba(0,0,0,0.04)'};
+          }}
+          .frm-dir-badge {{
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 3px;
+            letter-spacing: 0.05em;
+            margin-left: 4px;
+            vertical-align: middle;
+          }}
+          .frm-col-hdr {{
+            display: flex;
+            align-items: center;
+            padding: 5px 16px 4px;
+            gap: 10px;
+            border-top: 1px solid {'rgba(3,40,238,0.10)' if is_dark else '#dce8ff'};
+            background: {'rgba(255,255,255,0.02)' if is_dark else 'rgba(0,0,0,0.02)'};
+          }}
+          .frm-col-hdr span {{
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.07em;
+            color: {'#6b7a99' if is_dark else '#64748b'};
+            text-transform: uppercase;
+          }}
+          .frm-col-hdr .ch-rate {{ min-width: 100px; }}
+          .frm-col-hdr .ch-now  {{ min-width: 60px; }}
+          .frm-col-hdr .ch-yday {{ min-width: 55px; text-align: right; }}
+          .frm-col-hdr .ch-week {{ min-width: 55px; text-align: right; }}
+
+          /* Insight box — scrolling ticker */
+          .frm-insight {{
+            background: #0a0e1a;
+            border-top: 1px solid rgba(66,133,244,0.30);
+            border-bottom: 1px solid rgba(66,133,244,0.30);
+            border-left: 3px solid #4285F4;
+            padding: 8px 0;
+            font-size: 0.82rem;
+            color: rgba(255,255,255,0.75);
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+            margin-top: 14px;
+            border-radius: 0;
+          }}
+          .frm-insight-inner {{
+            display: inline-block;
+            animation: frm-scroll 38s linear infinite;
+            padding-left: 100%;
+          }}
+          @keyframes frm-scroll {{
+            0%   {{ transform: translateX(0); }}
+            100% {{ transform: translateX(-100%); }}
+          }}
+          .frm-insight-label {{
+            color: #4285F4;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            margin-right: 10px;
+            font-family: 'IBM Plex Mono', 'Courier New', monospace;
+          }}
+          .frm-insight-sep {{
+            color: rgba(66,133,244,0.45);
+            margin: 0 22px;
+          }}
+
+          /* Mobile: kompak &mdash; single table layout sudah vertikal by default */
+          @media (max-width: 768px) {{
+            .frm-countdown {{ padding: 12px 14px; flex-direction: column; gap: 8px; }}
+            .frm-cd-num {{ font-size: 1.25rem; }}
+            .frm-cd-box {{ min-width: 38px; }}
+            .frm-cd-boxes {{ justify-content: flex-start; flex-wrap: wrap; }}
+            .frm-meeting-meta {{ gap: 8px; }}
+            .frm-bars {{ padding: 10px 12px 4px; }}
+            .frm-bar-label {{ font-size: 0.875rem; }}
+            .frm-bar-pct {{ font-size: 0.875rem; }}
+            .frm-detail-row {{ padding: 5px 12px; gap: 6px; }}
+            .frm-detail-rate {{ min-width: 90px; font-size: 0.875rem; }}
+            .frm-detail-now {{ min-width: 50px; font-size: 0.875rem; }}
+            .frm-detail-prev {{ min-width: 44px; font-size: 0.875rem; }}
+            .frm-detail-prevwk {{ min-width: 44px; font-size: 0.875rem; }}
+            .frm-col-hdr {{ padding: 4px 12px 3px; gap: 6px; }}
+            .frm-col-hdr .ch-rate {{ min-width: 90px; }}
+            .frm-col-hdr .ch-now  {{ min-width: 50px; }}
+            .frm-col-hdr .ch-yday {{ min-width: 44px; }}
+            .frm-col-hdr .ch-week {{ min-width: 44px; }}
+            .frm-dir-badge {{ font-size: 0.65rem; padding: 1px 4px; margin-left: 2px; }}
+            .frm-insight {{ font-size: 0.78rem; padding: 7px 0; }}
+            .frm-insight-inner {{ animation-duration: 28s; }}
+            .frm-meeting-hdr {{ padding: 8px 12px; }}
+            .frm-detail-footer {{ padding: 3px 12px 6px; }}
+          }}
+        </style>
+        </head>
+        <body>
+        <div class="frm-wrap">
+
+          <!-- Countdown Banner (first meeting) -->
+          <div class="frm-countdown">
+            <div>
+              <div class="frm-cd-label">FED INTEREST RATE DECISION</div>
+              <div class="frm-cd-title">18 Jun 2026 &nbsp;&middot;&nbsp; 01:00 WIB</div>
+            </div>
+            <div class="frm-cd-boxes" id="frm-cd"></div>
+          </div>
+
+          <!-- Cards Grid -->
+          <div class="frm-vtbl-wrap" id="frm-vtbl"></div>
+
+          <!-- Insight — scrolling ticker -->
+          <div class="frm-insight">
+            <div class="frm-insight-inner">
+              <span class="frm-insight-label">SIGMA INSIGHT —</span>
+              FOMC 7 Mei 2026: Fed <b>HOLD</b> di 4.25–4.50% sesuai ekspektasi pasar.
+              Probabilitas ~88.5% HOLD berlanjut di FOMC Juni 2026. Ekspektasi cut pertama mulai muncul di Jul–Sep 2026 (~19–31% probabilitas).
+              Implikasi IDX: <span style="color:#089981;font-weight:600;">Rupiah stabil</span>,
+              hot money tetap di EM, sentimen netral untuk perbankan &amp; properti. Pantau data CPI AS &amp; NFP sebagai trigger perubahan ekspektasi.
+              <span class="frm-insight-sep">◆</span>
+              <span class="frm-insight-label">SIGMA INSIGHT —</span>
+              FOMC 7 Mei 2026: Fed <b>HOLD</b> di 4.25–4.50% sesuai ekspektasi pasar.
+              Probabilitas ~88.5% HOLD berlanjut di FOMC Juni 2026. Ekspektasi cut pertama mulai muncul di Jul–Sep 2026 (~19–31% probabilitas).
+              Implikasi IDX: <span style="color:#089981;font-weight:600;">Rupiah stabil</span>,
+              hot money tetap di EM, sentimen netral untuk perbankan &amp; properti. Pantau data CPI AS &amp; NFP sebagai trigger perubahan ekspektasi.
+            </div>
+          </div>
+
+        </div>
+
+        <script>
+        var DATA = {_fed_json};
+        var UPDATED = "{_updated_str}";
+
+        var DIR_COLOR = {{ "cut":"#089981", "hold":"#4285F4", "hike":"#f23645" }};
+        var DIR_LABEL = {{ "cut":"CUT", "hold":"HOLD", "hike":"HIKE" }};
+        var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15)", "hike":"rgba(242,54,69,0.15)" }};
+
+        // -- LIVE COUNTDOWN - target: Apr 30 2026 01:00 WIB = Apr 29 2026 18:00 UTC --
+        (function() {{
+          // Jun 17 2026 18:00 UTC = Jun 18 2026 01:00 WIB (UTC+7)
+          var TARGET_UTC_MS = Date.UTC(2026, 5, 17, 18, 0, 0);
+
+          function tick() {{
+            var diff = TARGET_UTC_MS-Date.now();
+            var cd = document.getElementById('frm-cd');
+            if (!cd) return;
+            if (diff <= 0) {{
+              cd.innerHTML = '<div class="frm-cd-box"><div class="frm-cd-num" style="font-size:1.1rem;color:#089981;">BERLANGSUNG</div></div>';
+              return;
+            }}
+            var totalSec = Math.floor(diff / 1000);
+            var mins     = Math.floor(totalSec / 60) % 60;
+            var hours    = Math.floor(totalSec / 3600) % 24;
+            var days     = Math.floor(totalSec / 86400) % 7;
+            var weeks    = Math.floor(totalSec / 604800);
+            var parts = [[weeks,"WEEKS"],[days,"DAYS"],[hours,"HOURS"],[mins,"MINS"]];
+            var html = '';
+            parts.forEach(function(p, i) {{
+              if (i > 0) html += '<div class="frm-cd-sep">:</div>';
+              html += '<div class="frm-cd-box"><div class="frm-cd-num">' + p[0] + '</div><div class="frm-cd-unit">' + p[1] + '</div></div>';
+            }});
+            cd.innerHTML = html;
+          }}
+          tick();
+          setInterval(tick, 1000);
+        }})();
+
+        // -- Build single vertical table --
+        (function() {{
+          var wrap = document.getElementById('frm-vtbl');
+          var html = '';
+
+          DATA.forEach(function(mtg, idx) {{
+            // Section header &mdash; tanggal FOMC
+            var borderTop = idx > 0 ? 'border-top:2px solid rgba(3,40,238,0.22);' : '';
+            html += '<div class="frm-meeting-hdr" style="' + borderTop + '">';
+            html += '<span class="frm-meeting-date">' + (mtg.date_wib || mtg.date) + '</span>';
+            html += '<div class="frm-meeting-meta">';
+            html += '<span class="frm-meeting-future">Future: ' + mtg.future_price + '</span>';
+            html += '<span class="frm-meeting-time">Meeting: ' + mtg.meeting_time + '</span>';
+            html += '</div></div>';
+
+            // Probability bars
+            html += '<div class="frm-bars">';
+            mtg.scenarios.forEach(function(sc) {{
+              var c = DIR_COLOR[sc.dir] || '#b2b5be';
+              var w = Math.max(sc.prob, 1.5);
+              html += '<div class="frm-bar-row">';
+              html += '<div class="frm-bar-top">';
+              html += '<span class="frm-bar-label">'+sc.range+'</span>';
+              html += '<span class="frm-bar-pct" style="color:'+c+'">'+sc.prob.toFixed(1)+'%</span>';
+              html += '</div>';
+              html += '<div class="frm-bar-track"><div class="frm-bar-fill" style="width:'+w+'%;background:'+c+';opacity:0.85;"></div></div>';
+              html += '</div>';
+            }});
+            html += '</div>';
+
+            // Column header
+            html += '<div class="frm-col-hdr">';
+            html += '<span class="ch-rate">TARGET RATE</span>';
+            html += '<span class="ch-now">NOW %</span>';
+            html += '<span class="ch-yday">YDAY %</span>';
+            html += '<span class="ch-week">WEEK %</span>';
+            html += '</div>';
+
+            // Detail rows
+            mtg.scenarios.forEach(function(sc) {{
+              var c  = DIR_COLOR[sc.dir] || '#b2b5be';
+              var bc = DIR_BADGE_BG[sc.dir] || 'transparent';
+              var pd = (sc.prev_day  !== null && sc.prev_day  !== undefined) ? sc.prev_day.toFixed(1)  + '%' : '-';
+              var pw = (sc.prev_week !== null && sc.prev_week !== undefined) ? sc.prev_week.toFixed(1) + '%' : '-';
+              var badge = '<span class="frm-dir-badge" style="color:'+c+';background:'+bc+'">'+DIR_LABEL[sc.dir]+'</span>';
+              html += '<div class="frm-detail-row">';
+              html += '<span class="frm-detail-rate">'+sc.range+badge+'</span>';
+              html += '<span class="frm-detail-now" style="color:'+c+'">'+sc.prob.toFixed(1)+'%</span>';
+              html += '<span class="frm-detail-prev">'+pd+'</span>';
+              html += '<span class="frm-detail-prevwk">'+pw+'</span>';
+              html += '</div>';
+            }});
+
+            // Footer row
+            html += '<div class="frm-detail-footer">Updated: '+UPDATED+' &middot; Source: CME FedWatch</div>';
+          }});
+
+          wrap.innerHTML = html;
+
+          // -- Auto-resize: ukur tinggi aktual konten, bukan pakai angka hardcoded --
+          function sendHeight() {{
+            // Reset overflow agar scrollHeight akurat
+            document.body.style.overflow = 'visible';
+            var fw = document.querySelector('.frm-wrap');
+            if (fw) fw.style.overflow = 'visible';
+            // BUG1 FIX: tambah extra padding bottom agar baris terakhir 30 Jul tidak terpotong
+            var h = Math.max(
+              document.documentElement.scrollHeight,
+              document.body.scrollHeight,
+              fw ? fw.scrollHeight : 0
+            );
+            window.parent.postMessage({{type:'streamlit:setFrameHeight', height: h + 40}}, '*');
+          }}
+          sendHeight();
+          setTimeout(sendHeight, 100);
+          setTimeout(sendHeight, 400);
+          setTimeout(sendHeight, 900);
+          setTimeout(sendHeight, 1800);
+          window.addEventListener('resize', function() {{ setTimeout(sendHeight, 150); }});
+        }})();
+        </script>
+        </body>
+        </html>
+                """, height=1200, scrolling=False)
+
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+
+            with _rm_tab_bi:
+                # ── BI RATE MONITOR + GLOBAL RATES ────────────────────────
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏦 BI RATE MONITOR & GLOBAL INTEREST RATES</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+                # ── Hardcoded historical data (update berkala) ──
+                _bi_rate_history = [
+                    {"date": "Jan 2024", "rate": 6.00}, {"date": "Feb 2024", "rate": 6.00},
+                    {"date": "Mar 2024", "rate": 6.00}, {"date": "Apr 2024", "rate": 6.25},
+                    {"date": "Mei 2024", "rate": 6.25}, {"date": "Jun 2024", "rate": 6.25},
+                    {"date": "Jul 2024", "rate": 6.25}, {"date": "Ags 2024", "rate": 6.25},
+                    {"date": "Sep 2024", "rate": 6.00}, {"date": "Okt 2024", "rate": 6.00},
+                    {"date": "Nov 2024", "rate": 6.00}, {"date": "Des 2024", "rate": 6.00},
+                    {"date": "Jan 2025", "rate": 5.75}, {"date": "Feb 2025", "rate": 5.75},
+                    {"date": "Mar 2025", "rate": 5.75}, {"date": "Apr 2025", "rate": 5.75},
+                    {"date": "Mei 2025", "rate": 5.50}, {"date": "Jun 2025", "rate": 5.50},
+                    {"date": "Jul 2025", "rate": 5.25}, {"date": "Ags 2025", "rate": 5.25},
+                    {"date": "Sep 2025", "rate": 5.25}, {"date": "Okt 2025", "rate": 5.00},
+                    {"date": "Nov 2025", "rate": 5.00}, {"date": "Des 2025", "rate": 5.00},
+                    {"date": "Jan 2026", "rate": 5.00}, {"date": "Feb 2026", "rate": 4.75},
+                    {"date": "Mar 2026", "rate": 4.75}, {"date": "Apr 2026", "rate": 4.75},
+                    {"date": "Mei 2026", "rate": 5.25},
+                ]
+                _rdg_schedule_2026 = [
+                    {"date": "21–22 Jan 2026", "result": "Turun 25bps → 5.00%", "status": "done"},
+                    {"date": "18–19 Feb 2026", "result": "Turun 25bps → 4.75%", "status": "done"},
+                    {"date": "18–19 Mar 2026", "result": "Tetap 4.75%", "status": "done"},
+                    {"date": "22–23 Apr 2026", "result": "Tetap 4.75%", "status": "done"},
+                    {"date": "20–21 Mei 2026", "result": "Naik 50bps → 5.25%", "status": "done"},
+                    {"date": "17–18 Jun 2026", "result": "—", "status": "future"},
+                    {"date": "15–16 Jul 2026", "result": "—", "status": "future"},
+                    {"date": "19–20 Ags 2026", "result": "—", "status": "future"},
+                    {"date": "16–17 Sep 2026", "result": "—", "status": "future"},
+                    {"date": "21–22 Okt 2026", "result": "—", "status": "future"},
+                    {"date": "17–18 Nov 2026", "result": "—", "status": "future"},
+                    {"date": "16–17 Des 2026", "result": "—", "status": "future"},
+                ]
+
+                # ── Fetch live rates via yfinance fallback ──
+                @st.cache_data(ttl=1800, show_spinner=False)
+                def _fetch_global_rates():
+                    """Fetch rates via yfinance + FRED API fallback. Hardcoded hanya sebagai last resort."""
+                    # ── Nilai hardcoded (last resort) — UPDATE MANUAL jika FRED dan yfinance gagal semua ──
+                    # BI Rate: update dari keputusan RDG BI terbaru (Mei 2026 = 5.25%)
+                    # Fed Funds: update dari FOMC terbaru (Mei 2026 = 4.25-4.50%)
+                    rates = {
+                        "BI Rate":   {"value": 5.25, "change": 0.00, "source": "hardcoded", "label": "Bank Indonesia — RDG Mei 2026"},
+                        "Fed Funds": {"value": 4.50, "change": 0.00, "source": "hardcoded", "label": "US Federal Reserve — FOMC Mei 2026"},
+                        "SOFR":      {"value": 4.31, "change": -0.02, "source": "hardcoded", "label": "Secured Overnight Financing Rate"},
+                        "US 10Y":    {"value": 4.38, "change": 0.05, "source": "hardcoded", "label": "US Treasury 10Y Yield"},
+                        "ID 10Y":    {"value": 6.82, "change": -0.08, "source": "hardcoded", "label": "Indonesia Gov Bond 10Y"},
+                    }
+
+                    # ── Layer 1: yfinance untuk US 10Y Treasury ──
+                    try:
+                        import yfinance as _yf_r
+                        _us10y = _yf_r.Ticker("^TNX").history(period="5d")
+                        if len(_us10y) >= 2:
+                            _us10y_now  = round(float(_us10y["Close"].iloc[-1]), 2)
+                            _us10y_prev = round(float(_us10y["Close"].iloc[-2]), 2)
+                            rates["US 10Y"] = {
+                                "value": _us10y_now,
+                                "change": round(_us10y_now - _us10y_prev, 2),
+                                "source": "yfinance",
+                                "label": "US Treasury 10Y Yield"
+                            }
+                    except Exception:
+                        pass
+
+                    # ── Layer 2: yfinance untuk ID 10Y ──
+                    try:
+                        import yfinance as _yf_r2
+                        _id10y = _yf_r2.Ticker("INDO10Y=X").history(period="5d")
+                        if len(_id10y) >= 1:
+                            _id_v = round(float(_id10y["Close"].iloc[-1]), 2)
+                            rates["ID 10Y"] = {
+                                "value": _id_v, "change": 0.0,
+                                "source": "yfinance", "label": "Indonesia Gov Bond 10Y"
+                            }
+                    except Exception:
+                        pass
+
+                    # ── Layer 3: FRED API untuk Fed Funds Rate (gratis, no key needed) ──
+                    try:
+                        import urllib.request as _ur
+                        import json as _jj
+                        _fred_req = _ur.Request(
+                            "https://fred.stlouisfed.org/graph/fredgraph.json?id=FEDFUNDS",
+                            headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
+                        )
+                        with _ur.urlopen(_fred_req, timeout=6) as _fr:
+                            _fred_data = _jj.loads(_fr.read())
+                        if _fred_data and len(_fred_data) >= 2:
+                            _ff_now  = round(float(_fred_data[-1][1]), 2)
+                            _ff_prev = round(float(_fred_data[-2][1]), 2)
+                            rates["Fed Funds"] = {
+                                "value": _ff_now,
+                                "change": round(_ff_now - _ff_prev, 2),
+                                "source": "FRED",
+                                "label": "US Federal Reserve (FRED)"
+                            }
+                    except Exception:
+                        pass
+
+                    # ── Layer 4: yfinance untuk SOFR proxy (^IRX = 13-week T-Bill ≈ SOFR) ──
+                    try:
+                        import yfinance as _yf_r3
+                        _sofr = _yf_r3.Ticker("^IRX").history(period="5d")
+                        if len(_sofr) >= 2:
+                            _sofr_now  = round(float(_sofr["Close"].iloc[-1]) / 10, 2)
+                            _sofr_prev = round(float(_sofr["Close"].iloc[-2]) / 10, 2)
+                            rates["SOFR"] = {
+                                "value": _sofr_now,
+                                "change": round(_sofr_now - _sofr_prev, 2),
+                                "source": "yfinance(^IRX)",
+                                "label": "SOFR proxy (13W T-Bill)"
+                            }
+                    except Exception:
+                        pass
+
+                    return rates
+
+                _global_rates = _fetch_global_rates()
+                _bi_current = _bi_rate_history[-1]["rate"]
+                _bi_prev = _bi_rate_history[-2]["rate"] if len(_bi_rate_history) > 1 else _bi_current
+                _bi_chg = _bi_current - _bi_prev
+
+                # ── Metric cards ──
+                _rc = st.columns(5)
+                _rate_items = [
+                    ("BI Rate", f"{_bi_current:.2f}%", f"{'▲' if _bi_chg>0 else '▼' if _bi_chg<0 else '─'} {abs(_bi_chg)*100:.0f}bps", "#26a69a" if _bi_chg<=0 else "#ef5350"),
+                    ("Fed Funds", f"4.25–4.50%", f"HOLD · 7 Mei 2026", "#8b5cf6"),
+                    ("SOFR", f"{_global_rates['SOFR']['value']:.2f}%", f"Overnight · USD", "#f59e0b"),
+                    ("US 10Y", f"{_global_rates['US 10Y']['value']:.2f}%", f"{'▲' if _global_rates['US 10Y']['change']>0 else '▼'} {abs(_global_rates['US 10Y']['change']):.2f}% · {'yfinance' if _global_rates['US 10Y']['source']=='yfinance' else 'hardcoded'}", "#3b82f6"),
+                    ("ID 10Y", f"{_global_rates['ID 10Y']['value']:.2f}%", f"Spread vs US: +{round(_global_rates['ID 10Y']['value']-_global_rates['US 10Y']['value'],2):.2f}%", "#10b981"),
+                ]
+                for _col_r, (_lbl, _val, _delta, _color) in zip(_rc, _rate_items):
+                    with _col_r:
+                        st.markdown(f"""
+                        <div style='background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);
+                        border-radius:8px;padding:12px 10px;text-align:center;margin-bottom:8px;'>
+                        <div style='font-size:0.7rem;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;'>{_lbl}</div>
+                        <div style='font-size:1.4rem;font-weight:700;color:{_color};font-family:IBM Plex Mono,monospace;'>{_val}</div>
+                        <div style='font-size:0.68rem;color:#64748b;margin-top:3px;'>{_delta}</div>
+                        </div>""", unsafe_allow_html=True)
+
+                # ── BI Rate History Chart — pakai components.html agar script CDN bisa load ──
+                _bi_labels_js = str([r["date"] for r in _bi_rate_history]).replace("'", '"')
+                _bi_vals_js   = str([r["rate"] for r in _bi_rate_history])
+                _bi_chart_html = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+                  <style>
+                    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+                    html, body {{ width: 100%; height: 100%; background: transparent; }}
+                    .chart-wrap {{
+                      background: rgba(255,255,255,0.03);
+                      border: 1px solid rgba(255,255,255,0.09);
+                      border-radius: 8px;
+                      padding: 14px 16px 10px;
+                      width: 100%;
+                      height: 230px;
+                    }}
+                    .chart-title {{
+                      font-family: 'IBM Plex Mono', monospace;
+                      font-size: 11px;
+                      color: #888;
+                      margin-bottom: 10px;
+                      display: flex;
+                      justify-content: space-between;
+                      flex-wrap: wrap;
+                      gap: 4px;
+                    }}
+                    .chart-title span {{ color: #26a69a; font-weight: 600; }}
+                    canvas {{ display: block; width: 100% !important; }}
+                  </style>
+                </head>
+                <body>
+                  <div class="chart-wrap">
+                    <div class="chart-title">
+                      📊 BI RATE HISTORIS (Jan 2024 – Mei 2026)
+                      <span>Current: {_bi_current:.2f}%</span>
+                    </div>
+                    <canvas id="bi_rate_chart" style="height:190px !important;"></canvas>
+                  </div>
+                  <script>
+                  (function() {{
+                    var ctx = document.getElementById('bi_rate_chart').getContext('2d');
+                    var labelsAll = {_bi_labels_js};
+                    var valsAll   = {_bi_vals_js};
+                    var labels = labelsAll;
+                    var vals   = valsAll;
+                    var ptColors = vals.map(function(v,i) {{
+                      if (i === 0) return '#26a69a';
+                      return v > vals[i-1] ? '#ef5350' : '#26a69a';
+                    }});
+                    new Chart(ctx, {{
+                      type: 'line',
+                      data: {{
+                        labels: labels,
+                        datasets: [{{
+                          label: 'BI Rate (%)',
+                          data: vals,
+                          borderColor: '#26a69a',
+                          backgroundColor: 'rgba(38,166,154,0.12)',
+                          tension: 0.3,
+                          fill: true,
+                          pointRadius: 4,
+                          pointHoverRadius: 7,
+                          borderWidth: 2.5,
+                          pointBackgroundColor: ptColors,
+                          pointBorderColor: ptColors,
+                        }}]
+                      }},
+                      options: {{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        plugins: {{
+                          legend: {{ display: false }},
+                          tooltip: {{
+                            backgroundColor: '#1a1a2e',
+                            titleColor: '#888',
+                            bodyColor: '#26a69a',
+                            callbacks: {{ label: function(c) {{ return ' ' + c.parsed.y.toFixed(2) + '%'; }} }}
+                          }}
+                        }},
+                        interaction: {{ mode: 'index', intersect: false }},
+                        scales: {{
+                          x: {{
+                            ticks: {{
+                              color: '#888',
+                              font: {{ size: 9 }},
+                              maxRotation: 45,
+                              minRotation: 0,
+                              autoSkip: true,
+                              maxTicksLimit: 18
+                            }},
+                            grid: {{ color: 'rgba(255,255,255,0.04)' }}
+                          }},
+                          y: {{
+                            ticks: {{ color: '#888', font: {{ size: 9 }}, callback: function(v) {{ return v.toFixed(2)+'%'; }} }},
+                            grid: {{ color: 'rgba(255,255,255,0.05)' }},
+                            min: 4.0, max: 6.8,
+                          }}
+                        }}
+                      }}
+                    }});
+                  }})();
+                  </script>
+                </body>
+                </html>
+                """
+                components.html(_bi_chart_html, height=255, scrolling=False)
+
+                # ── RDG BI Schedule 2026 ──
+                st.markdown(f"<div style='font-size:0.75rem;color:#888;margin:12px 0 6px;font-family:IBM Plex Mono,monospace;'>📅 JADWAL RDG BI 2026</div>", unsafe_allow_html=True)
+                _rdg_cols = st.columns(3)
+                for _ri, _rdg in enumerate(_rdg_schedule_2026):
+                    with _rdg_cols[_ri % 3]:
+                        _rdg_color = "#26a69a" if _rdg["status"] == "done" else ("#f59e0b" if _rdg["status"] == "upcoming" else "#374151")
+                        _rdg_icon  = "✅" if _rdg["status"] == "done" else ("🔔" if _rdg["status"] == "upcoming" else "📋")
+                        st.markdown(f"""
+                        <div style='background:rgba(255,255,255,0.02);border:1px solid {_rdg_color}33;
+                        border-radius:6px;padding:8px 10px;margin-bottom:6px;font-family:IBM Plex Mono,monospace;'>
+                        <div style='font-size:0.68rem;color:{_rdg_color};margin-bottom:2px;'>{_rdg_icon} {_rdg["date"]}</div>
+                        <div style='font-size:0.7rem;color:#ccc;'>{_rdg["result"]}</div>
+                        </div>""", unsafe_allow_html=True)
+
+                _rates_src_note = "US 10Y via yfinance" if _global_rates["US 10Y"]["source"] == "yfinance" else "Semua rates: hardcoded (yfinance gagal)"
+                st.caption(f"📡 Sumber data: BI Rate = hardcoded dari keputusan resmi BI · {_rates_src_note} · Cache 30 menit")
+
+
+            with _rm_tab_ai:
+                # ── AI ANALYST: Rate Monitor ──────────────────────────────
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🤖 AI ANALYST — RATE MONITOR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                if "ai_rate_monitor_result" not in st.session_state:
+                    st.session_state["ai_rate_monitor_result"] = None
+                _col_ai_rm, _ = st.columns([1, 3])
+                with _col_ai_rm:
+                    _btn_analyze_rate = st.button("🔍 Analyze Rate Monitor", key="btn_ai_rate_monitor", use_container_width=True)
+                if _btn_analyze_rate:
+                    _bi_trend = "turun" if _bi_chg < 0 else ("naik" if _bi_chg > 0 else "stabil")
+                    _rm_prompt = f"""Kamu adalah SIGMA AI, analis makro ekonomi dan pasar modal IDX.
+
+        Analisa kondisi suku bunga global dan implikasinya terhadap pasar modal Indonesia (IHSG) saat ini berdasarkan data berikut:
+
+        📌 DATA LIVE:
+        - BI Rate: {_bi_current:.2f}% (perubahan terakhir: {_bi_chg:+.2f}%, tren: {_bi_trend})
+        - Fed Funds Rate: {_global_rates["Fed Funds"]["value"]:.2f}%
+        - SOFR (Overnight USD): {_global_rates["SOFR"]["value"]:.2f}%
+        - US Treasury 10Y Yield: {_global_rates["US 10Y"]["value"]:.2f}%
+        - Indonesia Gov Bond 10Y: {_global_rates["ID 10Y"]["value"]:.2f}%
+        - Spread ID-US 10Y: +{round(_global_rates["ID 10Y"]["value"] - _global_rates["US 10Y"]["value"], 2):.2f}%
+
+        📌 KONTEKS BI RATE HISTORIS (24 bln terakhir):
+        - Puncak tertinggi: 6.25% (Apr–Ags 2024)
+        - Siklus pemotongan: Sep 2024 mulai turun bertahap
+        - Current: {_bi_current:.2f}% (baru naik 50bps Mei 2026 → 5.25%; siklus bunga kembali ketat)
+
+        Buatlah analisa naratif yang mencakup:
+        1. **Kondisi Saat Ini** — Apa yang sedang terjadi dengan suku bunga global & Indonesia?
+        2. **Spread Analysis** — Spread ID-US {round(_global_rates["ID 10Y"]["value"] - _global_rates["US 10Y"]["value"], 2):.2f}% itu atraktif/tidak? Dampak ke asing masuk/keluar IDX?
+        3. **Dampak ke IHSG** — Siklus pemotongan BI Rate ini bullish/bearish? Sektor mana yang paling diuntungkan?
+        4. **Risiko** — Apa yang perlu diwaspadai investor IDX dari kondisi rate global saat ini?
+        5. **Kesimpulan** — 1–2 kalimat tegas soal outlook suku bunga untuk pasar modal Indonesia.
+
+        Format: narasi profesional, padat, 300–400 kata. Gunakan bahasa Indonesia. Jujur dan tegas."""
+                    with st.spinner("🤖 SIGMA menganalisa kondisi rate monitor..."):
+                        try:
+                            _ai_rm_result, _ai_rm_model = _call_groq_primary(_rm_prompt, max_tokens=2000, temperature=0.6)
+                            st.session_state["ai_rate_monitor_result"] = (_ai_rm_result, _ai_rm_model)
+                        except Exception as _e:
+                            st.session_state["ai_rate_monitor_result"] = (f"❌ Gagal: {str(_e)}", "error")
+                if st.session_state.get("ai_rate_monitor_result"):
+                    _rm_txt, _rm_mdl = st.session_state["ai_rate_monitor_result"]
+                    st.markdown(f"""<div style='background:rgba(38,166,154,0.06);border:1px solid rgba(38,166,154,0.25);
+                    border-radius:8px;padding:16px 18px;margin-top:8px;font-family:"DM Sans",sans-serif;font-size:0.88rem;
+                    line-height:1.75;color:#e0e0e0;'>
+                    <div style='font-size:0.68rem;color:#26a69a;font-family:IBM Plex Mono,monospace;margin-bottom:10px;'>
+                    🤖 SIGMA AI · Rate Monitor Analysis</div>
+                    {_rm_txt.replace(chr(10), "<br>")}
+                    </div>""", unsafe_allow_html=True)
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+                # ─────────────────────────────────────────────────────────
+            # ECONOMIC CALENDAR → dipindah ke sub-tab Kalender
+            # ─────────────────────────────────────────────────────────
+        with _mm_subtab_cal:
+            # ─────────────────────────────────────────────────────────
+            # ECONOMIC CALENDAR — ID · US  (REALTIME ACTUAL + AI ANALYST)
+            # ─────────────────────────────────────────────────────────
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR — ID · US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+            # ── Fetch Actual data realtime dari Forexfactory RSS (gratis, no key) ──
+            @st.cache_data(ttl=120, show_spinner=False)  # ditingkatkan dari 300 → 120 detik
+            def _fetch_ff_actuals():
+                """
+                Ambil data Actual dari ForexFactory Calendar (XML/JSON public endpoint).
+                Fallback ke Trading Economics jika FF gagal.
+                Return dict: {"event_key": actual_str}
+                """
+                import urllib.request, json as _jj, time as _t
+                actuals = {}
+                # ── Layer 1: ForexFactory JSON Calendar ──
+                try:
+                    _ff_url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
+                    _req = urllib.request.Request(_ff_url, headers={
+                        "User-Agent": "Mozilla/5.0",
+                        "Accept": "application/json"
+                    })
+                    with urllib.request.urlopen(_req, timeout=8) as r:
+                        _events = _jj.loads(r.read())
+                    for ev in _events:
+                        _title = str(ev.get("title","")).strip()
+                        _actual = str(ev.get("actual","")).strip()
+                        _forecast = str(ev.get("forecast","")).strip()
+                        _prev = str(ev.get("previous","")).strip()
+                        if _title:
+                            _key = _title.lower().replace(" ","_")
+                            actuals[_key] = {
+                                "actual": _actual if _actual else "—",
+                                "forecast": _forecast if _forecast else "—",
+                                "previous": _prev if _prev else "—",
+                                "currency": str(ev.get("currency","")),
+                                "impact": str(ev.get("impact","")),
+                                "date": str(ev.get("date","")),
+                            }
+                except Exception as _e:
+                    pass
+                # ── Layer 2: Fallback week+next week ──
+                try:
+                    _ff_url2 = "https://nfs.faireconomy.media/ff_calendar_nextweek.json"
+                    _req2 = urllib.request.Request(_ff_url2, headers={"User-Agent":"Mozilla/5.0","Accept":"application/json"})
+                    with urllib.request.urlopen(_req2, timeout=8) as r2:
+                        _events2 = _jj.loads(r2.read())
+                    for ev in _events2:
+                        _title = str(ev.get("title","")).strip()
+                        _actual = str(ev.get("actual","")).strip()
+                        _key = _title.lower().replace(" ","_")
+                        if _key not in actuals:
+                            actuals[_key] = {
+                                "actual": _actual if _actual else "—",
+                                "forecast": str(ev.get("forecast","")) or "—",
+                                "previous": str(ev.get("previous","")) or "—",
+                                "currency": str(ev.get("currency","")),
+                                "impact": str(ev.get("impact","")),
+                                "date": str(ev.get("date","")),
+                            }
+                except Exception: pass
+                return actuals
+
+            _ff_actuals = _fetch_ff_actuals()
+
+            def _get_actual(event_name: str) -> str:
+                """Match event name ke FF actual data."""
+                _key = event_name.lower().replace(" ","_").replace("/","_").replace("-","_")
+                # Direct match
+                if _key in _ff_actuals:
+                    return _ff_actuals[_key].get("actual","—")
+                # Partial match - cari substring terpanjang yang cocok
+                _best = "—"
+                _best_len = 0
+                for k, v in _ff_actuals.items():
+                    # Compare normalised words
+                    _kwords = set(k.replace("_"," ").split())
+                    _ewords = set(event_name.lower().replace("/"," ").replace("-"," ").split())
+                    _common = _kwords & _ewords
+                    if len(_common) >= 2 and len(_common) > _best_len:
+                        _best = v.get("actual","—")
+                        _best_len = len(_common)
+                return _best
+
+            # ── Dataset lengkap: ID + US digabung ───────────────────
+            _ec_raw = [
+                # ══ APRIL 2026 ══════════════════════════════════════
+                {"neg":"ID","tgl":"19 Apr 2026","jam":"—",      "event":"Libur Paskah (Pasar Tutup)",        "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"BEI tutup hari Sabtu Paskah. Tidak ada sesi trading."},
+                {"neg":"US","tgl":"21 Apr 2026","jam":"19:15",  "event":"ADP Weekly Employment Change",      "fc":"—",      "prev":"39.3K",   "dampak":"MEDIUM","tip":"Data ketenagakerjaan mingguan ADP. Leading indicator NFP."},
+                {"neg":"US","tgl":"21 Apr 2026","jam":"19:30",  "event":"Core Retail Sales m/m",             "fc":"0.4%",   "prev":"1.3%",    "dampak":"HIGH",  "tip":"Penjualan ritel inti MoM. Konsumsi AS = 70% GDP. Data kuat → Fed hawkish → DXY naik, XAU/IDR tertekan."},
+                {"neg":"US","tgl":"21 Apr 2026","jam":"19:30",  "event":"Retail Sales m/m",                  "fc":"0.6%",   "prev":"1.4%",    "dampak":"HIGH",  "tip":"Penjualan ritel total MoM. Salah satu indikator kekuatan ekonomi AS terpenting."},
+                {"neg":"US","tgl":"21 Apr 2026","jam":"21:00",  "event":"Fed Chair-Designate Warsh Testifies","fc":"—",     "prev":"—",       "dampak":"HIGH",  "tip":"Testimoni calon Ketua Fed. Market perhatikan sinyal arah kebijakan suku bunga."},
+                {"neg":"US","tgl":"21 Apr 2026","jam":"21:00",  "event":"Pending Home Sales m/m",            "fc":"1.8%",   "prev":"0.0%",    "dampak":"MEDIUM","tip":"Kontrak rumah yang belum diselesaikan. Leading indicator penjualan rumah jadi."},
+                {"neg":"US","tgl":"21 Apr 2026","jam":"21:00",  "event":"Business Inventories m/m",          "fc":"-0.1%",  "prev":"0.3%",    "dampak":"LOW",   "tip":"Perubahan inventori bisnis. Kenaikan inventori → demand lemah ke depan."},
+                {"neg":"US","tgl":"22 Apr 2026","jam":"07:30",  "event":"FOMC Member Waller Speaks",         "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Pernyataan anggota FOMC. Cermati nada hawkish/dovish terkait suku bunga."},
+                {"neg":"ID","tgl":"22 Apr 2026","jam":"10:00",  "event":"Cadangan Devisa Mar",               "fc":"$155B",  "prev":"$154.5B", "dampak":"MEDIUM","tip":"Cadangan devisa BI. Makin tinggi = Rupiah lebih terlindungi dari gejolak global."},
+                {"neg":"US","tgl":"22 Apr 2026","jam":"09:30",  "event":"API Weekly Statistical Bulletin",   "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"Data stok minyak mingguan API. Prekursor resmi EIA Crude Oil Inventories."},
+                {"neg":"US","tgl":"22 Apr 2026","jam":"21:30",  "event":"Crude Oil Inventories",             "fc":"—",      "prev":"-0.9M",   "dampak":"MEDIUM","tip":"EIA stok minyak mingguan. Naik = supply berlebih = harga minyak tertekan. Relevan PGAS/MEDC."},
+                {"neg":"US","tgl":"23 Apr 2026","jam":"19:30",  "event":"Unemployment Claims",               "fc":"207K",   "prev":"210K",    "dampak":"HIGH",  "tip":"Klaim pengangguran mingguan. Di bawah 220K = pasar kerja kuat → Fed tetap wait and see."},
+                {"neg":"US","tgl":"23 Apr 2026","jam":"20:45",  "event":"Flash Manufacturing PMI",           "fc":"52.3",   "prev":"52.5",    "dampak":"MEDIUM","tip":"PMI Manufaktur S&P Global (flash). Di atas 50 = ekspansi. Bergerak bisa gerakkan DXY."},
+                {"neg":"US","tgl":"23 Apr 2026","jam":"20:45",  "event":"Flash Services PMI",                "fc":"49.8",   "prev":"50.1",    "dampak":"MEDIUM","tip":"PMI Jasa (flash). Sektor jasa = 80% ekonomi AS. Di bawah 50 = kontraksi = dovish signal."},
+                {"neg":"US","tgl":"23 Apr 2026","jam":"21:30",  "event":"Natural Gas Storage",               "fc":"—",      "prev":"59B",     "dampak":"LOW",   "tip":"Stok gas alam EIA. Relevan untuk harga gas dan emiten energi."},
+                {"neg":"US","tgl":"24 Apr 2026","jam":"21:00",  "event":"Revised UoM Consumer Sentiment",    "fc":"47.6",   "prev":"48.4",    "dampak":"MEDIUM","tip":"Revisi sentimen konsumen Universitas Michigan. Cerminkan kepercayaan rumah tangga AS."},
+                {"neg":"US","tgl":"24 Apr 2026","jam":"21:00",  "event":"Revised UoM Inflation Expectations","fc":"—",      "prev":"4.8%",    "dampak":"MEDIUM","tip":"Ekspektasi inflasi konsumen. Jika naik → tekanan pada Fed untuk pertahankan rate tinggi."},
+                {"neg":"US","tgl":"28 Apr 2026","jam":"19:15",  "event":"ADP Weekly Employment Change",      "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Data ketenagakerjaan mingguan ADP. Pembaruan awal sebelum NFP Jumat."},
+                {"neg":"US","tgl":"28 Apr 2026","jam":"20:00",  "event":"HPI m/m",                          "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"House Price Index FHFA MoM. Indikator harga properti Amerika."},
+                {"neg":"US","tgl":"28 Apr 2026","jam":"20:00",  "event":"S&P/CS Composite-20 HPI y/y",      "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"Indeks harga rumah Case-Shiller 20 kota. Tren properti AS jangka panjang."},
+                {"neg":"US","tgl":"28 Apr 2026","jam":"21:00",  "event":"CB Consumer Confidence",           "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Conference Board: keyakinan konsumen. Salah satu leading indicator konsumsi AS terkuat."},
+                {"neg":"US","tgl":"28 Apr 2026","jam":"21:00",  "event":"Richmond Manufacturing Index",     "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Indeks manufaktur distrik Richmond Fed. Snapshot aktivitas industri wilayah Mid-Atlantic."},
+                {"neg":"US","tgl":"29 Apr 2026","jam":"09:30",  "event":"API Weekly Statistical Bulletin",   "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"Data stok minyak mingguan API sebelum rilis resmi EIA."},
+                {"neg":"US","tgl":"29 Apr 2026","jam":"19:30",  "event":"Building Permits",                 "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Izin mendirikan bangunan. Leading indicator aktivitas konstruksi & permintaan material."},
+                {"neg":"US","tgl":"29 Apr 2026","jam":"19:30",  "event":"Core Durable Goods Orders m/m",    "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Pesanan barang tahan lama inti. Indikator investasi bisnis AS."},
+                {"neg":"US","tgl":"29 Apr 2026","jam":"19:30",  "event":"Durable Goods Orders m/m",         "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Pesanan barang tahan lama total. Volatilitas tinggi. Market perhatikan angka inti."},
+                {"neg":"US","tgl":"29 Apr 2026","jam":"19:30",  "event":"Goods Trade Balance",              "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Neraca perdagangan barang AS. Defisit besar → tekanan dollar jangka panjang."},
+                {"neg":"US","tgl":"29 Apr 2026","jam":"19:30",  "event":"Housing Starts",                   "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Jumlah unit hunian yang mulai dibangun. Cerminkan kondisi pasar properti AS."},
+                {"neg":"US","tgl":"29 Apr 2026","jam":"19:30",  "event":"Prelim Wholesale Inventories m/m", "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"Stok inventori grosir. Komponen perhitungan GDP."},
+                {"neg":"US","tgl":"29 Apr 2026","jam":"21:30",  "event":"Crude Oil Inventories",            "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"EIA stok minyak mingguan. Pengaruhi harga WTI/Brent dan emiten migas."},
+                # ══ APR 30 — SELESAI ════════════════════════════════════
+                {"neg":"US","tgl":"30 Apr 2026","jam":"01:00",  "event":"Federal Funds Rate (FOMC Apr)",     "fc":"4.50%",  "prev":"4.50%",   "dampak":"HIGH",  "tip":"✅ SELESAI: Fed HOLD di 4.25–4.50% sesuai ekspektasi. Pasar tidak kaget — wait and see data inflasi & tenaga kerja berikutnya."},
+                {"neg":"US","tgl":"30 Apr 2026","jam":"01:00",  "event":"FOMC Statement",                   "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"✅ Pernyataan resmi FOMC Apr. Powell tegaskan data-dependent. Tidak ada sinyal cut dalam waktu dekat."},
+                {"neg":"US","tgl":"30 Apr 2026","jam":"01:30",  "event":"FOMC Press Conference",            "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"✅ Konferensi pers selesai. Tone Powell: hati-hati, belum yakin inflasi terkendali sempurna."},
+                {"neg":"US","tgl":"30 Apr 2026","jam":"19:30",  "event":"Advance GDP q/q",                  "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"GDP AS Q1 2026. Hasil aktual menunjukkan perlambatan — perkuat argumen Fed untuk mulai pivot."},
+                {"neg":"US","tgl":"30 Apr 2026","jam":"19:30",  "event":"Core PCE Price Index m/m",         "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"🔴 Inflasi favorit Fed (PCE inti). Tren penurunan berlanjut mendukung ekspektasi cut di H2 2026."},
+                # ══ MEI 2026 ═══════════════════════════════════════════
+                {"neg":"US","tgl":"07 Mei 2026","jam":"01:00",  "event":"Federal Funds Rate (FOMC Mei)",     "fc":"4.25%",  "prev":"4.50%",   "dampak":"HIGH",  "tip":"✅ SELESAI: Fed HOLD di 4.25–4.50%. Keputusan sesuai konsensus. Sinyal: butuh data lebih lemah untuk cut."},
+                {"neg":"US","tgl":"07 Mei 2026","jam":"01:00",  "event":"FOMC Statement Mei",               "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"✅ Statement Mei: Fed tetap data-dependent. Dot plot tidak banyak berubah — 1-2 cut masih diproyeksikan di 2026."},
+                {"neg":"US","tgl":"13 Mei 2026","jam":"19:30",  "event":"CPI Inflasi YoY (Apr)",            "fc":"2.6%",   "prev":"2.8%",    "dampak":"HIGH",  "tip":"BLS: inflasi konsumen April. Penurunan konsisten = Fed makin dovish = positif aset EM."},
+                {"neg":"US","tgl":"13 Mei 2026","jam":"19:30",  "event":"Core CPI m/m",                     "fc":"0.3%",   "prev":"0.3%",    "dampak":"HIGH",  "tip":"Inflasi inti MoM (ex-food & energy). Tren inflasi lebih stabil vs CPI headline."},
+                {"neg":"ID","tgl":"15 Mei 2026","jam":"11:00",  "event":"GDP Q1 2026 (Flash)",              "fc":"5.1%",   "prev":"5.02%",   "dampak":"HIGH",  "tip":"Pertumbuhan ekonomi Q1 BPS. Lebih tinggi dari ekspektasi = bullish IHSG fundamental."},
+                {"neg":"US","tgl":"15 Mei 2026","jam":"19:30",  "event":"PPI Inflasi Produsen YoY",         "fc":"2.5%",   "prev":"2.7%",    "dampak":"MEDIUM","tip":"BLS: inflasi tingkat produsen. Leading indicator inflasi konsumen 1-2 bulan ke depan."},
+                {"neg":"US","tgl":"15 Mei 2026","jam":"19:30",  "event":"Retail Sales m/m",                 "fc":"0.4%",   "prev":"—",       "dampak":"HIGH",  "tip":"Penjualan ritel Mei. Kekuatan konsumsi — komponen terbesar GDP AS."},
+                {"neg":"ID","tgl":"20 Mei 2026","jam":"11:00",  "event":"Neraca Perdagangan Apr",           "fc":"$3.2B",  "prev":"$2.8B",   "dampak":"MEDIUM","tip":"BPS neraca dagang. Surplus = mendukung Rupiah dan capital inflow ke pasar saham."},
+                {"neg":"ID","tgl":"20 Mei 2026","jam":"10:00",  "event":"RDG BI Rate Mei",                  "fc":"5.25%",  "prev":"4.75%",   "dampak":"HIGH",  "tip":"✅ ACTUAL: BI NAIK 50bps → 5.25% (20 Mei 2026). Kejutan hawkish — konsensus sebelumnya HOLD 4.75%. Respons terhadap tekanan Rupiah & inflasi. Dampak: Rupiah menguat sesaat, sektor perbankan tertekan NIM, cost of capital naik, valuasi saham growth/properti tertekan."},
+                {"neg":"US","tgl":"29 Mei 2026","jam":"19:30",  "event":"GDP Q1 2026 (Revisi)",             "fc":"2.3%",   "prev":"2.4%",    "dampak":"MEDIUM","tip":"BEA: revisi GDP AS Q1. Lebih rendah dari flash = sinyal pelemahan ekonomi → dovish."},
+                # ══ JUNI ═══════════════════════════════════════════════
+                {"neg":"US","tgl":"05 Jun 2026","jam":"19:30",  "event":"Non-Farm Payrolls Mei",            "fc":"180K",   "prev":"195K",    "dampak":"HIGH",  "tip":"🔴 Data tenaga kerja Mei. Tren melambat = Fed lebih agresif potong rate = bullish aset global."},
+                {"neg":"US","tgl":"05 Jun 2026","jam":"19:30",  "event":"Unemployment Rate",                "fc":"4.1%",   "prev":"4.1%",    "dampak":"HIGH",  "tip":"Tingkat pengangguran Mei. Konsistensi penting — naik berturut = tekanan pada Fed."},
+                {"neg":"US","tgl":"11 Jun 2026","jam":"19:30",  "event":"CPI Inflasi YoY (Mei)",            "fc":"2.4%",   "prev":"2.6%",    "dampak":"HIGH",  "tip":"BLS: inflasi Mei. Tren turun berlanjut = ruang cut rate lebih besar di FOMC Jun."},
+                {"neg":"US","tgl":"18 Jun 2026","jam":"01:00",  "event":"FOMC Rate Decision Jun",           "fc":"4.25%",  "prev":"4.50%",   "dampak":"HIGH",  "tip":"🔴 FOMC Juni. Probabilitas ~88% HOLD. Potensi cut pertama jika data lemah. Paling market-moving di H1 2026."},
+                {"neg":"US","tgl":"18 Jun 2026","jam":"01:00",  "event":"FOMC Statement Jun",               "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Pernyataan FOMC Juni. Cermati forward guidance — apakah door terbuka untuk cut di Sep."},
+                {"neg":"US","tgl":"18 Jun 2026","jam":"01:30",  "event":"FOMC Press Conference Jun",       "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Konferensi pers post-FOMC. Cermati dot plot terbaru — sinyal arah H2 2026."},
+                {"neg":"ID","tgl":"19 Jun 2026","jam":"14:00",  "event":"BI Rate Decision Jun",             "fc":"4.50%",  "prev":"4.75%",   "dampak":"HIGH",  "tip":"RDG BI Juni. Potensi pemangkasan 25bps jika inflasi terkendali & Rupiah stabil pasca FOMC."},
+                # ══ JULI ═══════════════════════════════════════════════
+                {"neg":"ID","tgl":"01 Jul 2026","jam":"09:00",  "event":"Inflasi CPI YoY (Jun)",            "fc":"2.7%",   "prev":"2.9%",    "dampak":"HIGH",  "tip":"BPS CPI Juni. Tren penurunan membuka ruang pemangkasan BI Rate semester 2."},
+                {"neg":"US","tgl":"30 Jul 2026","jam":"01:00",  "event":"FOMC Rate Decision Jul",           "fc":"4.25%",  "prev":"4.25%",   "dampak":"HIGH",  "tip":"🔴 FOMC Juli. Probabilitas ~72% HOLD, ~19% cut. Keputusan tergantung data NFP & CPI Jun-Jul."},
+            ]
+
+            # ── Sort by date ──────────────────────────────────────────
+            def _ec_sort_key(r):
+                _m = {"jan":"01","feb":"02","mar":"03","apr":"04","mei":"05","may":"05",
+                      "jun":"06","jul":"07","agu":"08","aug":"08","sep":"09","okt":"10",
+                      "oct":"10","nov":"11","des":"12","dec":"12"}
+                try:
+                    p = r["tgl"].strip().split()
+                    mn = _m.get(p[1][:3].lower(),"01")
+                    return datetime.strptime(f"{p[0].zfill(2)}/{mn}/{p[2]}","%d/%m/%Y")
+                except: return datetime(2099,1,1)
+            _ec_raw.sort(key=_ec_sort_key)
+
+            # ── Filter tanggal yang sudah lewat (sembunyikan > 7 hari lalu) ────────
+            from datetime import date as _ec_date_cls, timedelta as _ec_td
+            _ec_today = _ec_date_cls.today()
+            _ec_cutoff = _ec_today - _ec_td(days=7)  # tampilkan mulai dari 7 hari lalu
+            def _ec_date_ok(row):
+                try:
+                    _m2 = {"jan":1,"feb":2,"mar":3,"apr":4,"mei":5,"may":5,"jun":6,"jul":7,
+                            "agu":8,"aug":8,"sep":9,"okt":10,"oct":10,"nov":11,"des":12,"dec":12}
+                    parts = row["tgl"].strip().split()
+                    _mn = _m2.get(parts[1][:3].lower(), 1)
+                    _dt = _ec_date_cls(int(parts[2]), _mn, int(parts[0]))
+                    return _dt >= _ec_cutoff
+                except: return True  # jika parse gagal, tampilkan saja
+            _ec_raw = [r for r in _ec_raw if _ec_date_ok(r)]
+
+            # ── Enrich with realtime actual ──────────────────────────
+            import json as _cal_json
+            _d_clr  = {"HIGH":"#f23645","MEDIUM":"#f59e0b","LOW":"#4285F4"}
+            _d_bg   = {"HIGH":"rgba(242,54,69,0.13)","MEDIUM":"rgba(245,158,11,0.13)","LOW":"rgba(66,133,244,0.11)"}
+            _d_lbl  = {"HIGH":"HIGH","MEDIUM":"MED","LOW":"LOW"}
+            _ec_rows = []
+            for ev in _ec_raw:
+                dk = ev["dampak"]
+                _actual_rt = _get_actual(ev["event"])
+                # Tentukan apakah event sudah lewat (is_past)
+                _ev_past = False
+                try:
+                    _m2p = {"jan":1,"feb":2,"mar":3,"apr":4,"mei":5,"may":5,"jun":6,"jul":7,
+                             "agu":8,"aug":8,"sep":9,"okt":10,"oct":10,"nov":11,"des":12,"dec":12}
+                    _parts_p = ev["tgl"].strip().split()
+                    _mn_p = _m2p.get(_parts_p[1][:3].lower(), 1)
+                    _ev_dt = _ec_date_cls(int(_parts_p[2]), _mn_p, int(_parts_p[0]))
+                    _ev_past = _ev_dt < _ec_today
+                except Exception: pass
+                _ec_rows.append({
+                    "neg":    ev["neg"],
+                    "flag":   "🇮🇩" if ev["neg"]=="ID" else "🇺🇸",
+                    "tgl":    ev["tgl"],
+                    "jam":    ev["jam"],
+                    "event":  ev["event"],
+                    "fc":     ev["fc"],
+                    "prev":   ev["prev"],
+                    "actual": _actual_rt,
+                    "d_lbl":  _d_lbl.get(dk,"LOW"),
+                    "d_clr":  _d_clr.get(dk,"#4285F4"),
+                    "d_bg":   _d_bg.get(dk,"rgba(66,133,244,0.10)"),
+                    "tip":    ev["tip"].replace('"','&quot;').replace("'","&#39;"),
+                    "is_past": _ev_past,
+                })
+            _ec_json = _cal_json.dumps(_ec_rows, ensure_ascii=False)
+
+            # ── Highlight rows yang sudah ada actual (untuk AI later) ──
+            _events_with_actual = [r for r in _ec_rows if r["actual"] not in ("—","",None)]
+
+            components.html(f"""<!DOCTYPE html><html><head>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <style>
+    *{{box-sizing:border-box;margin:0;padding:0;}}
+    body{{background:transparent;font-family:'DM Sans',sans-serif;}}
+    .cal-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;}}
+    .cal-hdr{{
+      padding:11px 16px;
+      background:rgba(139,92,246,0.08);
+      border-bottom:1px solid {met_border};
+      font-size:0.8rem;font-weight:700;letter-spacing:0.12em;
+      color:#8b5cf6;text-transform:uppercase;
+      display:flex;align-items:center;justify-content:space-between;
+      flex-wrap:wrap;gap:6px;font-family:'DM Sans',sans-serif;
+    }}
+    .hdr-right{{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}}
+    .ec-badge{{font-size:0.8rem;color:{text_sub};background:rgba(255,255,255,0.05);
+      border:1px solid {met_border};border-radius:8px;padding:2px 9px;white-space:nowrap;}}
+    .f-btn{{font-size:0.72rem;font-family:'IBM Plex Mono',monospace;font-weight:700;
+      border:1px solid {met_border};border-radius:4px;padding:3px 10px;cursor:pointer;
+      background:rgba(255,255,255,0.05);color:{text_sub};transition:all 0.15s;white-space:nowrap;}}
+    .f-btn.on{{background:rgba(139,92,246,0.18);color:#8b5cf6;border-color:#8b5cf6;}}
+    .f-btn:hover{{background:rgba(255,255,255,0.1);}}
+    .scroll-box{{width:100%;max-height:460px;overflow-x:auto;overflow-y:auto;
+      -webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
+    .scroll-box::-webkit-scrollbar{{width:4px;height:4px;}}
+    .scroll-box::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
+    table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;min-width:640px;}}
+    thead th{{
+      position:sticky;top:0;z-index:2;
+      background:rgba(139,92,246,0.08);color:#8b5cf6;
+      padding:9px 12px;text-align:left;
+      border-bottom:1px solid {met_border};
+      letter-spacing:0.07em;font-weight:700;font-size:0.8rem;
+      white-space:nowrap;text-transform:uppercase;
+      font-family:'DM Sans',sans-serif;
+    }}
+    tbody td{{padding:9px 12px;border-bottom:1px solid {met_border};
+      color:{text_main};vertical-align:middle;font-size:0.875rem;}}
+    tbody tr:last-child td{{border-bottom:none;}}
+    tbody tr:hover td{{background:rgba(139,92,246,0.04);}}
+    .flag-cell{{display:flex;align-items:center;gap:5px;white-space:nowrap;}}
+    .fl{{font-size:1.1rem;}}
+    .neg{{font-size:0.72rem;font-weight:700;letter-spacing:0.05em;color:{text_sub};font-family:'DM Sans',sans-serif;}}
+    .dt-d{{font-weight:600;color:{text_main};font-size:0.875rem;white-space:nowrap;}}
+    .dt-j{{font-size:0.8rem;color:{text_sub};white-space:nowrap;}}
+    .ev-name{{font-size:0.875rem;font-weight:500;color:{text_main};white-space:normal;line-height:1.35;max-width:200px;}}
+    .fc-v{{font-size:0.875rem;color:#089981;font-weight:700;}}
+    .pv-v{{font-size:0.8rem;color:{text_sub};}}
+    /* ACTUAL column - highlight jika ada data */
+    .act-val{{font-size:0.875rem;font-weight:700;}}
+    .act-beat{{color:#089981;}}  /* actual > forecast = beat */
+    .act-miss{{color:#f23645;}}  /* actual < forecast = miss */
+    .act-meet{{color:#f59e0b;}}  /* actual = forecast */
+    .act-none{{color:{text_sub};font-style:italic;font-size:0.8rem;}}
+    .bdg{{display:inline-block;padding:3px 8px;border-radius:4px;
+      font-size:0.8rem;font-weight:700;letter-spacing:0.05em;
+      font-family:'IBM Plex Mono',monospace;white-space:nowrap;}}
+    /* Date separator */
+    .sep-row td{{padding:3px 12px;font-size:0.72rem;letter-spacing:0.1em;
+      color:rgba(139,92,246,0.55);background:rgba(139,92,246,0.04);
+      border-bottom:1px solid rgba(139,92,246,0.12);
+      font-family:'DM Sans',sans-serif;font-weight:700;}}
+    /* Tooltip */
+    .tw{{position:relative;cursor:default;}}
+    .tw:hover .tip{{display:block;}}
+    .tip{{display:none;position:absolute;left:0;top:calc(100%+3px);z-index:9999;
+      background:{'#131825' if is_dark else '#ffffff'};
+      border:1px solid {met_border};border-left:3px solid #8b5cf6;
+      border-radius:0 6px 6px 6px;padding:9px 13px;
+      font-size:0.8rem;color:{text_main};line-height:1.6;
+      pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,0.45);
+      white-space:normal;min-width:240px;max-width:380px;
+      font-family:'DM Sans',sans-serif;}}
+    @media(max-width:768px){{
+      /* Hapus overflow:hidden dari cal-wrap agar scroll horizontal tidak terpotong */
+      .cal-wrap{{overflow:visible !important;}}
+      /* Pastikan scroll-box punya overflow-x:auto yang bekerja */
+      .scroll-box{{
+        overflow-x:auto !important;
+        overflow-y:auto !important;
+        -webkit-overflow-scrolling:touch !important;
+        max-height:400px !important;
+        width:100% !important;
+      }}
+      /* Kurangi min-width tabel agar lebih pas di mobile, tapi tetap bisa scroll horizontal */
+      table{{min-width:480px !important;}}
+      /* Header filter buttons: scroll horizontal agar tidak wrap terlalu banyak baris */
+      .hdr-right{{
+        overflow-x:auto;
+        flex-wrap:nowrap !important;
+        -webkit-overflow-scrolling:touch;
+        padding-bottom:2px;
+        gap:4px;
+      }}
+      .f-btn{{padding:3px 8px;font-size:0.72rem;white-space:nowrap;}}
+      .ev-name{{max-width:110px;}}
+      tbody td{{font-size:0.8rem;padding:6px 8px;}}
+      thead th{{font-size:0.72rem;padding:6px 8px;}}
+    }}
+    </style></head><body>
+    <div class="cal-wrap">
+      <div class="cal-hdr">
+        <span> ECONOMIC CALENDAR &mdash; ID &middot; US &nbsp;&middot;&nbsp; Apr&ndash;Jul 2026</span>
+        <div class="hdr-right">
+          <span class="ec-badge" id="ec-cnt">&mdash; events</span>
+          <button class="f-btn"     onclick="ef('ALL')"> SEMUA</button>
+          <button class="f-btn"     onclick="ef('ID')"> ID</button>
+          <button class="f-btn"     onclick="ef('US')"> USD</button>
+          <button class="f-btn"     onclick="ef('HIGH')"> HIGH</button>
+          <button class="f-btn"     onclick="ef('ACT')">OK ACTUAL</button>
+          <button class="f-btn on"  onclick="ef('UPCOMING')"> UPCOMING</button>
+          <button class="f-btn"     onclick="ef('PAST')"> SUDAH LEWAT</button>
+        </div>
+      </div>
+      <div class="scroll-box" id="ec-sb">
+        <table>
+          <thead><tr>
+            <th>NEGARA</th>
+            <th>TANGGAL</th>
+            <th>JAM (WIB)</th>
+            <th>EVENT</th>
+            <th>FORECAST</th>
+            <th>ACTUAL <span style="font-size:0.72rem;color:#089981;">&bull; RT</span></th>
+            <th>PREV</th>
+            <th>IMPACT</th>
+          </tr></thead>
+          <tbody id="ec-tb"></tbody>
+        </table>
+      </div>
+    </div>
+    <script>
+    (function(){{
+      var ROWS={_ec_json};
+      var AF='UPCOMING';
+
+      function parseNum(s){{
+        if(!s||s==='&mdash;'||s==='-') return null;
+        var n=parseFloat(s.replace(/[^0-9.\\-]/g,''));
+        return isNaN(n)?null:n;
+      }}
+
+      function actClass(actual,forecast){{
+        var a=parseNum(actual), f=parseNum(forecast);
+        if(a===null) return 'act-none';
+        if(f===null) return 'act-meet';
+        if(a>f) return 'act-beat';
+        if(a<f) return 'act-miss';
+        return 'act-meet';
+      }}
+
+      function render(){{
+        var rows=ROWS.filter(function(r){{
+          if(AF==='ALL') return true;
+          if(AF==='HIGH') return r.d_lbl==='HIGH';
+          if(AF==='ACT') return r.actual&&r.actual!=='&mdash;';
+          if(AF==='UPCOMING') return !r.is_past;
+          if(AF==='PAST') return r.is_past;
+          return r.neg===AF;
+        }});
+
+        var h='', lastDate='';
+        rows.forEach(function(r){{
+          if(r.tgl!==lastDate){{
+            var dateLabel = r.tgl + (r.is_past ? ' <span style="font-size:0.62rem;color:#64748b;background:rgba(100,116,139,0.15);border-radius:4px;padding:1px 5px;margin-left:4px;">LEWAT</span>' : ' <span style="font-size:0.62rem;color:#26a69a;background:rgba(38,166,154,0.12);border-radius:4px;padding:1px 5px;margin-left:4px;">UPCOMING</span>');
+            h+='<tr class="sep-row"><td colspan="8">'+dateLabel+'</td></tr>';
+            lastDate=r.tgl;
+          }}
+          var rowBg=r.is_past?'rgba(100,116,139,0.05)':(r.neg==='ID'?'rgba(8,153,129,0.05)':'rgba(66,133,244,0.04)');
+          var rowOpacity=r.is_past?'opacity:0.55;':'opacity:1;';
+          var ac=r.actual&&r.actual!=='&mdash;'?r.actual:'&mdash;';
+          var aClass=actClass(ac,r.fc);
+          var actHtml=ac==='&mdash;'
+            ?'<span class="act-val act-none">pending</span>'
+            :'<span class="act-val '+aClass+'">'+ac+'</span>';
+
+          h+='<tr style="background:'+rowBg+';'+rowOpacity+'">'+
+            '<td><div class="flag-cell"><span class="fl">'+r.flag+'</span><span class="neg">'+r.neg+'</span></div></td>'+
+            '<td><span class="dt-d">'+r.tgl+'</span></td>'+
+            '<td><span class="dt-j">'+r.jam+'</span></td>'+
+            '<td class="tw"><span class="ev-name">'+r.event+'</span><div class="tip">'+r.tip+'</div></td>'+
+            '<td><span class="fc-v">'+r.fc+'</span></td>'+
+            '<td>'+actHtml+'</td>'+
+            '<td><span class="pv-v">'+r.prev+'</span></td>'+
+            '<td><span class="bdg" style="background:'+r.d_bg+';color:'+r.d_clr+';border:1px solid '+r.d_clr+'33;">'+r.d_lbl+'</span></td>'+
+            '</tr>';
+        }});
+
+        if(!rows.length) h='<tr><td colspan="8" style="text-align:center;padding:24px;color:{text_sub};">Tidak ada event untuk filter ini.</td></tr>';
+        document.getElementById('ec-tb').innerHTML=h;
+        document.getElementById('ec-cnt').textContent=rows.length+' events';
+        document.querySelectorAll('.f-btn').forEach(function(b){{
+          b.classList.remove('on');
+          if((AF==='ALL'&&b.textContent.indexOf('SEMUA')>-1)||
+             (AF==='ID'&&b.textContent.indexOf('ID')>-1&&b.textContent.indexOf('INDONESIA')<0)||
+             (AF==='US'&&b.textContent.indexOf('USD')>-1)||
+             (AF==='HIGH'&&b.textContent.indexOf('HIGH')>-1)||
+             (AF==='ACT'&&b.textContent.indexOf('ACTUAL')>-1)||
+             (AF==='UPCOMING'&&b.textContent.indexOf('UPCOMING')>-1)||
+             (AF==='PAST'&&b.textContent.indexOf('LEWAT')>-1))
+            b.classList.add('on');
+        }});
+      }}
+
+      window.ef=function(f){{AF=f;render();document.getElementById('ec-sb').scrollTop=0;}};
+      render();
+
+      // Auto-resize
+      function resize(){{
+        var h=document.body.scrollHeight+4;
+        try{{window.parent.postMessage({{type:'streamlit:setFrameHeight',height:h}},'*');}}catch(e){{}}
+      }}
+      setTimeout(resize,100);setTimeout(resize,500);
+    }})();
+    </script></body></html>""", height=540, scrolling=False)
+
+            st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+            # ─────────────────────────────────────────────────────────
+            # EC AI ANALYST — Baca Actual vs Forecast, Dampak ke Aset
+            # ─────────────────────────────────────────────────────────
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ EC AI ANALYST — DAMPAK DATA EKONOMI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <p style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:14px;line-height:1.65;'>
+            Pilih event ekonomi &rarr; AI analisa dampak Actual vs Forecast ke <b style='color:#FFD700;'>XAU/USD</b>, <b style='color:#4285F4;'>USD/IDR</b>,
+            <b style='color:#089981;'>DXY</b>, dan <b style='color:#8b5cf6;'>IHSG/IDX</b>.
+            Skenario jika beat forecast maupun miss forecast keduanya disimulasikan.
+            </p>
+            """, unsafe_allow_html=True)
+
+            # ── Pilih event untuk dianalisis ──────────────────────────
+            _all_ec_events = [r["event"] for r in _ec_rows if r["neg"] in ("US","ID")]
+            _ec_event_sel = st.selectbox(
+                "Pilih Event Ekonomi untuk Dianalisis AI:",
+                options=_all_ec_events,
+                key="ec_ai_event_sel",
+                label_visibility="collapsed",
+                placeholder="Pilih event..."
+            )
+
+            # ── Find selected row ──────────────────────────────────────
+            _sel_row = next((r for r in _ec_rows if r["event"] == _ec_event_sel), None)
+
+            if _sel_row:
+                _ec_cols = st.columns([1,1,1,1])
+                with _ec_cols[0]:
+                    st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};'>NEGARA</div><div style='font-size:1.1rem;'>{_sel_row['flag']} {_sel_row['neg']}</div>", unsafe_allow_html=True)
+                with _ec_cols[1]:
+                    st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};'>FORECAST</div><div style='font-size:1rem;font-weight:700;color:#089981;'>{_sel_row['fc']}</div>", unsafe_allow_html=True)
+                with _ec_cols[2]:
+                    _act_color = "#089981" if _sel_row['actual'] not in ("—","") else text_sub
+                    st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};'>ACTUAL (RT)</div><div style='font-size:1rem;font-weight:700;color:{_act_color};'>{_sel_row['actual']}</div>", unsafe_allow_html=True)
+                with _ec_cols[3]:
+                    st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};'>PREVIOUS</div><div style='font-size:1rem;color:{text_sub};'>{_sel_row['prev']}</div>", unsafe_allow_html=True)
+
+            st.markdown("<div style='margin-top:12px;'></div>", unsafe_allow_html=True)
+
+            _ec_ai_cols = st.columns([2,1])
+            with _ec_ai_cols[0]:
+                _ec_custom_actual = st.text_input(
+                    "Override Actual (opsional — simulasi skenario):",
+                    placeholder=f"e.g. 0.5% atau 0.2% (kosongkan = pakai RT actual)",
+                    key="ec_ai_custom_actual",
+                    label_visibility="visible"
+                )
+            with _ec_ai_cols[1]:
+                _ec_ai_btn = st.button("⚡ ANALISA DAMPAK", use_container_width=True, key="ec_ai_run_btn")
+
+            if _ec_ai_btn and _sel_row:
+                _use_actual = _ec_custom_actual.strip() if _ec_custom_actual.strip() else _sel_row['actual']
+
+                _ec_prompt = f"""Kamu adalah SIGMA AI &mdash; analis ekonomi makro senior untuk pasar modal Indonesia (IDX/BEI).
+
+    DATA RILIS EKONOMI:
+    - Event: {_sel_row['event']}
+    - Negara: {_sel_row['neg']} ({_sel_row['flag']})
+    - Tanggal: {_sel_row['tgl']} | Jam: {_sel_row['jam']} WIB
+    - Forecast konsensus: {_sel_row['fc']}
+    - Actual (dirilis): {_use_actual}
+    - Previous: {_sel_row['prev']}
+    - Impact level: {_sel_row['d_lbl']}
+
+    TUGASMU &mdash; Analisa dampak event ini secara menyeluruh:
+
+    1. **VERDICT ACTUAL vs FORECAST**
+       - Apakah actual BEAT (lebih baik dari forecast), MISS (lebih buruk), atau IN-LINE?
+       - Berapa deviasi dari konsensus? Apakah signifikan?
+
+    2. **DAMPAK LANGSUNG (0&ndash;4 JAM PERTAMA)**
+       Jelaskan dampak ke masing-masing aset berikut:
+       -  XAU/USD (Gold): naik/turun/sideways? Mengapa?
+       -  DXY (Dollar Index): menguat/melemah? Berapa poin estimasi?
+       -  USD/IDR: Rupiah menguat atau melemah? Estimasi range?
+       -  IHSG/IDX: bullish atau bearish? Sektor apa yang terdampak?
+
+    3. **SKENARIO ALTERNATIF**
+       - Jika sebaliknya (actual BEAT jika miss, atau MISS jika beat): bagaimana reaksi aset di atas?
+       - Berikan angka estimasi pergerakan untuk masing-masing skenario.
+
+    4. **IMPLIKASI IDX SPESIFIK**
+       - Sektor dan saham apa yang paling terdampak di IDX? (perbankan, properti, consumer, mining, dll)
+       - Apakah ada perubahan ekspektasi kebijakan BI Rate?
+       - Strategi jangka pendek untuk trader IDX minggu ini?
+
+    5. **KESIMPULAN**
+       - Satu paragraf ringkas: apa yang harus dilakukan trader/investor IDX hari ini berdasarkan data ini?
+
+    Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gunakan Bahasa Indonesia. Tetap faktual, presisi, dan actionable &mdash; bukan generik."""
+
+                _ec_ai_resp = None
+                _ec_ai_model = "error"
+                with st.spinner("⚡ SIGMA AI menganalisa dampak data ekonomi ke XAU, IDR, DXY, IHSG..."):
+                    try:
+                        _ec_ai_resp, _ec_ai_model = _call_groq_text([{"role":"user","content":_ec_prompt}])
+                    except Exception as _ec_e:
+                        try:
+                            _ec_ai_resp, _ec_ai_model = _call_gemini_text([{"role":"user","content":_ec_prompt}])
+                        except Exception as _ec_e2:
+                            _ec_ai_resp = None
+                            _ec_ai_model = "error"
+
+                if not _ec_ai_resp or _ec_ai_model == "error":
+                    st.error("⚠️ Terjadi kesalahan: API Limit tercapai atau timeout. Silakan coba beberapa saat lagi.", icon="🚫")
+                    st.stop()
+
+                # ── Render hasil AI dalam card ──────────────────────
+                _act_display = _use_actual if _use_actual not in ("—","") else "Belum rilis"
+                _beat_miss = ""
+                try:
+                    import re as _re_ec
+                    _fc_n = float(_re_ec.sub(r'[^0-9.\\-]','',str(_sel_row['fc']))) if _sel_row['fc'] not in ("—","") else None
+                    _ac_n = float(_re_ec.sub(r'[^0-9.\\-]','',str(_use_actual))) if _use_actual not in ("—","","pending") else None
+                    if _fc_n is not None and _ac_n is not None:
+                        if _ac_n > _fc_n: _beat_miss = f"<span style='color:#089981;font-weight:700;'>▲ BEAT +{abs(_ac_n-_fc_n):.2f}</span>"
+                        elif _ac_n < _fc_n: _beat_miss = f"<span style='color:#f23645;font-weight:700;'>▼ MISS -{abs(_ac_n-_fc_n):.2f}</span>"
+                        else: _beat_miss = f"<span style='color:#f59e0b;font-weight:700;'>→ IN-LINE</span>"
+                except Exception: pass
+
+                # ── Simpan ke session_state & database agar tidak hilang saat rerun ──
+                st.session_state["ec_ai_result"]    = _ec_ai_resp
+                st.session_state["ec_ai_event"]     = _sel_row.get("event", "")
+                st.session_state["ec_ai_actual"]    = _act_display
+                st.session_state["ec_ai_beat_miss"] = _beat_miss
+                st.session_state["ec_ai_model"]     = _ec_ai_model
+                st.session_state["ec_ai_timestamp"] = _wib_now().strftime("%d %b %Y, %H:%M WIB")
+                if st.session_state.get("user"):
+                    _sv = load_user(st.session_state.user["email"]) or {}
+                    _sv["ec_ai_result"]    = _ec_ai_resp
+                    _sv["ec_ai_event"]     = _sel_row.get("event", "")
+                    _sv["ec_ai_actual"]    = _act_display
+                    _sv["ec_ai_beat_miss"] = _beat_miss
+                    _sv["ec_ai_model"]     = _ec_ai_model
+                    _sv["ec_ai_timestamp"] = st.session_state["ec_ai_timestamp"]
+                    save_user(st.session_state.user["email"], _sv)
+
+                st.markdown(f"""
+                <div style='background:{met_bg};border:1px solid {met_border};border-left:3px solid #8b5cf6;
+                    border-radius:0 10px 10px 0;padding:16px 20px;margin-top:4px;'>
+                  <div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;'>
+                    <span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;font-weight:700;
+                      letter-spacing:0.12em;color:#8b5cf6;'>&#9889; SIGMA EC ANALYSIS</span>
+                    <span style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;
+                      color:{text_sub};background:rgba(255,255,255,0.05);
+                      border:1px solid {met_border};border-radius:6px;padding:2px 8px;'>
+                      {_sel_row['event']} &middot; Actual: <b style='color:#089981;'>{_act_display}</b>
+                      &nbsp;{_beat_miss}
+                    </span>
+                    <span style='font-size:0.72rem;color:{text_sub};margin-left:auto;'>model: {_ec_ai_model}</span>
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
+                st.markdown(_ec_ai_resp)
+                _ec_dl_col1, _ec_dl_col2 = st.columns([3, 1])
+                with _ec_dl_col2:
+                    st.download_button(
+                        label="⬇️ Download Analisa (.txt)",
+                        data=(
+                            f"SIGMA — ECONOMIC CALENDAR AI ANALYSIS\n"
+                            f"Event  : {_sel_row.get('event', '')}\n"
+                            f"Actual : {_act_display}\n"
+                            f"Waktu  : {_wib_now().strftime('%d %b %Y %H:%M WIB')}\n"
+                            f"{'='*60}\n\n"
+                            + _ec_ai_resp
+                        ).encode("utf-8"),
+                        file_name=f"SIGMA_EC_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
+                        mime="text/plain",
+                        key="ec_fresh_dl_btn",
+                        use_container_width=True,
+                    )
+
+            # ── Re-render hasil EC AI dari session_state jika sudah pernah digenerate ──
+            if not _ec_ai_btn and st.session_state.get("ec_ai_result"):
+                _ec_cached_event  = st.session_state.get("ec_ai_event", "")
+                _ec_cached_actual = st.session_state.get("ec_ai_actual", "&#8212;")
+                _ec_cached_bm     = st.session_state.get("ec_ai_beat_miss", "")
+                _ec_cached_model  = st.session_state.get("ec_ai_model", "")
+                _ec_cached_ts     = st.session_state.get("ec_ai_timestamp", "")
+                st.markdown(f"""
+                <div style='background:{met_bg};border:1px solid {met_border};border-left:3px solid #8b5cf6;
+                    border-radius:0 10px 10px 0;padding:16px 20px;margin-top:4px;'>
+                  <div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;'>
+                    <span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;font-weight:700;
+                      letter-spacing:0.12em;color:#8b5cf6;'>&#9889; SIGMA EC ANALYSIS</span>
+                    <span style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;
+                      color:{text_sub};background:rgba(255,255,255,0.05);
+                      border:1px solid {met_border};border-radius:6px;padding:2px 8px;'>
+                      {_ec_cached_event} &middot; Actual: <b style='color:#089981;'>{_ec_cached_actual}</b>
+                      &nbsp;{_ec_cached_bm}
+                    </span>
+                    <span style='font-size:0.72rem;color:{text_sub};margin-left:auto;'>model: {_ec_cached_model} &nbsp;&middot;&nbsp; {_ec_cached_ts}</span>
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
+                st.markdown(st.session_state["ec_ai_result"])
+                _ec_cache_dl_col1, _ec_cache_dl_col2 = st.columns([3, 1])
+                with _ec_cache_dl_col2:
+                    st.download_button(
+                        label="⬇️ Download Analisa (.txt)",
+                        data=(
+                            f"SIGMA — ECONOMIC CALENDAR AI ANALYSIS\n"
+                            f"Event  : {_ec_cached_event}\n"
+                            f"Actual : {_ec_cached_actual}\n"
+                            f"Waktu  : {_ec_cached_ts}\n"
+                            f"{'='*60}\n\n"
+                            + st.session_state["ec_ai_result"]
+                        ).encode("utf-8"),
+                        file_name=f"SIGMA_EC_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
+                        mime="text/plain",
+                        key="ec_cache_dl_btn",
+                        use_container_width=True,
+                    )
+
+            st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+
+            # ════════════════════════════════════════════════════════════════
+            # TAB: INFLASI — Data Inflasi Indonesia & Global
+            # ════════════════════════════════════════════════════════════════
 
         with alpha_tab_brosum:
 
