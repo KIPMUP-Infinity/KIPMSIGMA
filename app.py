@@ -16834,7 +16834,6 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
         ])
 
         with _rot_tab_rrg:
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SECTOR ROTATION &mdash; RRG CONCEPT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:16px;'>Klik sektor di bubble chart untuk melihat detail saham &middot; RRG = Relative Rotation Graph &middot; Kanan-atas = Leading, Kiri-atas = Improving, Kanan-bawah = Weakening, Kiri-bawah = Lagging</p>", unsafe_allow_html=True)
 
             # ── AUTO-UPDATE: slot update 12:30 & 19:00 WIB ─────────────────
@@ -18354,7 +18353,6 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
         with _rot_tab_shareholder:
 
             # ── SHAREHOLDER TRACKER ─────────────────────────────────────────
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>👥 SHAREHOLDER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
             # ── Notifikasi data hardcoded + staleness check bulanan ──
             import datetime as _dt
@@ -19818,12 +19816,6 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
         # ══════════════════════════════════════════════════════════════
     # ─── ALPHA PLAN TAB — Daily · Weekly · BSJP · Track Record ───────────
     with tab_alpha_plan:
-        st.markdown(
-            "<div class='trm-section'><div class='trm-section-line'></div>"
-            "<span class='trm-section-label'>🗓️ ALPHA PLAN</span>"
-            "<div class='trm-section-line'></div></div>",
-            unsafe_allow_html=True
-        )
         reco_tab_daily, reco_tab_weekly, reco_tab_bsjp, reco_tab_trackrecord_plan = st.tabs([
             "  📅 DAILY PLAN  ",
             "  📆 WEEKLY PLAN  ",
@@ -19836,7 +19828,6 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
         _alpha_unlocked = True
         st.session_state["alpha_screener_unlocked"] = True
 
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         # [UI statement removed]
 
         # ── ALPHA PLAN (tab terpisah) mengandung: Daily, Weekly, BSJP, Track Record ──
@@ -32792,7 +32783,6 @@ function calculate() {{
 
 
     with tab_panduan:
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📖 PANDUAN SIGMA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
         # ── Versi & tanggal panduan ──────────────────────────────────────
         _PANDUAN_VERSION = "v5.0"
