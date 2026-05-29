@@ -18393,7 +18393,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
             if _sh_stale_days > 45:
                 st.warning(
                     f"⚠️ **Data Shareholder sudah {_sh_stale_days} hari** (terakhir: {_sh_data_month}). "
-                    "Data bulan baru belum ditambahkan ke kode. Developer: perbarui `get_manual_sh_db_full()` "
+                    "Data bulan baru belum ditambahkan ke kode. Developer: perbarui `_rot_get_manual_sh_db()` "
                     "dan ubah `_sh_data_month` di atas.",
                     icon="⚠️"
                 )
@@ -18410,7 +18410,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
             # ════════════════════════════════════════════════════════════════
             # DATABASE PEMEGANG SAHAM - shared helper
             # ════════════════════════════════════════════════════════════════
-            def get_manual_sh_db_full():
+            def _rot_get_manual_sh_db():
                 """Database lengkap - 12 bulan per emiten (Apr 2025 – Mar 2026)."""
                 import datetime as _dtx
                 D = _dtx.datetime
@@ -18674,7 +18674,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                     ],
                 }
 
-            _sh_all_db = get_manual_sh_db_full()
+            _sh_all_db = _rot_get_manual_sh_db()
 
             # ════════════════════════════════════════════════════════════════
             # DAFTAR SAHAM SUSPEND IDX - sync dengan IDX_SUSPENDED_TICKERS_GLOBAL
@@ -18684,7 +18684,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
             # LIVE FETCH PEMEGANG SAHAM - MULTI-SOURCE UNTUK SEMUA SAHAM BEI
             # ════════════════════════════════════════════════════════════════
             @st.cache_data(ttl=3600*6, show_spinner=False)
-            def fetch_sh_live(ticker):
+            def _rot_fetch_sh_live(ticker):
                 """
                 Fetch jumlah pemegang saham untuk SEMUA emiten BEI.
                 Cache 6 jam normal. Namun pada tanggal 7-10 setiap bulan (window update IDX/KSEI),
@@ -18826,7 +18826,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 return sorted(results, key=lambda x: x["date"]) if results else []
 
             @st.cache_data(ttl=3600*24, show_spinner=False)
-            def fetch_sh_historical_estimate(ticker, manual_db):
+            def _rot_fetch_sh_hist_est(ticker, manual_db):
                 """
                 Jika semua live fetch gagal, buat estimasi historis dari:
                 1. Data titik tunggal yang berhasil di-fetch
@@ -18896,13 +18896,13 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
             col_sh_inp, col_sh_btn = st.columns([3, 1])
             with col_sh_inp:
-                sh_ticker = st.text_input("KODE SAHAM (seluruh BEI):", "BBCA", key="sh_ticker_input").upper().strip()
+                sh_ticker = st.text_input("KODE SAHAM (seluruh BEI):", "BBCA", key="rot_sh_ticker_input").upper().strip()
             with col_sh_btn:
                 st.markdown("<br>", unsafe_allow_html=True)
-                sh_run = st.button("▶ LOAD DATA", key="sh_run_btn", use_container_width=True)
+                sh_run = st.button("▶ LOAD DATA", key="rot_sh_run_btn", use_container_width=True)
 
-            if sh_run or st.session_state.get("sh_last_ticker") == sh_ticker:
-                st.session_state["sh_last_ticker"] = sh_ticker
+            if True:
+                st.session_state["rot_sh_last_ticker"] = sh_ticker
 
                 # ── Cek suspend sebelum proses ──
                 if sh_ticker in IDX_SUSPENDED_TICKERS:
@@ -18930,14 +18930,14 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 # LANGKAH 2: Live fetch dari IDX / KSEI untuk semua emiten lain
                 if not sh_data:
                     with st.spinner(f"🔍 Mengambil data {sh_ticker} dari IDX & KSEI..."):
-                        sh_data = fetch_sh_live(sh_ticker)
+                        sh_data = _rot_fetch_sh_live(sh_ticker)
                         if sh_data:
                             data_source = "IDX/KSEI API (Live)"
 
                 # LANGKAH 3: Estimasi berbasis yfinance + pola industri
                 if not sh_data:
                     with st.spinner(f"📊 Membangun estimasi data {sh_ticker}..."):
-                        sh_data = fetch_sh_historical_estimate(sh_ticker, _sh_all_db)
+                        sh_data = _rot_fetch_sh_hist_est(sh_ticker, _sh_all_db)
                         if sh_data:
                             data_source = "Estimasi (yfinance + pola industri)"
                             is_estimated = True
@@ -18990,7 +18990,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                             <a href="https://ksei.co.id" target="_blank" style="color:#4285F4;">ksei.co.id</a>.
                         </div>""", unsafe_allow_html=True)
                     @st.cache_data(ttl=3600, show_spinner=False)
-                    def fetch_price_1y(ticker):
+                    def _rot_fetch_price_1y(ticker):
                         try:
                             import yfinance as yf
                             t = yf.Ticker(f"{ticker}.JK")
@@ -19004,7 +19004,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                         return pd.DataFrame()
 
                     with st.spinner(f"Mengambil data harga {sh_ticker} (1 tahun)..."):
-                        price_df = fetch_price_1y(sh_ticker)
+                        price_df = _rot_fetch_price_1y(sh_ticker)
 
                     df_sh = pd.DataFrame(sh_data)
                     df_sh["date"] = pd.to_datetime(df_sh["date"])
@@ -19279,7 +19279,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
             # ── Database screening 200+ emiten BEI (hardcoded, reliable) ──────
             # Format: ticker -> [{"date":..,"shareholders":..}, ...] 12 bulan Apr25-Mar26
             # Pola: Naik = akumulasi, Turun = distribusi, Flat = konsolidasi
-            def build_full_screening_db(manual_db):
+            def _rot_build_full_screening(manual_db):
                 import datetime as _dtx
                 D = _dtx.datetime
                 # Mulai dari manual DB yang sudah ada (31 terverifikasi)
@@ -19388,7 +19388,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                     pass
                 return combined
 
-            _full_screen_db = build_full_screening_db(_sh_all_db)
+            _full_screen_db = _rot_build_full_screening(_sh_all_db)
             # ── Hapus saham suspend dari screening database ──
             _full_screen_db = {tk: v for tk, v in _full_screen_db.items() if tk not in IDX_SUSPENDED_TICKERS}
 
@@ -19509,7 +19509,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     }}
     </style>""", unsafe_allow_html=True)
 
-            def _render_sh_table_v2(rows, is_naik):
+            def _rot_render_sh_table(rows, is_naik):
                 if not rows:
                     return
                 rows_sorted = sorted(rows, key=lambda x: abs(x["_pct"]), reverse=True)
@@ -19717,7 +19717,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
             st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:12px;margin-top:4px;'>Data diperbarui setiap bulan setelah rilis IDX &middot; <span style='color:#26a69a;font-weight:700;'>{len(_naik_rows)} emiten akumulasi</span> &middot; <span style='color:#f23645;font-weight:700;'>{len(_turun_rows)} emiten distribusi</span> dari total <b>{len(_naik_rows)+len(_turun_rows)}</b> emiten terpantau</p>", unsafe_allow_html=True)
 
-            _render_sh_table_v2(_naik_rows, is_naik=True)
+            _rot_render_sh_table(_naik_rows, is_naik=True)
             # ── MOBILE-ONLY: rapatkan gap antara tabel Akumulasi dan Distribusi ──
             components.html("""
     <script>
@@ -19753,7 +19753,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     </script>
     """, height=0)
             st.markdown("<div style='margin-top:0px;margin-bottom:0px;line-height:0;font-size:0;height:0;'></div>", unsafe_allow_html=True)
-            _render_sh_table_v2(_turun_rows, is_naik=False)
+            _rot_render_sh_table(_turun_rows, is_naik=False)
 
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         # ══════════════════════════════════════════════════════════════
