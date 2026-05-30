@@ -12732,6 +12732,16 @@ if current_view == "dashboard":
             font-size: 0.76rem !important;
             padding: 10px 14px !important;
         }}
+        /* ── CATCH-ALL: iframe components scrollable on mobile ── */
+        [data-testid="stCustomComponentV1"] {{
+            overflow: visible !important;
+            max-width: 100% !important;
+        }}
+        /* Ensure all st.markdown tables are scrollable */
+        [data-testid="stMarkdownContainer"] > div {{
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+        }}
     }}
 
     /* ── FIX M4: @media sibling blocks (dipindah dari nested di dalam @media 768px) ── */
@@ -13506,7 +13516,7 @@ if current_view == "dashboard":
 
         _tbl_css = f"""
 *{{box-sizing:border-box;margin:0;padding:0;}}
-html,body{{background:transparent;font-family:'DM Sans',sans-serif;width:100%;overflow:hidden;}}
+html,body{{background:transparent;font-family:'DM Sans',sans-serif;width:100%;overflow-x:hidden;overflow-y:auto;}}
 .mkt-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;width:100%;margin-bottom:4px;}}
 .mkt-hdr{{padding:6px 12px;background:rgba(139,92,246,0.09);border-bottom:1px solid {met_border};font-size:0.68rem;font-weight:700;letter-spacing:0.13em;color:#8b5cf6;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;font-family:'DM Sans',sans-serif;}}
 .mkt-badge{{font-size:0.70rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:8px;padding:1px 6px;white-space:nowrap;}}
@@ -13527,6 +13537,9 @@ table{{margin-bottom:0!important;}}
   thead th{{font-size:0.62rem;padding:3px 6px;}}
   tbody td{{font-size:0.72rem;padding:2px 6px;}}
   .badge{{font-size:0.75rem;padding:2px 5px;}}
+  .mkt-wrap{{overflow:visible !important;}}
+  table{{min-width:320px;width:max-content;}}
+  .mkt-wrap-inner{{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;display:block;}}
 }}"""
 
         components.html(f"""<!DOCTYPE html><html><head>
@@ -14721,7 +14734,7 @@ table{{margin-bottom:0!important;}}
             st.markdown(f"""
 <div style=\'background:{"rgba(239,68,68,0.06)" if is_dark else "#fff5f5"};border:1px solid rgba(239,68,68,0.2);border-left:3px solid #ef4444;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;\'>
 <div style=\'font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#ef4444;margin-bottom:10px;\'>🇺🇸 INFLASI AS (BLS / Fed)</div>
-<table style=\'width:100%;border-collapse:collapse;font-size:0.82rem;\'>
+<div style=\'overflow-x:auto;-webkit-overflow-scrolling:touch;\'><table style=\'width:max-content;min-width:480px;border-collapse:collapse;font-size:0.82rem;white-space:nowrap;\'>
 <tr style=\'border-bottom:1px solid rgba(239,68,68,0.2);\'>
   <th style=\'text-align:left;padding:4px 8px;color:{text_sub};font-weight:600;\'>Indikator</th>
   <th style=\'text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;\'>Terbaru</th>
@@ -14729,7 +14742,7 @@ table{{margin-bottom:0!important;}}
   <th style=\'text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;\'>Target Fed</th>
   <th style=\'text-align:center;padding:4px 8px;color:{text_sub};font-weight:600;\'>Dampak IDX</th>
 </tr>{_inf_rows_us}
-</table>
+</table></div>
 <div style=\'margin-top:10px;font-size:0.72rem;color:{text_sub};\'>📌 PCE = indikator favorit Fed · Turun = sinyal dovish → positif EM & IDX · Sumber: BLS, Fed</div>
 </div>""", unsafe_allow_html=True)
 
@@ -16345,6 +16358,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
 *{{box-sizing:border-box;margin:0;padding:0;}}
 body{{background:transparent;font-family:'DM Sans','Segoe UI',sans-serif;padding:0 0 8px;}}
 .cal-wrap{{width:100%;border-radius:10px;overflow:hidden;border:1px solid {met_border};}}
+.cal-scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;}}
 .cal-hdr{{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:rgba(139,92,246,0.09);border-bottom:1px solid {met_border};font-size:0.7rem;font-weight:700;letter-spacing:0.13em;color:#8b5cf6;text-transform:uppercase;font-family:'DM Sans',sans-serif;}}
 .cal-hdr-right{{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}}
 .hdr-badge{{font-size:0.68rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:8px;padding:2px 8px;white-space:nowrap;}}
@@ -16370,6 +16384,9 @@ tbody td{{padding:7px 10px;color:{text_main};vertical-align:middle;font-size:0.7
 @media(max-width:600px){{
   thead th.hide-sm,tbody td.hide-sm{{display:none;}}
   tbody td{{padding:5px 6px;font-size:0.72rem;}}
+  .cal-wrap{{overflow:visible !important;}}
+  .cal-scroll{{overflow-x:auto !important;-webkit-overflow-scrolling:touch;}}
+  table{{min-width:480px;}}
 }}
 </style></head><body>
 <div class="cal-wrap">
@@ -16380,6 +16397,7 @@ tbody td{{padding:7px 10px;color:{text_main};vertical-align:middle;font-size:0.7
       <span class="hdr-badge"> INDONESIA</span>
     </div>
   </div>
+  <div class="cal-scroll">
   <table>
     <thead><tr>
       <th>INDEKS</th>
@@ -16391,6 +16409,7 @@ tbody td{{padding:7px 10px;color:{text_main};vertical-align:middle;font-size:0.7
     </tr></thead>
     <tbody id="reb-tbody"></tbody>
   </table>
+  </div>
 </div>
 <script>
 (function(){{
@@ -24337,6 +24356,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_txt};
   padding:10px 14px;font-size:0.8rem;color:{_txt};margin-bottom:12px;line-height:1.65;}}
 .tbl-wrap{{background:{_tbl_bg};border:1px solid {_border};border-radius:10px;overflow:hidden;margin-bottom:12px;}}
 .scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}}
+@media(max-width:768px){{.tbl-wrap{{overflow:visible !important;}}}}
 .scroll::-webkit-scrollbar{{height:4px;}}
 .scroll::-webkit-scrollbar-thumb{{background:{_border};border-radius:4px;}}
 table{{width:100%;border-collapse:collapse;min-width:700px;}}
@@ -24730,6 +24750,7 @@ html,body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_
 .tbl-wrap{{background:{_tbl_bg};border:1px solid {_border};border-radius:10px;
   overflow:hidden;margin-bottom:28px;width:100%;max-width:100%;}}
 .scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;}}
+@media(max-width:768px){{.tbl-wrap{{overflow:visible !important;}}}}
 table{{border-collapse:collapse;min-width:1000px;table-layout:auto;width:max-content;}}
 thead th{{background:{_hdr_bg};color:#26a69a;padding:8px 10px;
   text-align:left;border-bottom:1px solid {_border};
@@ -31023,8 +31044,10 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
     /* Tables */
     .section-row{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}}
     .tbl-wrap{{background:{_tbl_bg};border:1px solid {_brd};border-radius:10px;overflow:hidden;}}
-    .tbl-head{{background:{_hdr_bg};display:grid;grid-template-columns:40px 1fr 70px 70px 70px;gap:0;padding:7px 10px;border-bottom:1px solid {_brd};font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:{_G};font-weight:700;}}
-    .tbl-row{{display:grid;grid-template-columns:40px 1fr 70px 70px 70px;gap:0;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.04);align-items:center;font-size:0.75rem;}}
+@media(max-width:768px){{.tbl-wrap{{overflow:visible !important;}}}}
+    .tbl-head{{background:{_hdr_bg};display:grid;grid-template-columns:40px 1fr 70px 70px 70px;gap:0;padding:7px 10px;border-bottom:1px solid {_brd};font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:{_G};font-weight:700;white-space:nowrap;}}
+    .tbl-row{{display:grid;grid-template-columns:40px 1fr 70px 70px 70px;gap:0;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.04);align-items:center;font-size:0.75rem;white-space:nowrap;}}
+    .tbl-scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}}
     .tbl-row:last-child{{border-bottom:none;}}
     .tbl-row:hover{{background:rgba(38,166,154,0.06);}}
     .bk{{font-weight:700;font-size:0.82rem;}}
@@ -31041,6 +31064,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
     /* Full table */
     .full-wrap{{background:{_tbl_bg};border:1px solid {_brd};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
     .scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}}
+    @media(max-width:768px){{.full-wrap{{overflow:visible !important;}}}}
     table{{width:100%;border-collapse:collapse;min-width:700px;}}
     thead th{{background:{_hdr_bg};color:{_G};padding:8px 10px;text-align:left;border-bottom:1px solid {_brd};font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;white-space:nowrap;}}
     tbody td{{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.78rem;white-space:nowrap;}}
@@ -31077,16 +31101,16 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
 
     <div class="section-row">
       <div>
-        <div class="tbl-wrap">
+        <div class="tbl-scroll"><div class="tbl-wrap">
           <div class="tbl-head"><span>Buy</span><span>B.Val</span><span>B.Lot</span><span>B.Avg</span><span>Net</span></div>
           <div id="buy-rows"></div>
-        </div>
+        </div></div>
       </div>
       <div>
-        <div class="tbl-wrap">
+        <div class="tbl-scroll"><div class="tbl-wrap">
           <div class="tbl-head"><span>Sell</span><span>S.Val</span><span>S.Lot</span><span>S.Avg</span><span>Net</span></div>
           <div id="sell-rows"></div>
-        </div>
+        </div></div>
       </div>
     </div>
 
@@ -32878,6 +32902,8 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_kc_te
 /* Breakdown table */
 .bk-wrap{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
 .bk-tbl{{width:100%;border-collapse:collapse;}}
+.bk-scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;}}
+@media(max-width:768px){{.bk-wrap{{overflow:visible !important;}}.bk-tbl{{min-width:480px;white-space:nowrap;}}}}
 .bk-tbl thead th{{background:rgba(124,58,237,0.08);color:{_kc_purple};padding:9px 12px;
   font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;text-align:left;border-bottom:1px solid {_kc_border};}}
 .bk-tbl tbody td{{padding:9px 12px;font-size:0.875rem;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;}}
@@ -32936,13 +32962,13 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_kc_te
 <div class="result-wrap" id="result-wrap">
   <div class="result-header">Hasil Perhitungan</div>
   <div class="summary-grid" id="summary-grid"></div>
-  <div class="bk-wrap"><table class="bk-tbl">
+  <div class="bk-wrap"><div class="bk-scroll"><table class="bk-tbl">
     <thead><tr>
       <th>#</th><th>Harga Beli</th><th>Lot</th><th>Lembar</th>
       <th>Total Modal</th><th>Bobot</th>
     </tr></thead>
     <tbody id="bk-tbody"></tbody>
-  </table></div>
+  </table></div></div>
   <div id="pnl-box"></div>
   <div id="live-avg" style="display:none;margin-top:-10px;margin-bottom:14px;font-size:0.8rem;color:{_kc_sub};
     font-family:'IBM Plex Mono',monospace;text-align:center;letter-spacing:0.06em;"></div>
@@ -33268,8 +33294,9 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .gcard.blue .gcard-val{{color:{_B};}}.gcard.green .gcard-val{{color:{_G};}}
 .gcard.yellow .gcard-val{{color:{_Y};}}.gcard.red .gcard-val{{color:{_R};}}
 .gcard-sub{{font-size:0.78rem;color:{_SUB};margin-top:4px;line-height:1.55;}}
-.tbl-wrap{{overflow-x:auto;margin:12px 0;}}
-table{{width:100%;border-collapse:collapse;font-size:0.82rem;}}
+.tbl-wrap{{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:12px 0;}}
+table{{width:100%;border-collapse:collapse;font-size:0.82rem;min-width:400px;}}
+@media(max-width:600px){{table{{font-size:0.76rem;}}th,td{{padding:6px 8px;white-space:normal;word-break:break-word;}}}}
 th{{background:rgba(124,58,237,0.15);color:{_P};font-weight:700;padding:9px 12px;text-align:left;border-bottom:1px solid rgba(124,58,237,0.4);}}
 td{{padding:7px 12px;border-bottom:1px solid rgba(255,255,255,0.06);color:{_TXT};}}
 tr:hover td{{background:rgba(124,58,237,0.06);}}
