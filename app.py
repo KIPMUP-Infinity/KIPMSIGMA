@@ -12420,6 +12420,18 @@ if current_view == "dashboard":
 
     /* -- Screening/data tables -- */
     .sh-screen-table th {{ background: rgba(139,92,246,0.12); color: #8b5cf6; }}
+    /* Wrapper untuk horizontal scroll di mobile */
+    .sh-screen-table-wrap {{
+        width: 100%;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        border-radius: 8px;
+    }}
+    .sh-screen-table {{
+        min-width: 600px;  /* jangan dikompres — geser saja */
+        width: 100%;
+        border-collapse: collapse;
+    }}
 
     /* -- Mobile -- */
     @media (max-width: 768px) {{
@@ -28468,6 +28480,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
           overflow-x:auto !important;
           overflow-y:visible !important;
           -webkit-overflow-scrolling:touch !important;
+          touch-action:pan-x !important;
           cursor:grab;
           scrollbar-width:thin;
           scrollbar-color:{_tbl_border} transparent;
@@ -28478,6 +28491,9 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
         height:auto !important;
         overflow-y:visible !important;
         overflow-x:auto !important;
+        touch-action:pan-x !important;
+        cursor:default !important;
+        -webkit-overflow-scrolling:touch !important;
           }}
           .wrap{{
         overflow:visible !important;
@@ -28610,9 +28626,9 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
         }})();
         </script></body></html>"""
 
-                # Hitung tinggi presisi: label(28) + hint(0/20) + thead(36) + baris(42×15) + footer(44)
-                _h = 28 + 36 + (min(count, 15) * 42) + 44
-                _h = max(_h, 200)
+                # Hitung tinggi presisi: label(28) + hint(20) + thead(36) + baris(44x15) + footer(44)
+                _h = 28 + 20 + 36 + (min(count, 15) * 44) + 44
+                _h = max(_h, 220)
                 components.html(_html, height=_h, scrolling=False)
 
             pass  # subtitle count dihapus per request
@@ -34962,15 +34978,15 @@ components.html(f"""
         var css = pd.createElement('style');
         css.id = 'sigma-lock-css';
         css.textContent = [
-            '#sigma-lock-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999999;align-items:center;justify-content:center;}}',
+            '#sigma-lock-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999999;align-items:center;justify-content:center;touch-action:none;}}',
             '#sigma-lock-overlay.active{{display:flex;}}',
-            '#sigma-lock-box{{background:#1a1a2e;border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:32px 28px 28px;width:320px;max-width:90vw;box-shadow:0 8px 40px rgba(0,0,0,0.6);font-family:IBM Plex Mono,Courier New,monospace;text-align:center;transition:transform 0.08s ease;}}',
+            '#sigma-lock-box{{background:#1a1a2e;border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:32px 28px 28px;width:320px;max-width:90vw;box-shadow:0 8px 40px rgba(0,0,0,0.6);font-family:IBM Plex Mono,Courier New,monospace;text-align:center;transition:transform 0.08s ease;touch-action:auto;pointer-events:auto;}}',
             '#sigma-lock-icon{{font-size:2rem;margin-bottom:10px;}}',
             '#sigma-lock-title{{color:#fff;font-size:0.95rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;}}',
             '#sigma-lock-subtitle{{color:rgba(255,255,255,0.45);font-size:0.7rem;margin-bottom:20px;letter-spacing:0.05em;}}',
-            '#sigma-lock-input{{width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:10px 14px;color:#fff;font-family:IBM Plex Mono,monospace;font-size:1.1rem;letter-spacing:0.2em;text-align:center;outline:none;box-sizing:border-box;margin-bottom:14px;}}',
+            '#sigma-lock-input{{width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:10px 14px;color:#fff;font-family:IBM Plex Mono,monospace;font-size:1.1rem;letter-spacing:0.2em;text-align:center;outline:none;box-sizing:border-box;margin-bottom:14px;-webkit-appearance:none;touch-action:manipulation;pointer-events:auto;cursor:text;}}',
             '#sigma-lock-input:focus{{border-color:rgba(0,229,190,0.5);}}',
-            '#sigma-lock-btn{{width:100%;background:#00E5BE;color:#0a0a1a;border:none;border-radius:8px;padding:10px;font-family:IBM Plex Mono,monospace;font-size:0.85rem;font-weight:700;letter-spacing:0.1em;cursor:pointer;margin-bottom:10px;}}',
+            '#sigma-lock-btn{{width:100%;background:#00E5BE;color:#0a0a1a;border:none;border-radius:8px;padding:12px;font-family:IBM Plex Mono,monospace;font-size:0.85rem;font-weight:700;letter-spacing:0.1em;cursor:pointer;margin-bottom:10px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}}',
             '#sigma-lock-btn:hover{{background:#00c9a7;}}',
             '#sigma-lock-cancel{{color:rgba(255,255,255,0.35);font-size:0.7rem;cursor:pointer;letter-spacing:0.05em;text-decoration:underline;}}',
             '#sigma-lock-cancel:hover{{color:rgba(255,255,255,0.6);}}',
@@ -35019,10 +35035,21 @@ components.html(f"""
 
     function showM(t, k) {{
         _pt = t; _pk = k;
-        pd.getElementById('sigma-lock-input').value = '';
+        var inp = pd.getElementById('sigma-lock-input');
+        var btn = pd.getElementById('sigma-lock-btn');
+        inp.value = '';
+        inp.disabled = false;
+        btn.disabled = false;
+        btn.textContent = 'BUKA AKSES';
         pd.getElementById('sigma-lock-error').textContent = '';
         pd.getElementById('sigma-lock-overlay').classList.add('active');
-        setTimeout(function() {{ pd.getElementById('sigma-lock-input').focus(); }}, 80);
+        // FIX MOBILE: iOS butuh user gesture yang masih aktif untuk focus + keyboard
+        // Langsung focus (masih dalam callstack click event) → keyboard muncul
+        try {{ inp.focus(); }} catch(e) {{}}
+        // Fallback setTimeout juga untuk browser lain
+        setTimeout(function() {{
+            try {{ inp.focus(); }} catch(e) {{}}
+        }}, 100);
     }}
 
     function hideModal() {{
@@ -35033,15 +35060,44 @@ components.html(f"""
     function submitPassword() {{
         var inp = pd.getElementById('sigma-lock-input');
         var err = pd.getElementById('sigma-lock-error');
+        var btn = pd.getElementById('sigma-lock-btn');
         var val = inp.value.trim();
-        if (!val || !_pk) return;
 
+        // FIX BUG 1: validasi DULU sebelum disable — kalau kosong langsung return tanpa disable
+        if (!val) {{
+            err.textContent = '⚠️ Masukkan kode akses terlebih dahulu.';
+            inp.focus();
+            return;
+        }}
+        if (!_pk) {{
+            err.textContent = 'Error: tab tidak dikenali. Tutup dan coba lagi.';
+            return;
+        }}
+
+        // Baru disable setelah validasi lolos
         inp.disabled = true;
-        pd.getElementById('sigma-lock-btn').textContent = 'MEMVERIFIKASI...';
+        btn.textContent = 'MEMVERIFIKASI...';
+        btn.disabled = true;
         err.textContent = '';
 
+        function _resetBtn() {{
+            btn.textContent = 'BUKA AKSES';
+            btn.disabled = false;
+            inp.disabled = false;
+        }}
+
         // Hash password di browser pakai SubtleCrypto — tidak perlu redirect/reload
+        // FIX BUG 2: tambahkan timeout fallback 5 detik agar tidak stuck kalau SubtleCrypto gagal
+        var _timedOut = false;
+        var _timeout = setTimeout(function() {{
+            _timedOut = true;
+            _resetBtn();
+            err.textContent = 'Timeout verifikasi. Coba lagi.';
+        }}, 5000);
+
         window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(val)).then(function(buf) {{
+            if (_timedOut) return;
+            clearTimeout(_timeout);
             var hex = Array.from(new Uint8Array(buf)).map(function(b) {{ return b.toString(16).padStart(2,'0'); }}).join('');
             var expected = HASH_MAP[_pk] || '';
             if (expected && hex === expected) {{
@@ -35050,7 +35106,6 @@ components.html(f"""
                 if (UNLOCKED.indexOf(_pk) === -1) UNLOCKED.push(_pk);
                 hideModal();
                 // Tandai di Python session_state via pushState + soft rerun
-                // (tidak reload page, tab tidak reset ke index 0)
                 try {{
                     var url = window.parent.location.href.split('?')[0];
                     window.parent.history.pushState(null, '', url + '?_sigma_unlock_tab=' + encodeURIComponent(_pk) + '&_sigma_unlock_hash=' + encodeURIComponent(hex));
@@ -35058,14 +35113,15 @@ components.html(f"""
                 // Trigger Streamlit rerender via hidden click on a harmless element
                 try {{ window.parent.dispatchEvent(new Event('popstate')); }} catch(e) {{}}
             }} else {{
-                pd.getElementById('sigma-lock-btn').textContent = 'BUKA AKSES';
-                inp.disabled = false;
+                _resetBtn();
                 err.textContent = '❌ Kode akses salah. Coba lagi.';
-                inp.value = ''; inp.focus();
+                inp.value = '';
+                setTimeout(function() {{ inp.focus(); }}, 50);
             }}
-        }}).catch(function() {{
-            pd.getElementById('sigma-lock-btn').textContent = 'BUKA AKSES';
-            inp.disabled = false;
+        }}).catch(function(e) {{
+            if (_timedOut) return;
+            clearTimeout(_timeout);
+            _resetBtn();
             err.textContent = 'Error verifikasi. Refresh dan coba lagi.';
         }});
     }}
