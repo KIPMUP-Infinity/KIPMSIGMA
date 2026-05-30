@@ -2958,6 +2958,7 @@ def detect_zones_multi_tf(ticker: str) -> ZoneResult:
     """
     Deteksi zona multi-timeframe.
     TF: Daily (200c), Weekly (52c), 4H (120c)
+    FIX P1-A: 3 TF fetch dijalankan parallel (ThreadPoolExecutor) — hemat 2-6 detik.
     """
     try:
         import yfinance as yf
@@ -2974,12 +2975,35 @@ def detect_zones_multi_tf(ticker: str) -> ZoneResult:
     all_signals = []
     combined_conf = 0
 
-    for tf_label, (period, interval) in tf_map.items():
+    # ── FIX P1-A: fetch 3 TF secara parallel ──────────────────────────────
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    def _fetch_tf(args):
+        tf_label, period, interval = args
         try:
             hist = yf.Ticker(f"{ticker}.JK").history(
                 period=period, interval=interval, auto_adjust=True
             )
-            if hist.empty or len(hist) < 10:
+            return tf_label, hist
+        except Exception:
+            return tf_label, None
+
+    hist_results = {}
+    with ThreadPoolExecutor(max_workers=3) as ex:
+        futs = {ex.submit(_fetch_tf, (k, v[0], v[1])): k for k, v in tf_map.items()}
+        for fut in as_completed(futs):
+            try:
+                tf_label, hist = fut.result()
+                if hist is not None:
+                    hist_results[tf_label] = hist
+            except Exception:
+                pass
+    # ── end parallel fetch ─────────────────────────────────────────────────
+
+    for tf_label in ["D", "W", "4H"]:  # preserve order for master assignment
+        hist = hist_results.get(tf_label)
+        try:
+            if hist is None or hist.empty or len(hist) < 10:
                 continue
 
             c = hist["Close"].tolist()
@@ -5470,6 +5494,9 @@ def _cleanup_session_state_bloat():
       - auto_plan_history_*  → max 30 entri
       - sigma_bs30_history   → max 14 entri
       - tr_records           → max 200 entri
+      - sigma_insight_*      → max 10 ticker (FIX B7)
+      - _alpha_chart_*       → max 10 ticker (FIX B7)
+      - _zone_cache_*        → max 10 ticker (FIX B7)
     """
     import sys
 
@@ -5496,6 +5523,16 @@ def _cleanup_session_state_bloat():
     _tr = st.session_state.get("tr_records", [])
     if isinstance(_tr, list) and len(_tr) > 200:
         st.session_state["tr_records"] = _tr[-200:]  # ambil 200 terbaru
+
+    # ── FIX B7: Bersihkan insight/chart/zone cache — max 10 ticker terakhir ──
+    for _prefix in ("sigma_insight_", "_alpha_chart_", "_zone_cache_", "_prefetch_done_"):
+        _keys = [k for k in st.session_state if k.startswith(_prefix)]
+        if len(_keys) > 10:
+            for k in sorted(_keys)[:-10]:
+                try:
+                    del st.session_state[k]
+                except Exception:
+                    pass
 
     # ── Log ukuran session state untuk monitoring ──
     try:
@@ -5546,6 +5583,18 @@ def save_field(email: str, field: str, value):
         existing[field] = value
         _db_write("users", key, existing)
         _db_cache_ts.pop("users", None)
+
+def _async_save_field(email: str, field: str, value):
+    """FIX B1: Non-blocking wrapper untuk save_field.
+    Jalankan di background thread agar tidak blocking main render thread (1-3 detik).
+    Gunakan ini sebagai pengganti save_field() di konteks UI (Analyze, chat save, track record update)."""
+    import threading
+    def _do():
+        try:
+            save_field(email, field, value)
+        except Exception:
+            pass
+    threading.Thread(target=_do, daemon=True).start()
 
 def load_user(email: str):
     """Load semua data user — merge dari 'users' (session) + 'user_data' (per-field kritis).
@@ -8843,6 +8892,9 @@ def _auto_refresh_bursa():
         _now_ts   = _time_ar.time()
 
         if _now_ts - _last_ts >= _REFRESH_INTERVAL:
+            # FIX B8: jangan rerun jika ada operasi berat sedang berjalan (Analyze, AI call)
+            if st.session_state.get("_heavy_op_running"):
+                return
             st.session_state[_last_key] = _now_ts
             _jam_str = _now_ar.strftime("%H:%M")
             if _is_bursa:
@@ -11942,6 +11994,57 @@ def _tl_fetch_market_data(names_tuple, tickers_tuple, weekly_slot: str = ""):
 
 # _tl_fetch_globe_live dan _tl_fetch_konglo_prices dihapus — IDX Globe diremove
 
+# ── FIX B2: _ALPHA_ASSET_MAP dan _ALPHA_ASSET_CATEGORIES di module level ──
+# Sebelumnya dibangun ulang setiap rerun di dalam with alpha_tab_insight.
+# Dipindah ke sini agar Python hanya mengalokasikan dict ini sekali.
+_ALPHA_ASSET_MAP = {
+    "IHSG (^JKSE)":       ("^JKSE",    "IHSG Composite",          "index",     "IDR", "Poin"),
+    "LQ45 (^JKLQ45)":    ("^JKLQ45",  "LQ45 Index",              "index",     "IDR", "Poin"),
+    "Gold XAU/USD":       ("GC=F",     "Gold Futures",            "commodity", "USD", "$/oz"),
+    "Silver XAG/USD":     ("SI=F",     "Silver Futures",          "commodity", "USD", "$/oz"),
+    "WTI Crude Oil":      ("CL=F",     "WTI Crude Oil Futures",   "commodity", "USD", "$/bbl"),
+    "Brent Crude Oil":    ("BZ=F",     "Brent Crude Futures",     "commodity", "USD", "$/bbl"),
+    "Natural Gas":        ("NG=F",     "Natural Gas Futures",     "commodity", "USD", "$/MMBtu"),
+    "Coal (ICE)":         ("MTF=F",    "Coal Futures",            "commodity", "USD", "$/ton"),
+    "Nickel":             ("NI=F",     "Nickel Futures LME",      "commodity", "USD", "$/ton"),
+    "Copper":             ("HG=F",     "Copper Futures",          "commodity", "USD", "$/lb"),
+    "CPO (Palm Oil)":     ("KO=F",     "Crude Palm Oil Futures",  "commodity", "MYR", "MYR/ton"),
+    "Corn":               ("ZC=F",     "Corn Futures",            "commodity", "USD", "$/bu"),
+    "Wheat":              ("ZW=F",     "Wheat Futures",           "commodity", "USD", "$/bu"),
+    "Soybean":            ("ZS=F",     "Soybean Futures",         "commodity", "USD", "$/bu"),
+    "Rubber (SGX)":       ("RB=F",     "Rubber Futures",          "commodity", "USD", "$/kg"),
+    "USD/IDR":            ("USDIDR=X", "US Dollar/Rupiah",        "forex",     "IDR", "IDR"),
+    "DXY Index":          ("DX-Y.NYB", "US Dollar Index (DXY)",   "forex",     "USD", "Poin"),
+    "Bitcoin (BTC/USD)":  ("BTC-USD",  "Bitcoin",                 "crypto",    "USD", "USD"),
+    "Ethereum (ETH/USD)": ("ETH-USD",  "Ethereum",                "crypto",    "USD", "USD"),
+    "Solana (SOL/USD)":   ("SOL-USD",  "Solana",                  "crypto",    "USD", "USD"),
+    "BNB (BNB/USD)":      ("BNB-USD",  "BNB Binance Coin",        "crypto",    "USD", "USD"),
+    "XRP (XRP/USD)":      ("XRP-USD",  "XRP Ripple",              "crypto",    "USD", "USD"),
+    "USDT/IDR":           ("USDTIDR=X","Tether/Rupiah",           "crypto",    "IDR", "IDR"),
+}
+_ALPHA_ASSET_CATEGORIES = {
+    "🏦 Saham IDX": [],
+    "📊 IHSG & Indeks": ["IHSG (^JKSE)", "LQ45 (^JKLQ45)"],
+    "🪙 Komoditas Global": ["Gold XAU/USD","Silver XAG/USD","WTI Crude Oil","Brent Crude Oil",
+                             "Natural Gas","Coal (ICE)","Nickel","Copper","CPO (Palm Oil)",
+                             "Corn","Wheat","Soybean","Rubber (SGX)"],
+    "💱 Forex": ["USD/IDR","DXY Index"],
+    "🔗 Crypto": ["Bitcoin (BTC/USD)","Ethereum (ETH/USD)","Solana (SOL/USD)","BNB (BNB/USD)","XRP (XRP/USD)","USDT/IDR"],
+}
+
+# ── FIX B3: _alpha_cached_yf_history dipindah ke module level ──────────────
+# Sebelumnya didefinisikan di dalam conditional block → @st.cache_data dapat
+# function object baru setiap rerun → cache miss setiap kali → yfinance
+# di-download ulang meskipun data belum expire.
+@st.cache_data(ttl=90, show_spinner=False)
+def _alpha_cached_yf_history(yf_ticker: str, period: str = "6mo"):
+    try:
+        import yfinance as _yf_ins
+        return _yf_ins.Ticker(yf_ticker).history(period=period)
+    except Exception:
+        import pandas as _pd_ins
+        return _pd_ins.DataFrame()
+
 # ══════════════════════════════════════════════════════════════════════════════
 
 if current_view == "dashboard":
@@ -11975,22 +12078,22 @@ if current_view == "dashboard":
 # FIX UKURAN DESKTOP & MOBILE (ANTI TERPOTONG)
     st.markdown("""
     <style>
-    /* Desktop: Kasih jarak kanan-kiri */
+    /* ── Desktop: container centered dengan padding wajar ── */
     [data-testid="stMainBlockContainer"] {
         max-width: 1200px !important;
         padding-left: 1rem !important;
         padding-right: 1rem !important;
         margin: 0 auto !important;
     }
-    /* Mobile: Paksa grafik mengecil & anti geser */
-    @media (max-width: 768px) {
-        .stApp, html, body { overflow-x: hidden !important; width: 100vw !important; }
-        [data-testid="stMainBlockContainer"] { padding-left: 12px !important; padding-right: 12px !important; }
-        .stLineChart, canvas, iframe, [data-testid="stVerticalBlock"] > div { max-width: 100% !important; width: 100% !important; }
-        .stDataFrame { overflow-x: auto !important; }
+
+    section[data-testid="stMain"] {
+        align-items: center !important;
     }
 
-        
+    /* ── Mobile: semua rules dikumpulkan dalam satu @media guard ── */
+    /* FIX M1: orphaned CSS dipindah ke sini (was lines 11994-12024 tanpa guard) */
+    @media (max-width: 768px) {
+        .stApp, html, body { overflow-x: hidden !important; width: 100vw !important; }
         [data-testid="stMainBlockContainer"] {
             max-width: 100vw !important;
             width: 100vw !important;
@@ -12000,32 +12103,23 @@ if current_view == "dashboard":
             margin: 0 !important;
             overflow-x: hidden !important;
         }
-
         .stLineChart, iframe, canvas, [data-testid="stVerticalBlock"] > div {
             max-width: 100% !important;
             width: 100% !important;
         }
-
         .stDataFrame {
             width: 100% !important;
-            overflow-x: auto !important; 
+            overflow-x: auto !important;
         }
-
         [data-testid="stMetric"] {
             padding: 10px 10px !important;
         }
-        
         [data-testid="stMetricValue"] {
-            font-size: 1.3rem !important; 
+            font-size: 1.3rem !important;
         }
-        
         [data-testid="stVerticalBlock"] {
             gap: 0.5rem !important;
         }
-    }
-
-    section[data-testid="stMain"] {
-        align-items: center !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -12064,9 +12158,16 @@ if current_view == "dashboard":
       </script>
     </div>
     """
-    st.markdown(f"""
+    # FIX U2: inject Google Fonts hanya sekali per session — hindari flash of unstyled text setiap rerun
+    if not st.session_state.get("_fonts_injected"):
+        st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+    </style>
+    """, unsafe_allow_html=True)
+        st.session_state["_fonts_injected"] = True
+    st.markdown(f"""
+    <style>
 
     :root {{
         --acc:      #8b5cf6;
@@ -12488,32 +12589,9 @@ if current_view == "dashboard":
             padding-bottom: 2px !important;
             gap: 2px !important;
         }}
-        [data-testid="stTabs"] [data-baseweb="tab-list"]::-webkit-scrollbar {{
-            display: none !important;
-        }}
-        [data-testid="stTabs"] button[role="tab"] {{
-            flex-shrink: 0 !important;
-            font-size: 0.63rem !important;
-            padding: 5px 9px !important;
-            white-space: nowrap !important;
-            letter-spacing: 0.03em !important;
-        }}
+        /* FIX M5: duplicate tab CSS removed (dead code — was overridden by second declaration below) */
 
-        /* ── Columns on very small screens: force single column ── */
-        @media (max-width: 480px) {{
-            [data-testid="stHorizontalBlock"] {{
-                flex-direction: column !important;
-            }}
-            [data-testid="column"] {{
-                width: 100% !important;
-                flex: 1 1 100% !important;
-            }}
-            [data-testid="stMetricValue"] {{ font-size: 1.05rem !important; }}
-            [data-testid="stMetricLabel"] {{ font-size: 0.56rem !important; }}
-            [data-testid="column"] {{ padding: 0 3px !important; }}
-            .trm-card {{ padding: 10px 10px !important; }}
-            .bc-ticker {{ font-size: 0.95rem !important; }}
-        }}
+        /* FIX M4: @media (max-width:480px) dipindah keluar sebagai sibling — lihat di bawah penutup @media 768px */
 
         /* ── RRG chart: scrollable on mobile ── */
         .rrg-chart-wrap, .rrg-svg-container {{
@@ -12595,12 +12673,7 @@ if current_view == "dashboard":
             padding: 5px 10px !important;
             white-space: nowrap !important;
         }}
-        /* Metrics stack properly on tiny screens */
-        @media (max-width: 420px) {{
-            [data-testid="stMetricValue"] {{ font-size: 1.05rem !important; }}
-            [data-testid="stMetricLabel"] {{ font-size: 0.58rem !important; }}
-            [data-testid="column"] {{ padding: 0 4px !important; }}
-        }}
+        /* FIX M4: @media (max-width:420px) dipindah keluar sebagai sibling — lihat di bawah penutup @media 768px */
         /* Expander header */
         [data-testid="stExpander"] summary {{
             font-size: 0.82rem !important;
@@ -12617,6 +12690,30 @@ if current_view == "dashboard":
             font-size: 0.76rem !important;
             padding: 10px 14px !important;
         }}
+    }}
+
+    /* ── FIX M4: @media sibling blocks (dipindah dari nested di dalam @media 768px) ── */
+    /* Columns force single column on very small screens */
+    @media (max-width: 480px) {{
+        [data-testid="stHorizontalBlock"] {{
+            flex-direction: column !important;
+        }}
+        [data-testid="column"] {{
+            width: 100% !important;
+            flex: 1 1 100% !important;
+            padding: 0 3px !important;
+        }}
+        [data-testid="stMetricValue"] {{ font-size: 1.05rem !important; }}
+        [data-testid="stMetricLabel"] {{ font-size: 0.56rem !important; }}
+        .trm-card {{ padding: 10px 10px !important; }}
+        .bc-ticker {{ font-size: 0.95rem !important; }}
+    }}
+
+    /* Metrics compact on tiny screens */
+    @media (max-width: 420px) {{
+        [data-testid="stMetricValue"] {{ font-size: 1.05rem !important; }}
+        [data-testid="stMetricLabel"] {{ font-size: 0.58rem !important; }}
+        [data-testid="column"] {{ padding: 0 4px !important; }}
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -20543,7 +20640,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 if changed:
                     st.session_state["tr_records"] = records
                     if st.session_state.get("user"):
-                        try: save_field(st.session_state.user["email"], "tr_records", records)
+                        try: _async_save_field(st.session_state.user["email"], "tr_records", records)  # FIX B1
                         except Exception: pass
 
                 st.session_state[tr_update_key] = True
@@ -20851,11 +20948,13 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                                 st.session_state[_hist_key] = _hist_data
                                 if st.session_state.get("user"):
                                     try:
-                                        save_field(st.session_state.user["email"], _hist_key, _hist_data)
+                                        # FIX B1: async save
+                                        _async_save_field(st.session_state.user["email"], _hist_key, _hist_data)
                                     except Exception: pass
                         if st.session_state.get("user"):
                             try:
-                                save_field(st.session_state.user["email"], "tr_records", _tr_records_live)
+                                # FIX B1: async save
+                                _async_save_field(st.session_state.user["email"], "tr_records", _tr_records_live)
                             except Exception: pass
                         st.toast("✅ Status berhasil disimpan", icon="✅")
 
@@ -20934,40 +21033,10 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
         # [UI statement removed]
 
             # ── ASSET TYPE SELECTOR ─────────────────────────────────────────
-            _ASSET_MAP = {
-                "IHSG (^JKSE)":       ("^JKSE",    "IHSG Composite",          "index",     "IDR", "Poin"),
-                "LQ45 (^JKLQ45)":    ("^JKLQ45",  "LQ45 Index",              "index",     "IDR", "Poin"),
-                "Gold XAU/USD":       ("GC=F",     "Gold Futures",            "commodity", "USD", "$/oz"),
-                "Silver XAG/USD":     ("SI=F",     "Silver Futures",          "commodity", "USD", "$/oz"),
-                "WTI Crude Oil":      ("CL=F",     "WTI Crude Oil Futures",   "commodity", "USD", "$/bbl"),
-                "Brent Crude Oil":    ("BZ=F",     "Brent Crude Futures",     "commodity", "USD", "$/bbl"),
-                "Natural Gas":        ("NG=F",     "Natural Gas Futures",     "commodity", "USD", "$/MMBtu"),
-                "Coal (ICE)":         ("MTF=F",    "Coal Futures",            "commodity", "USD", "$/ton"),
-                "Nickel":             ("NI=F",     "Nickel Futures LME",      "commodity", "USD", "$/ton"),
-                "Copper":             ("HG=F",     "Copper Futures",          "commodity", "USD", "$/lb"),
-                "CPO (Palm Oil)":     ("KO=F",     "Crude Palm Oil Futures",  "commodity", "MYR", "MYR/ton"),
-                "Corn":               ("ZC=F",     "Corn Futures",            "commodity", "USD", "$/bu"),
-                "Wheat":              ("ZW=F",     "Wheat Futures",           "commodity", "USD", "$/bu"),
-                "Soybean":            ("ZS=F",     "Soybean Futures",         "commodity", "USD", "$/bu"),
-                "Rubber (SGX)":       ("RB=F",     "Rubber Futures",          "commodity", "USD", "$/kg"),
-                "USD/IDR":            ("USDIDR=X", "US Dollar/Rupiah",        "forex",     "IDR", "IDR"),
-                "DXY Index":          ("DX-Y.NYB", "US Dollar Index (DXY)",   "forex",     "USD", "Poin"),
-                "Bitcoin (BTC/USD)":  ("BTC-USD",  "Bitcoin",                 "crypto",    "USD", "USD"),
-                "Ethereum (ETH/USD)": ("ETH-USD",  "Ethereum",                "crypto",    "USD", "USD"),
-                "Solana (SOL/USD)":   ("SOL-USD",  "Solana",                  "crypto",    "USD", "USD"),
-                "BNB (BNB/USD)":      ("BNB-USD",  "BNB Binance Coin",        "crypto",    "USD", "USD"),
-                "XRP (XRP/USD)":      ("XRP-USD",  "XRP Ripple",              "crypto",    "USD", "USD"),
-                "USDT/IDR":           ("USDTIDR=X","Tether/Rupiah",           "crypto",    "IDR", "IDR"),
-            }
-            _ASSET_CATEGORIES = {
-                "🏦 Saham IDX": [],
-                "📊 IHSG & Indeks": ["IHSG (^JKSE)", "LQ45 (^JKLQ45)"],
-                "🪙 Komoditas Global": ["Gold XAU/USD","Silver XAG/USD","WTI Crude Oil","Brent Crude Oil",
-                                         "Natural Gas","Coal (ICE)","Nickel","Copper","CPO (Palm Oil)",
-                                         "Corn","Wheat","Soybean","Rubber (SGX)"],
-                "💱 Forex": ["USD/IDR","DXY Index"],
-                "🔗 Crypto": ["Bitcoin (BTC/USD)","Ethereum (ETH/USD)","Solana (SOL/USD)","BNB (BNB/USD)","XRP (XRP/USD)","USDT/IDR"],
-            }
+            # FIX B2: _ASSET_MAP dan _ASSET_CATEGORIES dipindah ke module level
+            # (lihat definisi di atas if current_view == "dashboard") — tidak rebuild setiap rerun
+            _ASSET_MAP        = _ALPHA_ASSET_MAP
+            _ASSET_CATEGORIES = _ALPHA_ASSET_CATEGORIES
 
             _asset_cat = st.selectbox(
                 "KATEGORI ASET:",
@@ -21014,18 +21083,12 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 ai_text_verdict = ""
                 live_price_str = "N/A"  # Fix NameError: inisialisasi di scope luar agar download button tidak crash
 
-                # ── CACHED PRICE FETCH — hindari re-download saat rerun ──────
-                @st.cache_data(ttl=90, show_spinner=False)
-                def _cached_yf_history(yf_ticker: str, period: str = "6mo"):
-                    try:
-                        import yfinance as _yf_ins
-                        return _yf_ins.Ticker(yf_ticker).history(period=period)
-                    except Exception:
-                        import pandas as _pd_ins
-                        return _pd_ins.DataFrame()
+                # ── CACHED PRICE FETCH — pakai fungsi module-level (FIX B3) ──────
+                # _cached_yf_history dipindah ke module level sebagai _alpha_cached_yf_history
+                # agar @st.cache_data tidak dapat function object baru setiap rerun
 
                 try:
-                    df_chart = _cached_yf_history(_yf_ticker, "6mo")
+                    df_chart = _alpha_cached_yf_history(_yf_ticker, "6mo")
                 except Exception:
                     pass
 
@@ -21087,6 +21150,8 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                         _insight_cache_key = None
 
                 if run_analysis:
+                    # FIX B8: tandai operasi berat sedang berjalan → cegah auto_refresh_bursa memotong Analyze
+                    st.session_state["_heavy_op_running"] = True
                     # Pre-warm sudah dilakukan di parallel fetch block (_th_fund/_th_ihsg)
                     # Tidak perlu fetch ulang di sini — hemat 1-3 detik duplikat call
                     with _sigma_spinner("SIGMA sedang menganalisis dan menggambar chart..."):
@@ -21146,7 +21211,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                                 def _fetch_ihsg_fd():
                                     try:
                                         if _is_idx_stock and _SIGMA_SCORE_AVAILABLE and not df_chart.empty:
-                                            _par_results["ihsg_hist"] = _cached_yf_history("^JKSE", "3mo")
+                                            _par_results["ihsg_hist"] = _alpha_cached_yf_history("^JKSE", "3mo")
                                             _par_results["fd_raw"] = fetch_fundamental_with_cache(ticker_input)
                                     except Exception:
                                         pass
@@ -21168,6 +21233,9 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
                                 fund_context = _par_results["fund_context"]
                                 _zone_res_ai = _par_results["zone_res"]
+                                # FIX P1-C: simpan ke session_state agar call kedua (render verdict) tidak re-fetch
+                                if _zone_res_ai is not None:
+                                    st.session_state[f"_zone_cache_{ticker_input}"] = _zone_res_ai
 
                                 # ── SIGMA SCORE CALCULATION (gunakan hasil parallel fetch) ──
                                 _sigma_result = None
@@ -21589,9 +21657,10 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                                             if st.session_state.get("user"):
                                                 try:
                                                     _ue_ins = st.session_state.user["email"]
-                                                    save_field(_ue_ins, "alpha_insight_last_key",    _insight_cache_key)
-                                                    save_field(_ue_ins, "alpha_insight_last_data",   _cache_payload)
-                                                    save_field(_ue_ins, "alpha_insight_last_ticker", ticker_input)
+                                                    # FIX B1: async save — tidak block main render thread
+                                                    _async_save_field(_ue_ins, "alpha_insight_last_key",    _insight_cache_key)
+                                                    _async_save_field(_ue_ins, "alpha_insight_last_data",   _cache_payload)
+                                                    _async_save_field(_ue_ins, "alpha_insight_last_ticker", ticker_input)
                                                 except Exception: pass
                                         except Exception:
                                             pass
@@ -21966,7 +22035,9 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                     # ── MnM ZONE DETECTION CARD ──
                     if _ZONE_ENGINE_AVAILABLE:
                         try:
-                            _zone_res = _cached_detect_zones_multi_tf(ticker_input)
+                            # FIX P1-C: reuse hasil dari parallel block — hindari double fetch
+                            _zone_res = st.session_state.get(f"_zone_cache_{ticker_input}") or \
+                                        _cached_detect_zones_multi_tf(ticker_input)
                             _zone_price = float(df_chart['Close'].iloc[-1]) if not df_chart.empty else 0.0
                             st.markdown(zone_detail_html(_zone_res, _zone_price, C), unsafe_allow_html=True)
                         except Exception as _ze:
@@ -21995,6 +22066,8 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     </div>"""
 
                     st.markdown(html_str, unsafe_allow_html=True)
+                    # FIX B8: Analyze selesai — izinkan auto_refresh kembali
+                    st.session_state["_heavy_op_running"] = False
 
                     # ── DOWNLOAD BUTTON: Alpha Stock Insight ──
                     _insight_dl_col1, _insight_dl_col2 = st.columns([3, 1])
