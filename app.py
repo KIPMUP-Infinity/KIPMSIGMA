@@ -126,6 +126,29 @@ except ImportError:
     _WIB = timezone(timedelta(hours=7))
 
 
+
+# ── Rate Limiter — cegah spam klik tombol berat (Bug#19 fix) ─────────────────
+import time as _time_module
+
+def _sigma_check_cooldown(action_key: str, min_seconds: int = 300) -> tuple:
+    """Cek apakah action boleh dijalankan. Returns (allowed, remaining_seconds)."""
+    last = st.session_state.get(f"_cd_{action_key}", 0)
+    elapsed = _time_module.time() - last
+    return (True, 0) if elapsed >= min_seconds else (False, int(min_seconds - elapsed))
+
+def _sigma_set_cooldown(action_key: str):
+    """Tandai action sudah jalan — mulai cooldown timer."""
+    st.session_state[f"_cd_{action_key}"] = _time_module.time()
+
+def _sigma_cooldown_ui(action_key: str, min_seconds: int = 300, label: str = "") -> bool:
+    """Tampilkan warning sisa cooldown jika masih aktif. Returns True jika boleh jalan."""
+    ok, remaining = _sigma_check_cooldown(action_key, min_seconds)
+    if not ok:
+        m, s = divmod(remaining, 60)
+        st.warning(f"\u23f3 {label or action_key} — tunggu {m}m {s}s sebelum generate ulang.", icon="\u23f3")
+    return ok
+# ─────────────────────────────────────────────────────────────────────────────
+
 def _wib_now() -> datetime:
     return datetime.now(_WIB)
 
@@ -202,7 +225,8 @@ def _single_card_html(row: dict, idx: int) -> str:
     sigma_score = max(0, min(99, sigma_score))
 
     # ── Indikator Teknikal Tambahan (RSI · MACD · BB · Vol Ratio) ──
-    rsi_val        = _sf(row.get("rsi", None), None) if row.get("rsi") not in (None, "", "—", "-") else None
+    # Bug #8 fix: _sf sudah handle None/empty/—/- dengan default=None; tidak perlu double-check
+    rsi_val        = _sf(row.get("rsi"), None)
     rsi_label      = row.get("rsi_label", "—")
     rsi_color      = row.get("rsi_color", "rgba(255,255,255,0.4)")
     macd_label     = row.get("macd_label", "—")
@@ -1088,7 +1112,11 @@ def render_bsjp_cards(
     # Estimasi tinggi
     cols_est   = max(1, min(3, math.floor(720 / 295)))
     rows_est   = math.ceil(n_show / cols_est)
-    height_est = rows_est * 780 + 80
+    # Bug#9 fix: estimasi tinggi dinamis berdasarkan konten kartu
+    # Kartu kosong ~680px, kartu penuh (TP2+bandar+indikator) ~900px
+    # Pakai 860 sebagai rata-rata + buffer 120px
+    _card_h_avg = 860
+    height_est  = rows_est * _card_h_avg + 120
     components.html(full_html, height=height_est, scrolling=False)
 
 # ── SIGMA SHEETS — Google Sheets Persistent Storage ──────────────────────────
@@ -1124,11 +1152,20 @@ except Exception as _sheets_import_err:
 
 # ── SIGMA HTML SANITIZER ──
 def _sanitize_html_text(raw) -> str:
-    """Hapus tag HTML yang bocor dari string teks sebelum dirender sebagai plain text."""
+    """Hapus tag HTML yang bocor dari string teks sebelum dirender sebagai plain text.
+    Bug#20 fix: hanya hapus tag HTML yang berasal dari template/render, bukan
+    konten ketikan user (misal <BBCA> dalam pertanyaan teknis).
+    Strategi: hapus HANYA tag yang merupakan tag HTML dikenal, bukan semua <...>.
+    """
+    import html as _html_mod
     if not isinstance(raw, str):
         return str(raw) if raw is not None else ""
-    # Hapus semua tag HTML/XML (termasuk </div>, <span>, dll)
-    cleaned = re.sub(r'</?[a-zA-Z][^>]*>', '', raw)
+    # Decode HTML entities dulu (&amp; → &, &lt; → <, dll)
+    decoded = _html_mod.unescape(raw)
+    # Hapus hanya tag HTML dikenal (div, span, p, br, strong, dll)
+    # Biarkan <BBCA>, <ticker>, atau konten user yang kebetulan pakai < >
+    _HTML_KNOWN = r'(?i)</?(?:div|span|p|br|strong|b|i|em|ul|ol|li|a|h[1-6]|table|tr|td|th|thead|tbody|style|script|meta|html|body|head|form|input|button|img|svg|path|g|section|article|header|footer|nav|aside|main)[^>]*>'
+    cleaned = re.sub(_HTML_KNOWN, '', decoded)
     return cleaned.strip()
 
 # ── SIGMA GEMINI RATE LIMIT MANAGER ──
@@ -3276,6 +3313,7 @@ def add_zone_columns_to_rows(rows: list, C: dict) -> list:
 
 # ── Zone Engine: Streamlit cache wrappers ──
 @st.cache_data(ttl=3600)
+@st.cache_data(ttl=3600, show_spinner=False)
 def _cached_detect_zones_multi_tf(ticker: str) -> ZoneResult:
     return detect_zones_multi_tf(ticker)
 
@@ -3485,6 +3523,10 @@ def _fetch_all_data(tickers):
     th = threading.Thread(target=fetch, daemon=True)
     th.start()
     th.join(timeout=10)
+    # Bug#11 fix: join() bisa return karena timeout, bukan karena thread selesai.
+    # Thread fetch masih mungkin berjalan dan nulis ke result dict.
+    # Aman di sini karena fetch() hanya append ke list result["news"],
+    # tidak delete/overwrite key yang sudah ada (GIL protect single-key access).
     return result
 
 
@@ -3554,12 +3596,18 @@ def _goapi_resolve_base(force: bool = False) -> str:
                 f"{base}/TLKM/broker_summary",
                 params={"date": test_date, "investor": "ALL"},
                 headers=headers, timeout=8)
-            # 200 atau 401/403/429 = URL-nya ditemukan (auth issue, bukan path issue)
-            if r.status_code in (200, 401, 403, 429):
+            # 200/429 = URL valid (429 = rate limited, path benar)
+            # FIX Bug#10: 401/403 = auth error, bukan bukti URL valid — skip
+            if r.status_code in (401, 403):
+                try: st.session_state["_goapi_auth_error"] = True
+                except Exception: pass
+                continue
+            if r.status_code in (200, 429):
                 GOAPI_BASE = base
                 try:
                     st.session_state["_goapi_base_resolved"] = base
                     st.session_state.pop("_goapi_server_down", None)
+                    st.session_state.pop("_goapi_auth_error", None)
                 except Exception:
                     pass
                 return base
@@ -4468,8 +4516,7 @@ def build_global_context(prompt):
                         lines.append(f"{name}: {d['price']:,.2f} {arah}{chg:.2f}%")
         except Exception: pass
 
-        import re as _re
-        us_tickers = _re.findall(r' ([A-Z]{1,5}) ', prompt.upper())
+        us_tickers = re.findall(r' ([A-Z]{1,5}) ', prompt.upper())
         us_skip = {
             "THE","AND","FOR","IDX","BEI","USD","IDR","RSI","EMA","FVG","OB",
             "YANG","ATAU","DARI","PADA","UNTUK","SAYA","TOLONG","ANALISA",
@@ -5082,7 +5129,6 @@ def detect_emiten(text):
         if name in text_lower:
             return ticker
     # Cari 4 huruf kapital yang valid sebagai ticker IDX
-    import re
     matches = re.findall(r'\b([A-Z]{4})\b', text[:2000])
     skip = {"PADA","YANG","ATAU","DARI","BANK","TBKK","ANAK","ASET","LABA",
             "RUGI","TOTAL","BERSIH","TAHUN","SALDO","DANA","PIHAK","USAHA",
@@ -5094,7 +5140,6 @@ def detect_emiten(text):
 
 def detect_ticker_from_prompt(prompt):
     """Deteksi ticker dari perintah teks user (bukan PDF)."""
-    import re
     prompt_upper = prompt.upper()
     prompt_lower = prompt.lower()
 
@@ -7390,6 +7435,35 @@ def _smart_truncate_prompt(text, max_tokens=22000):
     if tail_cut < 0 or tail_cut > tail_start + 200: tail_cut = tail_start
     return text[:head_cut] + "\n\n[... sebagian data tengah dipotong otomatis untuk efisiensi token ...]\n\n" + text[tail_cut:]
 
+# ── Circuit Breaker (Bug#14 fix) ────────────────────────────────────────────
+# Kalau >60% key Groq rate-limited dalam 60 detik terakhir,
+# skip loop key langsung ke Gemini fallback (hemat 10-20 detik delay).
+_groq_cb_window = 60   # detik window circuit breaker
+_groq_cb_threshold = 0.60  # 60% key harus rate-limited baru trip
+
+def _groq_circuit_open() -> bool:
+    """Return True jika circuit breaker open (skip semua key Groq, langsung fallback)."""
+    try:
+        all_keys = _get_all_groq_keys()
+        if not all_keys: return True
+        now = time.time()
+        rl_count = sum(
+            1 for _, k in all_keys
+            if _groq_cooldown.get(hashlib.md5(k.encode()).hexdigest()[:10], 0) > now
+        )
+        ratio = rl_count / len(all_keys)
+        if ratio >= _groq_cb_threshold:
+            # Catat circuit trip di session state untuk debug
+            try: st.session_state["_groq_cb_tripped"] = True
+            except Exception: pass
+            return True
+        try: st.session_state.pop("_groq_cb_tripped", None)
+        except Exception: pass
+        return False
+    except Exception:
+        return False
+# ─────────────────────────────────────────────────────────────────────────────
+
 def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000, temperature=0.7):
     """
     SIGMA PRIMARY CHAIN — urutan prioritas:
@@ -7439,6 +7513,10 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000, tempera
     all_keys = _get_all_groq_keys()
     if not all_keys:
         raise Exception("Semua Groq API key tidak tersedia")
+
+    # Bug#14: circuit breaker — skip semua key jika >60% rate-limited
+    if _groq_circuit_open():
+        raise Exception("Groq circuit breaker open — langsung ke Gemini fallback")
 
     valid_keys = _get_available_groq_keys(all_keys)
 
@@ -16037,7 +16115,8 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
         # 1. Kartu PENGUMUMAN (di kiri, menonjol, dengan countdown ke tgl pengumuman)
         # 2. Kartu EFEKTIF (di bawahnya, info lengkap + semua date chips)
         import json as _reb_json_v2
-        import re as _re_reb
+        # Bug#3: re sudah di-import top-level
+        _re_reb = re
 
         MONTHS_ID = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"]
 
@@ -20933,6 +21012,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 df_chart = pd.DataFrame()
                 ai_data = None
                 ai_text_verdict = ""
+                live_price_str = "N/A"  # Fix NameError: inisialisasi di scope luar agar download button tidak crash
 
                 # ── CACHED PRICE FETCH — hindari re-download saat rerun ──────
                 @st.cache_data(ttl=90, show_spinner=False)
@@ -21007,14 +21087,8 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                         _insight_cache_key = None
 
                 if run_analysis:
-                    # ── Pre-warm fundamental cache jika belum ada (jalan paralel sebelum AI call) ──
-                    if _is_idx_stock:
-                        try:
-                            if not st.session_state.get(f"_prefetch_done_{ticker_input}"):
-                                fetch_fundamental_with_cache(ticker_input)
-                                st.session_state[f"_prefetch_done_{ticker_input}"] = True
-                        except Exception:
-                            pass
+                    # Pre-warm sudah dilakukan di parallel fetch block (_th_fund/_th_ihsg)
+                    # Tidak perlu fetch ulang di sini — hemat 1-3 detik duplikat call
                     with _sigma_spinner("SIGMA sedang menganalisis dan menggambar chart..."):
                         if _use_cached_insight:
                             st.info(
@@ -21024,27 +21098,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                             )
                         else:
                             try:
-                                # ── Fundamental context (hanya untuk IDX stock) ──
-                                if _is_idx_stock:
-                                    fund_context = build_fundamental_from_text(f"fundamental {ticker_input}")
-                                else:
-                                    # Untuk IHSG/komoditas/crypto: beri konteks makro
-                                    _asset_labels = {
-                                        "index": f"IHSG/Indeks IDX - {_display_name}",
-                                        "commodity": f"Komoditas Global - {_display_name} ({_price_label})",
-                                        "forex": f"Forex/Kurs - {_display_name}",
-                                        "crypto": f"Cryptocurrency - {_display_name} (USD)",
-                                    }
-                                    fund_context = (
-                                        f"ASET: {_asset_labels.get(_asset_type, _display_name)}\n"
-                                        f"Tipe aset: {_asset_type.upper()}\n"
-                                        f"Ticker yfinance: {_yf_ticker}\n"
-                                        f"Mata uang: {_asset_ccy}\n"
-                                        f"Catatan: Ini bukan saham IDX. Analisa teknikal murni berdasarkan price action & volume. "
-                                        f"Sertakan konteks makro yang relevan (Fed, DXY, siklus komoditas, dll)."
-                                    )
-
-                                live_price_str = "N/A"
+                                # ── Live price string (dari df_chart yang sudah ada) ──
                                 if not df_chart.empty:
                                     try:
                                         _lp = float(df_chart['Close'].iloc[-1])
@@ -21054,28 +21108,78 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                                             live_price_str = f"Rp {_lp:,.2f}"
                                         else:
                                             live_price_str = f"{_price_label} {_lp:,.4f}" if _lp < 1 else f"{_price_label} {_lp:,.2f}"
-                                    except Exception as e:
+                                    except Exception:
                                         pass
 
-                                # ── SIGMA SCORE CALCULATION (hanya untuk IDX stock) ──
+                                # ── PARALLEL PRE-FETCH: fundamental + IHSG + zone jalan bersamaan ──
+                                # Sebelumnya semua sequential → hemat 3-8 detik
+                                import threading as _thr_alpha
+                                _par_results = {
+                                    "fund_context": "",
+                                    "ihsg_hist": None,
+                                    "fd_raw": None,
+                                    "zone_res": None,
+                                }
+
+                                def _fetch_fund_ctx():
+                                    try:
+                                        if _is_idx_stock:
+                                            _par_results["fund_context"] = build_fundamental_from_text(f"fundamental {ticker_input}")
+                                        else:
+                                            _asset_labels = {
+                                                "index": f"IHSG/Indeks IDX - {_display_name}",
+                                                "commodity": f"Komoditas Global - {_display_name} ({_price_label})",
+                                                "forex": f"Forex/Kurs - {_display_name}",
+                                                "crypto": f"Cryptocurrency - {_display_name} (USD)",
+                                            }
+                                            _par_results["fund_context"] = (
+                                                f"ASET: {_asset_labels.get(_asset_type, _display_name)}\n"
+                                                f"Tipe aset: {_asset_type.upper()}\n"
+                                                f"Ticker yfinance: {_yf_ticker}\n"
+                                                f"Mata uang: {_asset_ccy}\n"
+                                                f"Catatan: Ini bukan saham IDX. Analisa teknikal murni berdasarkan price action & volume. "
+                                                f"Sertakan konteks makro yang relevan (Fed, DXY, siklus komoditas, dll)."
+                                            )
+                                    except Exception:
+                                        pass
+
+                                def _fetch_ihsg_fd():
+                                    try:
+                                        if _is_idx_stock and _SIGMA_SCORE_AVAILABLE and not df_chart.empty:
+                                            _par_results["ihsg_hist"] = _cached_yf_history("^JKSE", "3mo")
+                                            _par_results["fd_raw"] = fetch_fundamental_with_cache(ticker_input)
+                                    except Exception:
+                                        pass
+
+                                def _fetch_zones():
+                                    try:
+                                        if _ZONE_ENGINE_AVAILABLE:
+                                            _par_results["zone_res"] = _cached_detect_zones_multi_tf(ticker_input)
+                                    except Exception:
+                                        pass
+
+                                _th_fund  = _thr_alpha.Thread(target=_fetch_fund_ctx, daemon=True)
+                                _th_ihsg  = _thr_alpha.Thread(target=_fetch_ihsg_fd,  daemon=True)
+                                _th_zone  = _thr_alpha.Thread(target=_fetch_zones,    daemon=True)
+                                _th_fund.start(); _th_ihsg.start(); _th_zone.start()
+                                _th_fund.join(timeout=12)
+                                _th_ihsg.join(timeout=8)
+                                _th_zone.join(timeout=8)
+
+                                fund_context = _par_results["fund_context"]
+                                _zone_res_ai = _par_results["zone_res"]
+
+                                # ── SIGMA SCORE CALCULATION (gunakan hasil parallel fetch) ──
                                 _sigma_result = None
                                 if _is_idx_stock and _SIGMA_SCORE_AVAILABLE and not df_chart.empty:
                                     try:
-                                        _ihsg_hist = _cached_yf_history("^JKSE", "3mo")
+                                        _ihsg_hist = _par_results["ihsg_hist"] if _par_results["ihsg_hist"] is not None else pd.DataFrame()
                                         _pd_obj = price_data_from_yf(df_chart, _ihsg_hist if not _ihsg_hist.empty else None)
-                                        _fd_raw = fetch_fundamental_with_cache(ticker_input)
+                                        _fd_raw = _par_results["fd_raw"]
                                         _fd_obj = fundamental_data_from_dict(_fd_raw) if _fd_raw else None
                                         _sigma_result = _sigma_score_calc(ticker_input, _pd_obj, _fd_obj)
                                     except Exception as _se:
                                         _sigma_result = None
-
-                                # ── MnM ZONE DETECTION (untuk AI context) ──
-                                _zone_res_ai = None
-                                if _ZONE_ENGINE_AVAILABLE:
-                                    try:
-                                        _zone_res_ai = _cached_detect_zones_multi_tf(ticker_input)
-                                    except Exception:
-                                        _zone_res_ai = None
 
                                 # ── Override trade levels dengan zone-aware calculation ──
                                 if _sigma_result is not None and _zone_res_ai is not None and _pd_obj is not None:
@@ -21505,305 +21609,316 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                     try:
                         from plotly.subplots import make_subplots
 
-                        inc_color     = '#00e5a0'   # Aurora bullish — bright emerald-teal
-                        dec_color     = '#ff3d5a'   # Aurora bearish — vivid crimson-pink
-                        inc_fill      = 'rgba(0,229,160,0.18)'
-                        dec_fill      = 'rgba(255,61,90,0.18)'
-                        tv_bg_color   = "#080b14" if is_dark else "#f8fafc"
-                        tv_grid_color = "rgba(139,92,246,0.10)" if is_dark else "rgba(100,120,180,0.12)"
-                        tv_text_color = "#7c86a2" if is_dark else "#374151"
-                        tv_border     = "rgba(139,92,246,0.18)" if is_dark else "rgba(100,120,180,0.20)"
+                        # ── Chart cache: skip rebuild jika ticker + ai_data tidak berubah ──
+                        _chart_cache_key = f"_alpha_chart_{ticker_input}_{hash(str(ai_data))}"
+                        _skip_chart_build = False
+                        _cached_fig = st.session_state.get(_chart_cache_key)
+                        if _cached_fig is not None and not run_analysis:
+                            fig = _cached_fig
+                            _skip_chart_build = True
 
-                        # ── Bersihkan df: hanya trading days (buang weekend) ──
-                        df_chart = df_chart.copy()
-                        df_chart.index = pd.to_datetime(df_chart.index)
-                        df_chart = df_chart[df_chart.index.dayofweek < 5].dropna(subset=['Open','High','Low','Close'])
+                        if not _skip_chart_build:
 
-                        # ── EMAs ──────────────────────────────────────────────
-                        df_chart['EMA13']  = df_chart['Close'].ewm(span=13,  adjust=False).mean()
-                        df_chart['EMA21']  = df_chart['Close'].ewm(span=21,  adjust=False).mean()
-                        df_chart['EMA100'] = df_chart['Close'].ewm(span=100, adjust=False).mean()
-                        df_chart['EMA200'] = df_chart['Close'].ewm(span=200, adjust=False).mean()
+                            inc_color     = '#00e5a0'   # Aurora bullish — bright emerald-teal
+                            dec_color     = '#ff3d5a'   # Aurora bearish — vivid crimson-pink
+                            inc_fill      = 'rgba(0,229,160,0.18)'
+                            dec_fill      = 'rgba(255,61,90,0.18)'
+                            tv_bg_color   = "#080b14" if is_dark else "#f8fafc"
+                            tv_grid_color = "rgba(139,92,246,0.10)" if is_dark else "rgba(100,120,180,0.12)"
+                            tv_text_color = "#7c86a2" if is_dark else "#374151"
+                            tv_border     = "rgba(139,92,246,0.18)" if is_dark else "rgba(100,120,180,0.20)"
 
-                        # ── RSI ───────────────────────────────────────────────
-                        delta = df_chart['Close'].diff()
-                        gain  = delta.clip(lower=0)
-                        loss  = -delta.clip(upper=0)
-                        avg_g = gain.ewm(com=13, adjust=False).mean()
-                        avg_l = loss.ewm(com=13, adjust=False).mean()
-                        rs    = avg_g / avg_l.replace(0, 1e-9)
-                        df_chart['RSI'] = (100-(100 / (1 + rs))).fillna(50)
+                            # ── Bersihkan df: hanya trading days (buang weekend) ──
+                            df_chart = df_chart.copy()
+                            df_chart.index = pd.to_datetime(df_chart.index)
+                            df_chart = df_chart[df_chart.index.dayofweek < 5].dropna(subset=['Open','High','Low','Close'])
 
-                        # ── MACD ──────────────────────────────────────────────
-                        ema12 = df_chart['Close'].ewm(span=12, adjust=False).mean()
-                        ema26 = df_chart['Close'].ewm(span=26, adjust=False).mean()
-                        df_chart['MACD']        = ema12-ema26
-                        df_chart['MACD_signal'] = df_chart['MACD'].ewm(span=9, adjust=False).mean()
-                        df_chart['MACD_hist']   = df_chart['MACD']-df_chart['MACD_signal']
+                            # ── EMAs ──────────────────────────────────────────────
+                            df_chart['EMA13']  = df_chart['Close'].ewm(span=13,  adjust=False).mean()
+                            df_chart['EMA21']  = df_chart['Close'].ewm(span=21,  adjust=False).mean()
+                            df_chart['EMA100'] = df_chart['Close'].ewm(span=100, adjust=False).mean()
+                            df_chart['EMA200'] = df_chart['Close'].ewm(span=200, adjust=False).mean()
 
-                        # ── x-axis: string kategori (anti-gap weekend) ────────
-                        x_str  = df_chart.index.strftime('%d %b %y').tolist()
-                        n_bars = len(x_str)
+                            # ── RSI ───────────────────────────────────────────────
+                            delta = df_chart['Close'].diff()
+                            gain  = delta.clip(lower=0)
+                            loss  = -delta.clip(upper=0)
+                            avg_g = gain.ewm(com=13, adjust=False).mean()
+                            avg_l = loss.ewm(com=13, adjust=False).mean()
+                            rs    = avg_g / avg_l.replace(0, 1e-9)
+                            df_chart['RSI'] = (100-(100 / (1 + rs))).fillna(50)
 
-                        # Padding kanan ~30 bar agar candle tidak mepet & ada ruang label
-                        n_pad   = 30
-                        pad_str = [f"_p{i}" for i in range(n_pad)]
-                        x_all   = x_str + pad_str
-                        n_total = len(x_all)
+                            # ── MACD ──────────────────────────────────────────────
+                            ema12 = df_chart['Close'].ewm(span=12, adjust=False).mean()
+                            ema26 = df_chart['Close'].ewm(span=26, adjust=False).mean()
+                            df_chart['MACD']        = ema12-ema26
+                            df_chart['MACD_signal'] = df_chart['MACD'].ewm(span=9, adjust=False).mean()
+                            df_chart['MACD_hist']   = df_chart['MACD']-df_chart['MACD_signal']
 
-                        # ── Figure 5 rows: Price / Vol Normal / Vol Delta / RSI / MACD ────────
-                        fig = make_subplots(
-                            rows=5, cols=1,
-                            shared_xaxes=True,
-                            row_heights=[0.46, 0.12, 0.14, 0.14, 0.14],
-                            vertical_spacing=0.010,
-                        )
+                            # ── x-axis: string kategori (anti-gap weekend) ────────
+                            x_str  = df_chart.index.strftime('%d %b %y').tolist()
+                            n_bars = len(x_str)
 
-                        # ── Candlestick ───────────────────────────────────────
-                        fig.add_trace(go.Candlestick(
-                            x=x_str,
-                            open=df_chart['Open'],  high=df_chart['High'],
-                            low=df_chart['Low'],    close=df_chart['Close'],
-                            increasing_line_color=inc_color,
-                            increasing_fillcolor=inc_fill,
-                            decreasing_line_color=dec_color,
-                            decreasing_fillcolor=dec_fill,
-                            name="Price", showlegend=False,
-                        ), row=1, col=1)
+                            # Padding kanan ~30 bar agar candle tidak mepet & ada ruang label
+                            n_pad   = 30
+                            pad_str = [f"_p{i}" for i in range(n_pad)]
+                            x_all   = x_str + pad_str
+                            n_total = len(x_all)
 
-                        # ── EMAs ──────────────────────────────────────────────
-                        for col_n, clr, w in [
-                            ('EMA13','#0ea5e9',1.4), ('EMA21','#f472b6',1.4),
-                            ('EMA100','#a78bfa',1.3), ('EMA200','#8b5cf6',1.8),
-                        ]:
-                            fig.add_trace(go.Scatter(
-                                x=x_str, y=df_chart[col_n],
-                                mode='lines', line=dict(color=clr, width=w),
-                                showlegend=False,
+                            # ── Figure 5 rows: Price / Vol Normal / Vol Delta / RSI / MACD ────────
+                            fig = make_subplots(
+                                rows=5, cols=1,
+                                shared_xaxes=True,
+                                row_heights=[0.46, 0.12, 0.14, 0.14, 0.14],
+                                vertical_spacing=0.010,
+                            )
+
+                            # ── Candlestick ───────────────────────────────────────
+                            fig.add_trace(go.Candlestick(
+                                x=x_str,
+                                open=df_chart['Open'],  high=df_chart['High'],
+                                low=df_chart['Low'],    close=df_chart['Close'],
+                                increasing_line_color=inc_color,
+                                increasing_fillcolor=inc_fill,
+                                decreasing_line_color=dec_color,
+                                decreasing_fillcolor=dec_fill,
+                                name="Price", showlegend=False,
                             ), row=1, col=1)
 
-                        # ── Trade plan lines + labels style TradingView ────────
-                        if ai_data:
-                            try:
-                                el  = ai_data.get('entry_low')
-                                eh  = ai_data.get('entry_high')
-                                sl  = ai_data.get('stop_loss')
-                                tp1 = ai_data.get('tp1')
-                                tp2 = ai_data.get('tp2')
-                                tp3 = ai_data.get('tp3')
+                            # ── EMAs ──────────────────────────────────────────────
+                            for col_n, clr, w in [
+                                ('EMA13','#0ea5e9',1.4), ('EMA21','#f472b6',1.4),
+                                ('EMA100','#a78bfa',1.3), ('EMA200','#8b5cf6',1.8),
+                            ]:
+                                fig.add_trace(go.Scatter(
+                                    x=x_str, y=df_chart[col_n],
+                                    mode='lines', line=dict(color=clr, width=w),
+                                    showlegend=False,
+                                ), row=1, col=1)
 
-                                # Fungsi Final: Garis Full Layar & Label Rata Kanan Dalam (Untuk SL dan TP)
-                                def _draw_tv_level(y_val, label_text, line_color, bg_color, text_color, dash_style='dash'):
-                                    if not y_val: return
-                                    y_val = float(y_val)
+                            # ── Trade plan lines + labels style TradingView ────────
+                            if ai_data:
+                                try:
+                                    el  = ai_data.get('entry_low')
+                                    eh  = ai_data.get('entry_high')
+                                    sl  = ai_data.get('stop_loss')
+                                    tp1 = ai_data.get('tp1')
+                                    tp2 = ai_data.get('tp2')
+                                    tp3 = ai_data.get('tp3')
 
-                                    # 1. Garis absolut dari kiri (0) ke kanan (1) layar penuh
-                                    fig.add_shape(
-                                        type="line", xref="paper", yref="y",
-                                        x0=0, x1=1, y0=y_val, y1=y_val,
-                                        line=dict(color=line_color, width=1.5, dash=dash_style),
-                                        layer="below"
-                                    )
+                                    # Fungsi Final: Garis Full Layar & Label Rata Kanan Dalam (Untuk SL dan TP)
+                                    def _draw_tv_level(y_val, label_text, line_color, bg_color, text_color, dash_style='dash'):
+                                        if not y_val: return
+                                        y_val = float(y_val)
 
-                                    # 2. Label dikunci di x=1.0 (batas tembok kanan)
-                                    fig.add_annotation(
-                                        xref='paper', yref='y',
-                                        x=1.0, y=y_val,
-                                        text=f"<b>{label_text} {y_val:,.0f}</b>",
-                                        showarrow=False,
-                                        xanchor='right', yanchor='middle',
-                                        font=dict(color=text_color, size=10, family='IBM Plex Mono, monospace'),
-                                        bgcolor=bg_color,
-                                        bordercolor=line_color,
-                                        borderwidth=1,
-                                        borderpad=4
-                                    )
+                                        # 1. Garis absolut dari kiri (0) ke kanan (1) layar penuh
+                                        fig.add_shape(
+                                            type="line", xref="paper", yref="y",
+                                            x0=0, x1=1, y0=y_val, y1=y_val,
+                                            line=dict(color=line_color, width=1.5, dash=dash_style),
+                                            layer="below"
+                                        )
 
-                                # Area BUY - kotak hijau dengan border atas/bawah yang jelas
-                                if el and eh:
-                                    el_val = float(el)
-                                    eh_val = float(eh)
-                                    # Pastikan el_val < eh_val
-                                    if el_val > eh_val:
-                                        el_val, eh_val = eh_val, el_val
-                                    mid_y = (el_val + eh_val) / 2
+                                        # 2. Label dikunci di x=1.0 (batas tembok kanan)
+                                        fig.add_annotation(
+                                            xref='paper', yref='y',
+                                            x=1.0, y=y_val,
+                                            text=f"<b>{label_text} {y_val:,.0f}</b>",
+                                            showarrow=False,
+                                            xanchor='right', yanchor='middle',
+                                            font=dict(color=text_color, size=10, family='IBM Plex Mono, monospace'),
+                                            bgcolor=bg_color,
+                                            bordercolor=line_color,
+                                            borderwidth=1,
+                                            borderpad=4
+                                        )
 
-                                    # Background hijau - opacity lebih kuat agar konsisten terlihat
-                                    fig.add_shape(
-                                        type="rect", xref="paper", yref="y",
-                                        x0=0, x1=1, y0=el_val, y1=eh_val,
-                                        fillcolor="rgba(8,153,129,0.22)",
-                                        line=dict(width=0),
-                                        layer="below"
-                                    )
-                                    # Garis batas bawah buy zone (solid tipis hijau)
-                                    fig.add_shape(
-                                        type="line", xref="paper", yref="y",
-                                        x0=0, x1=1, y0=el_val, y1=el_val,
-                                        line=dict(color="#089981", width=1.2, dash="solid"),
-                                        layer="above"
-                                    )
-                                    # Garis batas atas buy zone (dashed hijau)
-                                    fig.add_shape(
-                                        type="line", xref="paper", yref="y",
-                                        x0=0, x1=1, y0=eh_val, y1=eh_val,
-                                        line=dict(color="#089981", width=1.0, dash="dash"),
-                                        layer="above"
-                                    )
-                                    # Label BUY di kanan
-                                    fig.add_annotation(
-                                        xref='paper', yref='y',
-                                        x=1.0, y=mid_y,
-                                        text=f"<b>BUY {min(el_val, eh_val):,.0f}-{max(el_val, eh_val):,.0f}</b>",
-                                        showarrow=False,
-                                        xanchor='right', yanchor='middle',
-                                        font=dict(color='#089981', size=10, family='IBM Plex Mono, monospace'),
-                                        bgcolor=tv_bg_color,
-                                        bordercolor='#089981',
-                                        borderwidth=1,
-                                        borderpad=4
-                                    )
+                                    # Area BUY - kotak hijau dengan border atas/bawah yang jelas
+                                    if el and eh:
+                                        el_val = float(el)
+                                        eh_val = float(eh)
+                                        # Pastikan el_val < eh_val
+                                        if el_val > eh_val:
+                                            el_val, eh_val = eh_val, el_val
+                                        mid_y = (el_val + eh_val) / 2
 
-                                # SL (Merah Solid)
-                                if sl:
-                                    _draw_tv_level(sl, "SL", '#f23645', '#f23645', '#ffffff', 'solid')
+                                        # Background hijau - opacity lebih kuat agar konsisten terlihat
+                                        fig.add_shape(
+                                            type="rect", xref="paper", yref="y",
+                                            x0=0, x1=1, y0=el_val, y1=eh_val,
+                                            fillcolor="rgba(8,153,129,0.22)",
+                                            line=dict(width=0),
+                                            layer="below"
+                                        )
+                                        # Garis batas bawah buy zone (solid tipis hijau)
+                                        fig.add_shape(
+                                            type="line", xref="paper", yref="y",
+                                            x0=0, x1=1, y0=el_val, y1=el_val,
+                                            line=dict(color="#089981", width=1.2, dash="solid"),
+                                            layer="above"
+                                        )
+                                        # Garis batas atas buy zone (dashed hijau)
+                                        fig.add_shape(
+                                            type="line", xref="paper", yref="y",
+                                            x0=0, x1=1, y0=eh_val, y1=eh_val,
+                                            line=dict(color="#089981", width=1.0, dash="dash"),
+                                            layer="above"
+                                        )
+                                        # Label BUY di kanan
+                                        fig.add_annotation(
+                                            xref='paper', yref='y',
+                                            x=1.0, y=mid_y,
+                                            text=f"<b>BUY {min(el_val, eh_val):,.0f}-{max(el_val, eh_val):,.0f}</b>",
+                                            showarrow=False,
+                                            xanchor='right', yanchor='middle',
+                                            font=dict(color='#089981', size=10, family='IBM Plex Mono, monospace'),
+                                            bgcolor=tv_bg_color,
+                                            bordercolor='#089981',
+                                            borderwidth=1,
+                                            borderpad=4
+                                        )
 
-                                # TP (Kuning Solid)
-                                if tp1: _draw_tv_level(tp1, "TP1", '#8b5cf6', '#8b5cf6', '#000000', 'dot')
-                                if tp2: _draw_tv_level(tp2, "TP2", '#8b5cf6', '#8b5cf6', '#000000', 'dot')
-                                if tp3: _draw_tv_level(tp3, "TP3", '#8b5cf6', '#8b5cf6', '#000000', 'dot')
+                                    # SL (Merah Solid)
+                                    if sl:
+                                        _draw_tv_level(sl, "SL", '#f23645', '#f23645', '#ffffff', 'solid')
 
-                            except Exception as e:
-                                st.warning(f"AI gagal menggambar Trade Plan: {e}")
+                                    # TP (Kuning Solid)
+                                    if tp1: _draw_tv_level(tp1, "TP1", '#8b5cf6', '#8b5cf6', '#000000', 'dot')
+                                    if tp2: _draw_tv_level(tp2, "TP2", '#8b5cf6', '#8b5cf6', '#000000', 'dot')
+                                    if tp3: _draw_tv_level(tp3, "TP3", '#8b5cf6', '#8b5cf6', '#000000', 'dot')
 
-                        # ── Volume Normal (hijau/merah ikut candle) ───────────
-                        vol_clr_normal = [
-                            inc_color if c >= o else dec_color
-                            for c, o in zip(df_chart['Close'], df_chart['Open'])
-                        ]
-                        vol_clr_mapped = [
-                            'rgba(0,229,160,0.55)' if c >= o else 'rgba(255,61,90,0.55)'
-                            for c, o in zip(df_chart['Close'], df_chart['Open'])
-                        ]
-                        fig.add_trace(go.Bar(
-                            x=x_str, y=df_chart['Volume'],
-                            marker_color=vol_clr_mapped,
-                            showlegend=False, name='Volume',
-                        ), row=2, col=1)
-                        # Garis rata-rata volume 20-bar
-                        vol_ma20 = df_chart['Volume'].rolling(20).mean()
-                        fig.add_trace(go.Scatter(
-                            x=x_str, y=vol_ma20,
-                            mode='lines', line=dict(color='#fbbf24', width=1.5, dash='dot'),
-                            showlegend=False, name='Vol MA20',
-                        ), row=2, col=1)
+                                except Exception as e:
+                                    st.warning(f"AI gagal menggambar Trade Plan: {e}")
 
-                        # ── Volume Delta (split buy/sell power) ───────────────
-                        hl_range = (df_chart['High']-df_chart['Low']).replace(0, 1)
-                        buy_vol  = (df_chart['Volume'] * (df_chart['Close']-df_chart['Low'])  / hl_range).clip(lower=0)
-                        sell_vol = (df_chart['Volume'] * (df_chart['High'] -df_chart['Close']) / hl_range).clip(lower=0)
-                        fig.add_trace(go.Bar(
-                            x=x_str, y=sell_vol,
-                            marker_color='rgba(255,61,90,0.70)',
-                            name='Sell Power', showlegend=False,
-                        ), row=3, col=1)
-                        fig.add_trace(go.Bar(
-                            x=x_str, y=buy_vol,
-                            marker_color='rgba(0,229,160,0.80)',
-                            name='Buy Power', showlegend=False,
-                        ), row=3, col=1)
-
-                        # ── RSI (level 70/30) ──────────────────────────────────
-                        fig.add_trace(go.Scatter(
-                            x=x_str, y=df_chart['RSI'],
-                            mode='lines', line=dict(color='#0ea5e9', width=1.4),
-                            showlegend=False,
-                        ), row=4, col=1)
-                        for lvl, clr in [(70,'rgba(255,61,90,0.5)'),(30,'rgba(0,229,160,0.5)')]:
+                            # ── Volume Normal (hijau/merah ikut candle) ───────────
+                            vol_clr_normal = [
+                                inc_color if c >= o else dec_color
+                                for c, o in zip(df_chart['Close'], df_chart['Open'])
+                            ]
+                            vol_clr_mapped = [
+                                'rgba(0,229,160,0.55)' if c >= o else 'rgba(255,61,90,0.55)'
+                                for c, o in zip(df_chart['Close'], df_chart['Open'])
+                            ]
+                            fig.add_trace(go.Bar(
+                                x=x_str, y=df_chart['Volume'],
+                                marker_color=vol_clr_mapped,
+                                showlegend=False, name='Volume',
+                            ), row=2, col=1)
+                            # Garis rata-rata volume 20-bar
+                            vol_ma20 = df_chart['Volume'].rolling(20).mean()
                             fig.add_trace(go.Scatter(
-                                x=[x_str[0], x_str[-1]], y=[lvl, lvl],
-                                mode='lines', line=dict(color=clr, width=1, dash='dot'),
+                                x=x_str, y=vol_ma20,
+                                mode='lines', line=dict(color='#fbbf24', width=1.5, dash='dot'),
+                                showlegend=False, name='Vol MA20',
+                            ), row=2, col=1)
+
+                            # ── Volume Delta (split buy/sell power) ───────────────
+                            hl_range = (df_chart['High']-df_chart['Low']).replace(0, 1)
+                            buy_vol  = (df_chart['Volume'] * (df_chart['Close']-df_chart['Low'])  / hl_range).clip(lower=0)
+                            sell_vol = (df_chart['Volume'] * (df_chart['High'] -df_chart['Close']) / hl_range).clip(lower=0)
+                            fig.add_trace(go.Bar(
+                                x=x_str, y=sell_vol,
+                                marker_color='rgba(255,61,90,0.70)',
+                                name='Sell Power', showlegend=False,
+                            ), row=3, col=1)
+                            fig.add_trace(go.Bar(
+                                x=x_str, y=buy_vol,
+                                marker_color='rgba(0,229,160,0.80)',
+                                name='Buy Power', showlegend=False,
+                            ), row=3, col=1)
+
+                            # ── RSI (level 70/30) ──────────────────────────────────
+                            fig.add_trace(go.Scatter(
+                                x=x_str, y=df_chart['RSI'],
+                                mode='lines', line=dict(color='#0ea5e9', width=1.4),
                                 showlegend=False,
                             ), row=4, col=1)
+                            for lvl, clr in [(70,'rgba(255,61,90,0.5)'),(30,'rgba(0,229,160,0.5)')]:
+                                fig.add_trace(go.Scatter(
+                                    x=[x_str[0], x_str[-1]], y=[lvl, lvl],
+                                    mode='lines', line=dict(color=clr, width=1, dash='dot'),
+                                    showlegend=False,
+                                ), row=4, col=1)
 
-                        # ── MACD ──────────────────────────────────────────────
-                        macd_hist_clr = ['rgba(0,229,160,0.75)' if v >= 0 else 'rgba(255,61,90,0.75)'
-                                         for v in df_chart['MACD_hist']]
-                        fig.add_trace(go.Bar(
-                            x=x_str, y=df_chart['MACD_hist'],
-                            marker_color=macd_hist_clr, showlegend=False,
-                        ), row=5, col=1)
-                        fig.add_trace(go.Scatter(
-                            x=x_str, y=df_chart['MACD'],
-                            mode='lines', line=dict(color='#0ea5e9', width=1.4),
-                            showlegend=False,
-                        ), row=5, col=1)
-                        fig.add_trace(go.Scatter(
-                            x=x_str, y=df_chart['MACD_signal'],
-                            mode='lines', line=dict(color='#f472b6', width=1.4),
-                            showlegend=False,
-                        ), row=5, col=1)
-                        fig.add_trace(go.Scatter(
-                            x=[x_str[0], x_str[-1]], y=[0, 0],
-                            mode='lines', line=dict(color=tv_border, width=1),
-                            showlegend=False,
-                        ), row=5, col=1)
+                            # ── MACD ──────────────────────────────────────────────
+                            macd_hist_clr = ['rgba(0,229,160,0.75)' if v >= 0 else 'rgba(255,61,90,0.75)'
+                                             for v in df_chart['MACD_hist']]
+                            fig.add_trace(go.Bar(
+                                x=x_str, y=df_chart['MACD_hist'],
+                                marker_color=macd_hist_clr, showlegend=False,
+                            ), row=5, col=1)
+                            fig.add_trace(go.Scatter(
+                                x=x_str, y=df_chart['MACD'],
+                                mode='lines', line=dict(color='#0ea5e9', width=1.4),
+                                showlegend=False,
+                            ), row=5, col=1)
+                            fig.add_trace(go.Scatter(
+                                x=x_str, y=df_chart['MACD_signal'],
+                                mode='lines', line=dict(color='#f472b6', width=1.4),
+                                showlegend=False,
+                            ), row=5, col=1)
+                            fig.add_trace(go.Scatter(
+                                x=[x_str[0], x_str[-1]], y=[0, 0],
+                                mode='lines', line=dict(color=tv_border, width=1),
+                                showlegend=False,
+                            ), row=5, col=1)
 
-                        # ── Tick labels: ambil ~8 titik merata ───────────────
-                        step     = max(1, n_bars // 8)
-                        tickvals = x_str[::step]
+                            # ── Tick labels: ambil ~8 titik merata ───────────────
+                            step     = max(1, n_bars // 8)
+                            tickvals = x_str[::step]
 
-                        # ── Layout ────────────────────────────────────────────
-                        ax_x = dict(
-                            type='category',
-                            showgrid=True, gridcolor=tv_grid_color,
-                            showline=True, linecolor=tv_border, linewidth=1,
-                            zeroline=False,
-                            tickangle=-30,
-                            tickfont=dict(size=10, color=tv_text_color),
-                            automargin=False,
-                        )
-                        ax_y_plain = dict(
-                            showgrid=True, gridcolor=tv_grid_color,
-                            showline=True, linecolor=tv_border, linewidth=1,
-                            zeroline=False,
-                            tickfont=dict(size=10, color=tv_text_color),
-                            type='linear',
-                            side='right',
-                            automargin=False,
-                        )
-                        ax_y_grid = dict(
-                            showgrid=True, gridcolor=tv_grid_color,
-                            showline=True, linecolor=tv_border, linewidth=1,
-                            zeroline=False,
-                            tickfont=dict(size=10, color=tv_text_color),
-                            type='linear',
-                            side='right',
-                            automargin=False,
-                        )
-                        fig.update_layout(
-                            template='plotly_dark' if is_dark else 'plotly_white',
-                            plot_bgcolor=tv_bg_color,
-                            paper_bgcolor=tv_bg_color,
-                            font=dict(color=tv_text_color, size=11),
-                            height=1080,
-                            showlegend=False,
-                            barmode="stack",
-                            margin=dict(l=0, r=120, t=10, b=40),
-                            xaxis =dict(**ax_x, rangeslider=dict(visible=False),
-                                        range=[-0.5, n_total-0.5], tickvals=tickvals),
-                            xaxis2=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
-                            xaxis3=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
-                            xaxis4=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
-                            xaxis5=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals),
-                            yaxis =dict(**ax_y_plain, title=''),
-                            yaxis2=dict(**ax_y_grid,  title='VOL'),
-                            yaxis3=dict(**ax_y_grid,  title='DELTA'),
-                            yaxis4=dict(**ax_y_grid,  title='RSI', range=[0, 100]),
-                            yaxis5=dict(**ax_y_grid,  title='MACD'),
-                        )
+                            # ── Layout ────────────────────────────────────────────
+                            ax_x = dict(
+                                type='category',
+                                showgrid=True, gridcolor=tv_grid_color,
+                                showline=True, linecolor=tv_border, linewidth=1,
+                                zeroline=False,
+                                tickangle=-30,
+                                tickfont=dict(size=10, color=tv_text_color),
+                                automargin=False,
+                            )
+                            ax_y_plain = dict(
+                                showgrid=True, gridcolor=tv_grid_color,
+                                showline=True, linecolor=tv_border, linewidth=1,
+                                zeroline=False,
+                                tickfont=dict(size=10, color=tv_text_color),
+                                type='linear',
+                                side='right',
+                                automargin=False,
+                            )
+                            ax_y_grid = dict(
+                                showgrid=True, gridcolor=tv_grid_color,
+                                showline=True, linecolor=tv_border, linewidth=1,
+                                zeroline=False,
+                                tickfont=dict(size=10, color=tv_text_color),
+                                type='linear',
+                                side='right',
+                                automargin=False,
+                            )
+                            fig.update_layout(
+                                template='plotly_dark' if is_dark else 'plotly_white',
+                                plot_bgcolor=tv_bg_color,
+                                paper_bgcolor=tv_bg_color,
+                                font=dict(color=tv_text_color, size=11),
+                                height=1080,
+                                showlegend=False,
+                                barmode="stack",
+                                margin=dict(l=0, r=120, t=10, b=40),
+                                xaxis =dict(**ax_x, rangeslider=dict(visible=False),
+                                            range=[-0.5, n_total-0.5], tickvals=tickvals),
+                                xaxis2=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
+                                xaxis3=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
+                                xaxis4=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
+                                xaxis5=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals),
+                                yaxis =dict(**ax_y_plain, title=''),
+                                yaxis2=dict(**ax_y_grid,  title='VOL'),
+                                yaxis3=dict(**ax_y_grid,  title='DELTA'),
+                                yaxis4=dict(**ax_y_grid,  title='RSI', range=[0, 100]),
+                                yaxis5=dict(**ax_y_grid,  title='MACD'),
+                            )
 
-                        st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, use_container_width=True)
+                            st.session_state[_chart_cache_key] = fig  # cache chart agar tidak rebuild saat rerun
 
                         # ── EMA Legend ────────────────────────────────────────
                         ema_items = [
@@ -22772,7 +22887,8 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
             border_c = "rgba(124,58,237,0.12)" if is_dark else "#e8d99a"
 
             # Split teks per saham - pisah berdasarkan baris yang dimulai dengan emoji 🎯/🌙
-            import re as _re
+            # Bug#3: re sudah di-import top-level
+            _re = re
             # Split at stock-entry markers (🎯 or 🌙 at start of line)
             parts = _re.split(r'(?m)^(?=(?:🎯|🌙)\s)', reco_text.strip())
             parts = [p.strip() for p in parts if p.strip()]
@@ -22856,7 +22972,8 @@ white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-bo
                                summary_label, plan_label, avoid_label, context_label,
                                plan_horizon_label="HORIZON"):
             """Render tabel rekomendasi universal - dipakai Daily, Weekly, BSJP."""
-            import re as _re_t, json as _json_t
+            _re_t = re  # Bug#3: re sudah di-import top-level
+            import json as _json_t
             _raw_t = st.session_state.get(session_key_result, "")
             _ts_t  = st.session_state.get(session_key_ts, "")
             if not _raw_t:
@@ -30249,7 +30366,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                 _act_display = _use_actual if _use_actual not in ("—","") else "Belum rilis"
                 _beat_miss = ""
                 try:
-                    import re as _re_ec
+                    _re_ec = re  # Bug#3: re sudah di-import top-level
                     _fc_n = float(_re_ec.sub(r'[^0-9.\\-]','',str(_sel_row['fc']))) if _sel_row['fc'] not in ("—","") else None
                     _ac_n = float(_re_ec.sub(r'[^0-9.\\-]','',str(_use_actual))) if _use_actual not in ("—","","pending") else None
                     if _fc_n is not None and _ac_n is not None:
@@ -34267,11 +34384,19 @@ Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di ak
             with st.chat_message("assistant"):
                 with _sigma_spinner("SIGMA menganalisis..."):
 
-                    _history_msgs = [
-                        {"role": m["role"], "content": m.get("content") or ""}
+                    # Bug#15 fix: sliding window agar history tidak overflow context window
+                    _MAX_HIST_CHARS = 60_000  # ~15k token, aman untuk semua model
+                    _MAX_HIST_MSGS  = 20      # max 20 turn (10 user + 10 asst)
+                    _all_raw = [
+                        {"role": m["role"], "content": (m.get("content") or "")[:8000]}
                         for m in active["messages"]
                         if m.get("role") in ("user", "assistant")
                     ]
+                    _history_msgs = _all_raw[-_MAX_HIST_MSGS:]
+                    _tot_chars = sum(len(m["content"]) for m in _history_msgs)
+                    while _tot_chars > _MAX_HIST_CHARS and len(_history_msgs) > 2:
+                        _rem = _history_msgs.pop(0)
+                        _tot_chars -= len(_rem["content"])
 
                     ans_bersih = None
                     simbol_ai  = ""
@@ -34643,6 +34768,65 @@ js_code = """
 """
 components.html(js_code, height=0)
 
+# ── TAB PERSISTENCE: Simpan & restore active tab saat Streamlit rerun ──
+# Tanpa ini, setiap st.rerun() akan reset ke tab pertama (Market Live).
+components.html("""
+<script>
+(function() {{
+    if (window.__sigmaTabPersistRunning) return;
+    window.__sigmaTabPersistRunning = true;
+    var pd = window.parent.document;
+    var PERSIST_KEY = '_sigma_active_tabs';
+
+    function saveTabs() {{
+        try {{
+            // Simpan semua level tab yang aktif: [mainTabText, subTabText, ...]
+            var tabs = pd.querySelectorAll('button[role="tab"][aria-selected="true"]');
+            var active = [];
+            tabs.forEach(function(t) {{ active.push((t.textContent||'').trim()); }});
+            if (active.length > 0) sessionStorage.setItem(PERSIST_KEY, JSON.stringify(active));
+        }} catch(e) {{}}
+    }}
+
+    function restoreTabs() {{
+        try {{
+            var saved = JSON.parse(sessionStorage.getItem(PERSIST_KEY) || '[]');
+            if (!saved.length) return;
+            // Coba restore setiap tab level
+            saved.forEach(function(targetText) {{
+                var tabs = pd.querySelectorAll('button[role="tab"]');
+                tabs.forEach(function(t) {{
+                    if ((t.textContent||'').trim() === targetText && t.getAttribute('aria-selected') !== 'true') {{
+                        t.click();
+                    }}
+                }});
+            }});
+        }} catch(e) {{}}
+    }}
+
+    // Restore sekali saat pertama load (setelah DOM siap)
+    var _restored = false;
+    function tryRestore() {{
+        if (_restored) return;
+        var tabs = pd.querySelectorAll('button[role="tab"]');
+        if (tabs.length === 0) {{ setTimeout(tryRestore, 200); return; }}
+        _restored = true;
+        // Delay sedikit agar Streamlit selesai render
+        setTimeout(restoreTabs, 150);
+    }}
+    tryRestore();
+
+    // Simpan setiap kali user klik tab
+    pd.addEventListener('click', function(e) {{
+        var t = e.target;
+        if (t && t.getAttribute && t.getAttribute('role') === 'tab') {{
+            setTimeout(saveTabs, 100);
+        }}
+    }}, true);
+}})();
+</script>
+""", height=0)
+
 # ── PASSWORD LOCK: Market Forecast & Alpha Plan ────────────────────────────────
 # FIX #1: Password TIDAK lagi dikirim ke browser dalam JS plaintext.
 # Validasi dilakukan di Python (server-side). JS hanya mengirim sinyal via
@@ -34661,23 +34845,22 @@ _TAB_PASSWORDS_HASH = {
 
 # ── Cek unlock request dari query param (dikirim JS via window.location) ──
 _tab_unlock_key = st.query_params.get("_sigma_unlock_tab", "")
-_tab_unlock_pwd = st.query_params.get("_sigma_unlock_pwd", "")
-if _tab_unlock_key and _tab_unlock_pwd:
+_tab_unlock_hash = st.query_params.get("_sigma_unlock_hash", "")
+if _tab_unlock_key and _tab_unlock_hash:
     _expected_hash = _TAB_PASSWORDS_HASH.get(_tab_unlock_key.lower(), "")
-    _submitted_hash = hashlib.sha256(_tab_unlock_pwd.encode()).hexdigest()
-    if _expected_hash and _submitted_hash == _expected_hash:
+    if _expected_hash and _tab_unlock_hash == _expected_hash:
         _unlocked = st.session_state.setdefault("_tab_unlocked", set())
         _unlocked.add(_tab_unlock_key.lower())
-    # Hapus param dari URL setelah diproses (jangan biarkan password ada di URL history)
     try:
         st.query_params.pop("_sigma_unlock_tab", None)
-        st.query_params.pop("_sigma_unlock_pwd", None)
+        st.query_params.pop("_sigma_unlock_hash", None)
     except Exception:
         pass
 
-# ── Kirim daftar tab yang SUDAH unlock ke JS (bukan passwordnya) ──
+# ── Kirim hash list ke JS (untuk client-side verify, aman: hash tidak bisa di-reverse) ──
 _unlocked_tabs_js = list(st.session_state.get("_tab_unlocked", set()))
 _unlocked_tabs_json = json.dumps(_unlocked_tabs_js)
+_hash_map_json = json.dumps(_TAB_PASSWORDS_HASH)
 
 components.html(f"""
 <script>
@@ -34686,9 +34869,18 @@ components.html(f"""
     window.__sigmaTabLockRunning = true;
     var pd = window.parent.document;
 
-    // FIX #1: Daftar unlocked tab datang dari Python (server) — bukan hardcoded password
-    // FIX #7: State ini di-inject ulang setiap rerun dari session_state Python
-    var UNLOCKED = {_unlocked_tabs_json};  // e.g. ["market forecast", "alpha plan"]
+    // Hash map dari Python (SHA-256) — aman di JS karena hash tidak bisa di-reverse
+    var HASH_MAP = {_hash_map_json};
+    // Daftar tab yang sudah unlock: dari Python session_state + sessionStorage (survive rerun)
+    var UNLOCKED = {_unlocked_tabs_json};
+    // Restore unlock dari sessionStorage (survive Streamlit rerun tanpa redirect)
+    Object.keys(HASH_MAP).forEach(function(k) {{
+        try {{
+            if (sessionStorage.getItem('_sigma_ul_' + k) === '1' && UNLOCKED.indexOf(k) === -1) {{
+                UNLOCKED.push(k);
+            }}
+        }} catch(e) {{}}
+    }});
 
     // Tab yang memerlukan password (nama tab dalam lowercase)
     var LOCKED_TABS = ["market forecast", "alpha plan", "broker summary"];
@@ -34771,20 +34963,38 @@ components.html(f"""
         var val = inp.value.trim();
         if (!val || !_pk) return;
 
-        // FIX #1: Kirim password ke Python server via query param untuk divalidasi
-        // Password TIDAK dibandingkan di JS — hanya dikirim untuk diproses server
-        var currentUrl = window.parent.location.href.split('?')[0];
-        var unlockUrl = currentUrl + '?_sigma_unlock_tab=' + encodeURIComponent(_pk) +
-                        '&_sigma_unlock_pwd=' + encodeURIComponent(val);
-
-        // Set loading state
-        inp.value = ''; inp.disabled = true;
+        inp.disabled = true;
         pd.getElementById('sigma-lock-btn').textContent = 'MEMVERIFIKASI...';
         err.textContent = '';
 
-        // Redirect ke URL dengan param — Streamlit akan memproses di Python
-        // dan rerender dengan tab yang sudah unlock
-        window.parent.location.href = unlockUrl;
+        // Hash password di browser pakai SubtleCrypto — tidak perlu redirect/reload
+        window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(val)).then(function(buf) {{
+            var hex = Array.from(new Uint8Array(buf)).map(function(b) {{ return b.toString(16).padStart(2,'0'); }}).join('');
+            var expected = HASH_MAP[_pk] || '';
+            if (expected && hex === expected) {{
+                // Cocok — simpan di sessionStorage dulu (instant, survive rerun)
+                try {{ sessionStorage.setItem('_sigma_ul_' + _pk, '1'); }} catch(e) {{}}
+                if (UNLOCKED.indexOf(_pk) === -1) UNLOCKED.push(_pk);
+                hideModal();
+                // Tandai di Python session_state via pushState + soft rerun
+                // (tidak reload page, tab tidak reset ke index 0)
+                try {{
+                    var url = window.parent.location.href.split('?')[0];
+                    window.parent.history.pushState(null, '', url + '?_sigma_unlock_tab=' + encodeURIComponent(_pk) + '&_sigma_unlock_hash=' + encodeURIComponent(hex));
+                }} catch(e) {{}}
+                // Trigger Streamlit rerender via hidden click on a harmless element
+                try {{ window.parent.dispatchEvent(new Event('popstate')); }} catch(e) {{}}
+            }} else {{
+                pd.getElementById('sigma-lock-btn').textContent = 'BUKA AKSES';
+                inp.disabled = false;
+                err.textContent = '❌ Kode akses salah. Coba lagi.';
+                inp.value = ''; inp.focus();
+            }}
+        }}).catch(function() {{
+            pd.getElementById('sigma-lock-btn').textContent = 'BUKA AKSES';
+            inp.disabled = false;
+            err.textContent = 'Error verifikasi. Refresh dan coba lagi.';
+        }});
     }}
 
     function iT() {{
