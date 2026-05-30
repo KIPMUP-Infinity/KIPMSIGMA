@@ -9063,6 +9063,8 @@ body{{
     background:#020617;
     color:#e2e8f0;
     overflow-x:hidden;
+    overflow-y:auto;
+    min-height:100vh;
 }}
 
 /* -- BACKGROUND -- */
@@ -9106,7 +9108,8 @@ body{{
 .page{{
     position:relative;z-index:1;
     display:flex;flex-direction:column;align-items:center;
-    padding:16px 20px 22px;
+    padding:16px 20px 40px;
+    min-height:100vh;
 }}
 
 /* -- HEADER -- */
@@ -10201,7 +10204,7 @@ function selectTerminal() {{
 </script>
 </body>
 </html>
-    """, height=820, scrolling=False)
+    """, height=1400, scrolling=True)
 
     # ── HIDDEN STREAMLIT BUTTONS (fallback for all browsers) ──
     col1, col2 = st.columns(2)
@@ -12460,8 +12463,35 @@ if current_view == "dashboard":
         [data-testid="stMetricDelta"] {{ font-size: 0.75rem !important; }}
 
         /* ── Section headers ── */
-        .trm-section-label {{ font-size: 0.6rem !important; letter-spacing: 0.09em !important; padding: 3px 8px !important; }}
-        .trm-section {{ margin: 12px 0 8px !important; gap: 6px !important; }}
+        .trm-section-label {{
+            font-size: 0.58rem !important;
+            letter-spacing: 0.06em !important;
+            padding: 4px 10px !important;
+            white-space: normal !important;        /* allow wrap on mobile */
+            word-break: break-word !important;
+            text-align: center !important;
+            line-height: 1.4 !important;
+            max-width: calc(100vw - 60px) !important;
+        }}
+        .trm-section {{ margin: 12px 0 8px !important; gap: 6px !important; flex-wrap: wrap !important; }}
+
+        /* ── Tabel data: horizontal scroll, no column crushing ── */
+        /* Berlaku untuk tabel yang di-render via st.markdown (Kurs, Inflasi, dsb.) */
+        [data-testid="stMarkdownContainer"] div[style*="overflow-x:auto"] {{
+            -webkit-overflow-scrolling: touch !important;
+            touch-action: pan-x !important;
+            cursor: grab !important;
+        }}
+        [data-testid="stMarkdownContainer"] div[style*="overflow-x:auto"]::before {{
+            content: "← geser kiri/kanan →" !important;
+            display: block !important;
+            text-align: center !important;
+            font-size: 0.58rem !important;
+            color: rgba(139,92,246,0.6) !important;
+            letter-spacing: 0.08em !important;
+            padding: 3px 0 4px !important;
+            font-family: 'IBM Plex Mono', monospace !important;
+        }}
 
         /* ── Cards ── */
         .trm-card {{
@@ -14653,7 +14683,7 @@ table{{margin-bottom:0!important;}}
                 if v >= 3.5: return ("#F0A500","rgba(240,165,0,0.10)")
                 if v >= 1.5: return ("#00E5BE","rgba(0,229,190,0.08)")
                 return ("#a78bfa","rgba(167,139,250,0.10)")
-            _inf_tbl_html = '<div style="overflow-x:auto;margin-top:8px;"><table style="width:100%;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(99,102,241,0.15);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#a78bfa;font-weight:600;letter-spacing:0.05em;">TAHUN</th>'
+            _inf_tbl_html = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:8px;"><table style="width:max-content;min-width:700px;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(99,102,241,0.15);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#a78bfa;font-weight:600;letter-spacing:0.05em;">TAHUN</th>'
             for _m in _inf_mo:
                 _inf_tbl_html += f'<th style="padding:8px 5px;text-align:center;color:#a78bfa;font-weight:600;">{_m}</th>'
             _inf_tbl_html += '<th style="padding:8px 8px;text-align:center;color:#a78bfa;font-weight:600;">Des YoY</th></tr></thead><tbody>'
@@ -14661,13 +14691,13 @@ table{{margin-bottom:0!important;}}
                 _yd_i = _inf_by_year[_yr_i]
                 _dv = _yd_i.get("Des",{}).get("yoy",None)
                 _ds = (f'<span style="color:{_inf_fc(_dv)[0]};font-weight:700;">{_dv:.2f}%</span>' if _dv is not None else '<span style="color:#555;">&#8212;</span>')
-                _inf_tbl_html += f'<tr style="border-bottom:1px solid rgba(255,255,255,0.04);"><td style="padding:7px 10px;color:#e2e8f0;font-weight:700;">{_yr_i}</td>'
+                _inf_tbl_html += f'<tr style="border-bottom:1px solid rgba(255,255,255,0.04);"><td style="padding:7px 10px;color:#e2e8f0;font-weight:700;white-space:nowrap;">{_yr_i}</td>'
                 for _m in _inf_mo:
                     if _m in _yd_i:
                         _v = _yd_i[_m]["yoy"]; _fc,_bg = _inf_fc(_v)
-                        _inf_tbl_html += f'<td style="padding:7px 5px;text-align:center;color:{_fc};background:{_bg};font-weight:600;">{_v:.1f}%</td>'
+                        _inf_tbl_html += f'<td style="padding:7px 5px;text-align:center;white-space:nowrap;color:{_fc};background:{_bg};font-weight:600;">{_v:.1f}%</td>'
                     else:
-                        _inf_tbl_html += '<td style="padding:7px 5px;text-align:center;color:#374151;">&#8212;</td>'
+                        _inf_tbl_html += '<td style="padding:7px 5px;text-align:center;white-space:nowrap;color:#374151;">&#8212;</td>'
                 _inf_tbl_html += f'<td style="padding:7px 8px;text-align:center;">{_ds}</td></tr>'
             _inf_tbl_html += '</tbody></table><div style="margin-top:8px;font-size:0.65rem;color:#555;font-family:IBM Plex Mono,monospace;">&#128993; Ungu &lt;1.5% (bawah target) &nbsp;|&nbsp; &#128994; Hijau 1.5&#8211;3.5% (target BI) &nbsp;|&nbsp; &#127993; Kuning 3.5&#8211;5% &nbsp;|&nbsp; &#128308; Merah &gt;5% &nbsp;|&nbsp; Nilai = CPI YoY %</div></div>'
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>&#128202; TABEL CPI YoY BULANAN (2020 &#8211; 2026)</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
@@ -14955,7 +14985,7 @@ Jawab dalam Bahasa Indonesia, tajam dan analitis. Maksimal 450 kata."""
                 if chg > 0:   return ("#26a69a","rgba(38,166,154,0.08)")
                 if chg >= -3: return ("#ef5350","rgba(239,83,80,0.08)")
                 return ("#e24b4a","rgba(226,75,74,0.14)")
-            _ih_tbl_html = '<div style="overflow-x:auto;margin-top:8px;"><table style="width:100%;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(0,229,190,0.12);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#00E5BE;font-weight:600;letter-spacing:0.05em;">TAHUN</th>'
+            _ih_tbl_html = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:8px;"><table style="width:max-content;min-width:700px;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(0,229,190,0.12);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#00E5BE;font-weight:600;letter-spacing:0.05em;">TAHUN</th>'
             for _m in _ih_mo:
                 _ih_tbl_html += f'<th style="padding:8px 5px;text-align:center;color:#00E5BE;font-weight:600;">{_m}</th>'
             _ih_tbl_html += '<th style="padding:8px 8px;text-align:center;color:#00E5BE;font-weight:600;">Des Close</th></tr></thead><tbody>'
@@ -14963,14 +14993,14 @@ Jawab dalam Bahasa Indonesia, tajam dan analitis. Maksimal 450 kata."""
                 _yd_i = _ih_by_year[_yr_i]
                 _dc = _yd_i.get("Des",{}).get("close",None)
                 _ds = (f'<span style="font-weight:700;color:#e2e8f0;">{_dc:,.0f}</span>' if _dc is not None else '<span style="color:#555;">&#8212;</span>')
-                _ih_tbl_html += f'<tr style="border-bottom:1px solid rgba(255,255,255,0.04);"><td style="padding:7px 10px;color:#e2e8f0;font-weight:700;">{_yr_i}</td>'
+                _ih_tbl_html += f'<tr style="border-bottom:1px solid rgba(255,255,255,0.04);"><td style="padding:7px 10px;color:#e2e8f0;font-weight:700;white-space:nowrap;">{_yr_i}</td>'
                 for _m in _ih_mo:
                     if _m in _yd_i:
                         _chg = _yd_i[_m]["chg_pct"]; _fc,_bg = _ih_fc(_chg)
                         _sym = "&#9650;" if _chg >= 0 else "&#9660;"
-                        _ih_tbl_html += f'<td style="padding:7px 5px;text-align:center;color:{_fc};background:{_bg};font-weight:600;">{_sym}{abs(_chg):.1f}%</td>'
+                        _ih_tbl_html += f'<td style="padding:7px 5px;text-align:center;white-space:nowrap;color:{_fc};background:{_bg};font-weight:600;">{_sym}{abs(_chg):.1f}%</td>'
                     else:
-                        _ih_tbl_html += '<td style="padding:7px 5px;text-align:center;color:#374151;">&#8212;</td>'
+                        _ih_tbl_html += '<td style="padding:7px 5px;text-align:center;white-space:nowrap;color:#374151;">&#8212;</td>'
                 _ih_tbl_html += f'<td style="padding:7px 8px;text-align:center;">{_ds}</td></tr>'
             _ih_tbl_html += '</tbody></table><div style="margin-top:8px;font-size:0.65rem;color:#555;font-family:IBM Plex Mono,monospace;">&#128994; Hijau tua &#8805;+3% &nbsp;|&nbsp; &#128994; Hijau muda 0&#8211;3% &nbsp;|&nbsp; &#128308; Merah -0&#8211;-3% &nbsp;|&nbsp; &#128308; Merah tua &#8804;-3% &nbsp;|&nbsp; Nilai = MoM %</div></div>'
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>&#128202; TABEL IHSG CLOSING BULANAN (2020 &#8211; 2026)</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
@@ -15223,7 +15253,7 @@ Jawab dalam Bahasa Indonesia, tajam dan profesional. Maksimal 500 kata."""
                 if chg > 0:   return ("#F0A500","rgba(240,165,0,0.08)")
                 if chg >= -2: return ("#26a69a","rgba(38,166,154,0.08)")
                 return ("#00E5BE","rgba(0,229,190,0.14)")
-            _kr_tbl_html = '<div style="overflow-x:auto;margin-top:8px;"><table style="width:100%;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(240,165,0,0.12);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#F0A500;font-weight:600;letter-spacing:0.05em;">TAHUN</th>'
+            _kr_tbl_html = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:8px;"><table style="width:max-content;min-width:700px;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(240,165,0,0.12);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#F0A500;font-weight:600;letter-spacing:0.05em;">TAHUN</th>'
             for _m in _kr_mo:
                 _kr_tbl_html += f'<th style="padding:8px 5px;text-align:center;color:#F0A500;font-weight:600;">{_m}</th>'
             _kr_tbl_html += '<th style="padding:8px 8px;text-align:center;color:#F0A500;font-weight:600;">Des Rate</th></tr></thead><tbody>'
@@ -15231,14 +15261,14 @@ Jawab dalam Bahasa Indonesia, tajam dan profesional. Maksimal 500 kata."""
                 _yd_i = _kr_by_year[_yr_i]
                 _dr = _yd_i.get("Des",{}).get("rate",None)
                 _ds = (f'<span style="font-weight:700;color:#e2e8f0;">{_dr:,}</span>' if _dr is not None else '<span style="color:#555;">&#8212;</span>')
-                _kr_tbl_html += f'<tr style="border-bottom:1px solid rgba(255,255,255,0.04);"><td style="padding:7px 10px;color:#e2e8f0;font-weight:700;">{_yr_i}</td>'
+                _kr_tbl_html += f'<tr style="border-bottom:1px solid rgba(255,255,255,0.04);"><td style="padding:7px 10px;color:#e2e8f0;font-weight:700;white-space:nowrap;">{_yr_i}</td>'
                 for _m in _kr_mo:
                     if _m in _yd_i:
                         _chg = _yd_i[_m]["chg_pct"]; _fc,_bg = _kr_fc(_chg)
                         _sym = "&#9650;" if _chg >= 0 else "&#9660;"
-                        _kr_tbl_html += f'<td style="padding:7px 5px;text-align:center;color:{_fc};background:{_bg};font-weight:600;">{_sym}{abs(_chg):.1f}%</td>'
+                        _kr_tbl_html += f'<td style="padding:7px 5px;text-align:center;white-space:nowrap;color:{_fc};background:{_bg};font-weight:600;">{_sym}{abs(_chg):.1f}%</td>'
                     else:
-                        _kr_tbl_html += '<td style="padding:7px 5px;text-align:center;color:#374151;">&#8212;</td>'
+                        _kr_tbl_html += '<td style="padding:7px 5px;text-align:center;white-space:nowrap;color:#374151;">&#8212;</td>'
                 _kr_tbl_html += f'<td style="padding:7px 8px;text-align:center;">{_ds}</td></tr>'
             _kr_tbl_html += '</tbody></table><div style="margin-top:8px;font-size:0.65rem;color:#555;font-family:IBM Plex Mono,monospace;">&#128994; Hijau tua &#8804;-2% (Rupiah menguat kuat) &nbsp;|&nbsp; &#128994; Hijau -2&#8211;0% &nbsp;|&nbsp; &#127993; Kuning 0&#8211;+2% (melemah) &nbsp;|&nbsp; &#128308; Merah &#8805;+2% &nbsp;|&nbsp; &#9650; = IDR naik = Rupiah MELEMAH</div></div>'
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>&#128202; TABEL KURS USD/IDR BULANAN (2020 &#8211; 2026)</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
@@ -29421,8 +29451,8 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                 _month_order_fed = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Ags","Sep","Okt","Nov","Des"]
 
                 _fed_tbl = """
-                <div style="overflow-x:auto;margin-top:8px;">
-                <table style="width:100%;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;">
+                <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:8px;">
+                <table style="width:max-content;min-width:700px;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;">
                   <thead>
                     <tr style="background:rgba(139,92,246,0.15);border-bottom:1px solid rgba(255,255,255,0.1);">
                       <th style="padding:8px 10px;text-align:left;color:#a78bfa;font-weight:600;letter-spacing:0.05em;">TAHUN</th>
@@ -29446,7 +29476,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                         _ys = '<span style="color:#555;">—</span>'
 
                     _fed_tbl += f'<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">'
-                    _fed_tbl += f'<td style="padding:7px 10px;color:#e2e8f0;font-weight:700;">{_yr}</td>'
+                    _fed_tbl += f'<td style="padding:7px 10px;color:#e2e8f0;font-weight:700;white-space:nowrap;">{_yr}</td>'
                     _pr = None
                     for _m in _month_order_fed:
                         if _m in _yrd:
@@ -29460,9 +29490,9 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                             else:
                                 _cc = "#94a3b8"; _bg = "transparent"
                             _pr = _rv
-                            _fed_tbl += f'<td style="padding:7px 6px;text-align:center;color:{_cc};background:{_bg};font-weight:600;">{_rv:.2f}%</td>'
+                            _fed_tbl += f'<td style="padding:7px 6px;text-align:center;white-space:nowrap;color:{_cc};background:{_bg};font-weight:600;">{_rv:.2f}%</td>'
                         else:
-                            _fed_tbl += '<td style="padding:7px 6px;text-align:center;color:#374151;">—</td>'
+                            _fed_tbl += '<td style="padding:7px 6px;text-align:center;white-space:nowrap;color:#374151;">—</td>'
                     _fed_tbl += f'<td style="padding:7px 8px;text-align:center;">{_ys}</td></tr>'
                     if _yrl is not None:
                         _fpyl = _yrl
@@ -29796,8 +29826,8 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
 
                 # Build HTML table
                 _tbl_html = """
-                <div style="overflow-x:auto;margin-top:8px;">
-                <table style="width:100%;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;">
+                <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:8px;">
+                <table style="width:max-content;min-width:700px;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;">
                   <thead>
                     <tr style="background:rgba(139,92,246,0.15);border-bottom:1px solid rgba(255,255,255,0.1);">
                       <th style="padding:8px 10px;text-align:left;color:#a78bfa;font-weight:600;letter-spacing:0.05em;">TAHUN</th>
@@ -29823,7 +29853,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                         _yoy_str = '<span style="color:#555;">—</span>'
 
                     _tbl_html += f'<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">'
-                    _tbl_html += f'<td style="padding:7px 10px;color:#e2e8f0;font-weight:700;">{_yr}</td>'
+                    _tbl_html += f'<td style="padding:7px 10px;color:#e2e8f0;font-weight:700;white-space:nowrap;">{_yr}</td>'
 
                     _prev_rate = None
                     for _m in _month_order:
@@ -29843,9 +29873,9 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                 _cell_color = "#94a3b8"
                                 _bg = "transparent"
                             _prev_rate = _rate
-                            _tbl_html += f'<td style="padding:7px 6px;text-align:center;color:{_cell_color};background:{_bg};font-weight:600;">{_rate:.2f}%</td>'
+                            _tbl_html += f'<td style="padding:7px 6px;text-align:center;white-space:nowrap;color:{_cell_color};background:{_bg};font-weight:600;">{_rate:.2f}%</td>'
                         else:
-                            _tbl_html += '<td style="padding:7px 6px;text-align:center;color:#374151;">—</td>'
+                            _tbl_html += '<td style="padding:7px 6px;text-align:center;white-space:nowrap;color:#374151;">—</td>'
 
                     _tbl_html += f'<td style="padding:7px 8px;text-align:center;">{_yoy_str}</td></tr>'
                     if _yr_last is not None:
