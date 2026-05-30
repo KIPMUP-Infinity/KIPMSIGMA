@@ -1034,16 +1034,13 @@ _CARD_CSS = """
 }
 
 /* ── Responsive ── */
-@media (max-width: 480px) {
-  .bsjp-grid { grid-template-columns: 1fr 1fr; }
+@media (max-width: 768px) {
+  .bsjp-grid { grid-template-columns: 1fr; }
   .bc-ticker { font-size: 18px; }
   .bc-price  { font-size: 16px; }
   .bc-ring-wrap { width: 56px; height: 56px; }
   .bc-ring-wrap svg { width: 56px; height: 56px; }
   .bc-score-num { font-size: 16px; }
-}
-@media (max-width: 340px) {
-  .bsjp-grid { grid-template-columns: 1fr; }
 }
 </style>
 """
@@ -14699,7 +14696,7 @@ table{{margin-bottom:0!important;}}
             _inf_tbl_html = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:8px;"><table style="width:max-content;min-width:700px;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(99,102,241,0.15);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#a78bfa;font-weight:600;letter-spacing:0.05em;">TAHUN</th>'
             for _m in _inf_mo:
                 _inf_tbl_html += f'<th style="padding:8px 5px;text-align:center;color:#a78bfa;font-weight:600;">{_m}</th>'
-            _inf_tbl_html += '<th style="padding:8px 8px;text-align:center;color:#a78bfa;font-weight:600;">Des YoY</th></tr></thead><tbody>'
+            _inf_tbl_html += '<th style="padding:8px 8px;text-align:center;color:#a78bfa;font-weight:600;white-space:nowrap;min-width:56px;">Des YoY</th></tr></thead><tbody>'
             for _yr_i in sorted(_inf_by_year.keys()):
                 _yd_i = _inf_by_year[_yr_i]
                 _dv = _yd_i.get("Des",{}).get("yoy",None)
@@ -15001,7 +14998,7 @@ Jawab dalam Bahasa Indonesia, tajam dan analitis. Maksimal 450 kata."""
             _ih_tbl_html = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:8px;"><table style="width:max-content;min-width:700px;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(0,229,190,0.12);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#00E5BE;font-weight:600;letter-spacing:0.05em;">TAHUN</th>'
             for _m in _ih_mo:
                 _ih_tbl_html += f'<th style="padding:8px 5px;text-align:center;color:#00E5BE;font-weight:600;">{_m}</th>'
-            _ih_tbl_html += '<th style="padding:8px 8px;text-align:center;color:#00E5BE;font-weight:600;">Des Close</th></tr></thead><tbody>'
+            _ih_tbl_html += '<th style="padding:8px 8px;text-align:center;color:#00E5BE;font-weight:600;white-space:nowrap;min-width:56px;">Des Close</th></tr></thead><tbody>'
             for _yr_i in sorted(_ih_by_year.keys()):
                 _yd_i = _ih_by_year[_yr_i]
                 _dc = _yd_i.get("Des",{}).get("close",None)
@@ -15269,7 +15266,7 @@ Jawab dalam Bahasa Indonesia, tajam dan profesional. Maksimal 500 kata."""
             _kr_tbl_html = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:8px;"><table style="width:max-content;min-width:700px;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(240,165,0,0.12);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#F0A500;font-weight:600;letter-spacing:0.05em;">TAHUN</th>'
             for _m in _kr_mo:
                 _kr_tbl_html += f'<th style="padding:8px 5px;text-align:center;color:#F0A500;font-weight:600;">{_m}</th>'
-            _kr_tbl_html += '<th style="padding:8px 8px;text-align:center;color:#F0A500;font-weight:600;">Des Rate</th></tr></thead><tbody>'
+            _kr_tbl_html += '<th style="padding:8px 8px;text-align:center;color:#F0A500;font-weight:600;white-space:nowrap;min-width:56px;">Des Rate</th></tr></thead><tbody>'
             for _yr_i in sorted(_kr_by_year.keys()):
                 _yd_i = _kr_by_year[_yr_i]
                 _dr = _yd_i.get("Des",{}).get("rate",None)
@@ -18201,17 +18198,32 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 df_msci_sm   = pd.DataFrame(msci_smallcap)
                 df_msci_excl = pd.DataFrame(msci_excluded)
 
+                # Column config for rebalancing tables: Status column must be wide enough for "NEW ENTRY"/"DOWNGRADED"
+                _rebal_col_cfg = {
+                    "Ticker": st.column_config.TextColumn("Ticker", width="small"),
+                    "Nama": st.column_config.TextColumn("Nama", width="medium"),
+                    "Sektor": st.column_config.TextColumn("Sektor", width="medium"),
+                    "Tier": st.column_config.TextColumn("Tier", width="small"),
+                    "Status": st.column_config.TextColumn("Status", width="medium"),
+                }
+                _rebal_col_cfg_noticker = {
+                    "Nama": st.column_config.TextColumn("Nama", width="medium"),
+                    "Sektor": st.column_config.TextColumn("Sektor", width="medium"),
+                    "Tier": st.column_config.TextColumn("Tier", width="small"),
+                    "Status": st.column_config.TextColumn("Status", width="medium"),
+                }
+
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:14px 0 8px;font-weight:700;'>01 · MSCI STANDARD INDEX — {len(df_msci_std)} SAHAM (THE GIANTS)</p>", unsafe_allow_html=True)
                 _h_df_msci_std = 38 + len(df_msci_std) * 36
-                st.dataframe(safe_style(df_msci_std.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_msci_std)
+                st.dataframe(safe_style(df_msci_std.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_msci_std, column_config=_rebal_col_cfg_noticker)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#a78bfa;margin:18px 0 8px;font-weight:700;'>02 · MSCI SMALL CAP INDEX — {len(df_msci_sm)} SAHAM</p>", unsafe_allow_html=True)
                 _h_df_msci_sm = 38 + len(df_msci_sm) * 36
-                st.dataframe(safe_style(df_msci_sm.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_msci_sm)
+                st.dataframe(safe_style(df_msci_sm.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_msci_sm, column_config=_rebal_col_cfg_noticker)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:18px 0 8px;font-weight:700;'>03 · KELUAR DARI MSCI — {len(df_msci_excl)} SAHAM</p>", unsafe_allow_html=True)
                 _h_df_msci_excl = 38 + len(df_msci_excl) * 36
-                st.dataframe(safe_style(df_msci_excl.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_msci_excl)
+                st.dataframe(safe_style(df_msci_excl.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_msci_excl, column_config=_rebal_col_cfg_noticker)
 
                 st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
                 <div class='trm-card-title'>📌 STRATEGI MSCI REBALANCING</div>
@@ -18263,15 +18275,15 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#00c853;margin:14px 0 8px;font-weight:700;'>01 · LARGE CAP — {len(df_ftse_l)} SAHAM</p>", unsafe_allow_html=True)
                 _h_df_ftse_l = 38 + len(df_ftse_l) * 36
-                st.dataframe(safe_style(df_ftse_l.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_ftse_l)
+                st.dataframe(safe_style(df_ftse_l.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_ftse_l, column_config=_rebal_col_cfg)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#00c853;margin:18px 0 8px;font-weight:700;'>02 · MID CAP — {len(df_ftse_m)} SAHAM</p>", unsafe_allow_html=True)
                 _h_df_ftse_m = 38 + len(df_ftse_m) * 36
-                st.dataframe(safe_style(df_ftse_m.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_ftse_m)
+                st.dataframe(safe_style(df_ftse_m.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_ftse_m, column_config=_rebal_col_cfg)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#a78bfa;margin:18px 0 8px;font-weight:700;'>03 · SMALL CAP — {len(df_ftse_s)} SAHAM</p>", unsafe_allow_html=True)
                 _h_df_ftse_s = 38 + len(df_ftse_s) * 36
-                st.dataframe(safe_style(df_ftse_s.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_ftse_s)
+                st.dataframe(safe_style(df_ftse_s.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_ftse_s, column_config=_rebal_col_cfg)
 
                 st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
                 <div class='trm-card-title'>📌 MSCI vs FTSE — PERBEDAAN KUNCI</div>
@@ -18313,11 +18325,11 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 df_lq45_out    = pd.DataFrame(lq45_out_data)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f5a623;margin:14px 0 8px;font-weight:700;'>01 · 45 KONSTITUEN AKTIF (Periode Feb–Jul 2026)</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_lq45_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=38+len(df_lq45_active)*36)
+                st.dataframe(safe_style(df_lq45_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=38+len(df_lq45_active)*36, column_config=_rebal_col_cfg)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:18px 0 8px;font-weight:700;'>02 · KELUAR DARI LQ45</p>", unsafe_allow_html=True)
                 _h_df_lq45_out = 38 + len(df_lq45_out) * 36
-                st.dataframe(safe_style(df_lq45_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_lq45_out)
+                st.dataframe(safe_style(df_lq45_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_lq45_out, column_config=_rebal_col_cfg)
 
                 st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
                 <div class='trm-card-title'>ℹ️ TENTANG LQ45</div>
@@ -18358,11 +18370,11 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 df_idx30_out    = pd.DataFrame(idx30_out_data)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:14px 0 8px;font-weight:700;'>01 · 30 KONSTITUEN AKTIF (Periode Feb–Jul 2026)</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_idx30_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=38+len(df_idx30_active)*36)
+                st.dataframe(safe_style(df_idx30_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=38+len(df_idx30_active)*36, column_config=_rebal_col_cfg)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:18px 0 8px;font-weight:700;'>02 · KELUAR DARI IDX30</p>", unsafe_allow_html=True)
                 _h_df_idx30_out = 38 + len(df_idx30_out) * 36
-                st.dataframe(safe_style(df_idx30_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_idx30_out)
+                st.dataframe(safe_style(df_idx30_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_idx30_out, column_config=_rebal_col_cfg)
 
                 st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
                 <div class='trm-card-title'>ℹ️ TENTANG IDX30</div>
@@ -18404,11 +18416,11 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 df_idx80_out    = pd.DataFrame(idx80_out_data)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:14px 0 8px;font-weight:700;'>01 · {len(df_idx80_active)} KONSTITUEN AKTIF (Efektif 4 Mei 2026)</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_idx80_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=38+len(df_idx80_active)*36)
+                st.dataframe(safe_style(df_idx80_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=38+len(df_idx80_active)*36, column_config=_rebal_col_cfg)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:18px 0 8px;font-weight:700;'>02 · KELUAR DARI IDX80 (per 4 Mei 2026)</p>", unsafe_allow_html=True)
                 _h_df_idx80_out = 38 + len(df_idx80_out) * 36
-                st.dataframe(safe_style(df_idx80_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_idx80_out)
+                st.dataframe(safe_style(df_idx80_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_idx80_out, column_config=_rebal_col_cfg)
 
                 st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
                 <div class='trm-card-title'>ℹ️ TENTANG IDX80</div>
@@ -18455,10 +18467,10 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 _df_k100_show = df_k100 if _k100_sel == "Semua Sektor" else df_k100[df_k100["Sektor"] == _k100_sel]
 
                 st.markdown(f"<p style='font-size:0.8rem;color:#ef4444;margin-bottom:8px;'>{len(_df_k100_show)} saham ditampilkan</p>", unsafe_allow_html=True)
-                st.dataframe(_df_k100_show, use_container_width=True, hide_index=True, on_select="ignore", height=38+len(_df_k100_show)*36)
+                st.dataframe(safe_style(_df_k100_show.style, highlight_status, ["Status"]) if "Status" in _df_k100_show.columns else _df_k100_show, use_container_width=True, hide_index=True, on_select="ignore", height=38+len(_df_k100_show)*36, column_config=_rebal_col_cfg)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:18px 0 8px;font-weight:700;'>02 · KELUAR DARI KOMPAS100</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_k100_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=38+len(df_k100_out)*36)
+                st.dataframe(safe_style(df_k100_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=38+len(df_k100_out)*36, column_config=_rebal_col_cfg)
 
                 st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
                 <div class='trm-card-title'>ℹ️ TENTANG KOMPAS100</div>
@@ -29480,7 +29492,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                 """
                 for _m in _month_order_fed:
                     _fed_tbl += f'<th style="padding:8px 6px;text-align:center;color:#a78bfa;font-weight:600;">{_m}</th>'
-                _fed_tbl += '<th style="padding:8px 8px;text-align:center;color:#a78bfa;font-weight:600;">Δ YoY</th></tr></thead><tbody>'
+                _fed_tbl += '<th style="padding:8px 8px;text-align:center;color:#a78bfa;font-weight:600;white-space:nowrap;min-width:56px;">Δ YoY</th></tr></thead><tbody>'
 
                 _fpyl = None
                 for _yr in sorted(_fed_by_year.keys()):
@@ -29855,7 +29867,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                 """
                 for _m in _month_order:
                     _tbl_html += f'<th style="padding:8px 6px;text-align:center;color:#a78bfa;font-weight:600;">{_m}</th>'
-                _tbl_html += '<th style="padding:8px 8px;text-align:center;color:#a78bfa;font-weight:600;">Δ YoY</th></tr></thead><tbody>'
+                _tbl_html += '<th style="padding:8px 8px;text-align:center;color:#a78bfa;font-weight:600;white-space:nowrap;min-width:56px;">Δ YoY</th></tr></thead><tbody>'
 
                 _prev_year_last = None
                 for _yr in sorted(_bi_by_year.keys()):
