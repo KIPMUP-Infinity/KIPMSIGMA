@@ -20,6 +20,38 @@ import bcrypt
 import re
 import time
 import random
+import math  # ← FIX #5: diperlukan oleh render_bsjp_cards (math.floor, math.ceil)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX #4 — SIGMA ERROR LOGGER: Logger terpusat untuk silent exception tracking
+# Mengganti pola `except Exception: pass` yang tersebar di seluruh file.
+# Gunakan _sigma_log_error() di catch block, bukan `pass` telanjang.
+# Di production: error terakumulasi di session_state["_sigma_error_log"]
+# Di debug mode (SIGMA_DEBUG=1 di secrets): error juga dicetak ke console.
+# ─────────────────────────────────────────────────────────────────────────────
+_SIGMA_DEBUG = False  # akan di-override dari st.secrets saat runtime
+
+def _sigma_log_error(context: str, err: Exception, extra: str = "") -> None:
+    """
+    Catat error ke session log tanpa crash app.
+    context : nama fungsi/section (e.g. "fetch_price_layer3")
+    err     : exception object
+    extra   : info tambahan (e.g. ticker, url)
+    """
+    try:
+        msg = f"[{context}] {type(err).__name__}: {str(err)[:120]}"
+        if extra:
+            msg += f" | {extra}"
+        # Simpan ke session state (max 100 entry, FIFO)
+        log = st.session_state.setdefault("_sigma_error_log", [])
+        if len(log) >= 100:
+            log.pop(0)
+        log.append({"ts": time.time(), "msg": msg})
+        # Print ke console jika debug mode aktif
+        if _SIGMA_DEBUG:
+            print(f"SIGMA ERR: {msg}")
+    except Exception:
+        pass  # logger tidak boleh crash app — ini satu-satunya `pass` yang diizinkan
 
 # ─────────────────────────────────────────────
 # CACHE CONFIGURATION — satu tempat untuk semua TTL
@@ -1059,14 +1091,35 @@ def render_bsjp_cards(
     height_est = rows_est * 780 + 80
     components.html(full_html, height=height_est, scrolling=False)
 
-# ── SIGMA SHEETS — Google Sheets Persistent Storage (SELALU AKTIF) ──────────
-from sigma_sheets import (
-    sheets_available, save_broker_scan, load_broker_history,
-    save_reko, load_reko_history, save_journal_entry, load_journal,
-    update_journal_status, render_sheets_status, render_backup_button,
-    render_history_table, log_backup,
-)
-_SHEETS_OK = True   # selalu True — modul selalu tersedia
+# ── SIGMA SHEETS — Google Sheets Persistent Storage ──────────────────────────
+# FIX #6: Wrapped dalam try/except — jika modul gagal (credentials hilang,
+# quota habis, network error), app tidak crash dan fallback ke stub functions.
+try:
+    from sigma_sheets import (
+        sheets_available, save_broker_scan, load_broker_history,
+        save_reko, load_reko_history, save_journal_entry, load_journal,
+        update_journal_status, render_sheets_status, render_backup_button,
+        render_history_table, log_backup,
+    )
+    _SHEETS_OK = True
+except Exception as _sheets_import_err:
+    _SHEETS_OK = False
+    import warnings
+    warnings.warn(f"[SIGMA] sigma_sheets tidak tersedia: {_sheets_import_err}")
+
+    # ── Stub functions — app tetap jalan meski Sheets offline ──
+    def sheets_available():           return False
+    def save_broker_scan(*a, **k):    return None
+    def load_broker_history(*a, **k): return {}
+    def save_reko(*a, **k):           return None
+    def load_reko_history(*a, **k):   return []
+    def save_journal_entry(*a, **k):  return None
+    def load_journal(*a, **k):        return []
+    def update_journal_status(*a, **k): return None
+    def render_sheets_status(*a, **k):  st.warning("⚠️ Google Sheets offline — data tidak tersimpan permanen.")
+    def render_backup_button(*a, **k):  pass
+    def render_history_table(*a, **k):  pass
+    def log_backup(*a, **k):            return None
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ── SIGMA HTML SANITIZER ──
@@ -1166,19 +1219,36 @@ def _get_available_gemini_keys(all_keys: list) -> list:
     available = [k for k in all_keys if _gemini_key_available(k)]
     return available if available else all_keys
 
-# ── SIGMA MODULES: Storage permanen (SELALU AKTIF) ──────────────────────────
-from sigma_modules import (
-    load_all as _sm_load_all,
-    save_auto_plan as _sm_save_auto_plan,
-    append_daily_plan as _sm_append_daily_plan,
-    append_daily_summary as _sm_append_daily_summary,
-    append_weekly_plan as _sm_append_weekly_plan,
-    append_weekly_summary as _sm_append_weekly_summary,
-    save_broker_screening_result as _sm_save_broker_result,
-    render_daily_plan as _sm_render_daily_plan,
-    render_weekly_plan as _sm_render_weekly_plan,
-)
-_SIGMA_MODULES_AVAILABLE = True   # selalu True — modul selalu tersedia
+# ── SIGMA MODULES: Storage permanen ─────────────────────────────────────────
+# FIX #6: Wrapped dalam try/except — fallback ke stub jika modul tidak tersedia.
+try:
+    from sigma_modules import (
+        load_all as _sm_load_all,
+        save_auto_plan as _sm_save_auto_plan,
+        append_daily_plan as _sm_append_daily_plan,
+        append_daily_summary as _sm_append_daily_summary,
+        append_weekly_plan as _sm_append_weekly_plan,
+        append_weekly_summary as _sm_append_weekly_summary,
+        save_broker_screening_result as _sm_save_broker_result,
+        render_daily_plan as _sm_render_daily_plan,
+        render_weekly_plan as _sm_render_weekly_plan,
+    )
+    _SIGMA_MODULES_AVAILABLE = True
+except Exception as _modules_import_err:
+    _SIGMA_MODULES_AVAILABLE = False
+    import warnings
+    warnings.warn(f"[SIGMA] sigma_modules tidak tersedia: {_modules_import_err}")
+
+    # ── Stub functions ──
+    def _sm_load_all(*a, **k):               return {}
+    def _sm_save_auto_plan(*a, **k):         return None
+    def _sm_append_daily_plan(*a, **k):      return None
+    def _sm_append_daily_summary(*a, **k):   return None
+    def _sm_append_weekly_plan(*a, **k):     return None
+    def _sm_append_weekly_summary(*a, **k):  return None
+    def _sm_save_broker_result(*a, **k):     return None
+    def _sm_render_daily_plan(*a, **k):      st.info("ℹ️ sigma_modules offline — history tidak tersedia.")
+    def _sm_render_weekly_plan(*a, **k):     st.info("ℹ️ sigma_modules offline — history tidak tersedia.")
 
 # ── SIGMA SCORE ENGINE (embedded) ──
 _SIGMA_SCORE_AVAILABLE = True
@@ -1205,7 +1275,7 @@ _SIGMA_SCORE_AVAILABLE = True
 
 from dataclasses import dataclass, field
 from typing import Optional
-import math
+# math sudah di-import di PART 1 (top-level) — tidak perlu import ulang di sini
 
 
 # ─────────────────────────────────────────────
@@ -2041,9 +2111,9 @@ def score_bandar_from_broker_summary(broker_text: str) -> tuple:
     score = 50
 
     # ── Net Foreign Flow ──
-    import re as _re
+    # FIX #3: hapus `import re as _re` — re sudah di-import di top-level (line 20)
     # Cari net foreign: "+Rp 50M", "-50 miliar", "net buy 100", dsb
-    nf_match = _re.search(
+    nf_match = re.search(
         r'(?:net\s*foreign|asing\s*net|foreign\s*net)[^\d\-+]*([+\-]?[\d,.]+)\s*(m|jt|miliar|b|rb|ribu)?',
         text
     )
@@ -3354,8 +3424,10 @@ def _fetch_all_data(tickers):
                                 "avg_vol_src": "yfinance(3M)",
                                 "source": "yfinance"
                             }
-                except Exception: pass
-        except Exception: pass
+                except Exception as _yf_tk_err:  # FIX #4
+                    _sigma_log_error("build_context_yf_ticker", _yf_tk_err, extra=tk)
+        except Exception as _yf_err:  # FIX #4
+            _sigma_log_error("build_context_yf_import", _yf_err)
 
         # Layer 6: stooq - backup terakhir
         try:
@@ -26941,7 +27013,9 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
 
             def _sh_auto_extend(db, base_dt, now):
                 """Otomatis extrapolasi bulan baru setelah tgl 7 berdasarkan tren 3 bulan terakhir."""
-                import calendar
+                import calendar, copy
+                # FIX #2: deep copy agar tidak mutate dict asli (mencegah data dobel saat rerun)
+                db = copy.deepcopy(db)
                 _cur = _dt.datetime(base_dt.year + (base_dt.month // 12), (base_dt.month % 12) + 1, 1)
                 while _cur <= now:
                     if now.day >= 7 or now > _dt.datetime(_cur.year, _cur.month, 1):
@@ -34569,34 +34643,77 @@ js_code = """
 """
 components.html(js_code, height=0)
 
-# ── PASSWORD LOCK: Market Forecast (929292) & Alpha Plan (171717) ─────────────
-components.html("""
+# ── PASSWORD LOCK: Market Forecast & Alpha Plan ────────────────────────────────
+# FIX #1: Password TIDAK lagi dikirim ke browser dalam JS plaintext.
+# Validasi dilakukan di Python (server-side). JS hanya mengirim sinyal via
+# postMessage / hidden input → Streamlit cek hash di session_state.
+# FIX #7: Unlock state disimpan di st.session_state (persist antar rerun),
+# bukan di JS variable yang reset setiap Streamlit rerun.
+
+# ── Definisi tab yang dilindungi & hash password-nya (SHA-256) ──
+# Untuk ganti password: ganti nilai hash di sini.
+# Generate hash baru: python -c "import hashlib; print(hashlib.sha256('PASSWORDBARU'.encode()).hexdigest())"
+_TAB_PASSWORDS_HASH = {
+    "market forecast": hashlib.sha256("929292".encode()).hexdigest(),
+    "alpha plan":      hashlib.sha256("171717".encode()).hexdigest(),
+    "broker summary":  hashlib.sha256("929292".encode()).hexdigest(),
+}
+
+# ── Cek unlock request dari query param (dikirim JS via window.location) ──
+_tab_unlock_key = st.query_params.get("_sigma_unlock_tab", "")
+_tab_unlock_pwd = st.query_params.get("_sigma_unlock_pwd", "")
+if _tab_unlock_key and _tab_unlock_pwd:
+    _expected_hash = _TAB_PASSWORDS_HASH.get(_tab_unlock_key.lower(), "")
+    _submitted_hash = hashlib.sha256(_tab_unlock_pwd.encode()).hexdigest()
+    if _expected_hash and _submitted_hash == _expected_hash:
+        _unlocked = st.session_state.setdefault("_tab_unlocked", set())
+        _unlocked.add(_tab_unlock_key.lower())
+    # Hapus param dari URL setelah diproses (jangan biarkan password ada di URL history)
+    try:
+        st.query_params.pop("_sigma_unlock_tab", None)
+        st.query_params.pop("_sigma_unlock_pwd", None)
+    except Exception:
+        pass
+
+# ── Kirim daftar tab yang SUDAH unlock ke JS (bukan passwordnya) ──
+_unlocked_tabs_js = list(st.session_state.get("_tab_unlocked", set()))
+_unlocked_tabs_json = json.dumps(_unlocked_tabs_js)
+
+components.html(f"""
 <script>
-(function() {
+(function() {{
     if (window.__sigmaTabLockRunning) return;
     window.__sigmaTabLockRunning = true;
     var pd = window.parent.document;
-    if (!pd.getElementById('sigma-lock-css')) {
+
+    // FIX #1: Daftar unlocked tab datang dari Python (server) — bukan hardcoded password
+    // FIX #7: State ini di-inject ulang setiap rerun dari session_state Python
+    var UNLOCKED = {_unlocked_tabs_json};  // e.g. ["market forecast", "alpha plan"]
+
+    // Tab yang memerlukan password (nama tab dalam lowercase)
+    var LOCKED_TABS = ["market forecast", "alpha plan", "broker summary"];
+
+    if (!pd.getElementById('sigma-lock-css')) {{
         var css = pd.createElement('style');
         css.id = 'sigma-lock-css';
         css.textContent = [
-            '#sigma-lock-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999999;align-items:center;justify-content:center;}',
-            '#sigma-lock-overlay.active{display:flex;}',
-            '#sigma-lock-box{background:#1a1a2e;border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:32px 28px 28px;width:320px;max-width:90vw;box-shadow:0 8px 40px rgba(0,0,0,0.6);font-family:IBM Plex Mono,Courier New,monospace;text-align:center;transition:transform 0.08s ease;}',
-            '#sigma-lock-icon{font-size:2rem;margin-bottom:10px;}',
-            '#sigma-lock-title{color:#fff;font-size:0.95rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;}',
-            '#sigma-lock-subtitle{color:rgba(255,255,255,0.45);font-size:0.7rem;margin-bottom:20px;letter-spacing:0.05em;}',
-            '#sigma-lock-input{width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:10px 14px;color:#fff;font-family:IBM Plex Mono,monospace;font-size:1.1rem;letter-spacing:0.2em;text-align:center;outline:none;box-sizing:border-box;margin-bottom:14px;}',
-            '#sigma-lock-input:focus{border-color:rgba(0,229,190,0.5);}',
-            '#sigma-lock-btn{width:100%;background:#00E5BE;color:#0a0a1a;border:none;border-radius:8px;padding:10px;font-family:IBM Plex Mono,monospace;font-size:0.85rem;font-weight:700;letter-spacing:0.1em;cursor:pointer;margin-bottom:10px;}',
-            '#sigma-lock-btn:hover{background:#00c9a7;}',
-            '#sigma-lock-cancel{color:rgba(255,255,255,0.35);font-size:0.7rem;cursor:pointer;letter-spacing:0.05em;text-decoration:underline;}',
-            '#sigma-lock-cancel:hover{color:rgba(255,255,255,0.6);}',
-            '#sigma-lock-error{color:#E24B4A;font-size:0.72rem;margin-bottom:10px;min-height:16px;letter-spacing:0.04em;}'
+            '#sigma-lock-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999999;align-items:center;justify-content:center;}}',
+            '#sigma-lock-overlay.active{{display:flex;}}',
+            '#sigma-lock-box{{background:#1a1a2e;border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:32px 28px 28px;width:320px;max-width:90vw;box-shadow:0 8px 40px rgba(0,0,0,0.6);font-family:IBM Plex Mono,Courier New,monospace;text-align:center;transition:transform 0.08s ease;}}',
+            '#sigma-lock-icon{{font-size:2rem;margin-bottom:10px;}}',
+            '#sigma-lock-title{{color:#fff;font-size:0.95rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;}}',
+            '#sigma-lock-subtitle{{color:rgba(255,255,255,0.45);font-size:0.7rem;margin-bottom:20px;letter-spacing:0.05em;}}',
+            '#sigma-lock-input{{width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:10px 14px;color:#fff;font-family:IBM Plex Mono,monospace;font-size:1.1rem;letter-spacing:0.2em;text-align:center;outline:none;box-sizing:border-box;margin-bottom:14px;}}',
+            '#sigma-lock-input:focus{{border-color:rgba(0,229,190,0.5);}}',
+            '#sigma-lock-btn{{width:100%;background:#00E5BE;color:#0a0a1a;border:none;border-radius:8px;padding:10px;font-family:IBM Plex Mono,monospace;font-size:0.85rem;font-weight:700;letter-spacing:0.1em;cursor:pointer;margin-bottom:10px;}}',
+            '#sigma-lock-btn:hover{{background:#00c9a7;}}',
+            '#sigma-lock-cancel{{color:rgba(255,255,255,0.35);font-size:0.7rem;cursor:pointer;letter-spacing:0.05em;text-decoration:underline;}}',
+            '#sigma-lock-cancel:hover{{color:rgba(255,255,255,0.6);}}',
+            '#sigma-lock-error{{color:#E24B4A;font-size:0.72rem;margin-bottom:10px;min-height:16px;letter-spacing:0.04em;}}'
         ].join('');
         pd.head.appendChild(css);
-    }
-    if (!pd.getElementById('sigma-lock-overlay')) {
+    }}
+    if (!pd.getElementById('sigma-lock-overlay')) {{
         var ov = pd.createElement('div');
         ov.id = 'sigma-lock-overlay';
         ov.innerHTML =
@@ -34612,62 +34729,78 @@ components.html("""
         pd.body.appendChild(ov);
         pd.getElementById('sigma-lock-btn').addEventListener('click', submitPassword);
         pd.getElementById('sigma-lock-cancel').addEventListener('click', hideModal);
-        pd.getElementById('sigma-lock-input').addEventListener('keydown', function(e) {
+        pd.getElementById('sigma-lock-input').addEventListener('keydown', function(e) {{
             if (e.key === 'Enter') submitPassword();
             if (e.key === 'Escape') hideModal();
-        });
-        pd.getElementById('sigma-lock-overlay').addEventListener('click', function(e) {
+        }});
+        pd.getElementById('sigma-lock-overlay').addEventListener('click', function(e) {{
             if (e.target === this) hideModal();
-        });
-    }
-    var _pt = null, _pc = null, _ul = {};
-    var TL = { 'market forecast': '929292', 'alpha plan': '171717', 'broker summary': '929292' };
-    function gL(t) {
+        }});
+    }}
+
+    var _pt = null, _pk = null;
+
+    function isUnlocked(tabKey) {{
+        return UNLOCKED.indexOf(tabKey) !== -1;
+    }}
+
+    function gL(t) {{
         var tx = (t.textContent || '').toLowerCase().trim();
-        for (var k in TL) { if (tx.indexOf(k) !== -1) return { key: k, code: TL[k] }; }
+        for (var i = 0; i < LOCKED_TABS.length; i++) {{
+            if (tx.indexOf(LOCKED_TABS[i]) !== -1) return LOCKED_TABS[i];
+        }}
         return null;
-    }
-    function showM(t, k, c) {
-        _pt = t; _pc = c;
+    }}
+
+    function showM(t, k) {{
+        _pt = t; _pk = k;
         pd.getElementById('sigma-lock-input').value = '';
         pd.getElementById('sigma-lock-error').textContent = '';
         pd.getElementById('sigma-lock-overlay').classList.add('active');
-        setTimeout(function() { pd.getElementById('sigma-lock-input').focus(); }, 80);
-    }
-    function hideModal() {
+        setTimeout(function() {{ pd.getElementById('sigma-lock-input').focus(); }}, 80);
+    }}
+
+    function hideModal() {{
         pd.getElementById('sigma-lock-overlay').classList.remove('active');
-        _pt = null; _pc = null;
-    }
-    function submitPassword() {
+        _pt = null; _pk = null;
+    }}
+
+    function submitPassword() {{
         var inp = pd.getElementById('sigma-lock-input');
         var err = pd.getElementById('sigma-lock-error');
         var val = inp.value.trim();
-        if (val === _pc) {
-            for (var k in TL) { if (TL[k] === _pc) { _ul[k] = true; } }
-            var tab = _pt; hideModal(); if (tab) { tab.click(); }
-        } else {
-            err.textContent = '&#x2717; Kode salah, coba lagi';
-            inp.value = ''; inp.focus();
-            var b = pd.getElementById('sigma-lock-box');
-            b.style.transform = 'translateX(-6px)';
-            setTimeout(function() { b.style.transform = 'translateX(6px)'; }, 80);
-            setTimeout(function() { b.style.transform = 'translateX(0)'; }, 160);
-        }
-    }
-    function iT() {
+        if (!val || !_pk) return;
+
+        // FIX #1: Kirim password ke Python server via query param untuk divalidasi
+        // Password TIDAK dibandingkan di JS — hanya dikirim untuk diproses server
+        var currentUrl = window.parent.location.href.split('?')[0];
+        var unlockUrl = currentUrl + '?_sigma_unlock_tab=' + encodeURIComponent(_pk) +
+                        '&_sigma_unlock_pwd=' + encodeURIComponent(val);
+
+        // Set loading state
+        inp.value = ''; inp.disabled = true;
+        pd.getElementById('sigma-lock-btn').textContent = 'MEMVERIFIKASI...';
+        err.textContent = '';
+
+        // Redirect ke URL dengan param — Streamlit akan memproses di Python
+        // dan rerender dengan tab yang sudah unlock
+        window.parent.location.href = unlockUrl;
+    }}
+
+    function iT() {{
         var ts = pd.querySelectorAll('[data-baseweb="tab"],button[role="tab"]');
-        ts.forEach(function(tab) {
+        ts.forEach(function(tab) {{
             if (tab.__sLB) return;
-            var l = gL(tab); if (!l) return;
+            var k = gL(tab); if (!k) return;
             tab.__sLB = true;
-            tab.addEventListener('click', function(e) {
-                if (_ul[l.key]) return;
+            tab.addEventListener('click', function(e) {{
+                if (isUnlocked(k)) return;  // FIX #7: cek dari UNLOCKED list (dari Python)
                 e.preventDefault(); e.stopPropagation();
-                showM(tab, l.key, l.code);
-            }, true);
-        });
-    }
+                showM(tab, k);
+            }}, true);
+        }});
+    }}
     setInterval(iT, 400); iT();
-})();
+}})();
 </script>
 """, height=0)
