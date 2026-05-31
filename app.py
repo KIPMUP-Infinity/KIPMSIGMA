@@ -3325,7 +3325,11 @@ def render_insight_card_html(
 
     entry_val = (f"{_rp(_el)} – {_rp(_eh)}" if _el and _eh else "—")
 
+    # Ambil Free Float jika ticker tersedia
+    _ff_val = _ff_str(ticker) if ticker else "—"
+
     rows = (
+        _row("#60a5fa", "FREE FLOAT", _ff_val) +
         _row("#ef4444", "ENTRY ZONE", entry_val) +
         _row("#f59e0b", "STOPLOSS",   _rp(_sl)  if _sl  else "—") +
         _row("#10b981", "TARGET 1",   _rp(_tp1) if _tp1 else "—") +
@@ -5218,6 +5222,61 @@ EMITEN_MAP = {
 # Ticker yang diketahui sebagai bank
 BANK_TICKERS = {"BBCA","BBRI","BMRI","BBNI","BBTN","BRIS","BNGA","BDMN",
                 "BNLI","PNBN","BJTM","BJBR","BMAS","MEGA","NISP","BTPN"}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FREE FLOAT HELPER — dipakai oleh semua modul (Index, Sector, Shareholder,
+# Alpha Insight, Dividend, Alpha Plan, Fundamental Screener)
+# ══════════════════════════════════════════════════════════════════════════════
+@st.cache_data(ttl=3600, show_spinner=False)
+def get_free_float_pct(ticker: str) -> float | None:
+    """
+    Ambil Free Float (%) dari yfinance.
+    Return float (misal 42.5 berarti 42.5%) atau None jika data tidak tersedia.
+    Rumus: floatShares / sharesOutstanding * 100
+    """
+    try:
+        import yfinance as _yf_ff
+        _suffix = ".JK" if not ticker.endswith(".JK") else ""
+        _info = _yf_ff.Ticker(f"{ticker}{_suffix}").info
+        _float = _info.get("floatShares") or 0
+        _total = _info.get("sharesOutstanding") or 0
+        if _float and _total and _total > 0:
+            _pct = round(_float / _total * 100, 2)
+            return min(_pct, 100.0)
+        return None
+    except Exception:
+        return None
+
+
+def _ff_str(ticker: str) -> str:
+    """Return Free Float (%) sebagai string siap tampil, e.g. '42.5%' atau '—'."""
+    v = get_free_float_pct(ticker)
+    return f"{v:.1f}%" if v is not None else "—"
+
+
+def _add_no_and_ff_col(df, ticker_col: str = "Ticker") -> "pd.DataFrame":
+    """
+    Tambahkan kolom 'No' (nomor urut, mulai 1) dan 'Free Float (%)'
+    ke DataFrame yang sudah ada. Kolom No ditempatkan paling kiri,
+    Free Float ditempatkan setelah kolom ticker.
+    Tidak mengubah kolom atau urutan lainnya.
+    """
+    import pandas as _pd_ff
+    df = df.reset_index(drop=True).copy()
+    df.insert(0, "No", range(1, len(df) + 1))
+    # Ambil Free Float per ticker (batch, paralel ringan)
+    if ticker_col in df.columns:
+        _ff_vals = [_ff_str(tk) for tk in df[ticker_col]]
+    else:
+        _ff_vals = ["—"] * len(df)
+    # Sisipkan setelah kolom ticker
+    try:
+        _tk_pos = df.columns.tolist().index(ticker_col)
+        df.insert(_tk_pos + 1, "Free Float (%)", _ff_vals)
+    except ValueError:
+        df["Free Float (%)"] = _ff_vals
+    return df
+
 
 def is_bank_sector(ticker, info=None):
     """Deteksi apakah emiten adalah bank."""
@@ -14649,12 +14708,16 @@ table{{margin-bottom:0!important;}}
                             "Status":       _ex_flag,
                         })
                     _dv_df = _pd_dv.DataFrame(_dv_rows)
+                    # Tambah No + Free Float
+                    _dv_df = _add_no_and_ff_col(_dv_df, "Ticker")
                     st.dataframe(
                         _dv_df,
                         use_container_width=True,
                         hide_index=True,
                         height=80 + len(_dv_df) * 36,
                         column_config={
+                            "No":            st.column_config.NumberColumn("No", width="small", format="%d"),
+                            "Free Float (%)":st.column_config.TextColumn("Free Float (%)", width="small"),
                             "Yield %": st.column_config.NumberColumn("Yield %", format="%.2f%%"),
                             "DPS (Rp)": st.column_config.NumberColumn("DPS (Rp)", format="Rp %d"),
                             "Status": st.column_config.TextColumn("Status Ex-Date"),
@@ -18183,11 +18246,13 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 # Build HTML table - max 30 rows
                 tbl_rows = ""
                 _saham_display = sorted(sd["saham"], key=lambda x: x["rs"], reverse=True)[:30]
-                for stk in _saham_display:
+                for _no_stk, stk in enumerate(_saham_display, 1):
                     fc2 = fase_colors.get(stk.get("fase",""), "#888")
                     rs_pct = max(0, min(100, (stk["rs"]-85) / 30 * 100))
                     _mc_disp = stk.get("mktcap","-")
+                    _ff_disp = _ff_str(stk["ticker"])
                     tbl_rows += f"""<tr>
+                        <td style='font-size:13px;color:{text_sub};text-align:center;'>{_no_stk}</td>
                         <td style='font-weight:700;color:{fc2};font-family:'DM Sans',sans-serif;font-size:14px;white-space:nowrap;'>{stk["ticker"]}</td>
                         <td style='font-size:13px;color:{text_sub};'>{stk["nama"]}</td>
                         <td><span style='background:{fc2}22;color:{fc2};border:1px solid {fc2}44;
@@ -18201,17 +18266,20 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                             </div>
                         </td>
                         <td style='font-size:13px;color:{text_main};font-weight:600;'>{stk["mom"]}</td>
+                        <td style='font-size:13px;color:#60a5fa;font-weight:600;'>{_ff_disp}</td>
                     </tr>"""
 
                 st.markdown(f"""<div class='sigma-stk-wrap' style='overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:380px;border:1px solid {met_border};border-radius:8px;'>
-                <table class='sigma-stk-tbl' style='width:100%;border-collapse:collapse;font-family:DM Sans,sans-serif;min-width:440px;'>
+                <table class='sigma-stk-tbl' style='width:100%;border-collapse:collapse;font-family:DM Sans,sans-serif;min-width:520px;'>
                 <thead><tr style='background:{met_bg};position:sticky;top:0;z-index:2;'>
+                    <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:center;border-bottom:1px solid {met_border};white-space:nowrap;min-width:36px;'>NO</th>
                     <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:#8b5cf6;text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:56px;'>TICKER</th>
                     <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:80px;'>NAMA</th>
                     <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:72px;'>FASE</th>
                     <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:#60a5fa;text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:72px;'>MKT CAP</th>
                     <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:64px;'>RS</th>
                     <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:60px;'>MOM</th>
+                    <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:#60a5fa;text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:72px;'>FREE FLOAT</th>
                 </tr></thead>
                 <tbody>{tbl_rows}</tbody>
                 </table></div>""", unsafe_allow_html=True)
@@ -18329,23 +18397,30 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 df_msci_std  = pd.DataFrame(msci_standard)
                 df_msci_sm   = pd.DataFrame(msci_smallcap)
                 df_msci_excl = pd.DataFrame(msci_excluded)
+                # Tambah No + Free Float ke semua tabel MSCI
+                df_msci_std  = _add_no_and_ff_col(df_msci_std,  "Ticker")
+                df_msci_sm   = _add_no_and_ff_col(df_msci_sm,   "Ticker")
+                df_msci_excl = _add_no_and_ff_col(df_msci_excl, "Ticker")
 
                 # Column config for rebalancing tables: Status column must be wide enough for "NEW ENTRY"/"DOWNGRADED"
                 # FIX: gunakan "large" untuk Status agar teks "NEW ENTRY" & "DOWNGRADED" tidak terpotong
                 _rebal_col_cfg = {
-                    "No":     st.column_config.NumberColumn("No", width="small", format="%d"),
-                    "Ticker": st.column_config.TextColumn("Ticker", width="small"),
-                    "Nama":   st.column_config.TextColumn("Nama", width="medium"),
-                    "Sektor": st.column_config.TextColumn("Sektor", width="medium"),
-                    "Tier":   st.column_config.TextColumn("Tier", width="small"),
-                    "Status": st.column_config.TextColumn("Status", width="large"),
+                    "No":            st.column_config.NumberColumn("No", width="small", format="%d"),
+                    "Ticker":        st.column_config.TextColumn("Ticker", width="small"),
+                    "Free Float (%)":st.column_config.TextColumn("Free Float (%)", width="small"),
+                    "Nama":          st.column_config.TextColumn("Nama", width="medium"),
+                    "Sektor":        st.column_config.TextColumn("Sektor", width="medium"),
+                    "Tier":          st.column_config.TextColumn("Tier", width="small"),
+                    "Status":        st.column_config.TextColumn("Status", width="large"),
                 }
                 _rebal_col_cfg_noticker = {
-                    "No":     st.column_config.NumberColumn("No", width="small", format="%d"),
-                    "Nama":   st.column_config.TextColumn("Nama", width="medium"),
-                    "Sektor": st.column_config.TextColumn("Sektor", width="medium"),
-                    "Tier":   st.column_config.TextColumn("Tier", width="small"),
-                    "Status": st.column_config.TextColumn("Status", width="large"),
+                    "No":            st.column_config.NumberColumn("No", width="small", format="%d"),
+                    "Ticker":        st.column_config.TextColumn("Ticker", width="small"),
+                    "Free Float (%)":st.column_config.TextColumn("Free Float (%)", width="small"),
+                    "Nama":          st.column_config.TextColumn("Nama", width="medium"),
+                    "Sektor":        st.column_config.TextColumn("Sektor", width="medium"),
+                    "Tier":          st.column_config.TextColumn("Tier", width="small"),
+                    "Status":        st.column_config.TextColumn("Status", width="large"),
                 }
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:14px 0 8px;font-weight:700;'>01 · MSCI STANDARD INDEX — {len(df_msci_std)} SAHAM (THE GIANTS)</p>", unsafe_allow_html=True)
@@ -18407,6 +18482,10 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 df_ftse_l  = pd.DataFrame(ftse_large)
                 df_ftse_m  = pd.DataFrame(ftse_mid)
                 df_ftse_s  = pd.DataFrame(ftse_small)
+                # Tambah No + Free Float
+                df_ftse_l  = _add_no_and_ff_col(df_ftse_l,  "Ticker")
+                df_ftse_m  = _add_no_and_ff_col(df_ftse_m,  "Ticker")
+                df_ftse_s  = _add_no_and_ff_col(df_ftse_s,  "Ticker")
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#00c853;margin:14px 0 8px;font-weight:700;'>01 · LARGE CAP — {len(df_ftse_l)} SAHAM</p>", unsafe_allow_html=True)
                 _h_df_ftse_l = 38 + len(df_ftse_l) * 36
@@ -18458,6 +18537,9 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 }
                 df_lq45_active = pd.DataFrame(lq45_active_data)
                 df_lq45_out    = pd.DataFrame(lq45_out_data)
+                # Tambah No + Free Float
+                df_lq45_active = _add_no_and_ff_col(df_lq45_active, "Ticker")
+                df_lq45_out    = _add_no_and_ff_col(df_lq45_out,    "Ticker")
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f5a623;margin:14px 0 8px;font-weight:700;'>01 · 45 KONSTITUEN AKTIF (Periode Feb–Jul 2026)</p>", unsafe_allow_html=True)
                 st.dataframe(safe_style(df_lq45_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=38+len(df_lq45_active)*36, column_config=_rebal_col_cfg)
@@ -18503,6 +18585,9 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 }
                 df_idx30_active = pd.DataFrame(idx30_active_data)
                 df_idx30_out    = pd.DataFrame(idx30_out_data)
+                # Tambah No + Free Float
+                df_idx30_active = _add_no_and_ff_col(df_idx30_active, "Ticker")
+                df_idx30_out    = _add_no_and_ff_col(df_idx30_out,    "Ticker")
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:14px 0 8px;font-weight:700;'>01 · 30 KONSTITUEN AKTIF (Periode Feb–Jul 2026)</p>", unsafe_allow_html=True)
                 st.dataframe(safe_style(df_idx30_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=38+len(df_idx30_active)*36, column_config=_rebal_col_cfg)
@@ -18549,6 +18634,9 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 }
                 df_idx80_active = pd.DataFrame(idx80_active_data)
                 df_idx80_out    = pd.DataFrame(idx80_out_data)
+                # Tambah No + Free Float
+                df_idx80_active = _add_no_and_ff_col(df_idx80_active, "Ticker")
+                df_idx80_out    = _add_no_and_ff_col(df_idx80_out,    "Ticker")
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:14px 0 8px;font-weight:700;'>01 · {len(df_idx80_active)} KONSTITUEN AKTIF (Efektif 4 Mei 2026)</p>", unsafe_allow_html=True)
                 st.dataframe(safe_style(df_idx80_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=38+len(df_idx80_active)*36, column_config=_rebal_col_cfg)
@@ -18595,6 +18683,9 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 }
                 df_k100 = pd.DataFrame(kompas100_data)
                 df_k100_out = pd.DataFrame(kompas100_out_data)
+                # Tambah No + Free Float
+                df_k100     = _add_no_and_ff_col(df_k100,     "Ticker")
+                df_k100_out = _add_no_and_ff_col(df_k100_out, "Ticker")
 
                 # filter
                 _k100_sektors = ["Semua Sektor"] + sorted(df_k100["Sektor"].unique().tolist())
@@ -18698,7 +18789,8 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                     st.markdown(f"<p style='font-size:0.8rem;color:#8b5cf6;padding-top:6px;'>{len(df_conglo[df_conglo['Grup']==selected_grup] if selected_grup!='Semua Grup' else df_conglo)} emiten</p>", unsafe_allow_html=True)
 
                 df_display = df_conglo[df_conglo["Grup"] == selected_grup] if selected_grup != "Semua Grup" else df_conglo
-                st.dataframe(df_display[["Grup","Ticker","Nama","Fokus Bisnis","Indeks"]], use_container_width=True, hide_index=True, on_select="ignore",
+                _df_conglo_show = _add_no_and_ff_col(df_display[["Grup","Ticker","Nama","Fokus Bisnis","Indeks"]].copy(), "Ticker")
+                st.dataframe(_df_conglo_show, use_container_width=True, hide_index=True, on_select="ignore",
                              height=38+len(df_display)*36)
 
                 st.markdown(f"""
@@ -18781,8 +18873,9 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                     _df_bumn_show = _df_bumn_show[~_df_bumn_show["Keterangan"].str.contains("SUSPEND", na=False)]
 
                 st.markdown(f"<p style='font-size:0.8rem;color:#26a69a;margin-bottom:8px;'>{len(_df_bumn_show)} emiten BUMN ditampilkan</p>", unsafe_allow_html=True)
+                _df_bumn_display = _add_no_and_ff_col(_df_bumn_show[["Sektor","Ticker","Nama","Indeks","Keterangan"]].copy(), "Ticker")
                 st.dataframe(
-                    _df_bumn_show[["Sektor","Ticker","Nama","Indeks","Keterangan"]],
+                    _df_bumn_display,
                     use_container_width=True, hide_index=True, on_select="ignore",
                     height=38+len(_df_bumn_show)*36,
                 )
@@ -19780,6 +19873,10 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
                     df_show = df_disp[["date_str","sh_str","delta_str","pct_str","price_str"]].copy()
                     df_show.columns = ["Bulan", "Pemegang Saham", "Δ MoM", "Δ %", "Harga Akhir Bulan"]
+                    # Tambah No + Free Float (nilai konstan per ticker yang dipilih)
+                    df_show.insert(0, "No", range(1, len(df_show) + 1))
+                    _sh_ff_val = _ff_str(sh_ticker)
+                    df_show["Free Float (%)"] = _sh_ff_val
                     st.dataframe(df_show, use_container_width=True, hide_index=True, on_select="ignore")
 
 
@@ -20150,7 +20247,9 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
       <div class="scroll-box" id="sb_{_uid}">
         <table>
           <thead><tr>
+            <th>No</th>
             <th>Ticker</th>
+            <th>Free Float</th>
             <th>Pemegang<br><span style="font-weight:400;opacity:0.7;">(Terkini)</span></th>
             <th>Δ 1 Bln</th><th>Δ %</th>
             <th style="color:{_acc_hist};">{lbl_m1}</th>
@@ -20179,7 +20278,9 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
         var h='';
         ROWS.slice(s,e).forEach(function(r){{
           h+='<tr>'+
+            '<td style="color:{_acc_hist};text-align:center;">'+r.no+'</td>'+
             '<td><span class="tk">'+r.ticker+'</span></td>'+
+            '<td style="color:#60a5fa;font-weight:600;">'+r.ff+'</td>'+
             '<td style="font-weight:600;">'+r.pemegang+'</td>'+
             '<td class="'+dc+'">'+r.d1bln+'</td>'+
             '<td class="'+dc+'">'+r.dpct+'</td>'+
@@ -21181,6 +21282,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                     # ── MODE NORMAL: HTML table read-only ──
                     _rows_tr = ""
                     for _i_tr, _rec in enumerate(_tr_filtered):
+                        _tr_idx_no = _i_tr + 1
                         _status = _rec.get("status","OPEN")
                         _ptype  = _rec.get("plan_type","BSJP")
                         _sc_status = _G if _status in ("TP1","TP2","CLOSED") else _R if _status == "SL" else _Y
@@ -21203,9 +21305,11 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                             _unreal_disp = f"<span style='color:{_unreal_clr};font-size:0.68rem;'> ({'+' if float(_unreal)>=0 else ''}{float(_unreal):.1f}%)</span>"
                         _rows_tr += (
                             f"<tr style='background:{_bg_row};'>"
+                            f"<td style='padding:7px 10px;color:#94a3b8;font-size:0.72rem;text-align:center;white-space:nowrap;'>{_tr_idx_no}</td>"
                             f"<td style='padding:7px 10px;color:#94a3b8;font-size:0.72rem;white-space:nowrap;'>{_pdate}</td>"
                             f"<td style='padding:7px 10px;font-weight:700;color:{_sc_type};font-family:IBM Plex Mono,monospace;font-size:0.78rem;white-space:nowrap;'>{_ptype}</td>"
                             f"<td style='padding:7px 10px;font-weight:700;color:{_P};font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;'>{_rec.get('ticker','')}</td>"
+                            f"<td style='padding:7px 10px;color:#60a5fa;font-weight:600;font-size:0.75rem;white-space:nowrap;'>{_ff_str(_rec.get('ticker',''))}</td>"
                             f"<td style='padding:7px 10px;color:{'#26a69a' if _rec.get('bias','BUY')=='BUY' else '#f23645'};font-weight:600;font-size:0.75rem;white-space:nowrap;'>{_rec.get('bias','BUY')}</td>"
                             f"<td style='padding:7px 10px;font-size:0.75rem;white-space:nowrap;'>{_entry_disp}</td>"
                             f"<td style='padding:7px 10px;color:{_R};font-size:0.75rem;white-space:nowrap;'>{int(_rec.get('stoploss',0) or 0):,}</td>"
@@ -21219,11 +21323,13 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                     _tr_table_html = (
                         "<div style='width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;"
                         "border-radius:10px;border:1px solid rgba(124,58,237,0.2);'>"
-                        "<table style='border-collapse:collapse;min-width:700px;width:max-content;'>"
+                        "<table style='border-collapse:collapse;min-width:800px;width:max-content;'>"
                         "<thead><tr style='background:rgba(124,58,237,0.1);'>"
+                        f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>NO</th>"
                         f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>TGL</th>"
                         f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>JENIS</th>"
                         f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>TICKER</th>"
+                        f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:#60a5fa;border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>FREE FLOAT</th>"
                         f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>BIAS</th>"
                         f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>ENTRY</th>"
                         f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>SL</th>"
@@ -23226,6 +23332,19 @@ white-space:pre-wrap;word-break:break-word;line-height:1.78;box-sizing:border-bo
 </style>""", unsafe_allow_html=True)
 
             for sp in stock_parts:
+                # Ekstrak ticker dari baris pertama card (format: 🎯 TICKER — Nama / 🌙 TICKER ...)
+                _card_ticker = None
+                _first_line = sp.split("\n")[0] if "\n" in sp else sp
+                _tk_match = re.search(r'\b([A-Z]{3,5})\b', _first_line)
+                if _tk_match:
+                    _card_ticker = _tk_match.group(1)
+                # Sisipkan baris Free Float tepat setelah baris pertama
+                if _card_ticker:
+                    _ff_badge = _ff_str(_card_ticker)
+                    _lines_card = sp.split("\n")
+                    _ff_line = f"📊 Free Float: {_ff_badge}"
+                    _lines_card.insert(1, _ff_line)
+                    sp = "\n".join(_lines_card)
                 st.markdown(f'<div class="reco-stock-card">{sp}</div>', unsafe_allow_html=True)
 
             # Render tail (bias, outlook, kesimpulan)
@@ -24483,6 +24602,18 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                     "outlook": outlook,
                 })
 
+                # Tambah Free Float ke setiap row dan avoid sebelum serialize ke JSON
+                def _enrich_rows_ff(row_list):
+                    enriched = []
+                    for _r in row_list:
+                        _r2 = dict(_r)
+                        _r2["ff"] = _ff_str(_r2.get("ticker", ""))
+                        enriched.append(_r2)
+                    return enriched
+                for _slt in all_slots_data:
+                    _slt["rows"]  = _enrich_rows_ff(_slt.get("rows", []))
+                    _slt["avoid"] = _enrich_rows_ff(_slt.get("avoid", []))
+
             _data_json = _jhist.dumps(all_slots_data, ensure_ascii=False).replace("'", "\\'")
             _total_h = 900
 
@@ -24559,10 +24690,14 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
     if(rows.length > 0){{
       html += '<span class="sec-hd"> TRADE PLAN &mdash; ' + d.label + '</span>';
       html += '<div class="tbl-wrap"><div class="scroll"><table>';
-      html += '<thead><tr><th>TICKER</th><th>PRICE</th><th>ENTRY LOW</th><th>ENTRY HIGH</th><th>TP1</th><th>TP2</th><th>SL</th><th>RR</th><th>HORIZON</th><th>VOL</th><th>RATING</th><th>ALASAN</th></tr></thead><tbody>';
+      html += '<thead><tr><th>NO</th><th>TICKER</th><th>FREE FLOAT</th><th>PRICE</th><th>ENTRY LOW</th><th>ENTRY HIGH</th><th>TP1</th><th>TP2</th><th>SL</th><th>RR</th><th>HORIZON</th><th>VOL</th><th>RATING</th><th>ALASAN</th></tr></thead><tbody>';
+      var _rno=0;
       rows.forEach(function(r){{
+        _rno++;
         html += '<tr>'+
+          '<td style="color:#94a3b8;text-align:center;font-size:0.72rem;">'+_rno+'</td>'+
           '<td><span class="tk">'+r.ticker+'</span></td>'+
+          '<td style="color:#60a5fa;font-weight:600;font-size:0.78rem;">'+(r.ff||'—')+'</td>'+
           '<td>'+fmt(r.price)+'</td>'+
           '<td class="grn">'+fmt(r.entry_low)+'</td>'+
           '<td class="grn">'+fmt(r.entry_high)+'</td>'+
@@ -25958,9 +26093,12 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                             _rat3 = _wr3.get("RATING","—")
                             _rc3  = "#089981" if _rat3=="BUY" else "#f5a623" if _rat3=="HOLD" else "#f23645"
                             _bg3  = "rgba(38,166,154,0.05)" if _wri3%2==0 else "transparent"
+                            _wtk3 = _wr3.get("TICKER","")
                             _wtp_trs += (
                                 f"<tr style='background:{_bg3};'>"
-                                f"<td style='padding:7px 10px;font-weight:700;color:#26a69a;font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;'>{_wr3.get('TICKER','')}</td>"
+                                f"<td style='padding:7px 10px;color:#94a3b8;font-size:0.72rem;text-align:center;white-space:nowrap;'>{_wri3+1}</td>"
+                                f"<td style='padding:7px 10px;font-weight:700;color:#26a69a;font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;'>{_wtk3}</td>"
+                                f"<td style='padding:7px 10px;color:#60a5fa;font-weight:600;font-size:0.78rem;white-space:nowrap;'>{_ff_str(_wtk3)}</td>"
                                 f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_wr3.get('PRICE','')}</td>"
                                 f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.78rem;'>{_wr3.get('ENTRY ZONE','')}</td>"
                                 f"<td style='padding:7px 10px;white-space:nowrap;color:#26a69a;font-weight:600;font-size:0.8rem;'>{_wr3.get('TP1','')}</td>"
@@ -25976,11 +26114,14 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                 f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.75rem;'>{_wr3.get('TOP DIST','')}</td>"
                                 "</tr>"
                             )
+                        # Header juga diperbarui dengan NO dan FREE FLOAT
+                        _wtp_hdr_ext = ["NO","TICKER","FREE FLOAT","PRICE","ENTRY ZONE","TP1","TP2","SL","RR","HORIZON","ACC DAYS","SCORE","RATING","ALASAN","TOP ACCUM","TOP DIST"]
+                        _wtp_th  = "".join(f"<th style='padding:8px 10px;white-space:nowrap;font-size:0.67rem;letter-spacing:0.1em;text-transform:uppercase;color:#26a69a;border-bottom:1px solid rgba(38,166,154,0.25);text-align:left;'>{h}</th>" for h in _wtp_hdr_ext)
                         st.markdown(
                             "<div style='width:100%;overflow-x:auto;overflow-y:visible;"
                             "-webkit-overflow-scrolling:touch;"
                             "border-radius:8px;border:1px solid rgba(38,166,154,0.2);margin-bottom:4px;'>"
-                            "<table style='border-collapse:collapse;min-width:1000px;width:max-content;'>"
+                            "<table style='border-collapse:collapse;min-width:1100px;width:max-content;'>"
                             f"<thead><tr style='background:rgba(38,166,154,0.08);'>{_wtp_th}</tr></thead>"
                             f"<tbody>{_wtp_trs}</tbody>"
                             "</table></div>",
@@ -27090,6 +27231,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                 except Exception: pass
                                 return {
                                     "tk":tk,"name":d.get("name","-")[:22],"tier":tier,
+                                    "ff": _ff_str(tk),
                                     "price": f"Rp {d['price']:,.0f}" if d.get("price") else "-",
                                     "roe":  f"{d['roe']:.1f}%" if d.get("roe") else "-",
                                     "der":  f"{d['der']:.2f}x" if d.get("der") is not None else "-",
@@ -27110,6 +27252,9 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
 
                             _pass_data  = [_build_row(tk,d,"PASS")  for tk,d in pass_rows[:30]]
                             _watch_data = [_build_row(tk,d,"WATCH") for tk,d in watch_rows[:20]]
+                            # Tambah nomor urut per tier
+                            for _i, _row in enumerate(_pass_data,  1): _row["no"] = _i
+                            for _i, _row in enumerate(_watch_data, 1): _row["no"] = _i
                             _all_data   = _pass_data + _watch_data
 
                             _rj = _fsjson.dumps(_all_data, ensure_ascii=False)
@@ -27153,7 +27298,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
         <span class="sec-lbl">OK LOLOS BUFFETT - {_n_pass} SAHAM (SKOR &ge;4/6)</span>
         <div class="card"><div class="scroll"><table>
         <thead><tr>
-          <th>TICKER</th><th>NAMA</th><th>HARGA</th>
+          <th>NO</th><th>TICKER</th><th>FREE FLOAT</th><th>NAMA</th><th>HARGA</th>
           <th title="ROE &ge;15%">ROE</th>
           <th title="DER &le;1.0x">DER</th>
           <th title="Net Margin &ge;10%">NET MARGIN</th>
@@ -27172,7 +27317,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
         <span class="sec-lbl">(!) WATCHLIST - {_n_watch} SAHAM (SKOR 2&ndash;3/6)</span>
         <div class="card"><div class="scroll"><table>
         <thead><tr>
-          <th>TICKER</th><th>NAMA</th><th>HARGA</th>
+          <th>NO</th><th>TICKER</th><th>FREE FLOAT</th><th>NAMA</th><th>HARGA</th>
           <th>ROE</th><th>DER</th><th>NET MARGIN</th>
           <th>CURR RATIO</th><th>PBV</th><th>PER</th><th>PEG</th>
           <th>DIV</th><th>MKT CAP</th><th>52W POS</th><th>SKOR</th>
@@ -27197,7 +27342,9 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
             arr.forEach(function(r){{
               var tier=r.tier==='PASS'?'<span class="bdg bdg-pass">LOLOS</span>':'<span class="bdg bdg-watch">WATCH</span>';
               h+='<tr>'+
+            '<td style="color:{_acc_hist};text-align:center;font-size:0.8rem;">'+r.no+'</td>'+
             '<td><span class="tk">'+r.tk+'</span></td>'+
+            '<td style="color:#60a5fa;font-weight:600;font-size:0.8rem;">'+r.ff+'</td>'+
             '<td><span class="nm">'+r.name+'</span></td>'+
             '<td style="font-weight:600;">'+r.price+'</td>'+
             '<td>'+c(r.roe,r.roe_ok)+'</td>'+
@@ -28323,6 +28470,10 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
 
                     df_show = df_disp[["date_str","sh_str","delta_str","pct_str","price_str"]].copy()
                     df_show.columns = ["Bulan", "Pemegang Saham", "Δ MoM", "Δ %", "Harga Akhir Bulan"]
+                    # Tambah No + Free Float (nilai konstan per ticker yang dipilih)
+                    df_show.insert(0, "No", range(1, len(df_show) + 1))
+                    _sh_ff_val2 = _ff_str(sh_ticker)
+                    df_show["Free Float (%)"] = _sh_ff_val2
                     st.dataframe(df_show, use_container_width=True, hide_index=True, on_select="ignore")
 
 
@@ -28651,11 +28802,13 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
 
                 import json as _json2
                 _sh_rows = []
-                for r in rows_sorted:
+                for _sh_no2, r in enumerate(rows_sorted, 1):
                     t3  = r["Tren 3 Bln"]
                     sig = sinyal_strong if "3bln" in t3 else sinyal_weak
                     _sh_rows.append({
+                        "no":     _sh_no2,
                         "ticker": r["Ticker"],
+                        "ff":     _ff_str(r["Ticker"]),
                         "pemegang": r["Pemegang"],
                         "d1bln": r["Δ 1 Bln"],
                         "dpct":  r["Δ %"],
@@ -32654,7 +32807,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                         "MOMENTUM":     f"★ {_bhs.get('momentum_days',0)}d" if _bhs.get("high_momentum") else "—",
                                         "TOP ACCUM":    " ".join(_bhs.get("top_accum",[])[:3]) or "—",
                                     })
-                                st.dataframe(_pd_bh.DataFrame(_bh_rows), use_container_width=True, hide_index=True)
+                                st.dataframe(_add_no_and_ff_col(_pd_bh.DataFrame(_bh_rows), "TICKER"), use_container_width=True, hide_index=True)
 
                         # Tampilkan status jika ada data historis yg sedang dipakai
                         if st.session_state.get("brosum_hist_use_key"):
