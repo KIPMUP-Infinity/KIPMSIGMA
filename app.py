@@ -606,6 +606,11 @@ _CARD_CSS = """
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 12px;
 }
+@media (max-width: 600px) {
+  .bsjp-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
 
 /* ── Card ── */
 .bcard {
@@ -1035,12 +1040,43 @@ _CARD_CSS = """
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
+  /* Grid utama: 1 kolom di mobile */
   .bsjp-grid { grid-template-columns: 1fr; }
+
+  /* Card: tidak boleh ada overflow:hidden agar isi bawah tidak terpotong */
+  .bcard { overflow: visible; }
+
+  /* Body card: beri padding bawah extra agar konten tidak terpotong */
+  .bc-body { padding: 14px 14px 20px; }
+
+  /* Typography scale-down */
   .bc-ticker { font-size: 18px; }
   .bc-price  { font-size: 16px; }
   .bc-ring-wrap { width: 56px; height: 56px; }
   .bc-ring-wrap svg { width: 56px; height: 56px; }
   .bc-score-num { font-size: 16px; }
+
+  /* Level strategy grid: 1 kolom di mobile agar tidak sempit */
+  .bc-levels { grid-template-columns: 1fr; gap: 4px; }
+
+  /* Indikator teknikal grid: tetap 2 kolom tapi dengan font lebih kecil */
+  .bc-ind-grid { grid-template-columns: 1fr 1fr; gap: 5px 8px; }
+  .bc-ind-label { font-size: 8px; }
+  .bc-ind-value { font-size: 10px; }
+
+  /* Stats row: tetap 3 kolom, kurangi ukuran font */
+  .bc-stat-val { font-size: 11px; }
+  .bc-stat-lbl { font-size: 7px; }
+
+  /* HAKA label: pastikan tidak terpotong */
+  .bc-haka { min-height: 32px; padding: 6px 10px; flex-wrap: wrap; }
+  .bc-haka-text { font-size: 9px; white-space: normal; }
+
+  /* Footer jangan terpotong */
+  .bsjp-footer { margin-top: 16px; padding-bottom: 4px; }
+
+  /* Container BSJP: scroll vertikal diizinkan */
+  .bsjp-wrap { overflow: visible !important; height: auto !important; }
 }
 </style>
 """
@@ -1107,13 +1143,16 @@ def render_bsjp_cards(
 </html>"""
 
     # Estimasi tinggi
-    cols_est   = max(1, min(3, math.floor(720 / 295)))
+    # FIX: mobile lebar ~360px → 1 kolom; desktop 720px+ → 2-3 kolom
+    # Gunakan 1 kolom sebagai estimasi safe agar card tidak terpotong di mobile
+    # (di desktop height lebih besar dari perlu, tapi itu lebih baik dari terpotong)
+    cols_est   = 1  # selalu estimasi 1 kolom agar mobile tidak terpotong
     rows_est   = math.ceil(n_show / cols_est)
     # Bug#9 fix: estimasi tinggi dinamis berdasarkan konten kartu
     # Kartu kosong ~680px, kartu penuh (TP2+bandar+indikator) ~900px
-    # Pakai 860 sebagai rata-rata + buffer 120px
-    _card_h_avg = 860
-    height_est  = rows_est * _card_h_avg + 120
+    # Pakai 880 sebagai rata-rata + buffer 150px (extra untuk mobile)
+    _card_h_avg = 880
+    height_est  = rows_est * _card_h_avg + 150
     components.html(full_html, height=height_est, scrolling=False)
 
 # ── SIGMA SHEETS — Google Sheets Persistent Storage ──────────────────────────
@@ -12739,6 +12778,33 @@ if current_view == "dashboard":
             overflow-x: auto !important;
             -webkit-overflow-scrolling: touch !important;
         }}
+
+        /* ── FIX TABEL HTML (Inflasi, IHSG, Kurs, BI Rate, Fed Funds) ── */
+        /* Pastikan wrapper div overflow-x tidak diblok oleh parent */
+        [data-testid="stMarkdownContainer"] {{
+            overflow-x: visible !important;
+        }}
+        /* Kolom "No": min-width agar angka puluhan tidak membungkus */
+        [data-testid="stMarkdownContainer"] table th:first-child,
+        [data-testid="stMarkdownContainer"] table td:first-child {{
+            min-width: 36px !important;
+            white-space: nowrap !important;
+        }}
+        /* Header tabel HTML: nowrap agar TAHUN, Δ YoY, Des Close, Des Rate tidak terpotong */
+        [data-testid="stMarkdownContainer"] table th {{
+            white-space: nowrap !important;
+            min-width: 52px !important;
+        }}
+        /* Pastikan semua div dengan overflow-x:auto di dalam markdown bisa di-scroll */
+        [data-testid="stMarkdownContainer"] div[style*="overflow-x"] {{
+            -webkit-overflow-scrolling: touch !important;
+            overflow-x: auto !important;
+        }}
+        /* Pastikan parent stMarkdownContainer tidak memblokir scroll horizontal */
+        [data-testid="stMarkdownContainer"] > div {{
+            overflow-x: auto !important;
+            max-width: 100% !important;
+        }}
     }}
 
     /* ── FIX M4: @media sibling blocks (dipindah dari nested di dalam @media 768px) ── */
@@ -14693,7 +14759,7 @@ table{{margin-bottom:0!important;}}
                 if v >= 3.5: return ("#F0A500","rgba(240,165,0,0.10)")
                 if v >= 1.5: return ("#00E5BE","rgba(0,229,190,0.08)")
                 return ("#a78bfa","rgba(167,139,250,0.10)")
-            _inf_tbl_html = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:8px;"><table style="width:max-content;min-width:700px;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(99,102,241,0.15);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#a78bfa;font-weight:600;letter-spacing:0.05em;">TAHUN</th>'
+            _inf_tbl_html = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:8px;"><table style="width:max-content;min-width:700px;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(99,102,241,0.15);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#a78bfa;font-weight:600;letter-spacing:0.05em;white-space:nowrap;min-width:52px;">TAHUN</th>'
             for _m in _inf_mo:
                 _inf_tbl_html += f'<th style="padding:8px 5px;text-align:center;color:#a78bfa;font-weight:600;">{_m}</th>'
             _inf_tbl_html += '<th style="padding:8px 8px;text-align:center;color:#a78bfa;font-weight:600;white-space:nowrap;min-width:56px;">Des YoY</th></tr></thead><tbody>'
@@ -14995,7 +15061,7 @@ Jawab dalam Bahasa Indonesia, tajam dan analitis. Maksimal 450 kata."""
                 if chg > 0:   return ("#26a69a","rgba(38,166,154,0.08)")
                 if chg >= -3: return ("#ef5350","rgba(239,83,80,0.08)")
                 return ("#e24b4a","rgba(226,75,74,0.14)")
-            _ih_tbl_html = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:8px;"><table style="width:max-content;min-width:700px;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(0,229,190,0.12);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#00E5BE;font-weight:600;letter-spacing:0.05em;">TAHUN</th>'
+            _ih_tbl_html = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:8px;"><table style="width:max-content;min-width:700px;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(0,229,190,0.12);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#00E5BE;font-weight:600;letter-spacing:0.05em;white-space:nowrap;min-width:52px;">TAHUN</th>'
             for _m in _ih_mo:
                 _ih_tbl_html += f'<th style="padding:8px 5px;text-align:center;color:#00E5BE;font-weight:600;">{_m}</th>'
             _ih_tbl_html += '<th style="padding:8px 8px;text-align:center;color:#00E5BE;font-weight:600;white-space:nowrap;min-width:56px;">Des Close</th></tr></thead><tbody>'
@@ -15263,7 +15329,7 @@ Jawab dalam Bahasa Indonesia, tajam dan profesional. Maksimal 500 kata."""
                 if chg > 0:   return ("#F0A500","rgba(240,165,0,0.08)")
                 if chg >= -2: return ("#26a69a","rgba(38,166,154,0.08)")
                 return ("#00E5BE","rgba(0,229,190,0.14)")
-            _kr_tbl_html = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:8px;"><table style="width:max-content;min-width:700px;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(240,165,0,0.12);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#F0A500;font-weight:600;letter-spacing:0.05em;">TAHUN</th>'
+            _kr_tbl_html = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:8px;"><table style="width:max-content;min-width:700px;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;"><thead><tr style="background:rgba(240,165,0,0.12);border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px 10px;text-align:left;color:#F0A500;font-weight:600;letter-spacing:0.05em;white-space:nowrap;min-width:52px;">TAHUN</th>'
             for _m in _kr_mo:
                 _kr_tbl_html += f'<th style="padding:8px 5px;text-align:center;color:#F0A500;font-weight:600;">{_m}</th>'
             _kr_tbl_html += '<th style="padding:8px 8px;text-align:center;color:#F0A500;font-weight:600;white-space:nowrap;min-width:56px;">Des Rate</th></tr></thead><tbody>'
@@ -17122,9 +17188,10 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     with tab_rotation:
 
         def highlight_status(val):
-            if val == 'NEW ENTRY': return 'background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; font-weight: bold;'
-            elif val == 'DOWNGRADED': return 'background-color: rgba(241, 196, 15, 0.2); color: #f1c40f;'
-            elif 'OUT' in str(val): return 'background-color: rgba(231, 76, 60, 0.2); color: #e74c3c;'
+            # FIX: NEW ENTRY = hijau terang (#2ecc71), pastikan tidak terpotong
+            if val == 'NEW ENTRY': return 'background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; font-weight: bold; white-space: nowrap;'
+            elif val == 'DOWNGRADED': return 'background-color: rgba(241, 196, 15, 0.2); color: #f1c40f; white-space: nowrap;'
+            elif 'OUT' in str(val): return 'background-color: rgba(231, 76, 60, 0.2); color: #e74c3c; white-space: nowrap;'
             return ''
 
         def safe_style(df_style, func, subset):
@@ -18199,18 +18266,21 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 df_msci_excl = pd.DataFrame(msci_excluded)
 
                 # Column config for rebalancing tables: Status column must be wide enough for "NEW ENTRY"/"DOWNGRADED"
+                # FIX: gunakan "large" untuk Status agar teks "NEW ENTRY" & "DOWNGRADED" tidak terpotong
                 _rebal_col_cfg = {
+                    "No":     st.column_config.NumberColumn("No", width="small", format="%d"),
                     "Ticker": st.column_config.TextColumn("Ticker", width="small"),
-                    "Nama": st.column_config.TextColumn("Nama", width="medium"),
+                    "Nama":   st.column_config.TextColumn("Nama", width="medium"),
                     "Sektor": st.column_config.TextColumn("Sektor", width="medium"),
-                    "Tier": st.column_config.TextColumn("Tier", width="small"),
-                    "Status": st.column_config.TextColumn("Status", width="medium"),
+                    "Tier":   st.column_config.TextColumn("Tier", width="small"),
+                    "Status": st.column_config.TextColumn("Status", width="large"),
                 }
                 _rebal_col_cfg_noticker = {
-                    "Nama": st.column_config.TextColumn("Nama", width="medium"),
+                    "No":     st.column_config.NumberColumn("No", width="small", format="%d"),
+                    "Nama":   st.column_config.TextColumn("Nama", width="medium"),
                     "Sektor": st.column_config.TextColumn("Sektor", width="medium"),
-                    "Tier": st.column_config.TextColumn("Tier", width="small"),
-                    "Status": st.column_config.TextColumn("Status", width="medium"),
+                    "Tier":   st.column_config.TextColumn("Tier", width="small"),
+                    "Status": st.column_config.TextColumn("Status", width="large"),
                 }
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:14px 0 8px;font-weight:700;'>01 · MSCI STANDARD INDEX — {len(df_msci_std)} SAHAM (THE GIANTS)</p>", unsafe_allow_html=True)
@@ -21759,16 +21829,18 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                             fig = _cached_fig
                             _skip_chart_build = True
 
-                        if not _skip_chart_build:
+                        # FIX: definisi warna di luar blok _skip_chart_build agar selalu tersedia
+                        # (dipakai saat chart di-render dari cache maupun saat build ulang)
+                        inc_color     = '#00e5a0'   # Aurora bullish — bright emerald-teal
+                        dec_color     = '#ff3d5a'   # Aurora bearish — vivid crimson-pink
+                        inc_fill      = 'rgba(0,229,160,0.18)'
+                        dec_fill      = 'rgba(255,61,90,0.18)'
+                        tv_bg_color   = "#080b14" if is_dark else "#f8fafc"
+                        tv_grid_color = "rgba(139,92,246,0.10)" if is_dark else "rgba(100,120,180,0.12)"
+                        tv_text_color = "#7c86a2" if is_dark else "#374151"
+                        tv_border     = "rgba(139,92,246,0.18)" if is_dark else "rgba(100,120,180,0.20)"
 
-                            inc_color     = '#00e5a0'   # Aurora bullish — bright emerald-teal
-                            dec_color     = '#ff3d5a'   # Aurora bearish — vivid crimson-pink
-                            inc_fill      = 'rgba(0,229,160,0.18)'
-                            dec_fill      = 'rgba(255,61,90,0.18)'
-                            tv_bg_color   = "#080b14" if is_dark else "#f8fafc"
-                            tv_grid_color = "rgba(139,92,246,0.10)" if is_dark else "rgba(100,120,180,0.12)"
-                            tv_text_color = "#7c86a2" if is_dark else "#374151"
-                            tv_border     = "rgba(139,92,246,0.18)" if is_dark else "rgba(100,120,180,0.20)"
+                        if not _skip_chart_build:
 
                             # ── Bersihkan df: hanya trading days (buang weekend) ──
                             df_chart = df_chart.copy()
@@ -22880,13 +22952,13 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                         Butuh kenaikan: <span style='color:#fbbf24;font-weight:700;'>{dist['n_tick_needed']} tick</span>
                         agar distribusi selesai tanpa rugi
                     </div>
-                    <div style='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;'>
-                        <div style='background:rgba(38,166,154,0.1);border:1px solid rgba(38,166,154,0.3);
+                    <div style='display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;'>
+                        <div style='flex:1;min-width:120px;background:rgba(38,166,154,0.1);border:1px solid rgba(38,166,154,0.3);
                         border-radius:5px;padding:8px;text-align:center;'>
                             <div style='color:{text_sub};font-size:0.68rem;'>TP KONSERVATIF (+5 tick)</div>
                             <div style='color:#26a69a;font-weight:700;font-size:1rem;'>Rp{int(dist['tp_conservative']):,}</div>
                         </div>
-                        <div style='background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);
+                        <div style='flex:1;min-width:120px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);
                         border-radius:5px;padding:8px;text-align:center;'>
                             <div style='color:{text_sub};font-size:0.68rem;'>TP AGRESIF ({dist['n_tick_needed']} tick)</div>
                             <div style='color:#a78bfa;font-weight:700;font-size:1rem;'>Rp{int(dist['tp_aggressive']):,}</div>
@@ -22907,18 +22979,18 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 total_net  = item.get("total_net", 0)
                 avg_buy    = item.get("avg_buy", 0)
                 weekly_extra = f"""
-                <div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:8px 0;'>
-                    <div style='background:rgba(255,255,255,0.04);border-radius:5px;padding:6px;text-align:center;'>
+                <div style='display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;'>
+                    <div style='flex:1;min-width:90px;background:rgba(255,255,255,0.04);border-radius:5px;padding:6px;text-align:center;'>
                         <div style='color:{text_sub};font-size:0.65rem;'>HARI AKUM</div>
                         <div style='color:#26a69a;font-weight:700;'>{days_accum}/{days_data}</div>
                     </div>
-                    <div style='background:rgba(255,255,255,0.04);border-radius:5px;padding:6px;text-align:center;'>
+                    <div style='flex:1;min-width:90px;background:rgba(255,255,255,0.04);border-radius:5px;padding:6px;text-align:center;'>
                         <div style='color:{text_sub};font-size:0.65rem;'>NET 5H (LOT)</div>
                         <div style='color:{"#26a69a" if total_net >= 0 else "#f23645"};font-weight:700;'>
                             {"+" if total_net >= 0 else ""}{int(total_net):,}
                         </div>
                     </div>
-                    <div style='background:rgba(255,255,255,0.04);border-radius:5px;padding:6px;text-align:center;'>
+                    <div style='flex:1;min-width:90px;background:rgba(255,255,255,0.04);border-radius:5px;padding:6px;text-align:center;'>
                         <div style='color:{text_sub};font-size:0.65rem;'>AVG BUY</div>
                         <div style='color:#fbbf24;font-weight:700;'>{"Rp"+str(int(avg_buy)) if avg_buy > 0 else "-"}</div>
                     </div>
@@ -24368,7 +24440,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_txt};
   padding:10px 14px;font-size:0.8rem;color:{_txt};margin-bottom:12px;line-height:1.65;}}
 .tbl-wrap{{background:{_tbl_bg};border:1px solid {_border};border-radius:10px;overflow:hidden;margin-bottom:12px;}}
 .scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}}
-@media(max-width:768px){{.tbl-wrap{{overflow:visible !important;}}}}
+@media(max-width:768px){{.tbl-wrap{{overflow-x:auto !important;-webkit-overflow-scrolling:touch !important;}}}}
 .scroll::-webkit-scrollbar{{height:4px;}}
 .scroll::-webkit-scrollbar-thumb{{background:{_border};border-radius:4px;}}
 table{{width:100%;border-collapse:collapse;min-width:700px;}}
@@ -24762,7 +24834,7 @@ html,body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_
 .tbl-wrap{{background:{_tbl_bg};border:1px solid {_border};border-radius:10px;
   overflow:hidden;margin-bottom:28px;width:100%;max-width:100%;}}
 .scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;display:block;}}
-@media(max-width:768px){{.tbl-wrap{{overflow:visible !important;}}}}
+@media(max-width:768px){{.tbl-wrap{{overflow-x:auto !important;-webkit-overflow-scrolling:touch !important;}}}}
 table{{border-collapse:collapse;min-width:1000px;table-layout:auto;width:max-content;}}
 thead th{{background:{_hdr_bg};color:#26a69a;padding:8px 10px;
   text-align:left;border-bottom:1px solid {_border};
@@ -29488,7 +29560,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                 <table style="width:max-content;min-width:700px;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;">
                   <thead>
                     <tr style="background:rgba(139,92,246,0.15);border-bottom:1px solid rgba(255,255,255,0.1);">
-                      <th style="padding:8px 10px;text-align:left;color:#a78bfa;font-weight:600;letter-spacing:0.05em;">TAHUN</th>
+                      <th style="padding:8px 10px;text-align:left;color:#a78bfa;font-weight:600;letter-spacing:0.05em;white-space:nowrap;min-width:52px;">TAHUN</th>
                 """
                 for _m in _month_order_fed:
                     _fed_tbl += f'<th style="padding:8px 6px;text-align:center;color:#a78bfa;font-weight:600;">{_m}</th>'
@@ -29863,7 +29935,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                 <table style="width:max-content;min-width:700px;border-collapse:collapse;font-family:IBM Plex Mono,monospace;font-size:0.72rem;">
                   <thead>
                     <tr style="background:rgba(139,92,246,0.15);border-bottom:1px solid rgba(255,255,255,0.1);">
-                      <th style="padding:8px 10px;text-align:left;color:#a78bfa;font-weight:600;letter-spacing:0.05em;">TAHUN</th>
+                      <th style="padding:8px 10px;text-align:left;color:#a78bfa;font-weight:600;letter-spacing:0.05em;white-space:nowrap;min-width:52px;">TAHUN</th>
                 """
                 for _m in _month_order:
                     _tbl_html += f'<th style="padding:8px 6px;text-align:center;color:#a78bfa;font-weight:600;">{_m}</th>'
@@ -31056,7 +31128,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
     /* Tables */
     .section-row{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}}
     .tbl-wrap{{background:{_tbl_bg};border:1px solid {_brd};border-radius:10px;overflow:hidden;}}
-@media(max-width:768px){{.tbl-wrap{{overflow:visible !important;}}}}
+@media(max-width:768px){{.tbl-wrap{{overflow-x:auto !important;-webkit-overflow-scrolling:touch !important;}}}}
     .tbl-head{{background:{_hdr_bg};display:grid;grid-template-columns:40px 1fr 70px 70px 70px;gap:0;padding:7px 10px;border-bottom:1px solid {_brd};font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:{_G};font-weight:700;white-space:nowrap;}}
     .tbl-row{{display:grid;grid-template-columns:40px 1fr 70px 70px 70px;gap:0;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.04);align-items:center;font-size:0.75rem;white-space:nowrap;}}
     .tbl-scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}}
@@ -31076,7 +31148,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
     /* Full table */
     .full-wrap{{background:{_tbl_bg};border:1px solid {_brd};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
     .scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}}
-    @media(max-width:768px){{.full-wrap{{overflow:visible !important;}}}}
+    @media(max-width:768px){{.full-wrap{{overflow-x:auto !important;-webkit-overflow-scrolling:touch !important;}}}}
     table{{width:100%;border-collapse:collapse;min-width:700px;}}
     thead th{{background:{_hdr_bg};color:{_G};padding:8px 10px;text-align:left;border-bottom:1px solid {_brd};font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;white-space:nowrap;}}
     tbody td{{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.78rem;white-space:nowrap;}}
@@ -32930,7 +33002,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_kc_te
 .pnl-box.neutral{{background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-left:3px solid {_kc_gold};}}
 
 @media(max-width:640px){{
-  .row3{{grid-template-columns:1fr;}}
+  .row3,.row2{{grid-template-columns:1fr;}}
   .summary-grid{{grid-template-columns:1fr 1fr;}}
   .form-wrap{{padding:16px 14px;}}
 }}
@@ -33324,6 +33396,9 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
   .grid2,.grid3{{grid-template-columns:1fr;}}
   .mock-card-row,.mock-card-row.col4{{grid-template-columns:1fr 1fr;}}
   .feat{{padding:14px 14px;}}.hero{{padding:18px 16px;}}
+}}
+@media(max-width:420px){{
+  .mock-card-row,.mock-card-row.col4,.mock-card-row.col2{{grid-template-columns:1fr;}}
 }}
 """
 
