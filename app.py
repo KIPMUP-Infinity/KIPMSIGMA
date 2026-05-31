@@ -30313,19 +30313,15 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
     body{{background:transparent;font-family:'DM Sans',sans-serif;}}
     .cal-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;}}
     .cal-hdr{{
-      padding:10px 14px 10px 16px;
-      background:rgba(139,92,246,0.10);
+      padding:11px 16px;
+      background:rgba(139,92,246,0.08);
       border-bottom:1px solid {met_border};
+      font-size:0.8rem;font-weight:700;letter-spacing:0.12em;
+      color:#8b5cf6;text-transform:uppercase;
       display:flex;align-items:center;justify-content:space-between;
       flex-wrap:wrap;gap:6px;font-family:'DM Sans',sans-serif;
     }}
-    .cal-hdr-title{{
-      font-size:0.78rem;font-weight:800;letter-spacing:0.13em;
-      color:#8b5cf6;text-transform:uppercase;white-space:nowrap;
-      display:flex;align-items:center;gap:7px;
-    }}
-    .cal-hdr-title::before{{content:'📅';font-size:0.9rem;}}
-    .hdr-right{{display:flex;gap:5px;align-items:center;flex-wrap:wrap;}}
+    .hdr-right{{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}}
     .ec-badge{{font-size:0.8rem;color:{text_sub};background:rgba(255,255,255,0.05);
       border:1px solid {met_border};border-radius:8px;padding:2px 9px;white-space:nowrap;}}
     .f-btn{{font-size:0.72rem;font-family:'IBM Plex Mono',monospace;font-weight:700;
@@ -30385,41 +30381,36 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
       white-space:normal;min-width:240px;max-width:380px;
       font-family:'DM Sans',sans-serif;}}
     @media(max-width:768px){{
-      /* Cal-wrap: overflow visible agar scroll box bekerja */
-      .cal-wrap{{overflow:visible !important;border-radius:8px;}}
-      /* Scroll box: horizontal + vertical scroll touch-friendly */
+      /* Hapus overflow:hidden dari cal-wrap agar scroll horizontal tidak terpotong */
+      .cal-wrap{{overflow:visible !important;}}
+      /* Pastikan scroll-box punya overflow-x:auto yang bekerja */
       .scroll-box{{
-        overflow-x:scroll !important;
+        overflow-x:auto !important;
         overflow-y:auto !important;
         -webkit-overflow-scrolling:touch !important;
-        max-height:380px !important;
+        max-height:400px !important;
         width:100% !important;
         display:block !important;
       }}
-      /* Tabel min-width agar konten tidak terpotong tapi bisa scroll */
-      table{{min-width:520px !important;}}
-      /* Header filter: scroll horizontal, no wrap */
+      /* Kurangi min-width tabel agar lebih pas di mobile, tapi tetap bisa scroll horizontal */
+      table{{min-width:480px !important;}}
+      /* Header filter buttons: scroll horizontal agar tidak wrap terlalu banyak baris */
       .hdr-right{{
-        overflow-x:auto !important;
+        overflow-x:auto;
         flex-wrap:nowrap !important;
-        -webkit-overflow-scrolling:touch !important;
+        -webkit-overflow-scrolling:touch;
         padding-bottom:2px;
         gap:4px;
-        max-width:calc(100vw - 32px);
       }}
-      .cal-hdr{{flex-wrap:nowrap !important; align-items:flex-start; gap:6px;}}
-      .cal-hdr-title{{font-size:0.7rem;white-space:nowrap;}}
-      .f-btn{{padding:2px 7px;font-size:0.68rem;white-space:nowrap;flex-shrink:0;}}
-      .ev-name{{max-width:100px;font-size:0.8rem;}}
-      tbody td{{font-size:0.78rem;padding:5px 7px;}}
-      thead th{{font-size:0.7rem;padding:5px 7px;}}
-      .dt-d{{font-size:0.78rem;}}
-      .dt-j{{font-size:0.72rem;}}
+      .f-btn{{padding:3px 8px;font-size:0.72rem;white-space:nowrap;}}
+      .ev-name{{max-width:110px;}}
+      tbody td{{font-size:0.8rem;padding:6px 8px;}}
+      thead th{{font-size:0.72rem;padding:6px 8px;}}
     }}
     </style></head><body>
     <div class="cal-wrap">
       <div class="cal-hdr">
-        <span class="cal-hdr-title"> ECONOMIC CALENDAR &mdash; ID &middot; US &nbsp;&middot;&nbsp; Apr&ndash;Jul 2026</span>
+        <span> ECONOMIC CALENDAR &mdash; ID &middot; US &nbsp;&middot;&nbsp; Apr&ndash;Jul 2026</span>
         <div class="hdr-right">
           <span class="ec-badge" id="ec-cnt">&mdash; events</span>
           <button class="f-btn"     onclick="ef('ALL')"> SEMUA</button>
@@ -30528,9 +30519,9 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
         var h=document.body.scrollHeight+4;
         try{{window.parent.postMessage({{type:'streamlit:setFrameHeight',height:h}},'*');}}catch(e){{}}
       }}
-      setTimeout(resize,100);setTimeout(resize,500);setTimeout(resize,1200);
+      setTimeout(resize,100);setTimeout(resize,500);
     }})();
-    </script></body></html>""", height=560, scrolling=False)
+    </script></body></html>""", height=540, scrolling=False)
 
 
             # ─────────────────────────────────────────────────────────
