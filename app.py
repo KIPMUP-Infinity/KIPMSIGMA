@@ -147,16 +147,19 @@ def _sigma_cooldown_ui(action_key: str, min_seconds: int = 300, label: str = "")
         m, s = divmod(remaining, 60)
         st.warning(f"\u23f3 {label or action_key} — tunggu {m}m {s}s sebelum generate ulang.", icon="\u23f3")
     return ok
+# ─────────────────────────────────────────────────────────────────────────────
 
-# ── SIGMA TAB GATE — server-side content lock (Fix: Bug #SECURITY-1) ─────────────
-# Gunakan _sigma_tab_is_unlocked(tab_key) sebelum render konten sensitif.
-# Jika belum unlock: tampilkan placeholder, konten TIDAK dirender sama sekali.
+def _wib_now() -> datetime:
+    return datetime.now(_WIB)
+
+
+# ── SIGMA TAB GATE — server-side content lock ─────────────────────────────────
 def _sigma_tab_is_unlocked(tab_key: str) -> bool:
-    """True jika tab sudah di-unlock via session_state (server-side check)."""
+    """True jika tab sudah di-unlock via session_state (server-side, bukan JS)."""
     return tab_key.lower() in st.session_state.get("_tab_unlocked", set())
 
 def _sigma_locked_placeholder(label: str = "AREA TERKUNCI") -> None:
-    """Render placeholder kunci — TIDAK memuat konten apapun."""
+    """Render UI placeholder kunci — konten sensitif TIDAK dirender sama sekali."""
     st.markdown(
         f"<div style='display:flex;flex-direction:column;align-items:center;"
         f"justify-content:center;padding:60px 24px;text-align:center;"
@@ -166,15 +169,11 @@ def _sigma_locked_placeholder(label: str = "AREA TERKUNCI") -> None:
         f"text-transform:uppercase;color:rgba(255,255,255,0.85);margin-bottom:8px;'>{label}</div>"
         f"<div style='font-size:0.72rem;color:rgba(255,255,255,0.4);letter-spacing:0.06em;"
         f"max-width:300px;line-height:1.7;'>Area ini dilindungi password.<br>"
-        f"Klik tab di atas lalu masukkan kode akses untuk membuka konten.</div>"
+        f"Klik tab lalu masukkan kode akses untuk membuka konten.</div>"
         f"</div>",
         unsafe_allow_html=True,
     )
 # ─────────────────────────────────────────────────────────────────────────────
-
-
-def _wib_now() -> datetime:
-    return datetime.now(_WIB)
 
 
 def _fmt_price(p) -> str:
@@ -20241,15 +20240,16 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
         # ══════════════════════════════════════════════════════════════
     # ─── ALPHA PLAN TAB — Daily · Weekly · BSJP · Track Record ───────────
     with tab_alpha_plan:
-        if not _sigma_tab_is_unlocked('alpha plan'):
-            _sigma_locked_placeholder('ALPHA PLAN')
-        else:
-            reco_tab_daily, reco_tab_weekly, reco_tab_bsjp, reco_tab_trackrecord_plan = st.tabs([
-                "  📅 DAILY PLAN  ",
-                "  📆 WEEKLY PLAN  ",
-                "  🌙 BELI SORE JUAL PAGI  ",
-                "  🏆 TRACK RECORD  ",
-            ])
+        # SECURITY GATE — konten tidak dirender sebelum unlock
+        if not _sigma_tab_is_unlocked("alpha plan"):
+            _sigma_locked_placeholder("ALPHA PLAN")
+            st.stop()
+        reco_tab_daily, reco_tab_weekly, reco_tab_bsjp, reco_tab_trackrecord_plan = st.tabs([
+            "  📅 DAILY PLAN  ",
+            "  📆 WEEKLY PLAN  ",
+            "  🌙 BELI SORE JUAL PAGI  ",
+            "  🏆 TRACK RECORD  ",
+        ])
 
     with tab_alpha_screener:
         # ── ALPHA SCREENER — NO LOCK (akses langsung) ─────────────────────────
@@ -30732,426 +30732,428 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
 
 
         with _mm_subtab_marketnotes:
-            if not _sigma_tab_is_unlocked('market forecast'):
-                _sigma_locked_placeholder('MARKET FORECAST')
-            else:
-                # ─────────────────────────────────────────────────────────
-                # MARKET NOTES — MASTER FORECAST IHSG
-                # ─────────────────────────────────────────────────────────
-                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>MASTER FORECAST IHSG</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            # SECURITY GATE — konten tidak dirender sebelum unlock
+            if not _sigma_tab_is_unlocked("market forecast"):
+                _sigma_locked_placeholder("MARKET FORECAST")
+                st.stop()
+            # ─────────────────────────────────────────────────────────
+            # MARKET NOTES — MASTER FORECAST IHSG
+            # ─────────────────────────────────────────────────────────
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>MASTER FORECAST IHSG</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
-                st.markdown("""
-                <style>
-                .mf-card {
-                    background: #1a1a2e;
-                    border-radius: 14px;
-                    padding: 20px 24px;
-                    max-width: 680px;
-                    margin: 0 auto 24px auto;
-                    font-family: 'IBM Plex Mono', 'Courier New', monospace;
-                }
-                .mf-title {
-                    font-size: 1.5rem;
-                    font-weight: 900;
-                    color: #ffffff;
-                    letter-spacing: 0.03em;
-                    margin-bottom: 18px;
-                }
-                .mf-row {
-                    display: flex;
-                    align-items: flex-start;
-                    gap: 12px;
-                    margin-bottom: 11px;
-                    font-size: 0.82rem;
-                }
-                .mf-date {
-                    min-width: 60px;
-                    color: #e0e0e0;
-                    font-weight: 600;
-                    padding-top: 2px;
-                }
-                .mf-dots {
-                    display: flex;
-                    align-items: center;
-                    gap: 3px;
-                    min-width: 90px;
-                    flex-wrap: nowrap;
-                }
-                .mf-dot-red   { width: 11px; height: 11px; border-radius: 50%; background: #e24b4a; display: inline-block; flex-shrink:0; }
-                .mf-dot-green { width: 11px; height: 11px; border-radius: 50%; background: #26a69a; display: inline-block; flex-shrink:0; }
-                .mf-dot-arr   { font-size: 0.72rem; color: #aaaaaa; padding: 0 1px; }
-                .mf-note {
-                    color: #c8c8d0;
-                    line-height: 1.45;
-                    flex: 1;
-                }
-                .mf-note b { color: #ffffff; }
-                .mf-separator {
-                    border: none;
-                    border-top: 1px solid rgba(255,255,255,0.07);
-                    margin: 6px 0;
-                }
-                </style>
-                <div class="mf-card">
-                  <div class="mf-title">MASTER FORECAST IHSG</div>
+            st.markdown("""
+            <style>
+            .mf-card {
+                background: #1a1a2e;
+                border-radius: 14px;
+                padding: 20px 24px;
+                max-width: 680px;
+                margin: 0 auto 24px auto;
+                font-family: 'IBM Plex Mono', 'Courier New', monospace;
+            }
+            .mf-title {
+                font-size: 1.5rem;
+                font-weight: 900;
+                color: #ffffff;
+                letter-spacing: 0.03em;
+                margin-bottom: 18px;
+            }
+            .mf-row {
+                display: flex;
+                align-items: flex-start;
+                gap: 12px;
+                margin-bottom: 11px;
+                font-size: 0.82rem;
+            }
+            .mf-date {
+                min-width: 60px;
+                color: #e0e0e0;
+                font-weight: 600;
+                padding-top: 2px;
+            }
+            .mf-dots {
+                display: flex;
+                align-items: center;
+                gap: 3px;
+                min-width: 90px;
+                flex-wrap: nowrap;
+            }
+            .mf-dot-red   { width: 11px; height: 11px; border-radius: 50%; background: #e24b4a; display: inline-block; flex-shrink:0; }
+            .mf-dot-green { width: 11px; height: 11px; border-radius: 50%; background: #26a69a; display: inline-block; flex-shrink:0; }
+            .mf-dot-arr   { font-size: 0.72rem; color: #aaaaaa; padding: 0 1px; }
+            .mf-note {
+                color: #c8c8d0;
+                line-height: 1.45;
+                flex: 1;
+            }
+            .mf-note b { color: #ffffff; }
+            .mf-separator {
+                border: none;
+                border-top: 1px solid rgba(255,255,255,0.07);
+                margin: 6px 0;
+            }
+            </style>
+            <div class="mf-card">
+              <div class="mf-title">MASTER FORECAST IHSG</div>
 
-                  <!-- 29 Mei -->
-                  <div class="mf-row">
-                    <div class="mf-date">29 Mei</div>
-                    <div class="mf-dots">
-                      <span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span>
-                    </div>
-                    <div class="mf-note">Tekanan MSCI &amp; foreign reposition</div>
-                  </div>
-                  <hr class="mf-separator">
-
-                  <!-- 2 Juni -->
-                  <div class="mf-row">
-                    <div class="mf-date">2 Juni</div>
-                    <div class="mf-dots">
-                      <span class="mf-dot-red"></span><span class="mf-dot-arr">↗</span><span class="mf-dot-green"></span>
-                    </div>
-                    <div class="mf-note">Shake besar lalu <b>relief rebound</b></div>
-                  </div>
-                  <hr class="mf-separator">
-
-                  <!-- 3 Juni -->
-                  <div class="mf-row">
-                    <div class="mf-date">3 Juni</div>
-                    <div class="mf-dots">
-                      <span class="mf-dot-green"></span><span class="mf-dot-green"></span><span class="mf-dot-green"></span>
-                    </div>
-                    <div class="mf-note">Short covering &amp; rebound continuation</div>
-                  </div>
-                  <hr class="mf-separator">
-
-                  <!-- 4 Juni -->
-                  <div class="mf-row">
-                    <div class="mf-date">4 Juni</div>
-                    <div class="mf-dots">
-                      <span class="mf-dot-green"></span><span class="mf-dot-green"></span><span class="mf-dot-green"></span><span class="mf-dot-green"></span>
-                    </div>
-                    <div class="mf-note"><b>Momentum rebound paling kuat</b></div>
-                  </div>
-                  <hr class="mf-separator">
-
-                  <!-- 5 Juni -->
-                  <div class="mf-row">
-                    <div class="mf-date">5 Juni</div>
-                    <div class="mf-dots">
-                      <span class="mf-dot-green"></span><span class="mf-dot-arr">↘</span><span class="mf-dot-red"></span>
-                    </div>
-                    <div class="mf-note">Profit taking Jumat</div>
-                  </div>
-                  <hr class="mf-separator">
-
-                  <!-- 8 Juni -->
-                  <div class="mf-row">
-                    <div class="mf-date">8 Juni</div>
-                    <div class="mf-dots">
-                      <span class="mf-dot-green"></span><span class="mf-dot-green"></span><span class="mf-dot-green"></span>
-                    </div>
-                    <div class="mf-note">Optimisme sementara lanjut</div>
-                  </div>
-                  <hr class="mf-separator">
-
-                  <!-- 9 Juni -->
-                  <div class="mf-row">
-                    <div class="mf-date">9 Juni</div>
-                    <div class="mf-dots">
-                      <span class="mf-dot-green"></span><span class="mf-dot-green"></span>
-                    </div>
-                    <div class="mf-note">Bullish selektif</div>
-                  </div>
-                  <hr class="mf-separator">
-
-                  <!-- 10 Juni -->
-                  <div class="mf-row">
-                    <div class="mf-date">10 Juni</div>
-                    <div class="mf-dots">
-                      <span class="mf-dot-green"></span><span class="mf-dot-arr">↔</span>
-                    </div>
-                    <div class="mf-note">Konsolidasi sehat</div>
-                  </div>
-                  <hr class="mf-separator">
-
-                  <!-- 11 Juni -->
-                  <div class="mf-row">
-                    <div class="mf-date">11 Juni</div>
-                    <div class="mf-dots">
-                      <span class="mf-dot-arr">↔</span><span class="mf-dot-red"></span>
-                    </div>
-                    <div class="mf-note">Awal pricing in ketakutan MSCI</div>
-                  </div>
-                  <hr class="mf-separator">
-
-                  <!-- 12 Juni -->
-                  <div class="mf-row">
-                    <div class="mf-date">12 Juni</div>
-                    <div class="mf-dots">
-                      <span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span>
-                    </div>
-                    <div class="mf-note">Profit taking + fear mulai naik</div>
-                  </div>
-                  <hr class="mf-separator">
-
-                  <!-- 15 Juni -->
-                  <div class="mf-row">
-                    <div class="mf-date">15 Juni</div>
-                    <div class="mf-dots">
-                      <span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span>
-                    </div>
-                    <div class="mf-note">Reduce position sebelum libur</div>
-                  </div>
-                  <hr class="mf-separator">
-
-                  <!-- 17 Juni -->
-                  <div class="mf-row">
-                    <div class="mf-date">17 Juni</div>
-                    <div class="mf-dots">
-                      <span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span>
-                    </div>
-                    <div class="mf-note">H-1 assessment, <b>market paling nervous</b></div>
-                  </div>
-                  <hr class="mf-separator">
-
-                  <!-- 18 Juni -->
-                  <div class="mf-row">
-                    <div class="mf-date">18 Juni</div>
-                    <div class="mf-dots">
-                      <span class="mf-dot-arr">↕↕↕</span>
-                    </div>
-                    <div class="mf-note"><b>Hari penentuan, volatile ekstrem</b></div>
-                  </div>
-                  <hr class="mf-separator">
-
-                  <!-- 19 Juni -->
-                  <div class="mf-row">
-                    <div class="mf-date">19 Juni</div>
-                    <div class="mf-dots">
-                      <span class="mf-dot-red"></span><span class="mf-dot-arr">↔</span><span class="mf-dot-green"></span>
-                    </div>
-                    <div class="mf-note">Market mencerna hasil MSCI</div>
-                  </div>
-
+              <!-- 29 Mei -->
+              <div class="mf-row">
+                <div class="mf-date">29 Mei</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span>
                 </div>
-                """, unsafe_allow_html=True)
+                <div class="mf-note">Tekanan MSCI &amp; foreign reposition</div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 2 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">2 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-red"></span><span class="mf-dot-arr">↗</span><span class="mf-dot-green"></span>
+                </div>
+                <div class="mf-note">Shake besar lalu <b>relief rebound</b></div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 3 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">3 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-green"></span><span class="mf-dot-green"></span><span class="mf-dot-green"></span>
+                </div>
+                <div class="mf-note">Short covering &amp; rebound continuation</div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 4 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">4 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-green"></span><span class="mf-dot-green"></span><span class="mf-dot-green"></span><span class="mf-dot-green"></span>
+                </div>
+                <div class="mf-note"><b>Momentum rebound paling kuat</b></div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 5 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">5 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-green"></span><span class="mf-dot-arr">↘</span><span class="mf-dot-red"></span>
+                </div>
+                <div class="mf-note">Profit taking Jumat</div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 8 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">8 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-green"></span><span class="mf-dot-green"></span><span class="mf-dot-green"></span>
+                </div>
+                <div class="mf-note">Optimisme sementara lanjut</div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 9 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">9 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-green"></span><span class="mf-dot-green"></span>
+                </div>
+                <div class="mf-note">Bullish selektif</div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 10 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">10 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-green"></span><span class="mf-dot-arr">↔</span>
+                </div>
+                <div class="mf-note">Konsolidasi sehat</div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 11 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">11 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-arr">↔</span><span class="mf-dot-red"></span>
+                </div>
+                <div class="mf-note">Awal pricing in ketakutan MSCI</div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 12 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">12 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span>
+                </div>
+                <div class="mf-note">Profit taking + fear mulai naik</div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 15 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">15 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span>
+                </div>
+                <div class="mf-note">Reduce position sebelum libur</div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 17 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">17 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span>
+                </div>
+                <div class="mf-note">H-1 assessment, <b>market paling nervous</b></div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 18 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">18 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-arr">↕↕↕</span>
+                </div>
+                <div class="mf-note"><b>Hari penentuan, volatile ekstrem</b></div>
+              </div>
+              <hr class="mf-separator">
+
+              <!-- 19 Juni -->
+              <div class="mf-row">
+                <div class="mf-date">19 Juni</div>
+                <div class="mf-dots">
+                  <span class="mf-dot-red"></span><span class="mf-dot-arr">↔</span><span class="mf-dot-green"></span>
+                </div>
+                <div class="mf-note">Market mencerna hasil MSCI</div>
+              </div>
+
+            </div>
+            """, unsafe_allow_html=True)
 
 
         with alpha_tab_brosum:
-            if not _sigma_tab_is_unlocked('broker summary'):
-                _sigma_locked_placeholder('BROKER SUMMARY')
-            else:
+            # SECURITY GATE — konten tidak dirender sebelum unlock
+            if not _sigma_tab_is_unlocked("broker summary"):
+                _sigma_locked_placeholder("BROKER SUMMARY")
+                st.stop()
 
-                # [UI statement removed]
+            # [UI statement removed]
 
-                bs_tab_screening, bs_tab_history = st.tabs([
-                    "  🔍 BROKER SCREENING  ",
-                    "  🗂️ HISTORY BROKSUM  ",
-                ])
+            bs_tab_screening, bs_tab_history = st.tabs([
+                "  🔍 BROKER SCREENING  ",
+                "  🗂️ HISTORY BROKSUM  ",
+            ])
 
-                # ── BROKER CODES - LENGKAP (sumber: Daftar Kode Broker IDX) ──
-                _ALL_BROKERS = {
-                    # FOREIGN
-                    "AK": ("UBS Sekuritas Indonesia",          "FOREIGN", "3.4T"),
-                    "YU": ("CGS International Sekuritas",      "FOREIGN", "1.8T"),
-                    "YP": ("Mirae Asset Sekuritas Indonesia",  "FOREIGN", "1.8T"),
-                    "ZP": ("Maybank Sekuritas Indonesia",      "FOREIGN", "1.7T"),
-                    "CP": ("KB Valbury Sekuritas",             "FOREIGN", "1.0T"),
-                    "BK": ("J.P. Morgan Sekuritas Indonesia",  "FOREIGN", "734.7B"),
-                    "KZ": ("CLSA Sekuritas Indonesia",         "FOREIGN", "643.8B"),
-                    "RX": ("Macquarie Sekuritas Indonesia",    "FOREIGN", "623.4B"),
-                    "KK": ("Phillip Sekuritas Indonesia",      "FOREIGN", "412.8B"),
-                    "AI": ("Kay Hian Sekuritas",               "FOREIGN", "335.5B"),
-                    "AG": ("Kiwoom Sekuritas Indonesia",       "FOREIGN", "288.3B"),
-                    "DR": ("RHB Sekuritas Indonesia",          "FOREIGN", "278.8B"),
-                    "BQ": ("Korea Investment Sekuritas",       "FOREIGN", "270.1B"),
-                    "XA": ("NH Korindo Sekuritas Indonesia",   "FOREIGN", "237.7B"),
-                    "TP": ("OCBC Sekuritas Indonesia",         "FOREIGN", "208.5B"),
-                    "HD": ("KGI Sekuritas Indonesia",          "FOREIGN", "174.3B"),
-                    "RB": ("Ina Sekuritas Indonesia",          "FOREIGN", "66.2B"),
-                    "DP": ("DBS Vickers Sekuritas Indonesia",  "FOREIGN", "61.4B"),
-                    "LS": ("Reliance Sekuritas Indonesia",     "FOREIGN", "38.2B"),
-                    "FS": ("Yuanta Sekuritas Indonesia",       "FOREIGN", "23.1B"),
-                    "DU": ("KAF Sekuritas Indonesia",          "FOREIGN", "9.6B"),
-                    "GI": ("Webull Sekuritas Indonesia",       "FOREIGN", "9.0B"),
-                    "AH": ("Shinhan Sekuritas Indonesia",      "FOREIGN", "266.1M"),
-                    "CS": ("Credit Suisse Sekuritas",          "FOREIGN", "0"),
-                    "CG": ("Citigroup Sekuritas Indonesia",    "FOREIGN", "0"),
-                    "GW": ("HSBC Sekuritas Indonesia",         "FOREIGN", "0"),
-                    "LH": ("Royal Investium Sekuritas",        "FOREIGN", "0"),
-                    "MS": ("Morgan Stanley Sekuritas",         "FOREIGN", "0"),
-                    # BUMN
-                    "CC": ("Mandiri Sekuritas",                "BUMN",    "2.8T"),
-                    "NI": ("BNI Sekuritas",                    "BUMN",    "590.8B"),
-                    "OD": ("BRI Danareksa Sekuritas",          "BUMN",    "403.3B"),
-                    "DX": ("Bahana Sekuritas",                 "BUMN",    "69.4B"),
-                    # LOKAL
-                    "XL": ("Stockbit Sekuritas Digital",       "LOKAL",   "4.4T"),
-                    "MG": ("Semesta Indovest Sekuritas",       "LOKAL",   "1.3T"),
-                    "PD": ("Indo Premier Sekuritas",           "LOKAL",   "1.0T"),
-                    "XC": ("Ajaib Sekuritas Asia",             "LOKAL",   "978.5B"),
-                    "DH": ("Sinarmas Sekuritas",               "LOKAL",   "796.7B"),
-                    "AZ": ("Sucor Sekuritas",                  "LOKAL",   "715.8B"),
-                    "SQ": ("BCA Sekuritas",                    "LOKAL",   "705.5B"),
-                    "LG": ("Trimegah Sekuritas Indonesia",     "LOKAL",   "384.6B"),
-                    "IC": ("Integrity Capital Sekuritas",      "LOKAL",   "366.2B"),
-                    "IF": ("Samuel Sekuritas Indonesia",       "LOKAL",   "354.5B"),
-                    "GR": ("Panin Sekuritas Tbk.",             "LOKAL",   "310.1B"),
-                    "KI": ("Ciptadana Sekuritas Asia",         "LOKAL",   "278.7B"),
-                    "BB": ("Verdhana Sekuritas Indonesia",     "LOKAL",   "255.4B"),
-                    "YB": ("Yakin Bertumbuh Sekuritas",        "LOKAL",   "246.8B"),
-                    "EP": ("MNC Sekuritas",                    "LOKAL",   "203.8B"),
-                    "SS": ("Supra Sekuritas Indonesia",        "LOKAL",   "181.8B"),
-                    "AO": ("Erdhika Elit Sekuritas",           "LOKAL",   "123.3B"),
-                    "YJ": ("Lotus Andalan Sekuritas",          "LOKAL",   "115.7B"),
-                    "BR": ("Trust Sekuritas",                  "LOKAL",   "97.3B"),
-                    "HP": ("Henan Putihrai Sekuritas",         "LOKAL",   "82.8B"),
-                    "SF": ("Surya Fajar Sekuritas",            "LOKAL",   "76.2B"),
-                    "AT": ("Phintraco Sekuritas",              "LOKAL",   "73.3B"),
-                    "IN": ("Investindo Nusantara Sekuritas",   "LOKAL",   "63.1B"),
-                    "RF": ("Buana Capital Sekuritas",          "LOKAL",   "60.7B"),
-                    "FZ": ("Waterfront Sekuritas Indonesia",   "LOKAL",   "43.5B"),
-                    "SH": ("Artha Sekuritas Indonesia",        "LOKAL",   "41.5B"),
-                    "PC": ("FAC Sekuritas Indonesia",          "LOKAL",   "39.7B"),
-                    "SA": ("Elit Sukses Sekuritas",            "LOKAL",   "38.3B"),
-                    "PO": ("Pilarmas Investindo Sekuritas",    "LOKAL",   "38.0B"),
-                    "TS": ("Dwidana Sakti Sekuritas",          "LOKAL",   "37.1B"),
-                    "II": ("Danatama Makmur Sekuritas",        "LOKAL",   "36.3B"),
-                    "MU": ("Minna Padi Investama Sekuritas",   "LOKAL",   "35.2B"),
-                    "IH": ("Indo Harvest Sekuritas",           "LOKAL",   "32.3B"),
-                    "IU": ("Indo Capital Sekuritas",           "LOKAL",   "29.7B"),
-                    "CD": ("Mega Capital Sekuritas",           "LOKAL",   "29.1B"),
-                    "EL": ("Evergreen Sekuritas Indonesia",    "LOKAL",   "23.6B"),
-                    "MI": ("Victoria Sekuritas Indonesia",     "LOKAL",   "23.5B"),
-                    "AP": ("Pacific Sekuritas Indonesia",      "LOKAL",   "20.1B"),
-                    "PG": ("Panca Global Sekuritas",           "LOKAL",   "16.2B"),
-                    "RO": ("Pluang Maju Sekuritas",            "LOKAL",   "15.7B"),
-                    "AR": ("Binaartha Sekuritas",              "LOKAL",   "14.9B"),
-                    "PF": ("Danasakti Sekuritas Indonesia",    "LOKAL",   "13.5B"),
-                    "ID": ("Anugerah Sekuritas Indonesia",     "LOKAL",   "13.3B"),
-                    "ES": ("Ekokapital Sekuritas",             "LOKAL",   "12.5B"),
-                    "ZR": ("Bumiputera Sekuritas",             "LOKAL",   "11.3B"),
-                    "QA": ("Tuntun Sekuritas Indonesia",       "LOKAL",   "10.9B"),
-                    "RG": ("Profindo Sekuritas Indonesia",     "LOKAL",   "9.4B"),
-                    "GA": ("BNC Sekuritas Indonesia",          "LOKAL",   "9.2B"),
-                    "PI": ("Magenta Kapital Sekuritas",        "LOKAL",   "9.1B"),
-                    "OK": ("Net Sekuritas",                    "LOKAL",   "6.5B"),
-                    "AF": ("Harita Kencana Sekuritas",         "LOKAL",   "6.2B"),
-                    "BS": ("Equity Sekuritas Indonesia",       "LOKAL",   "5.7B"),
-                    "TF": ("Universal Broker Indonesia",       "LOKAL",   "5.6B"),
-                    "RS": ("Yulie Sekuritas Indonesia",        "LOKAL",   "5.4B"),
-                    "AD": ("OSO Sekuritas Indonesia",          "LOKAL",   "4.4B"),
-                    "JB": ("BJB Sekuritas",                    "LOKAL",   "2.1B"),
-                    "BF": ("Inti Fikasa Sekuritas",            "LOKAL",   "2.0B"),
-                    "YO": ("Amantara Sekuritas Indonesia",     "LOKAL",   "1.5B"),
-                    "IT": ("Inti Teladan Sekuritas",           "LOKAL",   "803.6M"),
-                    "PP": ("Aldiracita Sekuritas Indonesia",   "LOKAL",   "543.0M"),
-                    "DD": ("Makindo Sekuritas",                "LOKAL",   "125.3M"),
-                    "FO": ("Forte Global Sekuritas",           "LOKAL",   "3.8M"),
-                    "KS": ("Kresna Sekuritas",                 "LOKAL",   "0"),
-                    "AN": ("Wanteg Sekuritas",                 "LOKAL",   "0"),
-                    "DM": ("Masindo Artha Sekuritas",          "LOKAL",   "0"),
-                }
+            # ── BROKER CODES - LENGKAP (sumber: Daftar Kode Broker IDX) ──
+            _ALL_BROKERS = {
+                # FOREIGN
+                "AK": ("UBS Sekuritas Indonesia",          "FOREIGN", "3.4T"),
+                "YU": ("CGS International Sekuritas",      "FOREIGN", "1.8T"),
+                "YP": ("Mirae Asset Sekuritas Indonesia",  "FOREIGN", "1.8T"),
+                "ZP": ("Maybank Sekuritas Indonesia",      "FOREIGN", "1.7T"),
+                "CP": ("KB Valbury Sekuritas",             "FOREIGN", "1.0T"),
+                "BK": ("J.P. Morgan Sekuritas Indonesia",  "FOREIGN", "734.7B"),
+                "KZ": ("CLSA Sekuritas Indonesia",         "FOREIGN", "643.8B"),
+                "RX": ("Macquarie Sekuritas Indonesia",    "FOREIGN", "623.4B"),
+                "KK": ("Phillip Sekuritas Indonesia",      "FOREIGN", "412.8B"),
+                "AI": ("Kay Hian Sekuritas",               "FOREIGN", "335.5B"),
+                "AG": ("Kiwoom Sekuritas Indonesia",       "FOREIGN", "288.3B"),
+                "DR": ("RHB Sekuritas Indonesia",          "FOREIGN", "278.8B"),
+                "BQ": ("Korea Investment Sekuritas",       "FOREIGN", "270.1B"),
+                "XA": ("NH Korindo Sekuritas Indonesia",   "FOREIGN", "237.7B"),
+                "TP": ("OCBC Sekuritas Indonesia",         "FOREIGN", "208.5B"),
+                "HD": ("KGI Sekuritas Indonesia",          "FOREIGN", "174.3B"),
+                "RB": ("Ina Sekuritas Indonesia",          "FOREIGN", "66.2B"),
+                "DP": ("DBS Vickers Sekuritas Indonesia",  "FOREIGN", "61.4B"),
+                "LS": ("Reliance Sekuritas Indonesia",     "FOREIGN", "38.2B"),
+                "FS": ("Yuanta Sekuritas Indonesia",       "FOREIGN", "23.1B"),
+                "DU": ("KAF Sekuritas Indonesia",          "FOREIGN", "9.6B"),
+                "GI": ("Webull Sekuritas Indonesia",       "FOREIGN", "9.0B"),
+                "AH": ("Shinhan Sekuritas Indonesia",      "FOREIGN", "266.1M"),
+                "CS": ("Credit Suisse Sekuritas",          "FOREIGN", "0"),
+                "CG": ("Citigroup Sekuritas Indonesia",    "FOREIGN", "0"),
+                "GW": ("HSBC Sekuritas Indonesia",         "FOREIGN", "0"),
+                "LH": ("Royal Investium Sekuritas",        "FOREIGN", "0"),
+                "MS": ("Morgan Stanley Sekuritas",         "FOREIGN", "0"),
+                # BUMN
+                "CC": ("Mandiri Sekuritas",                "BUMN",    "2.8T"),
+                "NI": ("BNI Sekuritas",                    "BUMN",    "590.8B"),
+                "OD": ("BRI Danareksa Sekuritas",          "BUMN",    "403.3B"),
+                "DX": ("Bahana Sekuritas",                 "BUMN",    "69.4B"),
+                # LOKAL
+                "XL": ("Stockbit Sekuritas Digital",       "LOKAL",   "4.4T"),
+                "MG": ("Semesta Indovest Sekuritas",       "LOKAL",   "1.3T"),
+                "PD": ("Indo Premier Sekuritas",           "LOKAL",   "1.0T"),
+                "XC": ("Ajaib Sekuritas Asia",             "LOKAL",   "978.5B"),
+                "DH": ("Sinarmas Sekuritas",               "LOKAL",   "796.7B"),
+                "AZ": ("Sucor Sekuritas",                  "LOKAL",   "715.8B"),
+                "SQ": ("BCA Sekuritas",                    "LOKAL",   "705.5B"),
+                "LG": ("Trimegah Sekuritas Indonesia",     "LOKAL",   "384.6B"),
+                "IC": ("Integrity Capital Sekuritas",      "LOKAL",   "366.2B"),
+                "IF": ("Samuel Sekuritas Indonesia",       "LOKAL",   "354.5B"),
+                "GR": ("Panin Sekuritas Tbk.",             "LOKAL",   "310.1B"),
+                "KI": ("Ciptadana Sekuritas Asia",         "LOKAL",   "278.7B"),
+                "BB": ("Verdhana Sekuritas Indonesia",     "LOKAL",   "255.4B"),
+                "YB": ("Yakin Bertumbuh Sekuritas",        "LOKAL",   "246.8B"),
+                "EP": ("MNC Sekuritas",                    "LOKAL",   "203.8B"),
+                "SS": ("Supra Sekuritas Indonesia",        "LOKAL",   "181.8B"),
+                "AO": ("Erdhika Elit Sekuritas",           "LOKAL",   "123.3B"),
+                "YJ": ("Lotus Andalan Sekuritas",          "LOKAL",   "115.7B"),
+                "BR": ("Trust Sekuritas",                  "LOKAL",   "97.3B"),
+                "HP": ("Henan Putihrai Sekuritas",         "LOKAL",   "82.8B"),
+                "SF": ("Surya Fajar Sekuritas",            "LOKAL",   "76.2B"),
+                "AT": ("Phintraco Sekuritas",              "LOKAL",   "73.3B"),
+                "IN": ("Investindo Nusantara Sekuritas",   "LOKAL",   "63.1B"),
+                "RF": ("Buana Capital Sekuritas",          "LOKAL",   "60.7B"),
+                "FZ": ("Waterfront Sekuritas Indonesia",   "LOKAL",   "43.5B"),
+                "SH": ("Artha Sekuritas Indonesia",        "LOKAL",   "41.5B"),
+                "PC": ("FAC Sekuritas Indonesia",          "LOKAL",   "39.7B"),
+                "SA": ("Elit Sukses Sekuritas",            "LOKAL",   "38.3B"),
+                "PO": ("Pilarmas Investindo Sekuritas",    "LOKAL",   "38.0B"),
+                "TS": ("Dwidana Sakti Sekuritas",          "LOKAL",   "37.1B"),
+                "II": ("Danatama Makmur Sekuritas",        "LOKAL",   "36.3B"),
+                "MU": ("Minna Padi Investama Sekuritas",   "LOKAL",   "35.2B"),
+                "IH": ("Indo Harvest Sekuritas",           "LOKAL",   "32.3B"),
+                "IU": ("Indo Capital Sekuritas",           "LOKAL",   "29.7B"),
+                "CD": ("Mega Capital Sekuritas",           "LOKAL",   "29.1B"),
+                "EL": ("Evergreen Sekuritas Indonesia",    "LOKAL",   "23.6B"),
+                "MI": ("Victoria Sekuritas Indonesia",     "LOKAL",   "23.5B"),
+                "AP": ("Pacific Sekuritas Indonesia",      "LOKAL",   "20.1B"),
+                "PG": ("Panca Global Sekuritas",           "LOKAL",   "16.2B"),
+                "RO": ("Pluang Maju Sekuritas",            "LOKAL",   "15.7B"),
+                "AR": ("Binaartha Sekuritas",              "LOKAL",   "14.9B"),
+                "PF": ("Danasakti Sekuritas Indonesia",    "LOKAL",   "13.5B"),
+                "ID": ("Anugerah Sekuritas Indonesia",     "LOKAL",   "13.3B"),
+                "ES": ("Ekokapital Sekuritas",             "LOKAL",   "12.5B"),
+                "ZR": ("Bumiputera Sekuritas",             "LOKAL",   "11.3B"),
+                "QA": ("Tuntun Sekuritas Indonesia",       "LOKAL",   "10.9B"),
+                "RG": ("Profindo Sekuritas Indonesia",     "LOKAL",   "9.4B"),
+                "GA": ("BNC Sekuritas Indonesia",          "LOKAL",   "9.2B"),
+                "PI": ("Magenta Kapital Sekuritas",        "LOKAL",   "9.1B"),
+                "OK": ("Net Sekuritas",                    "LOKAL",   "6.5B"),
+                "AF": ("Harita Kencana Sekuritas",         "LOKAL",   "6.2B"),
+                "BS": ("Equity Sekuritas Indonesia",       "LOKAL",   "5.7B"),
+                "TF": ("Universal Broker Indonesia",       "LOKAL",   "5.6B"),
+                "RS": ("Yulie Sekuritas Indonesia",        "LOKAL",   "5.4B"),
+                "AD": ("OSO Sekuritas Indonesia",          "LOKAL",   "4.4B"),
+                "JB": ("BJB Sekuritas",                    "LOKAL",   "2.1B"),
+                "BF": ("Inti Fikasa Sekuritas",            "LOKAL",   "2.0B"),
+                "YO": ("Amantara Sekuritas Indonesia",     "LOKAL",   "1.5B"),
+                "IT": ("Inti Teladan Sekuritas",           "LOKAL",   "803.6M"),
+                "PP": ("Aldiracita Sekuritas Indonesia",   "LOKAL",   "543.0M"),
+                "DD": ("Makindo Sekuritas",                "LOKAL",   "125.3M"),
+                "FO": ("Forte Global Sekuritas",           "LOKAL",   "3.8M"),
+                "KS": ("Kresna Sekuritas",                 "LOKAL",   "0"),
+                "AN": ("Wanteg Sekuritas",                 "LOKAL",   "0"),
+                "DM": ("Masindo Artha Sekuritas",          "LOKAL",   "0"),
+            }
 
-                def _fetch_idx_broker_summary(ticker, period="daily"):
-                    # Bug #6 fix: gunakan st.session_state sebagai manual TTL cache (300 detik)
-                    # @st.cache_data di dalam nested block di-reset setiap render — tidak efektif.
-                    import urllib.request, json as _jbs
-                    from datetime import date as _td_bs, timedelta as _tdelta_bs
-                    import time as _time_bs
-                    _cache_key = f"_brosum_cache_{ticker}_{period}"
-                    _cache_ts_key = f"_brosum_cache_ts_{ticker}_{period}"
-                    _now_ts = _time_bs.time()
-                    _cached_val = st.session_state.get(_cache_key)
-                    _cached_ts  = st.session_state.get(_cache_ts_key, 0)
-                    if _cached_val is not None and (_now_ts - _cached_ts) < 300:
-                        return _cached_val
-                    # Fetch fresh data
-                    result = []
-                    if _goapi_available():
-                        for delta in [0, 1, 2, 3]:
-                            _date_str = str(_td_bs.today() - _tdelta_bs(days=delta))
-                            rows = goapi_get_broker_summary(ticker, _date_str)
-                            if rows:
-                                result = rows
-                                break
-                    if not result:
-                        try:
-                            url = f"https://www.idx.co.id/umbraco/Surface/StockData/GetBrokerSummary?code={ticker}&type={period}"
-                            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://www.idx.co.id/"})
-                            with urllib.request.urlopen(req, timeout=8) as r:
-                                data = _jbs.loads(r.read())
-                            if data and isinstance(data, list) and len(data) > 0:
-                                result = data
-                        except Exception:
-                            pass
-                    st.session_state[_cache_key]    = result
-                    st.session_state[_cache_ts_key] = _now_ts
-                    return result
+            def _fetch_idx_broker_summary(ticker, period="daily"):
+                # Bug #6 fix: gunakan st.session_state sebagai manual TTL cache (300 detik)
+                # @st.cache_data di dalam nested block di-reset setiap render — tidak efektif.
+                import urllib.request, json as _jbs
+                from datetime import date as _td_bs, timedelta as _tdelta_bs
+                import time as _time_bs
+                _cache_key = f"_brosum_cache_{ticker}_{period}"
+                _cache_ts_key = f"_brosum_cache_ts_{ticker}_{period}"
+                _now_ts = _time_bs.time()
+                _cached_val = st.session_state.get(_cache_key)
+                _cached_ts  = st.session_state.get(_cache_ts_key, 0)
+                if _cached_val is not None and (_now_ts - _cached_ts) < 300:
+                    return _cached_val
+                # Fetch fresh data
+                result = []
+                if _goapi_available():
+                    for delta in [0, 1, 2, 3]:
+                        _date_str = str(_td_bs.today() - _tdelta_bs(days=delta))
+                        rows = goapi_get_broker_summary(ticker, _date_str)
+                        if rows:
+                            result = rows
+                            break
+                if not result:
+                    try:
+                        url = f"https://www.idx.co.id/umbraco/Surface/StockData/GetBrokerSummary?code={ticker}&type={period}"
+                        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://www.idx.co.id/"})
+                        with urllib.request.urlopen(req, timeout=8) as r:
+                            data = _jbs.loads(r.read())
+                        if data and isinstance(data, list) and len(data) > 0:
+                            result = data
+                    except Exception:
+                        pass
+                st.session_state[_cache_key]    = result
+                st.session_state[_cache_ts_key] = _now_ts
+                return result
 
-                def _parse_brosum_rows(bs_data, all_brokers):
-                    """Parse raw broker data → sorted net_map list."""
-                    _net_map = {}
-                    for row in bs_data:
-                        broker = str(row.get("BrokerID", row.get("broker", row.get("Code", "?"))))
-                        buy_lot  = float(row.get("BuyVolume",  row.get("buy_lot",  row.get("BuyLot",  0))) or 0)
-                        sell_lot = float(row.get("SellVolume", row.get("sell_lot", row.get("SellLot", 0))) or 0)
-                        buy_val  = float(row.get("BuyValue",  row.get("buy_val",  0)) or 0)
-                        sell_val = float(row.get("SellValue", row.get("sell_val", 0)) or 0)
-                        avg_buy  = float(row.get("AvgBuy",  0) or 0)
-                        avg_sell = float(row.get("AvgSell", 0) or 0)
-                        net      = buy_lot - sell_lot
-                        net_val  = buy_val - sell_val
-                        _binfo   = all_brokers.get(broker)
-                        is_foreign = _binfo[1] == "FOREIGN" if _binfo else False
-                        is_bumn    = _binfo[1] == "BUMN"    if _binfo else False
-                        broker_name= _binfo[0] if _binfo else row.get("BrokerName", row.get("name", ""))
-                        _net_map[broker] = {
-                            "broker": broker, "name": broker_name,
-                            "buy_lot": buy_lot, "sell_lot": sell_lot, "net": net,
-                            "buy_val": buy_val, "sell_val": sell_val, "net_val": net_val,
-                            "avg_buy": avg_buy, "avg_sell": avg_sell,
-                            "is_foreign": is_foreign, "is_bumn": is_bumn,
-                            "type": ("FOREIGN" if is_foreign else "BUMN" if is_bumn else "LOKAL")
-                        }
-                    return sorted(_net_map.values(), key=lambda x: x["net"], reverse=True)
+            def _parse_brosum_rows(bs_data, all_brokers):
+                """Parse raw broker data → sorted net_map list."""
+                _net_map = {}
+                for row in bs_data:
+                    broker = str(row.get("BrokerID", row.get("broker", row.get("Code", "?"))))
+                    buy_lot  = float(row.get("BuyVolume",  row.get("buy_lot",  row.get("BuyLot",  0))) or 0)
+                    sell_lot = float(row.get("SellVolume", row.get("sell_lot", row.get("SellLot", 0))) or 0)
+                    buy_val  = float(row.get("BuyValue",  row.get("buy_val",  0)) or 0)
+                    sell_val = float(row.get("SellValue", row.get("sell_val", 0)) or 0)
+                    avg_buy  = float(row.get("AvgBuy",  0) or 0)
+                    avg_sell = float(row.get("AvgSell", 0) or 0)
+                    net      = buy_lot - sell_lot
+                    net_val  = buy_val - sell_val
+                    _binfo   = all_brokers.get(broker)
+                    is_foreign = _binfo[1] == "FOREIGN" if _binfo else False
+                    is_bumn    = _binfo[1] == "BUMN"    if _binfo else False
+                    broker_name= _binfo[0] if _binfo else row.get("BrokerName", row.get("name", ""))
+                    _net_map[broker] = {
+                        "broker": broker, "name": broker_name,
+                        "buy_lot": buy_lot, "sell_lot": sell_lot, "net": net,
+                        "buy_val": buy_val, "sell_val": sell_val, "net_val": net_val,
+                        "avg_buy": avg_buy, "avg_sell": avg_sell,
+                        "is_foreign": is_foreign, "is_bumn": is_bumn,
+                        "type": ("FOREIGN" if is_foreign else "BUMN" if is_bumn else "LOKAL")
+                    }
+                return sorted(_net_map.values(), key=lambda x: x["net"], reverse=True)
 
-                def _render_broker_distribution_html(ticker, sorted_net, is_dark, text_main, text_sub):
-                    """
-                    Render Broker Distribution mirip Stockbit:
-                    - Tabel Buy/Sell seperti Stockbit Broker Summary (Image 2)
-                    - Bar distribusi visual (buyer kiri, seller kanan)
-                    - Foreign & BUMN highlight
-                    """
-                    import json as _bdj
-                    _top_buy  = [r for r in sorted_net if r["net"] > 0][:12]
-                    _top_sell = sorted([r for r in sorted_net if r["net"] < 0], key=lambda x: x["net"])[:12]
-                    _foreign_rows = [r for r in sorted_net if r["is_foreign"]]
-                    _bumn_rows    = [r for r in sorted_net if r["is_bumn"]]
+            def _render_broker_distribution_html(ticker, sorted_net, is_dark, text_main, text_sub):
+                """
+                Render Broker Distribution mirip Stockbit:
+                - Tabel Buy/Sell seperti Stockbit Broker Summary (Image 2)
+                - Bar distribusi visual (buyer kiri, seller kanan)
+                - Foreign & BUMN highlight
+                """
+                import json as _bdj
+                _top_buy  = [r for r in sorted_net if r["net"] > 0][:12]
+                _top_sell = sorted([r for r in sorted_net if r["net"] < 0], key=lambda x: x["net"])[:12]
+                _foreign_rows = [r for r in sorted_net if r["is_foreign"]]
+                _bumn_rows    = [r for r in sorted_net if r["is_bumn"]]
 
-                    _tf_net = sum(r["net"] for r in _foreign_rows)
-                    _tb_net = sum(r["net"] for r in _bumn_rows)
-                    _tl_net = sum(r["net"] for r in sorted_net if not r["is_foreign"] and not r["is_bumn"])
-                    _total_buy_val  = sum(r["buy_val"]  for r in sorted_net)
-                    _total_sell_val = sum(r["sell_val"] for r in sorted_net)
+                _tf_net = sum(r["net"] for r in _foreign_rows)
+                _tb_net = sum(r["net"] for r in _bumn_rows)
+                _tl_net = sum(r["net"] for r in sorted_net if not r["is_foreign"] and not r["is_bumn"])
+                _total_buy_val  = sum(r["buy_val"]  for r in sorted_net)
+                _total_sell_val = sum(r["sell_val"] for r in sorted_net)
 
-                    # Broker Action score (−100..+100)
-                    _max_abs_net = max((abs(r["net"]) for r in sorted_net), default=1)
-                    _net_score = sum(r["net"] for r in sorted_net)
-                    _bar_pct   = max(0, min(100, 50 + (_net_score / max(_max_abs_net * len(sorted_net) * 0.5, 1)) * 50))
+                # Broker Action score (−100..+100)
+                _max_abs_net = max((abs(r["net"]) for r in sorted_net), default=1)
+                _net_score = sum(r["net"] for r in sorted_net)
+                _bar_pct   = max(0, min(100, 50 + (_net_score / max(_max_abs_net * len(sorted_net) * 0.5, 1)) * 50))
 
-                    _G = "#26a69a"; _R = "#f23645"; _P = "#a78bfa"; _Y = "#fbbf24"; _B = "#60a5fa"
-                    _tbl_bg = "rgba(8,12,22,0.97)" if is_dark else "#ffffff"
-                    _hdr_bg = "rgba(38,166,154,0.08)" if is_dark else "#f0fdf4"
-                    _brd    = "rgba(38,166,154,0.18)" if is_dark else "#d1fae5"
-                    _txt    = text_main; _sub = text_sub
+                _G = "#26a69a"; _R = "#f23645"; _P = "#a78bfa"; _Y = "#fbbf24"; _B = "#60a5fa"
+                _tbl_bg = "rgba(8,12,22,0.97)" if is_dark else "#ffffff"
+                _hdr_bg = "rgba(38,166,154,0.08)" if is_dark else "#f0fdf4"
+                _brd    = "rgba(38,166,154,0.18)" if is_dark else "#d1fae5"
+                _txt    = text_main; _sub = text_sub
 
-                    _all_rows_json = _bdj.dumps(_top_buy + _top_sell, ensure_ascii=False)
-                    _dist_buy_json = _bdj.dumps(_top_buy,  ensure_ascii=False)
-                    _dist_sel_json = _bdj.dumps(_top_sell, ensure_ascii=False)
+                _all_rows_json = _bdj.dumps(_top_buy + _top_sell, ensure_ascii=False)
+                _dist_buy_json = _bdj.dumps(_top_buy,  ensure_ascii=False)
+                _dist_sel_json = _bdj.dumps(_top_sell, ensure_ascii=False)
 
-                    _dist_html = f"""<!DOCTYPE html><html><head>
+                _dist_html = f"""<!DOCTYPE html><html><head>
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <style>
     *{{box-sizing:border-box;margin:0;padding:0;}}
