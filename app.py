@@ -30390,7 +30390,6 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
         -webkit-overflow-scrolling:touch !important;
         max-height:400px !important;
         width:100% !important;
-        display:block !important;
       }}
       /* Kurangi min-width tabel agar lebih pas di mobile, tapi tetap bisa scroll horizontal */
       table{{min-width:480px !important;}}
