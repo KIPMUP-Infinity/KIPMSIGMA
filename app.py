@@ -12152,7 +12152,7 @@ if current_view == "dashboard":
     <style>
     /* ── Desktop: container centered dengan padding wajar ── */
     [data-testid="stMainBlockContainer"] {
-        max-width: 1200px !important;
+        max-width: 1400px !important;
         padding-left: 1rem !important;
         padding-right: 1rem !important;
         margin: 0 auto !important;
@@ -30390,6 +30390,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
         -webkit-overflow-scrolling:touch !important;
         max-height:400px !important;
         width:100% !important;
+        display:block !important;
       }}
       /* Kurangi min-width tabel agar lebih pas di mobile, tapi tetap bisa scroll horizontal */
       table{{min-width:480px !important;}}
