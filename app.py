@@ -35115,53 +35115,58 @@ components.html("""
 </script>
 """, height=0)
 
-# ── PASSWORD LOCK: Market Forecast & Alpha Plan ────────────────────────────────
-# FIX #1: Password TIDAK lagi dikirim ke browser dalam JS plaintext.
-# Validasi dilakukan di Python (server-side). JS hanya mengirim sinyal via
-# postMessage / hidden input → Streamlit cek hash di session_state.
-# FIX #7: Unlock state disimpan di st.session_state (persist antar rerun),
-# bukan di JS variable yang reset setiap Streamlit rerun.
+# ── PASSWORD LOCK v2: Market Forecast, Alpha Plan, Broker Summary ──────────────
+# FIXES v2:
+# - Hapus flag __sigmaTabLockRunning yang mencegah re-attach setelah rerun
+# - Ganti popstate trigger → window.location.href (reliable Streamlit rerun)
+# - Perbaiki st.query_params del syntax (Streamlit 1.31+)
+# - Modal & CSS selalu di-reinject jika hilang (survive DOM teardown)
+# - iT() re-attach listener setiap 400ms tanpa flag blocking
+# ─────────────────────────────────────────────────────────────────────────────
 
 # ── Definisi tab yang dilindungi & hash password-nya (SHA-256) ──
-# Untuk ganti password: ganti nilai hash di sini.
-# Generate hash baru: python -c "import hashlib; print(hashlib.sha256('PASSWORDBARU'.encode()).hexdigest())"
+# Untuk ganti password:
+# python -c "import hashlib; print(hashlib.sha256('PASSWORDBARU'.encode()).hexdigest())"
 _TAB_PASSWORDS_HASH = {
     "market forecast": hashlib.sha256("929292".encode()).hexdigest(),
     "alpha plan":      hashlib.sha256("171717".encode()).hexdigest(),
     "broker summary":  hashlib.sha256("929292".encode()).hexdigest(),
 }
 
-# ── Cek unlock request dari query param (dikirim JS via window.location) ──
-_tab_unlock_key = st.query_params.get("_sigma_unlock_tab", "")
+# ── Cek unlock request dari query param (dikirim JS via window.location.href) ──
+_tab_unlock_key  = st.query_params.get("_sigma_unlock_tab",  "")
 _tab_unlock_hash = st.query_params.get("_sigma_unlock_hash", "")
 if _tab_unlock_key and _tab_unlock_hash:
     _expected_hash = _TAB_PASSWORDS_HASH.get(_tab_unlock_key.lower(), "")
     if _expected_hash and _tab_unlock_hash == _expected_hash:
-        _unlocked = st.session_state.setdefault("_tab_unlocked", set())
-        _unlocked.add(_tab_unlock_key.lower())
+        _unlocked_set = st.session_state.setdefault("_tab_unlocked", set())
+        _unlocked_set.add(_tab_unlock_key.lower())
+    # Bersihkan query param — Streamlit 1.31+ gunakan del
     try:
-        st.query_params.pop("_sigma_unlock_tab", None)
-        st.query_params.pop("_sigma_unlock_hash", None)
+        del st.query_params["_sigma_unlock_tab"]
+    except Exception:
+        pass
+    try:
+        del st.query_params["_sigma_unlock_hash"]
     except Exception:
         pass
 
-# ── Kirim hash list ke JS (untuk client-side verify, aman: hash tidak bisa di-reverse) ──
-_unlocked_tabs_js = list(st.session_state.get("_tab_unlocked", set()))
+# ── Kirim data ke JS ──
+_unlocked_tabs_js   = list(st.session_state.get("_tab_unlocked", set()))
 _unlocked_tabs_json = json.dumps(_unlocked_tabs_js)
-_hash_map_json = json.dumps(_TAB_PASSWORDS_HASH)
+_hash_map_json      = json.dumps(_TAB_PASSWORDS_HASH)
 
 components.html(f"""
 <script>
 (function() {{
-    if (window.__sigmaTabLockRunning) return;
-    window.__sigmaTabLockRunning = true;
     var pd = window.parent.document;
 
-    // Hash map dari Python (SHA-256) — aman di JS karena hash tidak bisa di-reverse
-    var HASH_MAP = {_hash_map_json};
-    // Daftar tab yang sudah unlock: dari Python session_state + sessionStorage (survive rerun)
-    var UNLOCKED = {_unlocked_tabs_json};
-    // Restore unlock dari sessionStorage (survive Streamlit rerun tanpa redirect)
+    // ── Hash map & unlock state dari Python ──
+    var HASH_MAP     = {_hash_map_json};
+    var LOCKED_TABS  = ["market forecast", "alpha plan", "broker summary"];
+
+    // Bangun UNLOCKED: gabung dari Python session_state + sessionStorage (survive rerun)
+    var UNLOCKED = {_unlocked_tabs_json}.slice();
     Object.keys(HASH_MAP).forEach(function(k) {{
         try {{
             if (sessionStorage.getItem('_sigma_ul_' + k) === '1' && UNLOCKED.indexOf(k) === -1) {{
@@ -35170,90 +35175,91 @@ components.html(f"""
         }} catch(e) {{}}
     }});
 
-    // Tab yang memerlukan password (nama tab dalam lowercase)
-    var LOCKED_TABS = ["market forecast", "alpha plan", "broker summary"];
-
-    if (!pd.getElementById('sigma-lock-css')) {{
+    // ── Inject CSS (selalu cek, bisa hilang setelah Streamlit DOM rebuild) ──
+    function ensureCSS() {{
+        if (pd.getElementById('sigma-lock-css')) return;
         var css = pd.createElement('style');
         css.id = 'sigma-lock-css';
         css.textContent = [
-            '#sigma-lock-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999999;align-items:center;justify-content:center;touch-action:none;}}',
-            '#sigma-lock-overlay.active{{display:flex;}}',
-            '#sigma-lock-box{{background:#1a1a2e;border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:32px 28px 28px;width:320px;max-width:90vw;box-shadow:0 8px 40px rgba(0,0,0,0.6);font-family:IBM Plex Mono,Courier New,monospace;text-align:center;transition:transform 0.08s ease;touch-action:auto;pointer-events:auto;}}',
-            '#sigma-lock-icon{{font-size:2rem;margin-bottom:10px;}}',
-            '#sigma-lock-title{{color:#fff;font-size:0.95rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;}}',
-            '#sigma-lock-subtitle{{color:rgba(255,255,255,0.45);font-size:0.7rem;margin-bottom:20px;letter-spacing:0.05em;}}',
-            '#sigma-lock-input{{width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:10px 14px;color:#fff;font-family:IBM Plex Mono,monospace;font-size:1.1rem;letter-spacing:0.2em;text-align:center;outline:none;box-sizing:border-box;margin-bottom:14px;-webkit-appearance:none;touch-action:manipulation;pointer-events:auto;cursor:text;}}',
-            '#sigma-lock-input:focus{{border-color:rgba(0,229,190,0.5);}}',
-            '#sigma-lock-btn{{width:100%;background:#00E5BE;color:#0a0a1a;border:none;border-radius:8px;padding:12px;font-family:IBM Plex Mono,monospace;font-size:0.85rem;font-weight:700;letter-spacing:0.1em;cursor:pointer;margin-bottom:10px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}}',
-            '#sigma-lock-btn:hover{{background:#00c9a7;}}',
-            '#sigma-lock-cancel{{color:rgba(255,255,255,0.35);font-size:0.7rem;cursor:pointer;letter-spacing:0.05em;text-decoration:underline;}}',
+            '#sigma-lock-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:2147483647;align-items:center;justify-content:center;touch-action:none;}}',
+            '#sigma-lock-overlay.active{{display:flex!important;}}',
+            '#sigma-lock-box{{background:#1a1a2e;border:1px solid rgba(255,255,255,0.13);border-radius:16px;padding:32px 28px 28px;width:340px;max-width:92vw;box-shadow:0 8px 48px rgba(0,0,0,0.7);font-family:IBM Plex Mono,Courier New,monospace;text-align:center;touch-action:auto;pointer-events:auto;}}',
+            '#sigma-lock-icon{{font-size:2.2rem;margin-bottom:12px;}}',
+            '#sigma-lock-title{{color:#fff;font-size:0.95rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;}}',
+            '#sigma-lock-subtitle{{color:rgba(255,255,255,0.4);font-size:0.7rem;margin-bottom:22px;letter-spacing:0.05em;line-height:1.6;}}',
+            '#sigma-lock-input{{width:100%;background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.15);border-radius:8px;padding:11px 14px;color:#fff;font-family:IBM Plex Mono,monospace;font-size:1.15rem;letter-spacing:0.25em;text-align:center;outline:none;box-sizing:border-box;margin-bottom:14px;-webkit-appearance:none;touch-action:manipulation;pointer-events:auto;cursor:text;}}',
+            '#sigma-lock-input:focus{{border-color:rgba(0,229,190,0.6);box-shadow:0 0 0 2px rgba(0,229,190,0.15);}}',
+            '#sigma-lock-btn{{width:100%;background:linear-gradient(90deg,#7B5EA7,#00C9A7);color:#fff;border:none;border-radius:8px;padding:12px;font-family:IBM Plex Mono,monospace;font-size:0.85rem;font-weight:700;letter-spacing:0.12em;cursor:pointer;margin-bottom:12px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:opacity 0.15s;}}',
+            '#sigma-lock-btn:hover{{opacity:0.88;}}',
+            '#sigma-lock-btn:disabled{{opacity:0.5;cursor:not-allowed;}}',
+            '#sigma-lock-cancel{{color:rgba(255,255,255,0.3);font-size:0.7rem;cursor:pointer;letter-spacing:0.05em;text-decoration:underline;display:inline-block;margin-top:2px;}}',
             '#sigma-lock-cancel:hover{{color:rgba(255,255,255,0.6);}}',
-            '#sigma-lock-error{{color:#E24B4A;font-size:0.72rem;margin-bottom:10px;min-height:16px;letter-spacing:0.04em;}}'
+            '#sigma-lock-error{{color:#E24B4A;font-size:0.72rem;margin-bottom:10px;min-height:18px;letter-spacing:0.04em;}}'
         ].join('');
         pd.head.appendChild(css);
     }}
-    if (!pd.getElementById('sigma-lock-overlay')) {{
+
+    // ── Inject Modal (selalu cek, bisa hilang setelah Streamlit DOM rebuild) ──
+    function ensureModal() {{
+        if (pd.getElementById('sigma-lock-overlay')) return;
         var ov = pd.createElement('div');
         ov.id = 'sigma-lock-overlay';
         ov.innerHTML =
             '<div id="sigma-lock-box">' +
             '<div id="sigma-lock-icon">&#x1F510;</div>' +
             '<div id="sigma-lock-title">AKSES TERKUNCI</div>' +
-            '<div id="sigma-lock-subtitle">Masukkan kode akses</div>' +
-            '<input id="sigma-lock-input" type="password" maxlength="12" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" autocomplete="off" />' +
+            '<div id="sigma-lock-subtitle">Masukkan kode akses untuk membuka konten ini.</div>' +
+            '<input id="sigma-lock-input" type="password" maxlength="20" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" autocomplete="off" inputmode="text" />' +
             '<div id="sigma-lock-error"></div>' +
-            '<button id="sigma-lock-btn">BUKA AKSES</button>' +
-            '<span id="sigma-lock-cancel">Batal</span>' +
+            '<button id="sigma-lock-btn">&#x1F513;&nbsp; BUKA AKSES</button>' +
+            '<br><span id="sigma-lock-cancel">Batal</span>' +
             '</div>';
         pd.body.appendChild(ov);
+
         pd.getElementById('sigma-lock-btn').addEventListener('click', submitPassword);
         pd.getElementById('sigma-lock-cancel').addEventListener('click', hideModal);
         pd.getElementById('sigma-lock-input').addEventListener('keydown', function(e) {{
-            if (e.key === 'Enter') submitPassword();
+            if (e.key === 'Enter') {{ e.preventDefault(); submitPassword(); }}
             if (e.key === 'Escape') hideModal();
         }});
-        pd.getElementById('sigma-lock-overlay').addEventListener('click', function(e) {{
-            if (e.target === this) hideModal();
+        ov.addEventListener('click', function(e) {{
+            if (e.target === ov) hideModal();
         }});
     }}
 
-    var _pt = null, _pk = null;
+    var _pk = null;
 
-    function isUnlocked(tabKey) {{
-        return UNLOCKED.indexOf(tabKey) !== -1;
+    function isUnlocked(k) {{
+        return UNLOCKED.indexOf(k) !== -1;
     }}
 
-    function gL(t) {{
-        var tx = (t.textContent || '').toLowerCase().trim();
+    function getTabKey(el) {{
+        var tx = (el.textContent || '').toLowerCase().replace(/\\s+/g,' ').trim();
         for (var i = 0; i < LOCKED_TABS.length; i++) {{
             if (tx.indexOf(LOCKED_TABS[i]) !== -1) return LOCKED_TABS[i];
         }}
         return null;
     }}
 
-    function showM(t, k) {{
-        _pt = t; _pk = k;
+    function showModal(k) {{
+        ensureCSS(); ensureModal();
+        _pk = k;
         var inp = pd.getElementById('sigma-lock-input');
         var btn = pd.getElementById('sigma-lock-btn');
         inp.value = '';
         inp.disabled = false;
         btn.disabled = false;
-        btn.textContent = 'BUKA AKSES';
+        btn.innerHTML = '&#x1F513;&nbsp; BUKA AKSES';
         pd.getElementById('sigma-lock-error').textContent = '';
         pd.getElementById('sigma-lock-overlay').classList.add('active');
-        // FIX MOBILE: iOS butuh user gesture yang masih aktif untuk focus + keyboard
-        // Langsung focus (masih dalam callstack click event) → keyboard muncul
         try {{ inp.focus(); }} catch(e) {{}}
-        // Fallback setTimeout juga untuk browser lain
-        setTimeout(function() {{
-            try {{ inp.focus(); }} catch(e) {{}}
-        }}, 100);
+        setTimeout(function() {{ try {{ inp.focus(); }} catch(e) {{}} }}, 120);
     }}
 
     function hideModal() {{
-        pd.getElementById('sigma-lock-overlay').classList.remove('active');
-        _pt = null; _pk = null;
+        var ov = pd.getElementById('sigma-lock-overlay');
+        if (ov) ov.classList.remove('active');
+        _pk = null;
     }}
 
     function submitPassword() {{
@@ -35262,10 +35268,9 @@ components.html(f"""
         var btn = pd.getElementById('sigma-lock-btn');
         var val = inp.value.trim();
 
-        // FIX BUG 1: validasi DULU sebelum disable — kalau kosong langsung return tanpa disable
         if (!val) {{
             err.textContent = '⚠️ Masukkan kode akses terlebih dahulu.';
-            inp.focus();
+            try {{ inp.focus(); }} catch(e) {{}}
             return;
         }}
         if (!_pk) {{
@@ -35273,72 +35278,84 @@ components.html(f"""
             return;
         }}
 
-        // Baru disable setelah validasi lolos
         inp.disabled = true;
-        btn.textContent = 'MEMVERIFIKASI...';
+        btn.innerHTML = '&#x23F3; MEMVERIFIKASI...';
         btn.disabled = true;
         err.textContent = '';
 
-        function _resetBtn() {{
-            btn.textContent = 'BUKA AKSES';
+        function resetBtn() {{
+            btn.innerHTML = '&#x1F513;&nbsp; BUKA AKSES';
             btn.disabled = false;
             inp.disabled = false;
         }}
 
-        // Hash password di browser pakai SubtleCrypto — tidak perlu redirect/reload
-        // FIX BUG 2: tambahkan timeout fallback 5 detik agar tidak stuck kalau SubtleCrypto gagal
         var _timedOut = false;
         var _timeout = setTimeout(function() {{
             _timedOut = true;
-            _resetBtn();
+            resetBtn();
             err.textContent = 'Timeout verifikasi. Coba lagi.';
-        }}, 5000);
+        }}, 6000);
 
-        window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(val)).then(function(buf) {{
+        window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(val))
+        .then(function(buf) {{
             if (_timedOut) return;
             clearTimeout(_timeout);
-            var hex = Array.from(new Uint8Array(buf)).map(function(b) {{ return b.toString(16).padStart(2,'0'); }}).join('');
+            var hex = Array.from(new Uint8Array(buf))
+                .map(function(b) {{ return b.toString(16).padStart(2,'0'); }}).join('');
             var expected = HASH_MAP[_pk] || '';
             if (expected && hex === expected) {{
-                // Cocok — simpan di sessionStorage dulu (instant, survive rerun)
+                // ✅ Password cocok
                 try {{ sessionStorage.setItem('_sigma_ul_' + _pk, '1'); }} catch(e) {{}}
                 if (UNLOCKED.indexOf(_pk) === -1) UNLOCKED.push(_pk);
                 hideModal();
-                // Tandai di Python session_state via pushState + soft rerun
+                // Trigger Streamlit rerun via window.location (RELIABLE — tidak pakai popstate)
                 try {{
-                    var url = window.parent.location.href.split('?')[0];
-                    window.parent.history.pushState(null, '', url + '?_sigma_unlock_tab=' + encodeURIComponent(_pk) + '&_sigma_unlock_hash=' + encodeURIComponent(hex));
-                }} catch(e) {{}}
-                // Trigger Streamlit rerender via hidden click on a harmless element
-                try {{ window.parent.dispatchEvent(new Event('popstate')); }} catch(e) {{}}
+                    var base = window.parent.location.href.split('?')[0];
+                    window.parent.location.href = base
+                        + '?_sigma_unlock_tab='  + encodeURIComponent(_pk)
+                        + '&_sigma_unlock_hash=' + encodeURIComponent(hex);
+                }} catch(e) {{
+                    // Fallback: reload biasa
+                    try {{ window.parent.location.reload(); }} catch(e2) {{}}
+                }}
             }} else {{
-                _resetBtn();
+                resetBtn();
                 err.textContent = '❌ Kode akses salah. Coba lagi.';
                 inp.value = '';
-                setTimeout(function() {{ inp.focus(); }}, 50);
+                setTimeout(function() {{ try {{ inp.focus(); }} catch(e) {{}} }}, 60);
             }}
-        }}).catch(function(e) {{
+        }})
+        .catch(function(e) {{
             if (_timedOut) return;
             clearTimeout(_timeout);
-            _resetBtn();
-            err.textContent = 'Error verifikasi. Refresh dan coba lagi.';
+            resetBtn();
+            err.textContent = 'Error verifikasi. Refresh halaman dan coba lagi.';
         }});
     }}
 
-    function iT() {{
-        var ts = pd.querySelectorAll('[data-baseweb="tab"],button[role="tab"]');
-        ts.forEach(function(tab) {{
-            if (tab.__sLB) return;
-            var k = gL(tab); if (!k) return;
+    // ── Attach click interceptor ke semua tab yang terkunci ──
+    // Tidak pakai flag global — re-attach aman karena pakai tab.__sLB per-element
+    function attachTabListeners() {{
+        ensureCSS(); ensureModal();
+        var tabs = pd.querySelectorAll('[data-baseweb="tab"],button[role="tab"]');
+        tabs.forEach(function(tab) {{
+            if (tab.__sLB) return;  // sudah ter-attach, skip
+            var k = getTabKey(tab);
+            if (!k) return;
             tab.__sLB = true;
             tab.addEventListener('click', function(e) {{
-                if (isUnlocked(k)) return;  // FIX #7: cek dari UNLOCKED list (dari Python)
-                e.preventDefault(); e.stopPropagation();
-                showM(tab, k);
-            }}, true);
+                if (isUnlocked(k)) return;  // sudah unlock, biarkan Streamlit handle
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                showModal(k);
+            }}, true);  // capture phase agar intercept sebelum Streamlit
         }});
     }}
-    setInterval(iT, 400); iT();
+
+    // Jalankan segera + polling — tidak ada flag global yang memblok
+    attachTabListeners();
+    setInterval(attachTabListeners, 400);
+
 }})();
 </script>
 """, height=0)
