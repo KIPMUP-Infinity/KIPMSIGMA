@@ -30096,7 +30096,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
             # ─────────────────────────────────────────────────────────
             # ECONOMIC CALENDAR — ID · US  (REALTIME ACTUAL + AI ANALYST)
             # ─────────────────────────────────────────────────────────
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📅 ECONOMIC CALENDAR — ID · US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR — ID · US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
             # ── Fetch Actual data realtime dari Forexfactory RSS (gratis, no key) ──
             @st.cache_data(ttl=120, show_spinner=False)  # ditingkatkan dari 300 → 120 detik
