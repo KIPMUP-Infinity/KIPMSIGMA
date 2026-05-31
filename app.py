@@ -12152,7 +12152,7 @@ if current_view == "dashboard":
     <style>
     /* ── Desktop: container centered dengan padding wajar ── */
     [data-testid="stMainBlockContainer"] {
-        max-width: 1400px !important;
+        max-width: 1600px !important;
         padding-left: 1rem !important;
         padding-right: 1rem !important;
         margin: 0 auto !important;
