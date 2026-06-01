@@ -26803,11 +26803,24 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                     _rows_avoid= _plan_data.get("avoid", [])
                     _outlook   = _plan_data.get("outlook", "")
 
-                    st.markdown(
-                        f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
-                        f"color:#888;margin-bottom:10px;'>🕐 {_today_entry.get('generated_at','—')}"
-                        f"&nbsp;·&nbsp;{_bs30_count} saham universe</div>",
-                        unsafe_allow_html=True)
+                    _dh_col1, _dh_col2 = st.columns([3, 1])
+                    with _dh_col1:
+                        st.markdown(
+                            f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
+                            f"color:#888;margin-bottom:10px;'>🕐 {_today_entry.get('generated_at','—')}"
+                            f"&nbsp;·&nbsp;{_bs30_count} saham universe</div>",
+                            unsafe_allow_html=True)
+                    with _dh_col2:
+                        _daily_dl_ready = st.session_state.get("_daily_dl_data")
+                        if _daily_dl_ready:
+                            st.download_button(
+                                label="⬇️ Download Plan",
+                                data=_daily_dl_ready,
+                                file_name=f"SIGMA_DailyPlan_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
+                                mime="text/plain",
+                                key="daily_plan_dl_btn",
+                                use_container_width=True,
+                            )
 
                     if _outlook:
                         st.markdown(
@@ -26975,6 +26988,30 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                             "⚡ DAILY TRADE PLAN · TOP 10 SAHAM PILIHAN</div>",
                             unsafe_allow_html=True)
 
+                        # ── Enrich RSI/MACD/BB ulang dari closes5 jika belum ada ──
+                        for _er_row in _top10_rows:
+                            _need_enrich = (
+                                _er_row.get("rsi") is None or
+                                _er_row.get("macd_label") is None or
+                                _er_row.get("bb_label") is None
+                            )
+                            if _need_enrich:
+                                _er_c = _er_row.get("closes", _er_row.get("closes5", []))
+                                _er_h = _er_row.get("highs",  _er_row.get("highs5",  []))
+                                _er_l = _er_row.get("lows",   _er_row.get("lows5",   []))
+                                _er_v = _er_row.get("volumes", _er_row.get("vols5",  []))
+                                if len(_er_c) >= 5:
+                                    try:
+                                        _er_row.update(
+                                            _enrich_row_indicators(
+                                                dict(_er_row),
+                                                closes=_er_c, highs=_er_h,
+                                                lows=_er_l,   volumes=_er_v,
+                                            )
+                                        )
+                                    except Exception:
+                                        pass
+
                         if _top10_rows:
                             render_bsjp_cards(
                                 rows         = _top10_rows,
@@ -26999,16 +27036,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                     f" | TP1 {_dp_r.get('tp1',0)} | TP2 {_dp_r.get('tp2',0)}"
                                     f" | Rating: {_dp_r.get('bias','BUY')}"
                                 )
-                            _dp_dl_col1, _dp_dl_col2 = st.columns([3, 1])
-                            with _dp_dl_col2:
-                                st.download_button(
-                                    label="⬇️ Download Daily Plan (.txt)",
-                                    data="\n".join(_dp_dl_lines).encode("utf-8"),
-                                    file_name=f"SIGMA_DailyPlan_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
-                                    mime="text/plain",
-                                    key="daily_plan_dl_btn",
-                                    use_container_width=True,
-                                )
+                            st.session_state["_daily_dl_data"] = "\n".join(_dp_dl_lines).encode("utf-8")
 
                         # ── Simpan data ranking ke session_state agar bisa dirender di tab terpisah ──
                         st.session_state["_daily_ranked_20"]  = _ranked_20
@@ -27806,9 +27834,20 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                         f"⚠️ <b>BSJP hari ini ({_now_b.strftime('%d %b %Y')}) belum ter-generate.</b> "
                         f"Klik ▶ GENERATE BSJP untuk membuat sekarang.</div>",
                         unsafe_allow_html=True)
-                _bcol1, _bcol2 = st.columns([4, 1])
+                _bcol1, _bcol2, _bcol3 = st.columns([4, 1.2, 1.2])
                 with _bcol2:
                     run_bsjp = st.button("▶ GENERATE BSJP", use_container_width=True, key="btn_bsjp")
+                with _bcol3:
+                    _bsjp_dl_ready = st.session_state.get("_bsjp_dl_data")
+                    if _bsjp_dl_ready:
+                        st.download_button(
+                            label="⬇️ Download Plan",
+                            data=_bsjp_dl_ready,
+                            file_name=f"SIGMA_BSJP_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
+                            mime="text/plain",
+                            key="bsjp_plan_dl_btn",
+                            use_container_width=True,
+                        )
 
                 if run_bsjp:
                     with _sigma_spinner("⚡ SIGMA Engine mencari kandidat BSJP..."):
@@ -27879,16 +27918,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                 f" | TP1 {_br.get('tp1',0)} | TP2 {_br.get('tp2',0)}"
                                 f" | Rating: {_br.get('bias','BUY')}"
                             )
-                        _bsjp_dl_col1, _bsjp_dl_col2 = st.columns([3, 1])
-                        with _bsjp_dl_col2:
-                            st.download_button(
-                                label="⬇️ Download BSJP Plan (.txt)",
-                                data="\n".join(_bsjp_dl_lines).encode("utf-8"),
-                                file_name=f"SIGMA_BSJP_{_wib_now().strftime('%Y%m%d_%H%M')}.txt",
-                                mime="text/plain",
-                                key="bsjp_plan_dl_btn",
-                                use_container_width=True,
-                            )
+                        st.session_state["_bsjp_dl_data"] = "\n".join(_bsjp_dl_lines).encode("utf-8")
 
                 else:
                     st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
