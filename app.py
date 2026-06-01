@@ -11620,8 +11620,9 @@ def show_login():
     [data-testid="stTextInput"] input:focus {{ border: 1px solid rgba(201,162,39,0.70) !important; box-shadow: 0 0 0 2px rgba(201,162,39,0.12) !important; outline: none !important; }}
     [data-testid="stTextInput"] input::placeholder {{ color: rgba(255,255,255,0.35) !important; }}
     [data-testid="stTextInput"] label {{ color: rgba(255,255,255,0.6) !important; font-size: 0.82rem !important; }}
-    [data-testid="stMainBlockContainer"] .stButton > button {{ background: linear-gradient(135deg, #c9a227, #a07a14) !important; color: #0A0C12 !important; font-weight: 700 !important; border: none !important; border-radius: 12px !important; padding: 12px !important; font-size: 0.95rem !important; letter-spacing: 0.5px !important; transition: opacity 0.2s, transform 0.1s !important; box-shadow: 0 4px 20px rgba(124,58,237,0.35) !important; }}
+    [data-testid="stMainBlockContainer"] .stButton > button {{ background: linear-gradient(135deg, #c9a227, #a07a14) !important; color: #0A0C12 !important; font-weight: 700 !important; border: none !important; border-radius: 12px !important; padding: 12px !important; font-size: 0.95rem !important; letter-spacing: 0.5px !important; transition: opacity 0.2s, transform 0.1s, box-shadow 0.1s !important; box-shadow: 0 4px 20px rgba(124,58,237,0.35) !important; will-change: transform !important; }}
     [data-testid="stMainBlockContainer"] .stButton > button:hover {{ opacity: 0.92 !important; transform: translateY(-1px) !important; }}
+    [data-testid="stMainBlockContainer"] .stButton > button:active, [data-testid="stMainBlockContainer"] .stButton > button:focus {{ transform: none !important; box-shadow: 0 2px 8px rgba(124,58,237,0.25) !important; outline: none !important; opacity: 1 !important; }}
     [data-testid="stTabs"] [role="tablist"] {{ background: rgba(255,255,255,0.05) !important; border-radius: 12px !important; padding: 4px !important; border: 1px solid rgba(255,255,255,0.08) !important; gap: 2px !important; }}
     [data-testid="stTabs"] button[role="tab"] {{ border-radius: 9px !important; color: rgba(255,255,255,0.5) !important; font-size: 0.85rem !important; padding: 7px 12px !important; border: none !important; background: transparent !important; }}
     [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{ background: linear-gradient(135deg,rgba(201,162,39,0.22),rgba(160,122,20,0.18)) !important; color: #c9a227 !important; font-weight: 700 !important; border-bottom: 2px solid #c9a227 !important; }}
@@ -13628,14 +13629,37 @@ if current_view == "dashboard":
         text-transform: uppercase !important;
         border-radius: 50px !important;
         padding: 10px 24px !important;
-        transition: all 0.2s !important;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease !important;
         box-shadow: 0 4px 18px rgba(139,92,246,0.35) !important;
+        will-change: transform !important;
     }}
     [data-testid="stTabs"] ~ div .stButton > button:hover,
     [data-testid="stVerticalBlock"] .stButton > button:hover {{
         box-shadow: 0 6px 28px rgba(139,92,246,0.55) !important;
         transform: translateY(-1px) !important;
         filter: brightness(1.1) !important;
+    }}
+    [data-testid="stTabs"] ~ div .stButton > button:active,
+    [data-testid="stTabs"] ~ div .stButton > button:focus,
+    [data-testid="stVerticalBlock"] .stButton > button:active,
+    [data-testid="stVerticalBlock"] .stButton > button:focus {{
+        transform: none !important;
+        box-shadow: 0 2px 10px rgba(139,92,246,0.30) !important;
+        filter: brightness(1.0) !important;
+        outline: none !important;
+    }}
+
+    /* ── v17: Lock all buttons on :active/:focus — prevent visual shift ── */
+    .stButton > button:active,
+    .stButton > button:focus {{
+        transform: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }}
+    [data-testid="stTabs"] button[role="tab"]:active,
+    [data-testid="stTabs"] button[role="tab"]:focus {{
+        transform: none !important;
+        outline: none !important;
     }}
 
     /* -- Gap control -- */
@@ -19519,32 +19543,32 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 st.markdown(f"""<div style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};
                     background:rgba(0,200,83,0.07);border-left:3px solid #00c853;
                     padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
-                 <b style='color:#00c853;'>Efektif sejak:</b> 23 Maret 2026 (FTSE Quarterly Review Q1 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-                <b style='color:#00c853;'>Review berikutnya:</b> Juni 2026 (pengumuman ~5 Jun, efektif 22 Jun 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-                <span style='color:{text_sub};'>Jadwal: 4&times; setahun — Mar/Jun/Sep/Des. <b>Large:</b> 16 · <b>Mid:</b> 5 · <b>Small:</b> 6 saham. Sumber: <b>ftserussell.com</b></span>
+                 <b style='color:#00c853;'>Efektif sejak:</b> 24 Maret 2026 (FTSE Quarterly Review Q1 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <b style='color:#00c853;'>Review berikutnya:</b> Q2 2026 (pengumuman ~6 Jun, efektif 23 Jun 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <span style='color:{text_sub};'>Jadwal: 4&times; setahun — Mar/Jun/Sep/Des. <b>Large:</b> 15 · <b>Mid:</b> 6 · <b>Small:</b> 6 saham. Sumber: <b>ftserussell.com</b></span>
                 </div>""", unsafe_allow_html=True)
 
                 import pandas as pd
                 ftse_large = {
-                    "Ticker": ["AMMN","ASII","BBCA","BBNI","BBRI","BMRI","BREN","BRPT","CPIN","GOTO","ICBP","INDF","KLBF","MDKA","TLKM","UNTR"],
-                    "Nama":   ["Amman Mineral","Astra International","Bank Central Asia","Bank Negara Indonesia","Bank Rakyat Indonesia","Bank Mandiri","Barito Renewables","Barito Pacific","Charoen Pokphand","GoTo Gojek Tokopedia","Indofood CBP","Indofood SM","Kalbe Farma","Merdeka Copper Gold","Telkom Indonesia","United Tractors"],
-                    "Sektor": ["Materials","Industrials","Finance","Finance","Finance","Finance","Energy","Materials","Consumer","Technology","Consumer","Consumer","Healthcare","Materials","Infrastructures","Industrials"],
-                    "Tier":   ["Large Cap"]*16,
-                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","DOWNGRADED","Existing","Existing","Existing","Existing","Existing","Existing"],
+                    "Ticker": ["AMMN","ASII","BBCA","BBNI","BBRI","BMRI","BREN","BRPT","CPIN","ICBP","INDF","KLBF","MDKA","TLKM","UNTR"],
+                    "Nama":   ["Amman Mineral","Astra International","Bank Central Asia","Bank Negara Indonesia","Bank Rakyat Indonesia","Bank Mandiri","Barito Renewables","Barito Pacific","Charoen Pokphand","Indofood CBP","Indofood SM","Kalbe Farma","Merdeka Copper Gold","Telkom Indonesia","United Tractors"],
+                    "Sektor": ["Materials","Industrials","Finance","Finance","Finance","Finance","Energy","Materials","Consumer","Consumer","Consumer","Healthcare","Materials","Infrastructures","Industrials"],
+                    "Tier":   ["Large Cap"]*15,
+                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing"],
                 }
                 ftse_mid = {
-                    "Ticker": ["ADRO","AKRA","BRIS","INKP","PGAS"],
-                    "Nama":   ["Adaro Energy","AKR Corporindo","Bank Syariah Indonesia","Indah Kiat Pulp","Perusahaan Gas Negara"],
-                    "Sektor": ["Energy","Energy","Finance","Materials","Energy"],
-                    "Tier":   ["Mid Cap"]*5,
-                    "Status": ["Existing","Existing","Existing","Existing","Existing"],
+                    "Ticker": ["ADRO","AKRA","BRIS","GOTO","INKP","PGAS"],
+                    "Nama":   ["Adaro Energy","AKR Corporindo","Bank Syariah Indonesia","GoTo Gojek Tokopedia","Indah Kiat Pulp","Perusahaan Gas Negara"],
+                    "Sektor": ["Energy","Energy","Finance","Technology","Materials","Energy"],
+                    "Tier":   ["Mid Cap"]*6,
+                    "Status": ["Existing","Existing","Existing","DOWNGRADED","Existing","Existing"],
                 }
                 ftse_small = {
-                    "Ticker": ["PTRO","CUAN","VKTR","RAJA","AADI","PGEO"],
-                    "Nama":   ["Petrosea","Petrindo Jaya Kreasi","VKTR Teknologi Mobilitas","Rukun Raharja","Adaro Andalan Indonesia","Pertamina Geothermal Energy"],
-                    "Sektor": ["Infrastructures","Energy","Industrials","Energy","Finance","Energy"],
+                    "Ticker": ["AADI","CUAN","PGEO","PTRO","RAJA","VKTR"],
+                    "Nama":   ["Adaro Andalan Indonesia","Petrindo Jaya Kreasi","Pertamina Geothermal Energy","Petrosea","Rukun Raharja","VKTR Teknologi Mobilitas"],
+                    "Sektor": ["Energy","Energy","Energy","Infrastructures","Energy","Industrials"],
                     "Tier":   ["Small Cap"]*6,
-                    "Status": ["Existing","Existing","Existing","Existing","NEW ENTRY","NEW ENTRY"],
+                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing"],
                 }
                 df_ftse_l  = pd.DataFrame(ftse_large)
                 df_ftse_m  = pd.DataFrame(ftse_mid)
@@ -19912,7 +19936,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                     {"Sektor":"Konstruksi (BUMN Karya)","Ticker":"PTPP","Nama":"PP (Pembangunan Perumahan) Tbk.","Indeks":"LQ45·IDX80","Keterangan":"BUMN Karya konstruksi, properti & infrastruktur."},
                     {"Sektor":"Konstruksi (BUMN Karya)","Ticker":"ADHI","Nama":"Adhi Karya (Persero) Tbk.","Indeks":"IDX80·KOMPAS100","Keterangan":"BUMN Karya konstruksi & pengembang LRT Jabodebek."},
                     {"Sektor":"Konstruksi (BUMN Karya)","Ticker":"WTON","Nama":"Wijaya Karya Beton Tbk.","Indeks":"IDX80","Keterangan":"Anak usaha WIKA, produsen beton pracetak terbesar BUMN."},
-                    {"Sektor":"Konstruksi (BUMN Karya)","Ticker":"WIKA","Nama":"Wijaya Karya Tbk.","Indeks":"—","Keterangan":"BUMN Karya EPC & infrastruktur. ⚠️ SUSPEND — PKPU aktif."},
+                    {"Sektor":"Konstruksi (BUMN Karya)","Ticker":"WIKA","Nama":"Wijaya Karya Tbk.","Indeks":"—","Keterangan":"BUMN Karya EPC & infrastruktur. ⚠️ SUSPEND — PKPU aktif. OUT dari IDX80 per 4 Mei 2026."},
                     {"Sektor":"Konstruksi (BUMN Karya)","Ticker":"WSKT","Nama":"Waskita Karya Tbk.","Indeks":"—","Keterangan":"BUMN Karya tol & konstruksi. ⚠️ SUSPEND — restrukturisasi utang."},
                     {"Sektor":"Konstruksi (BUMN Karya)","Ticker":"PPRO","Nama":"PP Properti Tbk.","Indeks":"—","Keterangan":"Anak usaha PTPP (properti). ⚠️ SUSPEND — restrukturisasi."},
                     # ── INDUSTRI & MANUFAKTUR ──
@@ -31143,11 +31167,11 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                     # BI Rate: update dari keputusan RDG BI terbaru (Mei 2026 = 5.25%)
                     # Fed Funds: update dari FOMC terbaru (Mei 2026 = 4.25-4.50%)
                     rates = {
-                        "BI Rate":   {"value": 5.25, "change": 0.00, "source": "hardcoded", "label": "Bank Indonesia — RDG Mei 2026"},
-                        "Fed Funds": {"value": 4.50, "change": 0.00, "source": "hardcoded", "label": "US Federal Reserve — FOMC Mei 2026"},
-                        "SOFR":      {"value": 4.31, "change": -0.02, "source": "hardcoded", "label": "Secured Overnight Financing Rate"},
-                        "US 10Y":    {"value": 4.38, "change": 0.05, "source": "hardcoded", "label": "US Treasury 10Y Yield"},
-                        "ID 10Y":    {"value": 6.82, "change": -0.08, "source": "hardcoded", "label": "Indonesia Gov Bond 10Y"},
+                        "BI Rate":   {"value": 5.25,  "change":  0.50, "source": "hardcoded", "label": "Bank Indonesia — RDG Mei 2026 (naik 50bps)"},
+                        "Fed Funds": {"value": 4.375, "change":  0.00, "source": "hardcoded", "label": "US Federal Reserve — FOMC Mei 2026 (4.25–4.50%)"},
+                        "SOFR":      {"value": 4.30,  "change": -0.01, "source": "hardcoded", "label": "Secured Overnight Financing Rate"},
+                        "US 10Y":    {"value": 4.50,  "change":  0.08, "source": "hardcoded", "label": "US Treasury 10Y Yield"},
+                        "ID 10Y":    {"value": 7.10,  "change":  0.25, "source": "hardcoded", "label": "Indonesia Gov Bond 10Y"},
                     }
 
                     # ── Layer 1: yfinance untuk US 10Y Treasury ──
@@ -32215,13 +32239,13 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                 <div class="mf-card">
                   <div class="mf-title">MASTER FORECAST IHSG</div>
 
-                  <!-- 29 Mei -->
-                  <div class="mf-row">
-                    <div class="mf-date">29 Mei</div>
+                  <!-- 29 Mei — SUDAH TERJADI -->
+                  <div class="mf-row" style="opacity:0.45;">
+                    <div class="mf-date" style="color:#888;">29 Mei</div>
                     <div class="mf-dots">
                       <span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span><span class="mf-dot-red"></span>
                     </div>
-                    <div class="mf-note">Tekanan MSCI &amp; foreign reposition</div>
+                    <div class="mf-note" style="color:#888;">✓ Tekanan MSCI &amp; foreign reposition — <b style="color:#aaa;">TERJADI</b></div>
                   </div>
                   <hr class="mf-separator">
 
@@ -32352,6 +32376,36 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                       <span class="mf-dot-red"></span><span class="mf-dot-arr">↔</span><span class="mf-dot-green"></span>
                     </div>
                     <div class="mf-note">Market mencerna hasil MSCI</div>
+                  </div>
+                  <hr class="mf-separator">
+
+                  <!-- 20 Juni -->
+                  <div class="mf-row">
+                    <div class="mf-date">20 Juni</div>
+                    <div class="mf-dots">
+                      <span class="mf-dot-green"></span><span class="mf-dot-green"></span><span class="mf-dot-green"></span>
+                    </div>
+                    <div class="mf-note">Recovery pasca MSCI. Window akumulasi big cap.</div>
+                  </div>
+                  <hr class="mf-separator">
+
+                  <!-- 23-25 Juni -->
+                  <div class="mf-row">
+                    <div class="mf-date">23–25 Jun</div>
+                    <div class="mf-dots">
+                      <span class="mf-dot-green"></span><span class="mf-dot-green"></span><span class="mf-dot-arr">↔</span><span class="mf-dot-green"></span>
+                    </div>
+                    <div class="mf-note">FTSE rebalancing efektif ~23 Jun. Demand GOTO di Mid Cap.</div>
+                  </div>
+                  <hr class="mf-separator">
+
+                  <!-- 26-30 Juni -->
+                  <div class="mf-row">
+                    <div class="mf-date">26–30 Jun</div>
+                    <div class="mf-dots">
+                      <span class="mf-dot-green"></span><span class="mf-dot-arr">↘</span><span class="mf-dot-red"></span>
+                    </div>
+                    <div class="mf-note">Window akhir kuartal — profit taking + rebalancing reksa dana.</div>
                   </div>
 
                 </div>
