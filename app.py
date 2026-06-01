@@ -800,7 +800,7 @@ def idxdb_render_admin_panel():
 # Panduan cepat penggunaan di masing-masing fitur:
 #
 # ┌─────────────────────────────────────────────────────────────────────────┐
-# │ ALPHA PLAN / DAILY PLAN / WEEKLY PLAN                                   │
+# │ SIGMA PLAN / DAILY PLAN / WEEKLY PLAN                                   │
 # │                                                                         │
 # │  # Ambil 30 hari data historis untuk sinyal                             │
 # │  rows = idxdb_get_ticker(ticker, days=30)                               │
@@ -822,7 +822,7 @@ def idxdb_render_admin_panel():
 # │  ff = idxdb_get_free_float_from_shares(ticker)                          │
 # │  if ff: return ff                                                       │
 # ├─────────────────────────────────────────────────────────────────────────┤
-# │ ALPHA STOCK INSIGHT                                                     │
+# │ SIGMA STOCK INSIGHT                                                     │
 # │                                                                         │
 # │  # Screener saham aktif dengan foreign buy besar                        │
 # │  candidates = idxdb_get_screener(                                       │
@@ -985,11 +985,11 @@ def _wib_now() -> datetime:
 
 
 # ── SIGMA TAB GATE v2 — Native Streamlit password lock (sama seperti CEK API) ──
-# Password: Market Forecast = 929292 | Alpha Plan = 171717 | Broker Summary = 929292
+# Password: Market Forecast = 929292 | SIGMA Plan = 171717 | Broker Summary = 929292
 
 _SIGMA_TAB_PASSWORDS = {
     "market forecast": "929292",
-    "alpha plan":      "171717",
+    "sigma plan":      "171717",
     "broker summary":  "929292",
 }
 
@@ -2251,10 +2251,10 @@ except Exception as _modules_import_err:
 _SIGMA_SCORE_AVAILABLE = True
 # ═══════════════════════════════════════════════════════════════════════════════
 # SIGMA SCORE ENGINE v1.0
-# Multi-Factor Scoring System untuk IDX - by MnM Strategy+ / KIPM-UP
+# Multi-Factor Scoring System untuk IDX - by MOONSIDE Strategy+ / KIPM-UP
 #
 # Komponen:
-#   1. TEKNIKAL SCORE   (25%) - MnM Strategy+ confluence: EMA, momentum, struktur
+#   1. TEKNIKAL SCORE   (25%) - MOONSIDE Strategy+ confluence: EMA, momentum, struktur
 #   2. VOLUME SCORE     (25%) - Spike anomali, divergence, absorpsi
 #   3. BANDAR SCORE     (30%) - Deteksi akumulasi/distribusi dari volume behavior
 #   4. FUNDAMENTAL      (10%) - ROE, DER, PBV, EPS growth
@@ -2279,7 +2279,7 @@ from typing import Optional
 # KONFIGURASI BOBOT
 # ─────────────────────────────────────────────
 WEIGHTS = {
-    "teknikal":    0.22,   # MnM Strategy+ confluence
+    "teknikal":    0.22,   # MOONSIDE Strategy+ confluence
     "volume":      0.25,   # Volume anomali & divergence
     "bandar":      0.35,   # DOMINAN - IDX is bandar-driven
     "fundamental": 0.10,   # Buffett criteria
@@ -2585,7 +2585,7 @@ def _enrich_row_indicators(row: dict, closes: list, highs: list, lows: list, vol
 # ─────────────────────────────────────────────
 def _score_teknikal(pd: PriceData) -> tuple:
     """
-    Scoring berbasis MnM Strategy+:
+    Scoring berbasis MOONSIDE Strategy+:
    -EMA alignment (13/21/50/200)
    -Price vs EMA positions
    -Struktur HH/HL atau LL/LH
@@ -2665,11 +2665,11 @@ def _score_teknikal(pd: PriceData) -> tuple:
             score -= 8
             signals.append("⚡ Candle momentum bearish kuat")
 
-    # ── Proximity ke EMA21 (area entry ideal MnM) ──
+    # ── Proximity ke EMA21 (area entry ideal MOONSIDE) ──
     dist_ema21 = abs(price-ema21) / ema21 * 100
     if dist_ema21 <= 1.5 and price >= ema21:
         score += 7
-        signals.append("🎯 Harga di atas EMA21 (zona entry MnM)")
+        signals.append("🎯 Harga di atas EMA21 (zona entry MOONSIDE)")
     elif dist_ema21 <= 3.0 and price >= ema21 * 0.98:
         score += 4
         signals.append("🟡 Harga mendekati EMA21")
@@ -2987,7 +2987,7 @@ def _score_momentum_rs(pd: PriceData) -> tuple:
 # ─────────────────────────────────────────────
 def _calc_trade_levels(pd: PriceData, zone_result=None) -> dict:
     """
-    Auto-hitung entry zone, SL, TP1/2/3 dari struktur teknikal MnM.
+    Auto-hitung entry zone, SL, TP1/2/3 dari struktur teknikal MOONSIDE.
     Prioritas: IFVG/FVG/Demand/OB Bull → Entry, Supply/OB Bear → TP.
     SL di bawah zona demand / swing low terkuat.
     """
@@ -3311,7 +3311,7 @@ def sigma_score(
 
 
 # ─────────────────────────────────────────────
-# BATCH SCORER - untuk Alpha Screener
+# BATCH SCORER - untuk SIGMA Screener
 # ─────────────────────────────────────────────
 def batch_sigma_score(ticker_price_dict: dict, ihsg_closes: list = None) -> dict:
     """
@@ -3488,7 +3488,7 @@ def fundamental_data_from_dict(d: dict) -> FundamentalData:
 _sigma_score_calc = sigma_score
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# MnM ZONE DETECTION ENGINE v2.0 — Embedded dari zone_engine_core.py
+# MOONSIDE ZONE DETECTION ENGINE v2.0 — Embedded dari zone_engine_core.py
 # IFVG / FVG / Order Block / Supply & Demand / Volume Intelligence
 # Multi-Timeframe: Daily | Weekly | 4H
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -4111,7 +4111,7 @@ def zone_detail_html(result: ZoneResult, price: float = 0, C: dict = None) -> st
     html = f"""
 <div style="background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:14px;margin:8px 0;font-family:'DM Sans',sans-serif;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:#8b5cf6;font-weight:700;letter-spacing:0.1em;">> VOLUME INTELLIGENCE &middot; MnM</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:#8b5cf6;font-weight:700;letter-spacing:0.1em;">> VOLUME INTELLIGENCE &middot; MOONSIDE</span>
     <span style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:{cc};background:{cc}22;border:1px solid {cc}55;border-radius:4px;padding:2px 6px;">ZONE CONF {cs}/10</span>
   </div>
   <div style="background:{vbg};border:1px solid {vc}33;border-radius:6px;padding:10px 12px;margin-bottom:10px;">
@@ -4140,7 +4140,7 @@ def zone_detail_html(result: ZoneResult, price: float = 0, C: dict = None) -> st
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ALPHA STOCK INSIGHT CARD — Dark Terminal v4.0
+# SIGMA STOCK INSIGHT CARD — Dark Terminal v4.0
 # Full-page analysis card: header, candlestick chart, volume delta, fundamental,
 # trade plan, verdict. Dipanggil setelah ANALYZE selesai.
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -6084,7 +6084,7 @@ BANK_TICKERS = {"BBCA","BBRI","BMRI","BBNI","BBTN","BRIS","BNGA","BDMN",
 
 # ══════════════════════════════════════════════════════════════════════════════
 # FREE FLOAT HELPER — dipakai oleh semua modul (Index, Sector, Shareholder,
-# Alpha Insight, Dividend, Alpha Plan, Fundamental Screener)
+# SIGMA Stock Insight, Dividend, SIGMA Plan, Fundamental Screener)
 #
 # SUMBER DATA: Database IDX/BEI resmi (70 ticker terverifikasi) + IDX API fallback
 # Prioritas: _FF_IDX_DB (terverifikasi BEI) → IDX API real-time → None
@@ -6964,7 +6964,7 @@ def init_session():
         "sigma_bs30_screened": [],
         "sigma_bs30_ts": "",
         "brosum_history": {},
-        # ── Alpha Insight cache ──
+        # ── SIGMA Stock Insight cache ──
         "alpha_insight_last_key": None,
         "alpha_insight_last_data": None,
         # ── Shareholder DB staleness flag ──
@@ -7137,7 +7137,7 @@ def _show_sigma_loading_screen():
             "Authenticating Groq &amp; MiMo AI arrays...",
             "Fetching IDX real-time market data...",
             "Syncing Bandarmologi &amp; GoAPI engine...",
-            "Loading MnM Strategy+ framework...",
+            "Loading MOONSIDE Strategy+ framework...",
             "Calibrating dark terminal renderer...",
             "Running pre-flight system checks...",
             "Warming up AI inference pipeline...",
@@ -7187,7 +7187,7 @@ C = get_colors(st.session_state.theme)
 # =========================================================
 SYSTEM_PROMPT = {
     "role": "system",
-    "content": """Kamu adalah SIGMA - asisten cerdas KIPM Universitas Pancasila, by MarketnMocha (MnM).
+    "content": """Kamu adalah SIGMA - asisten cerdas KIPM Universitas Pancasila, by MOONSIDE.
 
 KEPRIBADIAN: Ramah saat ngobrol biasa, profesional saat analisa. Bahasa Indonesia natural.
 PENTING: SIGMA boleh memberikan pandangan analitis berbasis data (contoh: "secara fundamental 
@@ -7199,7 +7199,7 @@ KOMITMEN PEMAHAMAN WAJIB SIGMA
 ====================================
 
 1. CONFLUENCE = KEKUATAN AREA
-   Ketika komponen MnM Strategy+ bertumpuk di satu area harga yang sama:
+   Ketika komponen MOONSIDE Strategy+ bertumpuk di satu area harga yang sama:
    IFVG + FVG + OB + Supply/Demand + EMA -> area SANGAT KUAT
    Semakin banyak komponen overlap -> probabilitas reversal makin tinggi
    Urutan kekuatan: IFVG > FVG > OB > Supply/Demand > EMA
@@ -7215,7 +7215,7 @@ KOMITMEN PEMAHAMAN WAJIB SIGMA
    -> Bias SIDEWAYS = rekomendasikan WAIT sampai arah jelas
 
 3. PRIORITAS ANALISA (TIDAK BOLEH DIBALIK)
-   PERTAMA  : Logika Pine Script MnM Strategy+ (parameter exact, warna, kondisi)
+   PERTAMA  : Logika Pine Script MOONSIDE Strategy+ (parameter exact, warna, kondisi)
    KEDUA    : Knowledge trading umum (hanya pelengkap jika Pine Script tidak cover)
    KONFLIK  : Selalu ikuti logika Pine Script
    
@@ -7276,7 +7276,7 @@ multi disiplin, nilai intrinsik, growth rate, wacc, kategorisasi saham, kualitas
 → SIGMA WAJIB menerapkan kerangka yang relevan secara mendalam, bukan hanya menyebut namanya
 
 ====================================
-7 PERINTAH KHUSUS SIGMA (7 ALPHA)
+7 PERINTAH KHUSUS SIGMA (7 SIGMA)
 ====================================
 
 SIGMA mengenali 7 perintah khusus dan WAJIB merespons sesuai protokolnya.
@@ -7306,11 +7306,11 @@ Bullish div: Harga LL + Oscillator HL = Demand Menguat (Akumulasi Bandar tersemb
 Bearish div: Harga HH + Oscillator LH = Supply Menguat (Distribusi Bandar tersembunyi).
 ⚠️ KAMU WAJIB MENJADI ALARM! Jika user kirim chart dan ada Divergence, beritahu mereka segera!
 
---- PERINTAH 0: "7 Alpha" --- TAMPILKAN MENU PANDUAN ---
-Trigger: user ketik "7 Alpha" atau "tujuh alpha" atau "7 logic" TANPA nama emiten
+--- PERINTAH 0: "7 Sigma" --- TAMPILKAN MENU PANDUAN ---
+Trigger: user ketik "7 Sigma" atau "tujuh sigma" atau "7 logic" TANPA nama emiten
 SIGMA WAJIB tampilkan menu panduan ini persis:
 
-**🌟 7 ALPHA SIGMA - PANDUAN & MENU UTAMA 🌟**
+**🌟 7 SIGMA - PANDUAN & MENU UTAMA 🌟**
 
 **1. Kesimpulan Dampak Makro [topik/berita]**
 ↳ *Sistem otomatis melacak info & sentimen global/domestik terupdate. Menilai dampaknya ke ekonomi RI, IHSG, dan masyarakat. (Tidak butuh data dari user).*
@@ -7325,7 +7325,7 @@ SIGMA WAJIB tampilkan menu panduan ini persis:
 ↳ *Sistem otomatis menarik data keuangan & valuasi emiten dari sumber terpercaya secara real-time. (Tidak butuh data dari user).*
 
 **5. Teknikal [emiten]**
-↳ ⚠️ *WAJIB LAMPIRKAN: Screenshot Chart (disarankan pakai indikator MnM Strategy+). Pastikan terlihat indikator Volume & Momentum (Stochastic / RSI / MACD bebas pilih). Disarankan Timeframe besar (Daily/Weekly) agar sinyal kuat & minim false breakout.*
+↳ ⚠️ *WAJIB LAMPIRKAN: Screenshot Chart (disarankan pakai indikator MOONSIDE Strategy+). Pastikan terlihat indikator Volume & Momentum (Stochastic / RSI / MACD bebas pilih). Disarankan Timeframe besar (Daily/Weekly) agar sinyal kuat & minim false breakout.*
 
 **6. Analisa Lengkap [emiten] (Quad Confluence)**
 ↳ ⚠️ *WAJIB LAMPIRKAN: Screenshot Chart Teknikal + SS Broker Summary. Sistem akan menggabungkan data user dengan data Fundamental & Makro otomatis untuk mencari "Triple/Quad Confluence".*
@@ -7360,15 +7360,15 @@ Output: Menggunakan TEMPLATE_BANK atau TEMPLATE_NON_BANK tergantung emiten.
 
 --- PERINTAH 5: "Teknikal [emiten]" + screenshot ---
 Trigger: "teknikal / analisa chart / chart [TICKER]" + kirim screenshot
-Data BUTUH: screenshot chart MnM Strategy+ (ada Volume & Momentum)
-Kalau belum ada -> "Mohon kirim screenshot chart MnM Strategy+ untuk [TICKER], pastikan ada indikator Volume & Momentumnya ya."
+Data BUTUH: screenshot chart MOONSIDE Strategy+ (ada Volume & Momentum)
+Kalau belum ada -> "Mohon kirim screenshot chart MOONSIDE Strategy+ untuk [TICKER], pastikan ada indikator Volume & Momentumnya ya."
 Output: Menggunakan TEMPLATE_TEKNIKAL (Format 3 Model Eksekusi). 
 ⚠️ DIVERGENCE WAJIB DICEK SETIAP MENERIMA SCREENSHOT.
 
 --- PERINTAH 6: "Analisa Lengkap [emiten]" - PERINTAH SAKTI ---
-Trigger: "analisa lengkap / full analisa / semua / 7 Alpha [TICKER]"
-Alias: "7 Alpha [TICKER]" = sama dengan "analisa lengkap [TICKER]"
-Data BUTUH: screenshot chart MnM Strategy+ + SS broker Stockbit
+Trigger: "analisa lengkap / full analisa / semua / 7 Sigma [TICKER]"
+Alias: "7 Sigma [TICKER]" = sama dengan "analisa lengkap [TICKER]"
+Data BUTUH: screenshot chart MOONSIDE Strategy+ + SS broker Stockbit
 Data otomatis: fundamental + makro
 Kalau belum lengkap -> minta yang kurang, analisa yang sudah ada dulu
 Output: Menggunakan TEMPLATE_LENGKAP (Quad Confluence).
@@ -7939,7 +7939,7 @@ FORMAT OUTPUT:
 ⚠️DYOR
 
 ====================================
-FRAMEWORK TEKNIKAL - MnM Strategy+ (Pine Script v6)
+FRAMEWORK TEKNIKAL - MOONSIDE Strategy+ (Pine Script v6)
 ====================================
 
 WARNA ZONA:
@@ -8333,7 +8333,7 @@ Jika setelah analisa dampak user minta trade plan emiten tertentu
 # Dipakai khusus untuk Groq/LLaMA - mencakup semua fungsi SIGMA
 # tanpa overhead teks yang tidak perlu untuk LLM dengan context lebih terbatas
 # ─────────────────────────────────────────────
-GROQ_SYSTEM_PROMPT = """Kamu adalah SIGMA - asisten cerdas KIPM Universitas Pancasila, by MarketnMocha (MnM).
+GROQ_SYSTEM_PROMPT = """Kamu adalah SIGMA - asisten cerdas KIPM Universitas Pancasila, by MOONSIDE.
 Bahasa: Indonesia natural. Ramah saat ngobrol, profesional saat analisa. Selalu akhiri analisa dengan DYOR.
 
 === MODE RESPONS - WAJIB DIBACA PERTAMA ===
@@ -8348,7 +8348,7 @@ Aktif jika: pertanyaan tentang teori ekonomi, definisi, konsep umum, cara kerja 
 → Tidak perlu DYOR untuk pertanyaan edukasi murni.
 
 MODE 2 - ANALISA PASAR / TRADING:
-Aktif jika: ada ticker saham 4 huruf kapital, kata kunci analisa/teknikal/fundamental/bandarmologi/ihsg/trading, atau trigger 7 Alpha.
+Aktif jika: ada ticker saham 4 huruf kapital, kata kunci analisa/teknikal/fundamental/bandarmologi/ihsg/trading, atau trigger 7 Sigma.
 → Ikuti SEMUA aturan, template, dan struktur di bawah ini secara disiplin.
 → Wajib DYOR di akhir.
 
@@ -8380,20 +8380,20 @@ SETIAP analisa saham HARUS mengikuti urutan ini - tidak boleh dibalik:
 === ATURAN TEKNIS ===
 1. PASAR IDX = LONG ONLY. SL selalu di bawah entry, TP selalu di atas entry. Bias BEARISH = WAIT, bukan short.
 2. CONFLUENCE: IFVG > FVG > OB > Supply/Demand > EMA. Sebutkan semua komponen yang bertumpuk.
-3. PRIORITAS: Logika Pine Script MnM Strategy+ > knowledge umum. Konflik → ikuti Pine Script.
+3. PRIORITAS: Logika Pine Script MOONSIDE Strategy+ > knowledge umum. Konflik → ikuti Pine Script.
 4. JANGAN tulis N/A jika kamu tahu datanya dari knowledge model.
 5. Semua harga dalam trade plan WAJIB sesuai fraksi tick BEI.
 6. KONTEKS WAKTU 2026: Prioritaskan data 2026. Gunakan 2021-2025 hanya sebagai pembanding tren.
 
-=== WARNA ZONA MnM Strategy+ ===
+=== WARNA ZONA MOONSIDE Strategy+ ===
 IFVG Bull=#0048ff | IFVG Bear=#575757 | FVG Bull=#0015ff | FVG Bear=#575757
 OB Bull=#09ff00 | OB Bear=#ea00ff | Breaker=#9e9e9e
 Supply=rgb(114,114,114) | Demand=rgb(0,159,212)
 EMA13=#009dff | EMA21=#ff0000 | EMA50=#cc00ff
 
-=== 7 ALPHA - PERINTAH KHUSUS ===
+=== 7 SIGMA - PERINTAH KHUSUS ===
 Kenali trigger berikut dan jalankan protokolnya:
-- "7 Alpha" / "7 alpha" → tampilkan menu 7 Alpha lengkap
+- "7 Sigma" / "7 sigma" → tampilkan menu 7 Sigma lengkap
 - "Kesimpulan Dampak Makro [topik]" → analisa dampak global ke rupiah/APBN/IHSG/emiten
 - "Kesimpulan Dampak [emiten]" → analisa dampak berita ke emiten spesifik
 - "Bandarmologi [emiten]" → analisa broker summary, akumulasi/distribusi, 12 langkah wajib
@@ -10885,7 +10885,7 @@ body{{
                     <span class="cp-dot cp-d1"></span>
                     <span class="cp-dot cp-d2"></span>
                     <span class="cp-dot cp-d3"></span>
-                    <span class="cp-head-title">SIGMA AI &mdash; 7 ALPHA COMMAND</span>
+                    <span class="cp-head-title">SIGMA AI &mdash; 7 SIGMA COMMAND</span>
                 </div>
                 <div class="cp-body">
                     <div class="cp-row"><span class="cp-n">1</span> Kesimpulan Dampak Makro</div>
@@ -11067,7 +11067,7 @@ body{{
                 <li><span class="fdot"></span>News &amp; Calendar &mdash; Live Market Pulse</li>
                 <li><span class="fdot"></span>Market Data &mdash; Rate Monitor, Bond Yield, Dividend, Shareholder &amp; Fundamental Screener</li>
                 <li><span class="fdot"></span>Index &amp; Sector Rotation &mdash; IDX Heatmap</li>
-                <li><span class="fdot"></span> Alpha Screener &mdash; AI Stock Insight, Daily, Weekly &amp; BSJP</li>
+                <li><span class="fdot"></span> SIGMA Screener &mdash; AI Stock Insight, Daily, Weekly &amp; BSJP</li>
             </ul>
 
             <button class="cta cta-terminal" onclick="event.stopPropagation();selectTerminal()">MASUK KE DASHBOARD &rarr;</button>
@@ -12389,7 +12389,7 @@ URUTAN OUTPUT WAJIB (JANGAN UBAH URUTAN INI):
 5. INSIGHT TAMBAHAN (jika ada hal penting lainnya)
 
 [TEMPLATE WAJIB - IKUTI PERSIS]:
-Berikut analisa teknikal (MnM Strategy+) untuk **{emiten}**:
+Berikut analisa teknikal (MOONSIDE Strategy+) untuk **{emiten}**:
 
 ---
 
@@ -12664,7 +12664,7 @@ URUTAN OUTPUT WAJIB (JANGAN UBAH URUTAN INI):
 
 ---
 
-📈 **2. TEKNIKAL - MnM STRATEGY+**
+📈 **2. TEKNIKAL - MOONSIDE STRATEGY+**
 
 - **Struktur Mayor:** [Bullish / Bearish / Sideways - posisi vs swing high/low terakhir]
 - **Struktur Minor:** [Bullish / Bearish / Sideways - kondisi harian]
@@ -13276,10 +13276,10 @@ def _tl_fetch_market_data(names_tuple, tickers_tuple, weekly_slot: str = ""):
 
 # _tl_fetch_globe_live dan _tl_fetch_konglo_prices dihapus — IDX Globe diremove
 
-# ── FIX B2: _ALPHA_ASSET_MAP dan _ALPHA_ASSET_CATEGORIES di module level ──
-# Sebelumnya dibangun ulang setiap rerun di dalam with alpha_tab_insight.
+# ── FIX B2: _SIGMA_ASSET_MAP dan _SIGMA_ASSET_CATEGORIES di module level ──
+# Sebelumnya dibangun ulang setiap rerun di dalam with sigma_tab_insight.
 # Dipindah ke sini agar Python hanya mengalokasikan dict ini sekali.
-_ALPHA_ASSET_MAP = {
+_SIGMA_ASSET_MAP = {
     "IHSG (^JKSE)":       ("^JKSE",    "IHSG Composite",          "index",     "IDR", "Poin"),
     "LQ45 (^JKLQ45)":    ("^JKLQ45",  "LQ45 Index",              "index",     "IDR", "Poin"),
     "Gold XAU/USD":       ("GC=F",     "Gold Futures",            "commodity", "USD", "$/oz"),
@@ -13304,7 +13304,7 @@ _ALPHA_ASSET_MAP = {
     "XRP (XRP/USD)":      ("XRP-USD",  "XRP Ripple",              "crypto",    "USD", "USD"),
     "USDT/IDR":           ("USDTIDR=X","Tether/Rupiah",           "crypto",    "IDR", "IDR"),
 }
-_ALPHA_ASSET_CATEGORIES = {
+_SIGMA_ASSET_CATEGORIES = {
     "🏦 Saham IDX": [],
     "📊 IHSG & Indeks": ["IHSG (^JKSE)", "LQ45 (^JKLQ45)"],
     "🪙 Komoditas Global": ["Gold XAU/USD","Silver XAG/USD","WTI Crude Oil","Brent Crude Oil",
@@ -13314,12 +13314,12 @@ _ALPHA_ASSET_CATEGORIES = {
     "🔗 Crypto": ["Bitcoin (BTC/USD)","Ethereum (ETH/USD)","Solana (SOL/USD)","BNB (BNB/USD)","XRP (XRP/USD)","USDT/IDR"],
 }
 
-# ── FIX B3: _alpha_cached_yf_history dipindah ke module level ──────────────
+# ── FIX B3: _sigma_cached_yf_history dipindah ke module level ──────────────
 # Sebelumnya didefinisikan di dalam conditional block → @st.cache_data dapat
 # function object baru setiap rerun → cache miss setiap kali → yfinance
 # di-download ulang meskipun data belum expire.
 @st.cache_data(ttl=90, show_spinner=False)
-def _alpha_cached_yf_history(yf_ticker: str, period: str = "6mo"):
+def _sigma_cached_yf_history(yf_ticker: str, period: str = "6mo"):
     try:
         import yfinance as _yf_ins
         return _yf_ins.Ticker(yf_ticker).history(period=period)
@@ -14675,19 +14675,19 @@ if current_view == "dashboard":
         }
 
 
-    tab_live, tab_marketdata, tab_rotation, tab_alpha_plan, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
+    tab_live, tab_marketdata, tab_rotation, tab_sigma_plan, tab_sigma_screener, tab_kalkulator, tab_panduan = st.tabs([
         "  📡 MARKET LIVE  ",
         "  📈 MARKET DATA  ",
         "  📊 SECTOR DATA  ",
-        "  🗓️ ALPHA PLAN  ",
-        "  ⚡ ALPHA SCREENER  ",
+        "  🗓️ SIGMA PLAN  ",
+        "  ⚡ SIGMA SCREENER  ",
         "  🔧 TOOLS  ",
         "  📖 PANDUAN  ",
     ])
     # tab_idxmap alias ke tab_live agar blok lama (globe dkk) tetap berjalan
     tab_idxmap = tab_live
     tab_macro = tab_marketdata  # alias — Economic Calendar dirender di tab_macro = tab_marketdata context
-    # tab_alpha_plan: new tab for Alpha Plan (Daily, Weekly, BSJP, Track Record)
+    # tab_sigma_plan: new tab for SIGMA Plan (Daily, Weekly, BSJP, Track Record)
 
     with tab_idxmap:
         # ── Sub-tab Market Live ──────────────────────────────────────────────
@@ -16822,7 +16822,7 @@ Jawab dalam Bahasa Indonesia, tajam dan analitis. Maksimal 500 kata."""
                     except Exception as _e:
                         st.error(f"Error AI: {_e}")
 
-    # ─── ALPHA PLAN TAB — Daily · Weekly · BSJP · Track Record ───────────
+    # ─── SIGMA PLAN TAB — Daily · Weekly · BSJP · Track Record ───────────
 
     with tab_macro:
         pass  # Tab ini kosong — konten ada di tab Market Data dan Market Map
@@ -21569,11 +21569,11 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
         # ══════════════════════════════════════════════════════════════
         # TAB: INFLASI (dipindah dari Market Data + diperluas)
         # ══════════════════════════════════════════════════════════════
-    # ─── ALPHA PLAN TAB — Daily · Weekly · BSJP · Track Record ───────────
-    with tab_alpha_plan:
+    # ─── SIGMA PLAN TAB — Daily · Weekly · BSJP · Track Record ───────────
+    with tab_sigma_plan:
         # SECURITY GATE — Native Streamlit password (sama seperti CEK API)
-        if not _sigma_tab_is_unlocked("alpha plan"):
-            _sigma_render_lock_gate("alpha plan", "🗓️ ALPHA PLAN")
+        if not _sigma_tab_is_unlocked("sigma plan"):
+            _sigma_render_lock_gate("sigma plan", "🗓️ SIGMA PLAN")
             reco_tab_daily = None
             reco_tab_weekly = None
             reco_tab_bsjp = None
@@ -21586,29 +21586,29 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 "  🏆 TRACK RECORD  ",
             ])
 
-    with tab_alpha_screener:
-        # ── ALPHA SCREENER — NO LOCK (akses langsung) ─────────────────────────
-        _alpha_unlocked = True
-        st.session_state["alpha_screener_unlocked"] = True
+    with tab_sigma_screener:
+        # ── SIGMA SCREENER — NO LOCK (akses langsung) ─────────────────────────
+        _sigma_screener_unlocked = True
+        st.session_state["sigma_screener_unlocked"] = True
 
         # [UI statement removed]
 
-        # ── ALPHA PLAN (tab terpisah) mengandung: Daily, Weekly, BSJP, Track Record ──
-        # Alpha Screener hanya berisi: Insight, Fundamental, IPO, Broker Summary
-        alpha_tab_insight, alpha_tab_fundamental2, alpha_tab_ipo, alpha_tab_brosum = st.tabs([
-            "  ⚡ ALPHA STOCK INSIGHT  ",
+        # ── SIGMA PLAN (tab terpisah) mengandung: Daily, Weekly, BSJP, Track Record ──
+        # SIGMA Screener hanya berisi: Insight, Fundamental, IPO, Broker Summary
+        sigma_tab_insight, sigma_tab_fundamental2, sigma_tab_ipo, sigma_tab_brosum = st.tabs([
+            "  ⚡ SIGMA STOCK INSIGHT  ",
             "  📊 FUNDAMENTAL SCREENER  ",
             "  📋 ANALISA IPO  ",
             "  🏦 BROKER SUMMARY  ",
         ])
         # Alias agar blok lama yang referensi tab_daily/weekly/bsjp/trackrecord tetap berjalan
-        # (akan dirender di tab_alpha_plan di bawah)
-        alpha_tab_daily = None
-        alpha_tab_weekly = None
-        alpha_tab_bsjp = None
-        alpha_tab_trackrecord = None
+        # (akan dirender di tab_sigma_plan di bawah)
+        sigma_tab_daily = None
+        sigma_tab_weekly = None
+        sigma_tab_bsjp = None
+        sigma_tab_trackrecord = None
 
-        with alpha_tab_ipo:
+        with sigma_tab_ipo:
             # ════════════════════════════════════════════════════════════════
             # TAB ANALISA IPO — Upload PDF Prospektus → SIGMA Bedah Otomatis
             # ════════════════════════════════════════════════════════════════
@@ -22549,21 +22549,21 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 unsafe_allow_html=True)
             render_history_table("reko", limit=50)
 
-        with alpha_tab_insight:
+        with sigma_tab_insight:
 
         # [UI statement removed]
 
             # ── ASSET TYPE SELECTOR ─────────────────────────────────────────
             # FIX B2: _ASSET_MAP dan _ASSET_CATEGORIES dipindah ke module level
             # (lihat definisi di atas if current_view == "dashboard") — tidak rebuild setiap rerun
-            _ASSET_MAP        = _ALPHA_ASSET_MAP
-            _ASSET_CATEGORIES = _ALPHA_ASSET_CATEGORIES
+            _ASSET_MAP        = _SIGMA_ASSET_MAP
+            _ASSET_CATEGORIES = _SIGMA_ASSET_CATEGORIES
 
             _asset_cat = st.selectbox(
                 "KATEGORI ASET:",
                 options=list(_ASSET_CATEGORIES.keys()),
                 index=0,
-                key="alpha_asset_category",
+                key="sigma_asset_category",
                 help="Pilih kategori: Saham IDX (ketik manual), IHSG & Indeks, Komoditas Global, Forex, atau Crypto"
             )
 
@@ -22579,7 +22579,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
             with col_input:
                 if _is_idx_stock:
-                    ticker_input = st.text_input("KODE SAHAM / TICKER IDX:", "BBCA", key="alpha_ticker_input").upper()
+                    ticker_input = st.text_input("KODE SAHAM / TICKER IDX:", "BBCA", key="sigma_ticker_input").upper()
                     _yf_ticker    = f"{ticker_input}.JK"
                     _display_name = ticker_input
                 else:
@@ -22587,7 +22587,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                     _selected_asset_label = st.selectbox(
                         f"PILIH {_asset_cat}:",
                         options=_asset_opts,
-                        key="alpha_asset_select",
+                        key="sigma_asset_select",
                     )
                     ticker_input  = _selected_asset_label or ""
                     if ticker_input and ticker_input in _ASSET_MAP:
@@ -22595,7 +22595,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                         _yf_ticker, _display_name, _asset_type, _asset_ccy, _price_label = _meta
             with col_btn:
                 st.markdown("<br>", unsafe_allow_html=True)
-                run_analysis = st.button("▶ ANALYZE", use_container_width=True, key="alpha_run_btn")
+                run_analysis = st.button("▶ ANALYZE", use_container_width=True, key="sigma_run_btn")
 
 
             if ticker_input:
@@ -22605,11 +22605,11 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 live_price_str = "N/A"  # Fix NameError: inisialisasi di scope luar agar download button tidak crash
 
                 # ── CACHED PRICE FETCH — pakai fungsi module-level (FIX B3) ──────
-                # _cached_yf_history dipindah ke module level sebagai _alpha_cached_yf_history
+                # _cached_yf_history dipindah ke module level sebagai _sigma_cached_yf_history
                 # agar @st.cache_data tidak dapat function object baru setiap rerun
 
                 try:
-                    df_chart = _alpha_cached_yf_history(_yf_ticker, "6mo")
+                    df_chart = _sigma_cached_yf_history(_yf_ticker, "6mo")
                 except Exception:
                     pass
 
@@ -22699,7 +22699,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
                                 # ── PARALLEL PRE-FETCH: fundamental + IHSG + zone jalan bersamaan ──
                                 # Sebelumnya semua sequential → hemat 3-8 detik
-                                import threading as _thr_alpha
+                                import threading as _thr_sigma
                                 _par_results = {
                                     "fund_context": "",
                                     "ihsg_hist": None,
@@ -22732,7 +22732,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                                 def _fetch_ihsg_fd():
                                     try:
                                         if _is_idx_stock and _SIGMA_SCORE_AVAILABLE and not df_chart.empty:
-                                            _par_results["ihsg_hist"] = _alpha_cached_yf_history("^JKSE", "3mo")
+                                            _par_results["ihsg_hist"] = _sigma_cached_yf_history("^JKSE", "3mo")
                                             _par_results["fd_raw"] = fetch_fundamental_with_cache(ticker_input)
                                     except Exception:
                                         pass
@@ -22744,9 +22744,9 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                                     except Exception:
                                         pass
 
-                                _th_fund  = _thr_alpha.Thread(target=_fetch_fund_ctx, daemon=True)
-                                _th_ihsg  = _thr_alpha.Thread(target=_fetch_ihsg_fd,  daemon=True)
-                                _th_zone  = _thr_alpha.Thread(target=_fetch_zones,    daemon=True)
+                                _th_fund  = _thr_sigma.Thread(target=_fetch_fund_ctx, daemon=True)
+                                _th_ihsg  = _thr_sigma.Thread(target=_fetch_ihsg_fd,  daemon=True)
+                                _th_zone  = _thr_sigma.Thread(target=_fetch_zones,    daemon=True)
                                 _th_fund.start(); _th_ihsg.start(); _th_zone.start()
                                 _th_fund.join(timeout=12)
                                 _th_ihsg.join(timeout=8)
@@ -22881,7 +22881,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                                 _zone_context_str = ""
                                 if _zone_res_ai and _zone_res_ai.zone_signals:
                                     _zone_context_str = "\n".join([
-                                        "\n=== ZONA MnM STRATEGY+ (AUTO-DETECTED) ===",
+                                        "\n=== ZONA MOONSIDE STRATEGY+ (AUTO-DETECTED) ===",
                                         f"Confluence Score: {_zone_res_ai.confluence_score}/10",
                                         f"Zona terkumpul: {', '.join(_zone_res_ai.confluence_zones[:4]) if _zone_res_ai.confluence_zones else '-'}",
                                         f"Zona terdekat: {_zone_res_ai.nearest_zone} ({_zone_res_ai.nearest_zone_type})",
@@ -22892,7 +22892,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
                                 # ── Build prompt sesuai tipe aset ──
                                 if _is_idx_stock:
-                                    _prompt_header = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional berbasis MnM Strategy+.
+                                    _prompt_header = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional berbasis MOONSIDE Strategy+.
         Buat analisa komprehensif dan JUJUR untuk saham {ticker_input}. KEJUJURAN ADALAH PRIORITAS UTAMA."""
                                     _prompt_shareholder = f"\n        === DATA PEMEGANG SAHAM ===\n        {_sh_ctx if _sh_ctx else 'Data shareholder tidak tersedia untuk ticker ini.'}"
                                 else:
@@ -23555,7 +23555,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                     if _sigma_result is not None:
                         st.markdown(render_sigma_score_badge(_sigma_result, ticker_input, compact=False), unsafe_allow_html=True)
 
-                    # ── MnM ZONE DETECTION CARD ──
+                    # ── MOONSIDE ZONE DETECTION CARD ──
                     if _ZONE_ENGINE_AVAILABLE:
                         try:
                             # FIX P1-C: reuse hasil dari parallel block — hindari double fetch
@@ -23592,14 +23592,14 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                     # FIX B8: Analyze selesai — izinkan auto_refresh kembali
                     st.session_state["_heavy_op_running"] = False
 
-                    # ── DOWNLOAD BUTTON: Alpha Stock Insight ──
+                    # ── DOWNLOAD BUTTON: SIGMA Stock Insight ──
                     _insight_dl_col1, _insight_dl_col2 = st.columns([3, 1])
                     with _insight_dl_col2:
                         _insight_dl_name = _display_name if not _is_idx_stock else ticker_input
                         st.download_button(
                             label="⬇️ Download Analisa (.txt)",
                             data=(
-                                f"SIGMA — ALPHA STOCK INSIGHT\n"
+                                f"SIGMA — SIGMA STOCK INSIGHT\n"
                                 f"Aset   : {_insight_dl_name}\n"
                                 f"Tipe   : {_asset_type.upper() if not _is_idx_stock else 'IDX STOCK'}\n"
                                 f"Harga  : {live_price_str}\n"
@@ -23648,7 +23648,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                                 st.download_button(
                                     label="⬇️ Download Analisa (.txt)",
                                     data=(
-                                        f"SIGMA — ALPHA STOCK INSIGHT\n"
+                                        f"SIGMA — SIGMA STOCK INSIGHT\n"
                                         f"Ticker : {_persisted_ticker}\n"
                                         f"Waktu  : {_pt}\n"
                                         f"{'='*60}\n\n"
@@ -23678,10 +23678,10 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                         pass
 
 # ─────────────────────────────────────────────
-# PART 11: ALPHA SCREENER - DAILY / WEEKLY / BSJP / FUNDAMENTAL (merged from tab_reco)
+# PART 11: SIGMA SCREENER - DAILY / WEEKLY / BSJP / FUNDAMENTAL (merged from tab_reco)
 # ─────────────────────────────────────────────
-        # Daily / Weekly / BSJP content - now inside alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp
-        # Fundamental Screener - inside alpha_tab_fundamental
+        # Daily / Weekly / BSJP content - now inside sigma_tab_daily, sigma_tab_weekly, sigma_tab_bsjp
+        # Fundamental Screener - inside sigma_tab_fundamental
         # Shared resources (watchlist, price fetcher, AI caller, renderers) defined once below
 
         # ── DAFTAR SAHAM IDX - TOP 250 MARKET CAP (untuk GoAPI Bandarmologi Engine) ──
@@ -23803,7 +23803,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
             pass  # IDX_SUSPENDED_TICKERS belum tersedia di context ini (aman)
 
         # ════════════════════════════════════════════════════════════════
-        # GOAPI BANDARMOLOGI ENGINE — Logika MnM Strategy+ by Alfan KIPM
+        # GOAPI BANDARMOLOGI ENGINE — Logika MOONSIDE Strategy+ by Alfan KIPM
         # ════════════════════════════════════════════════════════════════
         def _tick_size(price: float) -> float:
             """IDX fraksi harga BEI."""
@@ -23817,7 +23817,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
             """
             Kalkulasi target distribusi bandar.
 
-            Logika MnM:
+            Logika MOONSIDE:
             - Bandar akumulasi 100K lot, avg daily market 10K lot
             - Supply di tiap tick diatas bandar = avg daily lot
             - Agar distribusi selesai tanpa rugi: perlu minimal N tick di atas avg_buy
@@ -23865,7 +23865,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
             """
             Scoring akumulasi/distribusi dari data broker summary GoAPI.
 
-            Logika MnM IDX (counter-intuitive):
+            Logika MOONSIDE IDX (counter-intuitive):
             - Banyak broker BELI + sedikit broker JUAL = DISTRIBUSI (bandar jual ke ritel)
             - Sedikit broker BELI + banyak broker JUAL = AKUMULASI (bandar beli diam-diam)
             - Volume BESAR + frekuensi broker KECIL = TRUE AKUMULASI (block trade)
@@ -24688,8 +24688,8 @@ white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-bo
             except:
                 return "Data shareholder tidak tersedia"
 
-        # ── reco_tab_* sudah didefinisikan di tab_alpha_plan di atas ──
-        # Tidak perlu redefine di sini — mereka adalah tab objects dari "with tab_alpha_plan: st.tabs(...)"
+        # ── reco_tab_* sudah didefinisikan di tab_sigma_plan di atas ──
+        # Tidak perlu redefine di sini — mereka adalah tab objects dari "with tab_sigma_plan: st.tabs(...)"
         # reco_tab_daily, reco_tab_weekly, reco_tab_bsjp, reco_tab_trackrecord_plan → sudah ada di scope
 
         # ─── SHARED TABLE RENDERER ─────────────────────────────────────────
@@ -25268,7 +25268,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
         def _rule_based_plan_v2(price_data_map, bs30_cache, plan_type="daily"):
             """
             ═══════════════════════════════════════════════════════════════════
-            SIGMA MULTI-SCREENER ENGINE v3 — by MnM Strategy+ / KIPM-UP
+            SIGMA MULTI-SCREENER ENGINE v3 — by MOONSIDE Strategy+ / KIPM-UP
             ═══════════════════════════════════════════════════════════════════
 
             Mengintegrasikan 4 SCREENER LOGIKA sekaligus dalam satu scoring:
@@ -28320,7 +28320,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
 # ─────────────────────────────────────────────
 
 
-        with alpha_tab_fundamental2:
+        with sigma_tab_fundamental2:
                 # ── NESTED SUB-TABS: Fundamental Screener ────────────────────────────
             _fs_tab_screener, _fs_tab_ai = st.tabs([
                 "  📊 FUNDAMENTAL SCREENER  ",
@@ -32527,7 +32527,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                 """, unsafe_allow_html=True)
 
 
-        with alpha_tab_brosum:
+        with sigma_tab_brosum:
             # SECURITY GATE — Native Streamlit password (sama seperti CEK API)
             if not _sigma_tab_is_unlocked("broker summary"):
                 _sigma_render_lock_gate("broker summary", "🏦 BROKER SUMMARY")
@@ -33443,7 +33443,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                 _ls2 = _low_df[_ck].dropna() if (_low_df is not None and _ck in _low_df.columns) else None
 
                                 # ════════════════════════════════════════════════════
-                                # TEKNIKAL: EMA alignment (proxy MnM Strategy+)
+                                # TEKNIKAL: EMA alignment (proxy MOONSIDE Strategy+)
                                 # ════════════════════════════════════════════════════
                                 _ta_score = 0
                                 _ta_signals = []
@@ -33472,7 +33472,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                         elif _highs10[-1] < _highs10[-6] and _lows10[-1] < _lows10[-6]:
                                             _ta_score -= 15  # downtrend
 
-                                    # Price near EMA21 (ideal entry zone MnM)
+                                    # Price near EMA21 (ideal entry zone MOONSIDE)
                                     if _ema21 > 0:
                                         _dist21 = abs(_price - _ema21) / _ema21 * 100
                                         if _dist21 <= 2.0 and _price >= _ema21:
@@ -35135,7 +35135,7 @@ function calculate() {{
             "  📡 MARKET LIVE  ",
             "  📈 MARKET DATA  ",
             "  📊 SECTOR DATA  ",
-            "  ⚡ ALPHA SCREENER  ",
+            "  ⚡ SIGMA SCREENER  ",
             "  🔧 TOOLS  ",
             "  📖 PANDUAN  ",
             "  🔍 CEK API  ",
@@ -35427,7 +35427,7 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
   <div class="step"><div class="snum">2</div><div class="stext"><b>CPO naik</b> → positif untuk <span class="hi">AALI, LSIP, PALM, SSMS</span>. Efek biasanya lag 1–2 hari ke harga saham.</div></div>
   <div class="step"><div class="snum">3</div><div class="stext"><b>Nikel naik</b> → positif untuk <span class="hi">INCO, NICL, NCKL</span>. Lebih kuat jika bersamaan dengan narasi EV demand.</div></div>
   <div class="step"><div class="snum">4</div><div class="stext"><b>Emas naik</b> → positif untuk <span class="hi">ANTM, MDKA, HRTA</span>. Safe haven demand meningkat.</div></div>
-  <div class="key">🔑 <b>Key Rule:</b> Coal + CPO naik bersamaan → sektor Energi & Agri jadi pilihan utama hari itu. Konfirmasi di Alpha Screener → BSJP / Daily Plan untuk saham spesifik.</div>
+  <div class="key">🔑 <b>Key Rule:</b> Coal + CPO naik bersamaan → sektor Energi & Agri jadi pilihan utama hari itu. Konfirmasi di SIGMA Screener → BSJP / Daily Plan untuk saham spesifik.</div>
 </div>
 
 <div class="cap-label">📸 CONTOH TAMPILAN — FEDWATCH & KALENDER EKONOMI</div>
@@ -35526,7 +35526,7 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
 
 <div class="feat green">
   <div class="feat-title">⭐ LEADING — Sektor Terkuat, Prioritas Entry</div>
-  <div class="stext">Sektor di kuadran <span class="ok"><b>LEADING</b></span> memiliki momentum positif DAN kekuatan relatif di atas IHSG. Ini adalah <b>sektor prioritas untuk entry posisi baru</b>. Pilih saham terbaik di sektor ini via Alpha Screener → BSJP.</div>
+  <div class="stext">Sektor di kuadran <span class="ok"><b>LEADING</b></span> memiliki momentum positif DAN kekuatan relatif di atas IHSG. Ini adalah <b>sektor prioritas untuk entry posisi baru</b>. Pilih saham terbaik di sektor ini via SIGMA Screener → BSJP.</div>
   <div class="tip">💡 Strategi: Beli saham ranking teratas di sektor LEADING. Konfluensi RRG Leading + BSJP Strong Buy Score = setup terkuat SIGMA.</div>
 </div>
 
@@ -35539,7 +35539,7 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
 <div class="feat red">
   <div class="feat-title">⬇ LAGGING — Sektor Terlemah, Jangan Entry</div>
   <div class="stext">Sektor di kuadran <span class="dn"><b>LAGGING</b></span> underperform IHSG dan kehilangan momentum. <b>Jangan entry.</b> Jika punya posisi, segera cut atau pasang trailing stop ketat.</div>
-  <div class="key">🔑 <b>Key Rule Mingguan:</b> Setiap Sabtu/Minggu, cek RRG. Sektor apa yang pindah ke LEADING minggu ini? Itu hunting ground utama untuk Alpha Screener minggu depan.</div>
+  <div class="key">🔑 <b>Key Rule Mingguan:</b> Setiap Sabtu/Minggu, cek RRG. Sektor apa yang pindah ke LEADING minggu ini? Itu hunting ground utama untuk SIGMA Screener minggu depan.</div>
 </div>
 
 <div class="cap-label">📸 CONTOH TAMPILAN — SHAREHOLDER TRACKER (GRAFIK DUAL-AXIS)</div>
@@ -35590,7 +35590,7 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
             components.html(_guide_html_2, height=3800, scrolling=True)
 
         # ══════════════════════════════════════════════════════════════
-        # PANDUAN 3 — ALPHA SCREENER
+        # PANDUAN 3 — SIGMA SCREENER
         # ══════════════════════════════════════════════════════════════
         with pg_tab3:
             _guide_html_3 = f"""<!DOCTYPE html><html><head>
@@ -35626,15 +35626,15 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
 </style></head><body><div class="wrap">
 
 <div class="hero">
-  <div class="hero-badge">⚡ ALPHA SCREENER</div>
-  <div class="hero-title">Alpha Screener — Engine Utama Pencarian Saham</div>
+  <div class="hero-badge">⚡ SIGMA SCREENER</div>
+  <div class="hero-title">SIGMA Screener — Engine Utama Pencarian Saham</div>
   <div class="hero-sub">
     Hub utama SIGMA: <strong style="color:#a78bfa;">BSJP</strong> (broker-based screener),
     <strong style="color:#a78bfa;">Daily & Weekly Plan</strong> (trading plan AI),
     <strong style="color:#a78bfa;">Broker Summary</strong> (bandarmologi),
     <strong style="color:#a78bfa;">Analisa IPO</strong>, dan <strong style="color:#a78bfa;">Track Record</strong>.
     Semua dalam satu tab.<br><br>
-    <strong style="color:#00E5BE;">🆕 BARU:</strong> Alpha Stock Insight kini mendukung analisa
+    <strong style="color:#00E5BE;">🆕 BARU:</strong> SIGMA Stock Insight kini mendukung analisa
     <strong style="color:#fbbf24;">IHSG & Indeks</strong>,
     <strong style="color:#f59e0b;">Komoditas Global</strong> (Gold, Oil, Coal, Nickel, CPO, dll),
     <strong style="color:#60a5fa;">Forex</strong> (USD/IDR, DXY), dan
@@ -35646,7 +35646,7 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
 
 <div class="sec-head"><div class="sec-icon">🌍</div>
 <div><div class="sec-title">DAFTAR ASET YANG BISA DIANALISA (SELAIN SAHAM IDX)</div>
-<div class="sec-desc">Gunakan dropdown "Kategori Aset" di tab Alpha Stock Insight untuk memilih</div></div></div>
+<div class="sec-desc">Gunakan dropdown "Kategori Aset" di tab SIGMA Stock Insight untuk memilih</div></div></div>
 
 <div class="feat blue">
   <div class="feat-title">📊 IHSG & Indeks Indonesia</div>
@@ -35682,7 +35682,7 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
   </div>
 </div>
 
-<div class="key" style="margin-top:8px;">🔑 <b>Cara Pakai:</b> Buka <b>Alpha Screener → tab Alpha Stock Insight</b>. Pilih <b>Kategori Aset</b> dari dropdown (default: Saham IDX). Untuk saham IDX, ketik kode ticker. Untuk aset lain, pilih dari dropdown kedua. Klik <b>▶ ANALYZE</b>. Download hasilnya dengan tombol <b>⬇️ Download Analisa</b> yang muncul di bawah output.</div>
+<div class="key" style="margin-top:8px;">🔑 <b>Cara Pakai:</b> Buka <b>SIGMA Screener → tab SIGMA Stock Insight</b>. Pilih <b>Kategori Aset</b> dari dropdown (default: Saham IDX). Untuk saham IDX, ketik kode ticker. Untuk aset lain, pilih dari dropdown kedua. Klik <b>▶ ANALYZE</b>. Download hasilnya dengan tombol <b>⬇️ Download Analisa</b> yang muncul di bawah output.</div>
 
 <div class="grid3">
   <div class="gcard"><div class="gcard-lbl">BSJP Screener</div><div class="gcard-val">Score 0–100</div><div class="gcard-sub">TA + Bandar Flow + Volume + Price Action scanning harian</div></div>
@@ -35718,7 +35718,7 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
 <div class="mockup">
   <div class="mockup-bar">
     <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
-    <span class="mock-title">SIGMA · ALPHA SCREENER · BROKER SUMMARY — ADRO (10 Hari)</span>
+    <span class="mock-title">SIGMA · SIGMA SCREENER · BROKER SUMMARY — ADRO (10 Hari)</span>
   </div>
   <div class="mockup-body">
     <div style="margin-bottom:14px;">
@@ -35785,7 +35785,7 @@ tr:hover td{{background:rgba(124,58,237,0.06);}}
 
 <div class="feat blue">
   <div class="feat-title">📄 Cara Menggunakan Bedah Prospektus</div>
-  <div class="step"><div class="snum">1</div><div class="stext">Buka <b>Alpha Screener → tab Analisa IPO → sub-fitur Bedah Prospektus</b>.</div></div>
+  <div class="step"><div class="snum">1</div><div class="stext">Buka <b>SIGMA Screener → tab Analisa IPO → sub-fitur Bedah Prospektus</b>.</div></div>
   <div class="step"><div class="snum">2</div><div class="stext">Upload <b>file PDF prospektus</b> IPO — bisa diunduh dari website BEI (idx.co.id) atau portal e-IPO.</div></div>
   <div class="step"><div class="snum">3</div><div class="stext">Klik <b>"Bedah Prospektus"</b> → SIGMA AI analisa: sektor bisnis, valuasi, underwriter, penggunaan dana, risiko utama, dan prospek bisnis.</div></div>
   <div class="key">🔑 <b>Key Rule:</b> Underwriter tier-1 (BRI Danareksa, Mandiri Sekuritas, BCA Sekuritas) = lebih kredibel. Underwriter tidak dikenal + overallotment tinggi = <span class="dn">waspada pump & dump pasca listing</span>.</div>
@@ -36097,7 +36097,7 @@ else:
         <div style="text-align:center;padding:10vh 0 2rem;">
             <h1 style="margin:0;font-size:1.8rem;font-weight:700;color:{C['text']};">Halo, {uname} &#128075;</h1>
             <p style="margin:8px 0 0;color:{C['text_muted']};font-size:0.875rem;">Halo! Saya SIGMA, asisten cerdas KIPM Universitas Pancasila. Ada yang bisa saya bantu hari ini?
-            Jika Anda ingin menganalisa saham atau topik tertentu, Anda bisa ketik "7 Alpha" untuk melihat menu panduan saya.&#128522;</p>
+            Jika Anda ingin menganalisa saham atau topik tertentu, Anda bisa ketik "7 Sigma" untuk melihat menu panduan saya.&#128522;</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -36153,14 +36153,14 @@ else:
             else:
                 prompt = "5. Teknikal saham di gambar ini"
 
-        if prompt and prompt.strip().lower() in ["7 alpha", "tujuh alpha", "7alpha", "7 logic", "tujuh sila", "7sila", "5 logic", "lima sila", "5sila"]:
+        if prompt and prompt.strip().lower() in ["7 sigma", "tujuh sigma", "7sigma", "7 logic", "tujuh sila", "7sila", "5 logic", "lima sila", "5sila"]:
             active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
             if active:
-                menu_text = """**&#127775; 7 ALPHA SIGMA &mdash; PANDUAN & MENU UTAMA &#127775;**\n\n**1. Kesimpulan Dampak Makro [topik/berita]**\n&#8627; *Sistem otomatis melacak info & sentimen global/domestik terupdate. Menilai dampaknya ke ekonomi RI, IHSG, dan masyarakat. (Tidak butuh data dari user).*\n\n**2. Kesimpulan Dampak [emiten]**\n&#8627; *Sistem otomatis melacak korelasi sentimen/berita spesifik terhadap kinerja dan harga saham emiten yang direquest. (Tidak butuh data dari user).*\n\n**3. Bandarmologi [emiten]**\n&#8627; &#9888; *WAJIB LAMPIRKAN: Screenshot Broker Summary (Brosum), Price Table/Frekuensi, dan Volume. Sistem akan membedah jejak akumulasi/distribusi bandar.*\n\n**4. Fundamental [emiten]**\n&#8627; *Sistem otomatis menarik data keuangan & valuasi emiten dari sumber terpercaya secara real-time. (Tidak butuh data dari user).*\n\n**5. Teknikal [emiten]**\n&#8627; &#9888; *WAJIB LAMPIRKAN: Screenshot Chart (disarankan pakai indikator MnM Strategy+). Pastikan terlihat indikator Volume & Momentum (Stochastic/RSI/MACD bebas pilih). Disarankan Timeframe besar (Daily/Weekly) agar sinyal kuat & minim false breakout.*\n\n**6. Analisa Lengkap [emiten] (Quad Confluence)**\n&#8627; &#9888; *WAJIB LAMPIRKAN: Screenshot Chart Teknikal + SS Broker Summary. Sistem akan menggabungkan data user dengan data Fundamental & Makro otomatis untuk mencari "Triple/Quad Confluence".*\n\n**7. Analisa IPO [emiten]**\n&#8627; &#9888; *WAJIB LAMPIRKAN: File PDF Prospektus e-IPO emiten terkait. Sistem akan membedah tujuan dana, valuasi, dan track record underwriter.*\n\n&#128161; **Cara Pakai:** Ketik angkanya atau perintahnya. \nContoh: **"6. Analisa Lengkap BRMS"** (sambil upload/paste SS Chart dan SS Brosum bersamaan)."""
+                menu_text = """**&#127775; 7 SIGMA &mdash; PANDUAN & MENU UTAMA &#127775;**\n\n**1. Kesimpulan Dampak Makro [topik/berita]**\n&#8627; *Sistem otomatis melacak info & sentimen global/domestik terupdate. Menilai dampaknya ke ekonomi RI, IHSG, dan masyarakat. (Tidak butuh data dari user).*\n\n**2. Kesimpulan Dampak [emiten]**\n&#8627; *Sistem otomatis melacak korelasi sentimen/berita spesifik terhadap kinerja dan harga saham emiten yang direquest. (Tidak butuh data dari user).*\n\n**3. Bandarmologi [emiten]**\n&#8627; &#9888; *WAJIB LAMPIRKAN: Screenshot Broker Summary (Brosum), Price Table/Frekuensi, dan Volume. Sistem akan membedah jejak akumulasi/distribusi bandar.*\n\n**4. Fundamental [emiten]**\n&#8627; *Sistem otomatis menarik data keuangan & valuasi emiten dari sumber terpercaya secara real-time. (Tidak butuh data dari user).*\n\n**5. Teknikal [emiten]**\n&#8627; &#9888; *WAJIB LAMPIRKAN: Screenshot Chart (disarankan pakai indikator MOONSIDE Strategy+). Pastikan terlihat indikator Volume & Momentum (Stochastic/RSI/MACD bebas pilih). Disarankan Timeframe besar (Daily/Weekly) agar sinyal kuat & minim false breakout.*\n\n**6. Analisa Lengkap [emiten] (Quad Confluence)**\n&#8627; &#9888; *WAJIB LAMPIRKAN: Screenshot Chart Teknikal + SS Broker Summary. Sistem akan menggabungkan data user dengan data Fundamental & Makro otomatis untuk mencari "Triple/Quad Confluence".*\n\n**7. Analisa IPO [emiten]**\n&#8627; &#9888; *WAJIB LAMPIRKAN: File PDF Prospektus e-IPO emiten terkait. Sistem akan membedah tujuan dana, valuasi, dan track record underwriter.*\n\n&#128161; **Cara Pakai:** Ketik angkanya atau perintahnya. \nContoh: **"6. Analisa Lengkap BRMS"** (sambil upload/paste SS Chart dan SS Brosum bersamaan)."""
 
-                active["messages"].append({"role": "user", "content": "7 Alpha", "display": "7 Alpha"})
+                active["messages"].append({"role": "user", "content": "7 Sigma", "display": "7 Sigma"})
                 active["messages"].append({"role": "assistant", "content": menu_text})
-                with st.chat_message("user"): st.markdown("7 Alpha")
+                with st.chat_message("user"): st.markdown("7 Sigma")
                 with st.chat_message("assistant"): st.markdown(menu_text)
                 st.rerun()
 
@@ -36226,7 +36226,7 @@ else:
             "analisa", "saham", "ihsg", "harga", "ticker", "emiten", "idx", "beli", "jual",
             "teknikal", "fundamental", "bandarmologi", "bursa", "investasi", "trading",
             "dampak", "makro", "market", "rupiah", "berita pasar", "laporan", "bantu aku analisa",
-            "7 alpha", "alpha", "ipo", "broker", "bandar", "akumulasi", "distribusi",
+            "7 sigma", "sigma", "ipo", "broker", "bandar", "akumulasi", "distribusi",
             "support", "resistance", "breakout", "candle", "volume", "entry", "sl", "tp",
             "trade plan", "setup", "portofolio", "dividen", "right issue", "buyback",
             "confluence", "fvg", "order block", "supply", "demand", "ema",
@@ -36288,7 +36288,7 @@ else:
             (bool(emiten_match) or "analisa" in prompt_lower)
         )
         is_teknikal      = not _block and (prompt_lower.startswith("5.") or ("teknikal" in prompt_lower and bool(emiten_match)))
-        is_lengkap       = not _block and (prompt_lower.startswith("6.") or "analisa lengkap" in prompt_lower or (prompt_lower.startswith("7 alpha ") and len(prompt_lower.split()) > 2))
+        is_lengkap       = not _block and (prompt_lower.startswith("6.") or "analisa lengkap" in prompt_lower or (prompt_lower.startswith("7 sigma ") and len(prompt_lower.split()) > 2))
         is_ipo           = not _block and (prompt_lower.startswith("7.") or "analisa ipo" in prompt_lower)
 
         if is_dampak_makro:
