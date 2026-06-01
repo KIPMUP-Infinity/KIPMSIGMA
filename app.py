@@ -36815,61 +36815,153 @@ js_code = """
 components.html(js_code, height=0)
 
 # ── TAB PERSISTENCE: Simpan & restore active tab saat Streamlit rerun ──
-# Tanpa ini, setiap st.rerun() akan reset ke tab pertama (Market Live).
+# TAB PERSISTENCE v2 — MutationObserver + multi-retry restore
+# Menggantikan versi lama yang hanya restore sekali dan terlalu cepat.
 components.html("""
 <script>
-(function() {{
-    if (window.__sigmaTabPersistRunning) return;
-    window.__sigmaTabPersistRunning = true;
+(function() {
+    if (window.__sigmaTabPersist2) return;
+    window.__sigmaTabPersist2 = true;
+
     var pd = window.parent.document;
-    var PERSIST_KEY = '_sigma_active_tabs';
+    var KEY = '_sigma_tabs_v2';
 
-    function saveTabs() {{
-        try {{
-            // Simpan semua level tab yang aktif: [mainTabText, subTabText, ...]
-            var tabs = pd.querySelectorAll('button[role="tab"][aria-selected="true"]');
+    // ── SAVE: Simpan semua tab aktif saat ini ───────────────────────────────
+    function saveTabs() {
+        try {
             var active = [];
-            tabs.forEach(function(t) {{ active.push((t.textContent||'').trim()); }});
-            if (active.length > 0) sessionStorage.setItem(PERSIST_KEY, JSON.stringify(active));
-        }} catch(e) {{}}
-    }}
+            pd.querySelectorAll('button[role="tab"][aria-selected="true"]').forEach(function(t) {
+                var txt = (t.textContent || '').trim();
+                if (txt) active.push(txt);
+            });
+            if (active.length > 0) {
+                sessionStorage.setItem(KEY, JSON.stringify(active));
+            }
+        } catch(e) {}
+    }
 
-    function restoreTabs() {{
-        try {{
-            var saved = JSON.parse(sessionStorage.getItem(PERSIST_KEY) || '[]');
-            if (!saved.length) return;
-            // Coba restore setiap tab level
-            saved.forEach(function(targetText) {{
-                var tabs = pd.querySelectorAll('button[role="tab"]');
-                tabs.forEach(function(t) {{
-                    if ((t.textContent||'').trim() === targetText && t.getAttribute('aria-selected') !== 'true') {{
+    // ── RESTORE: Klik tab yang sesuai saved state ───────────────────────────
+    function restoreTabs() {
+        try {
+            var saved = JSON.parse(sessionStorage.getItem(KEY) || '[]');
+            if (!saved.length) return 0;
+            var restored = 0;
+            // Restore level-by-level: main tab dulu, baru sub-tab
+            // Harus berurutan karena sub-tab hanya muncul setelah main tab aktif
+            function restoreLevel(idx) {
+                if (idx >= saved.length) return;
+                var target = saved[idx];
+                var found = false;
+                pd.querySelectorAll('button[role="tab"]').forEach(function(t) {
+                    if ((t.textContent || '').trim() === target
+                        && t.getAttribute('aria-selected') !== 'true') {
                         t.click();
-                    }}
-                }});
-            }});
-        }} catch(e) {{}}
-    }}
+                        found = true;
+                        restored++;
+                    }
+                });
+                // Delay antar level agar Streamlit render sub-tab
+                if (idx + 1 < saved.length) {
+                    setTimeout(function() { restoreLevel(idx + 1); }, 120);
+                }
+            }
+            restoreLevel(0);
+            return restored;
+        } catch(e) { return 0; }
+    }
 
-    // Restore sekali saat pertama load (setelah DOM siap)
-    var _restored = false;
-    function tryRestore() {{
-        if (_restored) return;
+    // ── SMART RESTORE: Retry sampai berhasil atau timeout ──────────────────
+    var _restoreAttempts = 0;
+    var _maxAttempts = 12;  // 12 x 200ms = 2.4 detik max
+    var _lastTabCount = 0;
+
+    function smartRestore() {
+        _restoreAttempts++;
+        if (_restoreAttempts > _maxAttempts) return;
+
         var tabs = pd.querySelectorAll('button[role="tab"]');
-        if (tabs.length === 0) {{ setTimeout(tryRestore, 200); return; }}
-        _restored = true;
-        // Delay sedikit agar Streamlit selesai render
-        setTimeout(restoreTabs, 150);
-    }}
-    tryRestore();
+        var tabCount = tabs.length;
 
-    // Simpan setiap kali user klik tab
-    pd.addEventListener('click', function(e) {{
+        // Tunggu sampai tab muncul
+        if (tabCount === 0) {
+            setTimeout(smartRestore, 200);
+            return;
+        }
+
+        // Cek apakah tab yang seharusnya aktif sudah aktif
+        var saved = [];
+        try { saved = JSON.parse(sessionStorage.getItem(KEY) || '[]'); } catch(e) {}
+        if (!saved.length) return;
+
+        var mainTabText = saved[0];
+        var mainTabActive = false;
+        tabs.forEach(function(t) {
+            if ((t.textContent || '').trim() === mainTabText
+                && t.getAttribute('aria-selected') === 'true') {
+                mainTabActive = true;
+            }
+        });
+
+        if (!mainTabActive) {
+            // Tab belum restored, coba lagi
+            restoreTabs();
+            // Retry kalau masih belum beres
+            setTimeout(smartRestore, 200);
+        }
+        // Kalau sudah aktif, berhenti — selesai
+    }
+
+    // ── MUTATION OBSERVER: Deteksi Streamlit rerun yang inject ulang DOM ───
+    var _mutationTimer = null;
+    var _userClicked = false;
+
+    var observer = new MutationObserver(function(mutations) {
+        // Throttle: jangan fire terlalu sering
+        if (_mutationTimer) return;
+        _mutationTimer = setTimeout(function() {
+            _mutationTimer = null;
+
+            // Cek apakah ada tab baru yang muncul
+            var tabs = pd.querySelectorAll('button[role="tab"]');
+            if (tabs.length !== _lastTabCount) {
+                _lastTabCount = tabs.length;
+                // DOM berubah (rerun) — restore tab setelah Streamlit selesai render
+                if (!_userClicked) {
+                    _restoreAttempts = 0;
+                    setTimeout(smartRestore, 300);
+                }
+            }
+            _userClicked = false;
+        }, 80);
+    });
+
+    observer.observe(pd.body, {
+        childList: true,
+        subtree: true,
+        attributes: false,
+        characterData: false
+    });
+
+    // ── SAVE on click ───────────────────────────────────────────────────────
+    pd.addEventListener('click', function(e) {
         var t = e.target;
-        if (t && t.getAttribute && t.getAttribute('role') === 'tab') {{
-            setTimeout(saveTabs, 100);
-        }}
-    }}, true);
-}})();
+        // Cari tab button, termasuk klik pada child element (icon, span, dll)
+        var tabEl = t;
+        while (tabEl && tabEl !== pd.body) {
+            if (tabEl.getAttribute && tabEl.getAttribute('role') === 'tab') {
+                _userClicked = true;
+                setTimeout(saveTabs, 150);
+                break;
+            }
+            tabEl = tabEl.parentElement;
+        }
+    }, true);
+
+    // ── INITIAL RESTORE on first load ───────────────────────────────────────
+    _restoreAttempts = 0;
+    setTimeout(smartRestore, 400);
+
+})();
 </script>
 """, height=0)
 
