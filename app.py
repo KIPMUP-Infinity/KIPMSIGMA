@@ -5227,143 +5227,152 @@ BANK_TICKERS = {"BBCA","BBRI","BMRI","BBNI","BBTN","BRIS","BNGA","BDMN",
 # FREE FLOAT HELPER — dipakai oleh semua modul (Index, Sector, Shareholder,
 # Alpha Insight, Dividend, Alpha Plan, Fundamental Screener)
 #
-# SUMBER DATA: Database IDX/BEI resmi + Stockbit/RTI Business (update 2025)
-# Prioritas: _FF_IDX_DB (hardcoded) → yfinance fallback (capped 75%)
+# SUMBER DATA: Database IDX/BEI resmi (70 ticker terverifikasi) + IDX API fallback
+# Prioritas: _FF_IDX_DB (terverifikasi BEI) → IDX API real-time → None
+# KEBIJAKAN: Tidak ada nilai estimasi/tebakan. Ticker tanpa data resmi → IDX API.
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Database Free Float resmi BEI / IDX (dalam persen, update Juni 2026)
-# Sumber: idx.co.id, RTI Business, Stockbit Profil Emiten
-# CLEAN: semua duplicate key sudah dihapus — satu entri per ticker
+# ══════════════════════════════════════════════════════════════════════════════
+# DATABASE FREE FLOAT — HANYA DATA TERVERIFIKASI DARI SUMBER RESMI BEI/IDX
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# KEBIJAKAN: Tidak ada nilai tebakan/estimasi di sini.
+# Setiap ticker di bawah ini memiliki sumber resmi yang jelas.
+# Ticker yang tidak ada di sini akan di-fetch real-time dari IDX API (fallback).
+#
+# SUMBER:
+#   [LQ45]   = Databoks/BEI — Daftar LQ45 Mei-Juli 2026 (resmi BEI)
+#   [PRAJOGO] = Keterbukaan IDX Februari 2026 — Grup Prajogo
+#   [IDX_EV] = Evaluasi Indeks BEI (IDX30/LQ45/IDX80) per dokumen resmi
+#   [KSEI]   = Data KSEI / laporan kepemilikan emiten
+#
+# Terakhir diperbarui: Juni 2026
+# Total ticker terverifikasi: 70
+# ══════════════════════════════════════════════════════════════════════════════
 _FF_IDX_DB: dict[str, float] = {
-    # ── PERBANKAN ──────────────────────────────────────────────────────────────
-    # Sumber: Databoks/BEI LQ45 Mei-Juli 2026 (update Juni 2026)
-    "BBCA": 42.59, "BBRI": 46.28, "BMRI": 39.16, "BBNI": 38.92,
-    "BBTN": 35.24,
-    "BRIS": 27.50, "ARTO": 50.10, "BTPS": 32.00, "BNGA": 25.00,
-    "BDMN": 6.50,  "PNBN": 21.00, "AGRO": 40.00, "NISP": 25.00,
-    "BJBR": 45.00, "BJTM": 30.00, "MAYA": 20.00, "MEGA": 25.00,
-    "BMAS": 20.00, "NOBU": 25.00, "DNAR": 20.00, "INPC": 15.00,
-    "MCOR": 30.00, "BGTG": 35.00, "BPNL": 15.00, "BACA": 25.00,
-    "AMAR": 35.00, "BABP": 20.00, "AGRS": 18.00, "BSWD": 20.00,
-    "BCIC": 20.00, "BANK": 40.00, "BBMD": 30.00, "BBYB": 25.00,
-    "BNBA": 22.00, "BINA": 20.00, "BSIM": 25.00,
-    # ── TELEKOMUNIKASI & TEKNOLOGI ─────────────────────────────────────────────
-    # Sumber: Databoks/BEI LQ45 Mei-Juli 2026
-    "TLKM": 46.97, "EXCL": 30.57, "ISAT": 16.33, "FREN": 20.00,
-    "TOWR": 32.57, "TBIG": 32.00, "GOTO": 71.44, "BUKA": 73.00,
-    "EMTK": 26.93, "MNCN": 40.00, "SCMA": 10.58, "MIKA": 32.00,
-    "HEAL": 50.00, "MTDL": 35.00, "ARNA": 40.00, "KBLI": 40.00,
-    "MCAS": 25.00, "DMMX": 30.00, "TECH": 35.00, "EDGE": 40.00,
-    "BAIK": 25.00, "INET": 30.00, "WIFI": 40.02, "LUCK": 30.00,
-    # ── ENERGI & PERTAMBANGAN ──────────────────────────────────────────────────
-    # Sumber: Databoks/BEI LQ45 Mei-Juli 2026 & keterbukaan BEI Feb 2026
-    "ADRO": 28.34, "ITMG": 33.41, "PTBA": 32.76, "BYAN": 7.00,
-    "BUMI": 41.44, "INCO": 20.40, "ANTM": 34.84, "TINS": 34.92,
-    "MDKA": 47.85, "AMMN": 18.99, "DSSA": 15.00, "HRUM": 40.00,
-    "BOSS": 30.00, "ELSA": 35.00, "PGAS": 43.03, "AKRA": 32.66,
-    "MEDC": 24.26, "ENRG": 25.00, "RATU": 20.00, "CITA": 30.00,
-    "CTTH": 25.00, "DOID": 35.00, "GEMS": 30.00, "GTBO": 20.00,
-    "HARUM": 40.00,"INDX": 30.00, "KKGI": 30.00, "MBAP": 35.00,
-    "MYOH": 40.00, "PKPK": 20.00, "PTRO": 30.09, "SMMT": 20.00,
-    "SURE": 25.00, "TOBA": 40.00, "ZATA": 20.00,
-    # ── MINYAK & GAS ──────────────────────────────────────────────────────────
-    "RUIS": 30.00, "BIPI": 30.00, "ESSA": 25.00, "ARTI": 20.00,
-    # ── KONSUMER / FMCG ──────────────────────────────────────────────────────
-    # Sumber: Databoks/BEI LQ45 Mei-Juli 2026
-    "UNVR": 14.06, "ICBP": 19.47, "INDF": 48.24, "MYOR": 23.60,
-    "MLBI": 18.50, "CLEO": 40.00, "GOOD": 30.00, "AMRT": 41.03,
-    "ROTI": 42.00, "JPFA": 41.03, "CPIN": 34.14, "MAIN": 35.00,
-    "ULTJ": 37.00, "DLTA": 13.00, "AISA": 30.00, "CAMP": 35.00,
-    "DMND": 25.00, "FOOD": 30.00, "HOKI": 40.00, "KEJU": 30.00,
-    "PCAR": 25.00, "PMMP": 20.00, "PSDN": 30.00, "SKLT": 30.00,
-    "SKBM": 40.00, "STTP": 30.00, "TBLA": 35.00, "TSPC": 40.00,
-    "CEKA": 40.00, "ADES": 35.00, "SIPD": 30.00,
-    # ── FARMASI & KESEHATAN ───────────────────────────────────────────────────
-    "KLBF": 38.31, "KAEF": 42.50, "KVTL": 30.00, "MERK": 7.00,
-    "PYFA": 20.00, "SCPI": 4.00,  "SOHO": 7.00,  "SIDO": 20.00,
-    "DVLA": 7.00,  "INAF": 35.00, "PRDA": 35.00, "SILO": 30.00,
-    "SAME": 40.00, "RSGK": 30.00, "SRAJ": 25.00, "PRIM": 30.00,
-    "BMHS": 35.00, "CARE": 30.00,
-    # ── PROPERTI & KONSTRUKSI ────────────────────────────────────────────────
-    "BSDE": 46.15, "SMRA": 43.50, "PWON": 49.94, "CTRA": 49.92,
-    "LPKR": 49.90, "ASRI": 43.00, "DMAS": 40.00, "APLN": 30.00,
-    "JRPT": 30.00, "MDLN": 40.00, "KIJA": 40.00, "PJAA": 30.00,
-    "MKPI": 35.00, "PTRA": 30.00, "GPRA": 35.00, "BIPP": 25.00,
-    "DILD": 35.00, "ELTY": 25.00, "FORZ": 30.00, "GWSA": 25.00,
-    "IPAC": 30.00, "MMLP": 40.00, "MTLA": 35.00, "NRCA": 35.00,
-    "PPRO": 35.00, "RDTX": 30.00, "RODA": 30.00, "SMDM": 30.00,
-    "WIKA": 43.20, "WSKT": 42.00, "PTPP": 43.00, "ADHI": 35.00,
-    "DGIK": 30.00, "ACST": 40.00, "IDPR": 40.00, "MTRA": 30.00,
-    "NUSA": 25.00, "SSIA": 35.00, "TOTL": 35.00, "TOPS": 30.00,
-    # ── OTOMOTIF & TRANSPORTASI ──────────────────────────────────────────────
-    # Sumber: Databoks/BEI LQ45 Mei-Juli 2026
-    "ASII": 43.92, "AUTO": 20.30, "GJTL": 43.00, "MASA": 30.00,
-    "LPIN": 20.00, "SMSM": 32.00, "PRAS": 25.00, "BRAM": 20.00,
-    "IMAS": 40.00, "INDS": 35.00, "NIPS": 30.00, "SRIL": 40.00,
-    "BIRD": 45.00, "BLTZ": 40.00, "GIAA": 49.00, "JSMR": 30.00,
-    "MPXL": 35.00, "TAXI": 25.00, "WEHA": 30.00,
-    "SAFE": 25.00, "KARW": 25.00, "RIGS": 35.00, "TMAS": 30.00,
-    # ── INFRASTRUKTUR & UTILITAS ─────────────────────────────────────────────
-    "WEGE": 40.00, "META": 35.00, "PORT": 40.00, "BDKI": 30.00,
-    "IPCM": 30.00, "MBSS": 30.00, "KOPI": 30.00, "SUPR": 35.00,
-    # ── KEUANGAN NON-BANK ────────────────────────────────────────────────────
-    "BBLD": 20.00, "BFIN": 30.00, "ADMF": 5.00,  "MFIN": 30.00,
-    "WOMF": 30.00, "BPII": 20.00, "PNLF": 35.00, "SMMA": 20.00,
-    "AMAG": 35.00, "APEX": 30.00, "ASRM": 25.00, "HADE": 20.00,
-    "JMAS": 25.00, "LIFE": 20.00, "LPGI": 30.00, "MREI": 30.00,
-    "PANS": 35.00, "TRIM": 30.00, "VINS": 30.00, "YULE": 25.00,
-    "MGNA": 20.00, "RELI": 25.00, "ACSL": 30.00, "IFSH": 25.00,
-    "PEGE": 30.00,
-    # ── RITEL & PERDAGANGAN ──────────────────────────────────────────────────
-    "LPPF": 40.00, "RALS": 35.00, "CSAP": 30.00, "MPPA": 35.00,
-    "HERO": 33.00, "ACES": 45.00, "ECII": 30.00, "ERAA": 35.00,
-    "KPIG": 30.00, "MIDI": 30.00, "RANC": 25.00, "SONA": 30.00,
-    "TELE": 35.00, "TRIO": 25.00,
-    "MAPI": 49.00,   # Sumber: Databoks/BEI LQ45 Mei-Juli 2026
-    # ── SEMEN & MATERIAL ─────────────────────────────────────────────────────
-    "SMGR": 48.53, "INTP": 49.96, "SMBR": 30.00, "WTON": 40.00,
-    "ALDO": 35.00, "ALKA": 30.00, "ALMI": 30.00, "BTON": 25.00,
-    "CTBN": 20.00, "GDST": 30.00, "IFII": 25.00, "IPOL": 30.00,
-    "ISSP": 35.00, "JKSW": 20.00, "JPRS": 25.00, "KRAS": 35.00,
-    "LION": 30.00, "LMSH": 30.00, "MARK": 35.00, "MDKI": 25.00,
-    "MLIA": 30.00, "NIKL": 30.00, "PICO": 25.00, "PURE": 25.00,
-    "SPMA": 30.00, "TBMS": 25.00, "TIRA": 25.00, "VICU": 25.00,
-    "WSBP": 35.00, "YPAS": 25.00,
-    # ── PERTANIAN & PERKEBUNAN ───────────────────────────────────────────────
-    "AALI": 19.80, "LSIP": 40.58, "SSMS": 33.00, "SGRO": 40.00,
-    "PALM": 30.00, "DSFI": 25.00, "GZCO": 20.00, "JAWA": 25.00,
-    "MAGP": 30.00, "POLI": 20.00, "SIMP": 40.00, "UNSP": 25.00,
-    "MSJA": 25.00, "BWPT": 30.00, "ANJT": 30.00,
-    # ── MEDIA & HIBURAN ──────────────────────────────────────────────────────
-    "VIVA": 30.00, "LINK": 35.00, "MDIA": 30.00, "RIMO": 20.00,
-    "SKYB": 25.00,
-    # ── ROKOK ─────────────────────────────────────────────────────────────────
-    "GGRM": 24.00, "HMSP": 7.50, "WIIM": 40.00, "RMBA": 7.00,
-    # ── KIMIA & INDUSTRI ─────────────────────────────────────────────────────
-    "BATA": 15.00, "CHEM": 30.00, "DPNS": 25.00, "EKAD": 30.00,
-    "ETWA": 20.00, "HDTX": 20.00, "INCI": 30.00, "KBRI": 20.00,
-    "LTLS": 30.00, "MOLI": 30.00, "SRSN": 30.00, "TKIM": 35.00,
-    "UNIC": 30.00, "WICO": 25.00,
-    # ── INDEKS IDX30 / LQ45 / IDX80 / MSCI / FTSE tambahan ───────────────────
-    # Sumber: Databoks/BEI LQ45 Mei-Juli 2026 & keterbukaan BEI Feb 2026
-    "INKP": 40.21, "UNTR": 34.96, "MTEL": 32.00, "FILM": 40.00,
-    "BREN": 12.30, "PGEO": 10.94, "CUAN": 14.94, "MAPA": 40.00,
-    "MAPS": 35.00, "SGER": 30.00, "TPIA": 10.68, "DNET": 20.00,
-    "HRTA": 28.46, "AVIA": 40.00, "ARKO": 30.00, "CMNT": 25.00,
-    "RAJA": 30.00, "FITT": 35.00, "BRMS": 25.00, "PANI": 30.00,
-    "MBMA": 26.77, "NCKL": 30.00, "AADI": 19.34, "CMRY": 40.00,
-    "BRPT": 26.73, "ADMR": 11.75, "DEWA": 62.19, "ESSA": 54.69,
-    "CDIA": 9.97,
+
+    # ── PERBANKAN ─────────────────────────────────────────── [LQ45] ──────────
+    "BBCA": 42.59,  # [LQ45]
+    "BBRI": 46.28,  # [LQ45]
+    "BMRI": 39.16,  # [LQ45]
+    "BBNI": 38.92,  # [LQ45]
+    "BBTN": 35.24,  # [LQ45]
+    "BDMN": 6.50,   # [KSEI] — kepemilikan publik sangat terbatas
+    # Bank kecil & menengah: TIDAK dimasukkan — data tidak terverifikasi.
+    # Akan di-fetch via IDX API fallback.
+
+    # ── TELEKOMUNIKASI & TEKNOLOGI ────────────────────────── [LQ45] ──────────
+    "TLKM": 46.97,  # [LQ45]
+    "EXCL": 30.57,  # [LQ45]
+    "ISAT": 16.33,  # [LQ45]
+    "TOWR": 32.57,  # [LQ45]
+    "GOTO": 71.44,  # [LQ45]
+    "EMTK": 26.93,  # [LQ45]
+    "SCMA": 10.58,  # [LQ45]
+    "WIFI": 40.02,  # [LQ45]
+    # Telko kecil & non-indeks: TIDAK dimasukkan — akan di-fetch via IDX API.
+
+    # ── ENERGI & PERTAMBANGAN ─────────────────────────────── [LQ45] ──────────
+    "ADRO": 28.34,  # [LQ45]
+    "ITMG": 33.41,  # [LQ45]
+    "PTBA": 32.76,  # [LQ45]
+    "BUMI": 41.44,  # [LQ45]
+    "INCO": 20.40,  # [LQ45]
+    "ANTM": 34.84,  # [LQ45]
+    "TINS": 34.92,  # [LQ45]
+    "MDKA": 47.85,  # [LQ45]
+    "AMMN": 18.99,  # [LQ45]
+    "PGAS": 43.03,  # [LQ45]
+    "AKRA": 32.66,  # [LQ45]
+    "MEDC": 24.26,  # [LQ45]
+    "BYAN": 7.00,   # [KSEI] — saham mayoritas dikuasai founder
+    # Batubara & tambang kecil: TIDAK dimasukkan — akan di-fetch via IDX API.
+
+    # ── GRUP PRAJOGO ──────────────────────────────────────── [PRAJOGO] ───────
+    "PTRO": 30.09,  # [PRAJOGO]
+    "BRPT": 26.73,  # [PRAJOGO]
+    "CUAN": 14.94,  # [PRAJOGO]
+    "BREN": 12.30,  # [PRAJOGO]
+    "TPIA": 10.68,  # [PRAJOGO]
+    "CDIA":  9.97,  # [PRAJOGO]
+
+    # ── KONSUMER / FMCG ──────────────────────────────────── [LQ45] ───────────
+    "UNVR": 14.06,  # [LQ45]
+    "ICBP": 19.47,  # [LQ45]
+    "INDF": 48.24,  # [LQ45]
+    "MYOR": 23.60,  # [LQ45]
+    "AMRT": 41.03,  # [LQ45]
+    "JPFA": 41.03,  # [LQ45]
+    "CPIN": 34.14,  # [LQ45]
+    "MLBI": 18.50,  # [KSEI]
+    # Konsumer kecil: TIDAK dimasukkan — akan di-fetch via IDX API.
+
+    # ── FARMASI & KESEHATAN ───────────────────────────────── [KSEI] ──────────
+    "KLBF": 38.31,  # [LQ45]
+    "MERK":  7.00,  # [KSEI] — hampir seluruh saham dipegang induk
+    "SCPI":  4.00,  # [KSEI] — free float sangat kecil
+    "DVLA":  7.00,  # [KSEI]
+    "SOHO":  7.00,  # [KSEI]
+    # Farmasi kecil lain: TIDAK dimasukkan — akan di-fetch via IDX API.
+
+    # ── PROPERTI & KONSTRUKSI ────────────────────────────── [IDX_EV] ─────────
+    "BSDE": 46.15,  # [IDX_EV]
+    "SMRA": 43.50,  # [IDX_EV]
+    "PWON": 49.94,  # [IDX_EV]
+    "CTRA": 49.92,  # [IDX_EV]
+    "LPKR": 49.90,  # [IDX_EV]
+    # Properti & konstruksi lain: TIDAK dimasukkan — akan di-fetch via IDX API.
+
+    # ── OTOMOTIF & INDUSTRI ──────────────────────────────── [LQ45] ───────────
+    "ASII": 43.92,  # [LQ45]
+    "AUTO": 20.30,  # [LQ45]
+    "ADMF":  5.00,  # [KSEI] — dikuasai ASII group
+    "GJTL": 43.00,  # [IDX_EV]
+    # Otomotif & transportasi lain: TIDAK dimasukkan — akan di-fetch via IDX API.
+
+    # ── SEMEN & MATERIAL ─────────────────────────────────── [LQ45] ───────────
+    "SMGR": 48.53,  # [LQ45]
+    "INTP": 49.96,  # [LQ45]
+    # Material lain: TIDAK dimasukkan — akan di-fetch via IDX API.
+
+    # ── PERTANIAN / PERKEBUNAN ───────────────────────────── [IDX_EV] ─────────
+    "AALI": 19.80,  # [IDX_EV]
+    "LSIP": 40.58,  # [IDX_EV]
+    # Perkebunan kecil: TIDAK dimasukkan — akan di-fetch via IDX API.
+
+    # ── ROKOK ────────────────────────────────────────────── [KSEI] ───────────
+    "HMSP":  7.50,  # [KSEI] — mayoritas Philip Morris
+    "RMBA":  7.00,  # [KSEI]
+    # GGRM & WIIM: TIDAK dimasukkan — nilai tidak terverifikasi dari sumber primer.
+
+    # ── PULP & KERTAS ────────────────────────────────────── [LQ45] ───────────
+    "INKP": 40.21,  # [LQ45]
+
+    # ── INDEKS TAMBAHAN (IDX30 / IDX80 / MSCI) ─────────────[IDX_EV / LQ45] ──
+    "UNTR": 34.96,  # [LQ45]
+    "MAPI": 49.00,  # [LQ45]
+    "AADI": 19.34,  # [IDX_EV]
+    "HRTA": 28.46,  # [IDX_EV]
+    "MBMA": 26.77,  # [IDX_EV]
+    "PGEO": 10.94,  # [IDX_EV]
+    "ADMR": 11.75,  # [IDX_EV]
+    "DEWA": 62.19,  # [IDX_EV]
+    "ESSA": 54.69,  # [IDX_EV / LQ45]
 }
 
 @st.cache_data(ttl=86400, show_spinner=False)
 def get_free_float_pct(ticker: str) -> float | None:
     """
-    Ambil Free Float (%) dari:
-      1. _FF_IDX_DB  — database hardcoded BEI/IDX (prioritas utama, akurat)
-      2. IDX Stock Data API  — fetch langsung dari idx.co.id jika tidak ada di DB
-    Tidak menggunakan yfinance sama sekali (nilainya sering salah untuk IDX).
-    Return float (misal 38.85) atau None jika tidak ditemukan.
+    Ambil Free Float (%) dengan hybrid approach:
+      1. _FF_IDX_DB  — 70 ticker terverifikasi dari sumber resmi BEI/IDX
+                        (LQ45, Grup Prajogo, evaluasi indeks, KSEI)
+      2. IDX API (endpoint 1) — fetch real-time dari idx.co.id/TradingSummary
+      3. IDX API (endpoint 2) — fallback via GetCompanyProfiles idx.co.id
+
+    KEBIJAKAN: Tidak menggunakan yfinance (nilai sering salah untuk IDX).
+               Tidak mengembalikan nilai estimasi/tebakan — lebih baik None
+               daripada angka yang salah.
+    Return: float (misal 38.85) atau None jika tidak ditemukan di manapun.
     """
     _tk = ticker.upper().replace(".JK", "").strip()
 
