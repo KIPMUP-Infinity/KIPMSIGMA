@@ -1189,6 +1189,23 @@ def _single_card_html(row: dict, idx: int) -> str:
     else:
         asing_html = '<div class="bf-item"><span class="bf-name">Asing Net Buy</span><span class="bf-val" style="color:rgba(255,255,255,0.2);">—</span></div>'
 
+    # ── v20 FIX: Net Buy / Sell Asing (Lot) dari IDX Pipeline ──
+    _fb_lot = row.get("foreign_buy_lot")
+    _fs_lot = row.get("foreign_sell_lot")
+    if _fb_lot is not None or _fs_lot is not None:
+        _fb_str = f"{int(_fb_lot):,}" if _fb_lot is not None else "—"
+        _fs_str = f"{int(_fs_lot):,}" if _fs_lot is not None else "—"
+        _fn_lot = (int(_fb_lot or 0) - int(_fs_lot or 0))
+        _fn_col = "#00E5BE" if _fn_lot >= 0 else "#E24B4A"
+        _fn_str = f"+{_fn_lot:,}" if _fn_lot >= 0 else f"{_fn_lot:,}"
+        asing_detail_html = (
+            f'<div class="bf-item"><span class="bf-name">Asing Buy (Lot)</span><span class="bf-val" style="color:#00E5BE;">{_fb_str}</span></div>'
+            f'<div class="bf-item"><span class="bf-name">Asing Sell (Lot)</span><span class="bf-val" style="color:#E24B4A;">{_fs_str}</span></div>'
+            f'<div class="bf-item"><span class="bf-name">Asing Net (Lot)</span><span class="bf-val" style="color:{_fn_col};">{_fn_str}</span></div>'
+        )
+    else:
+        asing_detail_html = ""
+
     if inst_net:
         col_i = "#00E5BE" if not str(inst_net).startswith("-") else "#E24B4A"
         inst_html = f'<div class="bf-item"><span class="bf-name">Institusi Net Buy</span><span class="bf-val" style="color:{col_i};">{inst_net}</span></div>'
@@ -1265,6 +1282,7 @@ def _single_card_html(row: dict, idx: int) -> str:
       <div class="bc-band-details">
         <div class="bc-band-type" style="color:{acc};">{bandar_label}</div>
         {asing_html}
+        {asing_detail_html}
         {inst_html}
         {retail_html}
       </div>
@@ -16561,6 +16579,20 @@ Jawab dalam Bahasa Indonesia, tajam dan profesional. Maksimal 500 kata."""
                 {"month":"Apr 2026","rate":16890,"chg_pct":0.87},
                 {"month":"Mei 2026","rate":16350,"chg_pct":-3.20},
             ]
+            # ── v20 FIX: Update entry bulan terakhir dengan harga live dari yfinance ──
+            try:
+                import yfinance as _yf_krs
+                _krs_ticker_obj = _yf_krs.Ticker("USDIDR=X")
+                _krs_live_info  = _krs_ticker_obj.fast_info
+                _krs_live_px    = getattr(_krs_live_info, "last_price", None)
+                if _krs_live_px and float(_krs_live_px) > 10000:
+                    _krs_live_int = int(float(_krs_live_px))
+                    _krs_prev_rate = _kurs_monthly[-2]["rate"] if len(_kurs_monthly) >= 2 else _krs_live_int
+                    _krs_live_chg  = round((_krs_live_int - _krs_prev_rate) / _krs_prev_rate * 100, 2) if _krs_prev_rate else 0
+                    _kurs_monthly[-1]["rate"]    = _krs_live_int
+                    _kurs_monthly[-1]["chg_pct"] = _krs_live_chg
+            except Exception:
+                pass  # fallback ke hardcoded jika yfinance gagal
             # ── Tabel Kurs style BI Rate (grid tahun x bulan) ──────────
             _kr_mo = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Ags","Sep","Okt","Nov","Des"]
             _kr_by_year = {}
@@ -32580,6 +32612,27 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                 result = data
                         except Exception:
                             pass
+                    # ── v20 FIX: Inject foreign net dari IDX Pipeline ke metadata result ──
+                    # Ini dipakai oleh _parse_brosum_rows untuk menghitung Net Foreign (Lot)
+                    # bahkan ketika GoAPI tidak tersedia atau data broker tidak lengkap.
+                    try:
+                        _ff_brosum = idxdb_get_foreign_flow()
+                        _ff_map_bs = {}
+                        for _fr in (_ff_brosum.get("top_buy", []) + _ff_brosum.get("top_sell", [])):
+                            _ft = _fr.get("ticker", "")
+                            if _ft:
+                                _ff_map_bs[_ft] = _fr
+                        if ticker in _ff_map_bs:
+                            _fd = _ff_map_bs[ticker]
+                            # Simpan ke session_state agar bisa diakses oleh renderer
+                            st.session_state[f"_brosum_idx_foreign_{ticker}"] = {
+                                "foreign_buy":  _fd.get("foreign_buy"),
+                                "foreign_sell": _fd.get("foreign_sell"),
+                                "foreign_net":  _fd.get("foreign_net"),
+                                "date":         _ff_brosum.get("date", ""),
+                            }
+                    except Exception:
+                        pass
                     st.session_state[_cache_key]    = result
                     st.session_state[_cache_ts_key] = _now_ts
                     return result
@@ -33724,6 +33777,31 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                 s["high_momentum"] = (_streak >= 3)
                                 s["momentum_days"] = _streak
 
+                            # ── v20 FIX: Enrich _top30 dengan IDX Pipeline foreign net ──
+                            # Inject asing_net dari IDX pipeline ke semua saham yang belum punya
+                            # (GoAPI mungkin tidak return data untuk semua saham)
+                            try:
+                                _ff_enrich = idxdb_get_foreign_flow(top_n=500)
+                                _ff_enrich_map = {}
+                                for _fer in (_ff_enrich.get("top_buy", []) + _ff_enrich.get("top_sell", [])):
+                                    _fet = _fer.get("ticker", "")
+                                    if _fet:
+                                        _ff_enrich_map[_fet] = _fer
+                                for _s30 in _top30:
+                                    _stk_e = _s30.get("ticker", "")
+                                    if not _s30.get("asing_net") and _stk_e in _ff_enrich_map:
+                                        _fd_e = _ff_enrich_map[_stk_e]
+                                        _fn_e = _fd_e.get("foreign_net")
+                                        _fb_e = _fd_e.get("foreign_buy")
+                                        _fs_e = _fd_e.get("foreign_sell")
+                                        if _fn_e is not None:
+                                            _s30["asing_net"]    = f"+{int(_fn_e):,}" if _fn_e >= 0 else f"{int(_fn_e):,}"
+                                        if _fb_e is not None:
+                                            _s30["foreign_buy_lot"]  = int(_fb_e)
+                                        if _fs_e is not None:
+                                            _s30["foreign_sell_lot"] = int(_fs_e)
+                            except Exception:
+                                pass
                             st.session_state["sigma_bs30_screened"] = _top30
                             _ts_now = _wib_now().strftime("%d %b %Y, %H:%M WIB")
                             st.session_state["sigma_bs30_ts"] = _ts_now
