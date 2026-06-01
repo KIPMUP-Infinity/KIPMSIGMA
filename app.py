@@ -1129,6 +1129,17 @@ def _single_card_html(row: dict, idx: int) -> str:
     inst_net     = row.get("inst_net", "")
     bandar_label = row.get("bandar_label", "AKUMULASI" if sigma_score >= 55 else "DISTRIBUSI")
 
+    # ── Kode broker dominan (top buyer) ──
+    _broker_raw = (
+        row.get("top_broker_buy") or
+        row.get("dominant_buy") or
+        row.get("broker_buy") or
+        row.get("top_broker") or
+        row.get("broker_code") or
+        ""
+    )
+    broker_code_display = str(_broker_raw).strip()[:12] if _broker_raw else ""
+
     rating = _normalize_rating(row.get("rating", "BUY"))
     meta   = _RATING_META.get(rating, _DEFAULT_META)
     acc    = meta["accent"]
@@ -1149,10 +1160,21 @@ def _single_card_html(row: dict, idx: int) -> str:
     # ── Sigma bar width ──
     bar_w = sigma_score
 
-    # ── 5-candle data ──
+    # ── 5-candle data (fallback ke closes full jika closes5 kosong) ──
     closes5 = row.get("closes5", [])
     highs5  = row.get("highs5",  [])
     lows5   = row.get("lows5",   [])
+    # Fallback: ambil 5 data terakhir dari data full jika closes5 kosong
+    if not closes5:
+        _cf = row.get("closes", [])
+        _hf = row.get("highs",  [])
+        _lf = row.get("lows",   [])
+        _of = row.get("opens",  [])
+        _n  = min(5, len(_cf))
+        if _n > 0:
+            closes5 = [round(float(v), 0) for v in _cf[-_n:]]
+            highs5  = [round(float(v), 0) for v in _hf[-_n:]] if len(_hf) >= _n else closes5[:]
+            lows5   = [round(float(v), 0) for v in _lf[-_n:]] if len(_lf) >= _n else closes5[:]
     n5      = len(closes5)
 
     opens5 = list(row.get("opens5", []))
@@ -1229,6 +1251,7 @@ def _single_card_html(row: dict, idx: int) -> str:
       <div class="bc-ticker-block">
         <div class="bc-ticker">{ticker}</div>
         <div class="bc-name">{name[:28]}</div>
+        {f'<div class="bc-broker-badge">{broker_code_display}</div>' if broker_code_display else ''}
       </div>
       <div class="bc-ring-wrap" title="SIGMA Score {sigma_score}/100">
         <svg viewBox="0 0 68 68" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1260,32 +1283,6 @@ def _single_card_html(row: dict, idx: int) -> str:
     <div class="bc-haka {cls}">
       <div class="bc-haka-dot {cls}"></div>
       <span class="bc-haka-text {cls}">{haka}</span>
-    </div>
-
-    <div class="bc-sep"></div>
-
-    <!-- BANDAR FLOW -->
-    <div class="bc-section-lbl">Bandar Flow</div>
-    <div class="bc-bandar-row">
-      <div class="bc-band-ring-wrap">
-        <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="28" cy="28" r="18" stroke="rgba(255,255,255,0.07)" stroke-width="3.5"/>
-          <circle cx="28" cy="28" r="18" stroke="{ring}" stroke-width="3.5"
-            stroke-dasharray="{dash_band} {gap_band}"
-            stroke-dashoffset="28.3" stroke-linecap="round"/>
-        </svg>
-        <div class="bc-band-inner">
-          <div class="bc-band-pct">{bandar_pct}%</div>
-          <div class="bc-band-lbl" style="color:{acc};">{bandar_label[:4]}</div>
-        </div>
-      </div>
-      <div class="bc-band-details">
-        <div class="bc-band-type" style="color:{acc};">{bandar_label}</div>
-        {asing_html}
-        {asing_detail_html}
-        {inst_html}
-        {retail_html}
-      </div>
     </div>
 
     <div class="bc-sep"></div>
@@ -1565,6 +1562,19 @@ _CARD_CSS = """
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 160px;
+}
+.bc-broker-badge {
+  display: inline-block;
+  margin-top: 5px;
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.55);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 4px;
+  padding: 2px 6px;
+  text-transform: uppercase;
 }
 
 /* Score ring */
