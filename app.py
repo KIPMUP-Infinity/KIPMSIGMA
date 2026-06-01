@@ -10147,7 +10147,7 @@ section[data-testid="stSidebar"], section[data-testid="stSidebar"] > div, sectio
 section[data-testid="stSidebar"] {{ border-right: 1px solid {C['border']} !important; }}
 section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div {{ padding-top: 0 !important; margin-top: 0 !important; }}
 [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
-section[data-testid="stSidebar"] .stButton > button {{ background: transparent !important; border: none !important; box-shadow: none !important; color: {C['text']} !important; font-size: 0.875rem !important; padding: 7px 12px !important; border-radius: 8px !important; width: 100% !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; text-align: left !important; min-height: 36px !important; transition: all 0.18s ease !important; border-left: 2px solid transparent !important; }}
+section[data-testid="stSidebar"] .stButton > button {{ background: transparent !important; border: none !important; box-shadow: none !important; color: {C['text']} !important; font-size: 0.875rem !important; padding: 7px 12px !important; border-radius: 8px !important; width: 100% !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; text-align: left !important; min-height: 36px !important; transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease !important; border-left: 2px solid transparent !important; transform: none !important; will-change: auto !important; }}
 section[data-testid="stSidebar"] .stButton > button:hover {{ background: linear-gradient(135deg, rgba(124,58,237,0.16) 0%, rgba(59,130,246,0.16) 100%) !important; border-left: 2px solid rgba(124,58,237,0.6) !important; color: #a78bfa !important; }}
 section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSidebar"] .stButton > button span {{ margin: 0 !important; text-align: left !important; color: inherit !important; width: 100% !important; }}
 [data-testid="stChatMessage"] {{ background: transparent !important; border: none !important; box-shadow: none !important; }}
@@ -11620,8 +11620,8 @@ def show_login():
     [data-testid="stTextInput"] input:focus {{ border: 1px solid rgba(201,162,39,0.70) !important; box-shadow: 0 0 0 2px rgba(201,162,39,0.12) !important; outline: none !important; }}
     [data-testid="stTextInput"] input::placeholder {{ color: rgba(255,255,255,0.35) !important; }}
     [data-testid="stTextInput"] label {{ color: rgba(255,255,255,0.6) !important; font-size: 0.82rem !important; }}
-    [data-testid="stMainBlockContainer"] .stButton > button {{ background: linear-gradient(135deg, #c9a227, #a07a14) !important; color: #0A0C12 !important; font-weight: 700 !important; border: none !important; border-radius: 12px !important; padding: 12px !important; font-size: 0.95rem !important; letter-spacing: 0.5px !important; transition: opacity 0.2s, transform 0.1s, box-shadow 0.1s !important; box-shadow: 0 4px 20px rgba(124,58,237,0.35) !important; will-change: transform !important; }}
-    [data-testid="stMainBlockContainer"] .stButton > button:hover {{ opacity: 0.92 !important; transform: translateY(-1px) !important; }}
+    [data-testid="stMainBlockContainer"] .stButton > button {{ background: linear-gradient(135deg, #c9a227, #a07a14) !important; color: #0A0C12 !important; font-weight: 700 !important; border: none !important; border-radius: 12px !important; padding: 12px !important; font-size: 0.95rem !important; letter-spacing: 0.5px !important; min-height: 40px !important; box-sizing: border-box !important; transition: opacity 0.2s, box-shadow 0.1s !important; box-shadow: 0 4px 20px rgba(124,58,237,0.35) !important; will-change: auto !important; transform: none !important; }}
+    [data-testid="stMainBlockContainer"] .stButton > button:hover {{ opacity: 0.92 !important; transform: none !important; }}
     [data-testid="stMainBlockContainer"] .stButton > button:active, [data-testid="stMainBlockContainer"] .stButton > button:focus {{ transform: none !important; box-shadow: 0 2px 8px rgba(124,58,237,0.25) !important; outline: none !important; opacity: 1 !important; }}
     [data-testid="stTabs"] [role="tablist"] {{ background: rgba(255,255,255,0.05) !important; border-radius: 12px !important; padding: 4px !important; border: 1px solid rgba(255,255,255,0.08) !important; gap: 2px !important; }}
     [data-testid="stTabs"] button[role="tab"] {{ border-radius: 9px !important; color: rgba(255,255,255,0.5) !important; font-size: 0.85rem !important; padding: 7px 12px !important; border: none !important; background: transparent !important; }}
@@ -13616,7 +13616,17 @@ if current_view == "dashboard":
         box-shadow: 0 0 0 3px rgba(139,92,246,0.15) !important;
     }}
 
-    /* -- Buttons -- */
+    /* -- Buttons — v19: NO will-change, NO translateY, fixed height → zero layout shift -- */
+
+    /* Global anchor: semua stButton punya dimensi stabil, tidak ada compositing layer baru */
+    .stButton > button {{
+        min-height: 40px !important;
+        box-sizing: border-box !important;
+        will-change: auto !important;
+        transform: none !important;
+        position: relative !important;
+    }}
+
     [data-testid="stTabs"] ~ div .stButton > button,
     [data-testid="stVerticalBlock"] .stButton > button {{
         background: linear-gradient(135deg,#8b5cf6,#0ea5e9) !important;
@@ -13629,14 +13639,19 @@ if current_view == "dashboard":
         text-transform: uppercase !important;
         border-radius: 50px !important;
         padding: 10px 24px !important;
-        transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease !important;
+        min-height: 40px !important;
+        height: auto !important;
+        box-sizing: border-box !important;
+        /* Hanya transisi visual (box-shadow, filter) — TANPA transform */
+        transition: box-shadow 0.15s ease, filter 0.15s ease !important;
         box-shadow: 0 4px 18px rgba(139,92,246,0.35) !important;
-        will-change: transform !important;
+        will-change: auto !important;
+        transform: none !important;
     }}
     [data-testid="stTabs"] ~ div .stButton > button:hover,
     [data-testid="stVerticalBlock"] .stButton > button:hover {{
         box-shadow: 0 6px 28px rgba(139,92,246,0.55) !important;
-        transform: translateY(-1px) !important;
+        transform: none !important;
         filter: brightness(1.1) !important;
     }}
     [data-testid="stTabs"] ~ div .stButton > button:active,
@@ -13649,17 +13664,26 @@ if current_view == "dashboard":
         outline: none !important;
     }}
 
-    /* ── v17: Lock all buttons on :active/:focus — prevent visual shift ── */
+    /* ── v19: Global lock — SEMUA tombol tidak boleh shift pada state apapun ── */
+    .stButton > button,
+    .stButton > button:hover,
     .stButton > button:active,
-    .stButton > button:focus {{
+    .stButton > button:focus,
+    .stButton > button:focus-visible {{
+        transform: none !important;
+        outline: none !important;
+    }}
+    [data-testid="stTabs"] button[role="tab"] {{
+        min-height: 36px !important;
+        box-sizing: border-box !important;
+        will-change: auto !important;
+    }}
+    [data-testid="stTabs"] button[role="tab"]:active,
+    [data-testid="stTabs"] button[role="tab"]:focus,
+    [data-testid="stTabs"] button[role="tab"]:focus-visible {{
         transform: none !important;
         outline: none !important;
         box-shadow: none !important;
-    }}
-    [data-testid="stTabs"] button[role="tab"]:active,
-    [data-testid="stTabs"] button[role="tab"]:focus {{
-        transform: none !important;
-        outline: none !important;
     }}
 
     /* -- Gap control -- */
@@ -19160,7 +19184,25 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                         st.session_state["rrg_selected"] = clicked_sector
 
             # ── TOMBOL SEKTOR (fallback klik) ──────────────────────────────
-            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.8rem;color:{text_sub};margin-bottom:6px;letter-spacing:0.1em;'>PILIH SEKTOR:</p>", unsafe_allow_html=True)
+            # v19 FIX: selalu type="secondary" agar dimensi button tidak berubah
+            # saat toggle active/inactive (primary vs secondary beda class Streamlit → layout shift).
+            # Active state divisualisasikan via CSS inject nth-child column.
+            _rrg_active_sel = st.session_state.get("rrg_selected")
+            if _rrg_active_sel and _rrg_active_sel in sector_names:
+                _rrg_col_idx = sector_names.index(_rrg_active_sel) + 1
+                st.markdown(f"""<style>
+                div[data-testid="column"]:nth-child({_rrg_col_idx}) .stButton > button {{
+                    background: linear-gradient(135deg,#f59e0b,#ef4444) !important;
+                    box-shadow: 0 4px 18px rgba(245,158,11,0.45) !important;
+                    color: #fff !important;
+                }}
+                div[data-testid="column"]:nth-child({_rrg_col_idx}) .stButton > button:hover {{
+                    background: linear-gradient(135deg,#fbbf24,#f97316) !important;
+                    box-shadow: 0 6px 24px rgba(245,158,11,0.60) !important;
+                    filter: brightness(1.05) !important;
+                }}
+                </style>""", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.8rem;color:{text_sub};margin-bottom:6px;letter-spacing:0.1em;'>PILIH SEKTOR:</p>", unsafe_allow_html=True)
             btn_cols = st.columns(len(sector_names))
             for i, sname in enumerate(sector_names):
                 sdata = rrg_sectors[sname]
@@ -19169,7 +19211,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                     btn_label = f"{sdata['icon']} {sname[:6]}"
                     if st.button(btn_label, key=f"rrg_btn_{sname}",
                                  use_container_width=True,
-                                 type="primary" if is_active else "secondary"):
+                                 type="secondary"):
                         if is_active:
                             st.session_state["rrg_selected"] = None
                         else:
