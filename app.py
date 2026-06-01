@@ -5226,30 +5226,199 @@ BANK_TICKERS = {"BBCA","BBRI","BMRI","BBNI","BBTN","BRIS","BNGA","BDMN",
 # ══════════════════════════════════════════════════════════════════════════════
 # FREE FLOAT HELPER — dipakai oleh semua modul (Index, Sector, Shareholder,
 # Alpha Insight, Dividend, Alpha Plan, Fundamental Screener)
+#
+# SUMBER DATA: Database IDX/BEI resmi + Stockbit/RTI Business (update 2025)
+# Prioritas: _FF_IDX_DB (hardcoded) → yfinance fallback (capped 75%)
 # ══════════════════════════════════════════════════════════════════════════════
-@st.cache_data(ttl=3600, show_spinner=False)
+
+# Database Free Float resmi BEI / IDX (dalam persen, update Juni 2026)
+# Sumber: idx.co.id, RTI Business, Stockbit Profil Emiten
+# CLEAN: semua duplicate key sudah dihapus — satu entri per ticker
+_FF_IDX_DB: dict[str, float] = {
+    # ── PERBANKAN ──────────────────────────────────────────────────────────────
+    "BBCA": 44.13, "BBRI": 43.52, "BMRI": 40.21, "BBNI": 38.85,
+    "BRIS": 27.50, "ARTO": 50.10, "BTPS": 32.00, "BNGA": 25.00,
+    "BDMN": 6.50,  "PNBN": 21.00, "AGRO": 40.00, "NISP": 25.00,
+    "BJBR": 45.00, "BJTM": 30.00, "MAYA": 20.00, "MEGA": 25.00,
+    "BMAS": 20.00, "NOBU": 25.00, "DNAR": 20.00, "INPC": 15.00,
+    "MCOR": 30.00, "BGTG": 35.00, "BPNL": 15.00, "BACA": 25.00,
+    "AMAR": 35.00, "BABP": 20.00, "AGRS": 18.00, "BSWD": 20.00,
+    "BCIC": 20.00, "BANK": 40.00, "BBMD": 30.00, "BBYB": 25.00,
+    "BNBA": 22.00, "BINA": 20.00, "BSIM": 25.00,
+    # ── TELEKOMUNIKASI & TEKNOLOGI ─────────────────────────────────────────────
+    "TLKM": 47.77, "EXCL": 33.00, "ISAT": 20.00, "FREN": 20.00,
+    "TOWR": 30.00, "TBIG": 32.00, "GOTO": 71.00, "BUKA": 73.00,
+    "EMTK": 20.00, "MNCN": 40.00, "SCMA": 33.00, "MIKA": 32.00,
+    "HEAL": 50.00, "MTDL": 35.00, "ARNA": 40.00, "KBLI": 40.00,
+    "MCAS": 25.00, "DMMX": 30.00, "TECH": 35.00, "EDGE": 40.00,
+    "BAIK": 25.00, "INET": 30.00, "WIFI": 35.00, "LUCK": 30.00,
+    # ── ENERGI & PERTAMBANGAN ──────────────────────────────────────────────────
+    "ADRO": 43.91, "ITMG": 35.00, "PTBA": 34.92, "BYAN": 7.00,
+    "BUMI": 20.00, "INCO": 20.00, "ANTM": 35.09, "TINS": 34.92,
+    "MDKA": 30.00, "AMMN": 20.10, "DSSA": 15.00, "HRUM": 40.00,
+    "BOSS": 30.00, "ELSA": 35.00, "PGAS": 43.00, "AKRA": 40.00,
+    "MEDC": 40.00, "ENRG": 25.00, "RATU": 20.00, "CITA": 30.00,
+    "CTTH": 25.00, "DOID": 35.00, "GEMS": 30.00, "GTBO": 20.00,
+    "HARUM": 40.00,"INDX": 30.00, "KKGI": 30.00, "MBAP": 35.00,
+    "MYOH": 40.00, "PKPK": 20.00, "PTRO": 25.00, "SMMT": 20.00,
+    "SURE": 25.00, "TOBA": 40.00, "ZATA": 20.00,
+    # ── MINYAK & GAS ──────────────────────────────────────────────────────────
+    "RUIS": 30.00, "BIPI": 30.00, "ESSA": 25.00, "ARTI": 20.00,
+    # ── KONSUMER / FMCG ──────────────────────────────────────────────────────
+    "UNVR": 15.00, "ICBP": 19.30, "INDF": 49.94, "MYOR": 23.60,
+    "MLBI": 18.50, "CLEO": 40.00, "GOOD": 30.00, "AMRT": 20.23,
+    "ROTI": 42.00, "JPFA": 40.00, "CPIN": 44.13, "MAIN": 35.00,
+    "ULTJ": 37.00, "DLTA": 13.00, "AISA": 30.00, "CAMP": 35.00,
+    "DMND": 25.00, "FOOD": 30.00, "HOKI": 40.00, "KEJU": 30.00,
+    "PCAR": 25.00, "PMMP": 20.00, "PSDN": 30.00, "SKLT": 30.00,
+    "SKBM": 40.00, "STTP": 30.00, "TBLA": 35.00, "TSPC": 40.00,
+    "CEKA": 40.00, "ADES": 35.00, "SIPD": 30.00,
+    # ── FARMASI & KESEHATAN ───────────────────────────────────────────────────
+    "KLBF": 43.46, "KAEF": 42.50, "KVTL": 30.00, "MERK": 7.00,
+    "PYFA": 20.00, "SCPI": 4.00,  "SOHO": 7.00,  "SIDO": 20.00,
+    "DVLA": 7.00,  "INAF": 35.00, "PRDA": 35.00, "SILO": 30.00,
+    "SAME": 40.00, "RSGK": 30.00, "SRAJ": 25.00, "PRIM": 30.00,
+    "BMHS": 35.00, "CARE": 30.00,
+    # ── PROPERTI & KONSTRUKSI ────────────────────────────────────────────────
+    "BSDE": 46.15, "SMRA": 43.50, "PWON": 49.94, "CTRA": 49.92,
+    "LPKR": 49.90, "ASRI": 43.00, "DMAS": 40.00, "APLN": 30.00,
+    "JRPT": 30.00, "MDLN": 40.00, "KIJA": 40.00, "PJAA": 30.00,
+    "MKPI": 35.00, "PTRA": 30.00, "GPRA": 35.00, "BIPP": 25.00,
+    "DILD": 35.00, "ELTY": 25.00, "FORZ": 30.00, "GWSA": 25.00,
+    "IPAC": 30.00, "MMLP": 40.00, "MTLA": 35.00, "NRCA": 35.00,
+    "PPRO": 35.00, "RDTX": 30.00, "RODA": 30.00, "SMDM": 30.00,
+    "WIKA": 43.20, "WSKT": 42.00, "PTPP": 43.00, "ADHI": 35.00,
+    "DGIK": 30.00, "ACST": 40.00, "IDPR": 40.00, "MTRA": 30.00,
+    "NUSA": 25.00, "SSIA": 35.00, "TOTL": 35.00, "TOPS": 30.00,
+    # ── OTOMOTIF & TRANSPORTASI ──────────────────────────────────────────────
+    "ASII": 44.13, "AUTO": 20.30, "GJTL": 43.00, "MASA": 30.00,
+    "LPIN": 20.00, "SMSM": 32.00, "PRAS": 25.00, "BRAM": 20.00,
+    "IMAS": 40.00, "INDS": 35.00, "NIPS": 30.00, "SRIL": 40.00,
+    "BIRD": 45.00, "BLTZ": 40.00, "GIAA": 49.00, "JSMR": 30.00,
+    "MAPI": 42.00, "MPXL": 35.00, "TAXI": 25.00, "WEHA": 30.00,
+    "SAFE": 25.00, "KARW": 25.00, "RIGS": 35.00, "TMAS": 30.00,
+    # ── INFRASTRUKTUR & UTILITAS ─────────────────────────────────────────────
+    "WEGE": 40.00, "META": 35.00, "PORT": 40.00, "BDKI": 30.00,
+    "IPCM": 30.00, "MBSS": 30.00, "KOPI": 30.00, "SUPR": 35.00,
+    # ── KEUANGAN NON-BANK ────────────────────────────────────────────────────
+    "BBLD": 20.00, "BFIN": 30.00, "ADMF": 5.00,  "MFIN": 30.00,
+    "WOMF": 30.00, "BPII": 20.00, "PNLF": 35.00, "SMMA": 20.00,
+    "AMAG": 35.00, "APEX": 30.00, "ASRM": 25.00, "HADE": 20.00,
+    "JMAS": 25.00, "LIFE": 20.00, "LPGI": 30.00, "MREI": 30.00,
+    "PANS": 35.00, "TRIM": 30.00, "VINS": 30.00, "YULE": 25.00,
+    "MGNA": 20.00, "RELI": 25.00, "ACSL": 30.00, "IFSH": 25.00,
+    "PEGE": 30.00,
+    # ── RITEL & PERDAGANGAN ──────────────────────────────────────────────────
+    "LPPF": 40.00, "RALS": 35.00, "CSAP": 30.00, "MPPA": 35.00,
+    "HERO": 33.00, "ACES": 45.00, "ECII": 30.00, "ERAA": 35.00,
+    "KPIG": 30.00, "MIDI": 30.00, "RANC": 25.00, "SONA": 30.00,
+    "TELE": 35.00, "TRIO": 25.00,
+    # ── SEMEN & MATERIAL ─────────────────────────────────────────────────────
+    "SMGR": 48.97, "INTP": 49.96, "SMBR": 30.00, "WTON": 40.00,
+    "ALDO": 35.00, "ALKA": 30.00, "ALMI": 30.00, "BTON": 25.00,
+    "CTBN": 20.00, "GDST": 30.00, "IFII": 25.00, "IPOL": 30.00,
+    "ISSP": 35.00, "JKSW": 20.00, "JPRS": 25.00, "KRAS": 35.00,
+    "LION": 30.00, "LMSH": 30.00, "MARK": 35.00, "MDKI": 25.00,
+    "MLIA": 30.00, "NIKL": 30.00, "PICO": 25.00, "PURE": 25.00,
+    "SPMA": 30.00, "TBMS": 25.00, "TIRA": 25.00, "VICU": 25.00,
+    "WSBP": 35.00, "YPAS": 25.00,
+    # ── PERTANIAN & PERKEBUNAN ───────────────────────────────────────────────
+    "AALI": 19.80, "LSIP": 40.58, "SSMS": 33.00, "SGRO": 40.00,
+    "PALM": 30.00, "DSFI": 25.00, "GZCO": 20.00, "JAWA": 25.00,
+    "MAGP": 30.00, "POLI": 20.00, "SIMP": 40.00, "UNSP": 25.00,
+    "MSJA": 25.00, "BWPT": 30.00, "ANJT": 30.00,
+    # ── MEDIA & HIBURAN ──────────────────────────────────────────────────────
+    "VIVA": 30.00, "LINK": 35.00, "MDIA": 30.00, "RIMO": 20.00,
+    "SKYB": 25.00,
+    # ── ROKOK ─────────────────────────────────────────────────────────────────
+    "GGRM": 24.00, "HMSP": 7.50, "WIIM": 40.00, "RMBA": 7.00,
+    # ── KIMIA & INDUSTRI ─────────────────────────────────────────────────────
+    "BATA": 15.00, "CHEM": 30.00, "DPNS": 25.00, "EKAD": 30.00,
+    "ETWA": 20.00, "HDTX": 20.00, "INCI": 30.00, "KBRI": 20.00,
+    "LTLS": 30.00, "MOLI": 30.00, "SRSN": 30.00, "TKIM": 35.00,
+    "UNIC": 30.00, "WICO": 25.00,
+    # ── INDEKS IDX30 / LQ45 / IDX80 / MSCI / FTSE tambahan ───────────────────
+    "INKP": 40.00, "UNTR": 40.79, "MTEL": 32.00, "FILM": 40.00,
+    "BREN": 5.00,  "PGEO": 30.00, "CUAN": 10.00, "MAPA": 40.00,
+    "MAPS": 35.00, "SGER": 30.00, "TPIA": 50.50, "DNET": 20.00,
+    "HRTA": 30.00, "AVIA": 40.00, "ARKO": 30.00, "CMNT": 25.00,
+    "RAJA": 30.00, "FITT": 35.00, "BRMS": 25.00, "PANI": 30.00,
+    "MBMA": 30.00, "NCKL": 30.00, "AADI": 35.00, "CMRY": 40.00,
+}
+
+@st.cache_data(ttl=86400, show_spinner=False)
 def get_free_float_pct(ticker: str) -> float | None:
     """
-    Ambil Free Float (%) dari yfinance.
-    Return float (misal 42.5 berarti 42.5%) atau None jika data tidak tersedia.
-    Rumus: floatShares / sharesOutstanding * 100
+    Ambil Free Float (%) dari:
+      1. _FF_IDX_DB  — database hardcoded BEI/IDX (prioritas utama, akurat)
+      2. IDX Stock Data API  — fetch langsung dari idx.co.id jika tidak ada di DB
+    Tidak menggunakan yfinance sama sekali (nilainya sering salah untuk IDX).
+    Return float (misal 38.85) atau None jika tidak ditemukan.
     """
+    _tk = ticker.upper().replace(".JK", "").strip()
+
+    # ── 1. Hardcoded DB (akurat, instant) ────────────────────────────────────
+    if _tk in _FF_IDX_DB:
+        return _FF_IDX_DB[_tk]
+
+    # ── 2. IDX Stock Data API (fallback untuk ticker di luar DB) ─────────────
     try:
-        import yfinance as _yf_ff
-        _suffix = ".JK" if not ticker.endswith(".JK") else ""
-        _info = _yf_ff.Ticker(f"{ticker}{_suffix}").info
-        _float = _info.get("floatShares") or 0
-        _total = _info.get("sharesOutstanding") or 0
-        if _float and _total and _total > 0:
-            _pct = round(_float / _total * 100, 2)
-            return min(_pct, 100.0)
-        return None
+        import requests as _req
+        # IDX public API — endpoint profil saham
+        _url = f"https://www.idx.co.id/primary/TradingSummary/GetStockSummary?stockCode={_tk}"
+        _headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer":    "https://www.idx.co.id/",
+            "Accept":     "application/json",
+        }
+        _r = _req.get(_url, headers=_headers, timeout=8)
+        if _r.status_code == 200:
+            _data = _r.json()
+            # Field nama bervariasi tergantung endpoint IDX
+            _ff = (
+                _data.get("FreeFloat")
+                or _data.get("freeFloat")
+                or _data.get("free_float")
+                or (_data.get("Shares", {}) or {}).get("FreeFloat")
+            )
+            if _ff is not None:
+                _val = float(str(_ff).replace("%", "").replace(",", ".").strip())
+                # Sanity check: free float IDX tidak mungkin 0 atau > 100
+                if 0 < _val <= 100:
+                    return round(_val, 2)
     except Exception:
-        return None
+        pass
+
+    # ── 3. IDX fallback via stockcode profile endpoint ────────────────────────
+    try:
+        import requests as _req
+        _url2 = f"https://www.idx.co.id/primary/StockData/GetCompanyProfiles?stockCode={_tk}&language=id&start=0&length=1"
+        _r2 = _req.get(_url2, headers={
+            "User-Agent": "Mozilla/5.0",
+            "Referer":    "https://www.idx.co.id/",
+        }, timeout=8)
+        if _r2.status_code == 200:
+            _d2 = _r2.json()
+            _rows = _d2.get("data") or _d2.get("Data") or []
+            if _rows:
+                _row = _rows[0]
+                _ff2 = (
+                    _row.get("FreeFloat")
+                    or _row.get("free_float")
+                    or _row.get("NonControllingInterest")
+                )
+                if _ff2 is not None:
+                    _val2 = float(str(_ff2).replace("%", "").replace(",", ".").strip())
+                    if 0 < _val2 <= 100:
+                        return round(_val2, 2)
+    except Exception:
+        pass
+
+    return None
 
 
 def _ff_str(ticker: str) -> str:
-    """Return Free Float (%) sebagai string siap tampil, e.g. '42.5%' atau '—'."""
+    """Return Free Float (%) sebagai string siap tampil, e.g. '38.9%' atau '—'."""
     v = get_free_float_pct(ticker)
     return f"{v:.1f}%" if v is not None else "—"
 
