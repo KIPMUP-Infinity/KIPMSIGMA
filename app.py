@@ -9300,6 +9300,20 @@ def _sch_independent_screener(min_spike: float = 1.5, max_tickers: int = 30) -> 
                         if _hi_ind is not None and _ck in _hi_ind.columns else _c5)
                 _l5  = ([float(_lo_ind[_ck].dropna().iloc[-(5-i)]) for i in range(_n5)]
                         if _lo_ind is not None and _ck in _lo_ind.columns else _c5)
+                # Ambil asing_net dari IDX Pipeline untuk fallback screener
+                _fn_ind = None
+                try:
+                    _row_ind = idxdb_get_latest(_tk_ind)
+                    if _row_ind:
+                        _fb_ind = _row_ind.get("foreign_buy")
+                        _fs_ind = _row_ind.get("foreign_sell")
+                        if _fb_ind is not None and _fs_ind is not None:
+                            _fn_ind = int(_fb_ind) - int(_fs_ind)
+                except Exception:
+                    pass
+                _asing_str_ind = ""
+                if _fn_ind is not None:
+                    _asing_str_ind = f"+{_fn_ind:,}" if _fn_ind >= 0 else f"{_fn_ind:,}"
                 _result_ind.append({
                     "ticker": _tk_ind,
                     "price":  _pr,
@@ -9313,6 +9327,9 @@ def _sch_independent_screener(min_spike: float = 1.5, max_tickers: int = 30) -> 
                     "accum_days": 0,
                     "goapi_confirmed": False,
                     "closes5": _c5, "highs5": _h5, "lows5": _l5,
+                    "asing_net": _asing_str_ind,
+                    "inst_net": "",
+                    "retail_net": "",
                     "_source": "fallback_yfinance",
                 })
             except Exception:
@@ -9614,11 +9631,24 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                                 _spk_bs   = round(_tvol_bs / _avg20_bs, 2) if _avg20_bs > 0 else 1.0
                             if _spk_bs < 1.5: continue
                             _chg_bs = round((_cs_bs.iloc[-1]-_cs_bs.iloc[-2])/_cs_bs.iloc[-2]*100, 2) if len(_cs_bs)>=2 else 0
+                            # Inject asing_net dari IDX Pipeline
+                            _fn_bs = None
+                            try:
+                                _row_bs = idxdb_get_latest(_tk_bs)
+                                if _row_bs:
+                                    _fb_bs = _row_bs.get("foreign_buy")
+                                    _fs_bs = _row_bs.get("foreign_sell")
+                                    if _fb_bs is not None and _fs_bs is not None:
+                                        _fn_bs = int(_fb_bs) - int(_fs_bs)
+                            except Exception:
+                                pass
+                            _asing_bs = (f"+{_fn_bs:,}" if _fn_bs >= 0 else f"{_fn_bs:,}") if _fn_bs is not None else ""
                             _result_bs.append({
                                 "ticker": _tk_bs, "price": _pr_bs, "spike": _spk_bs, "chg1d": _chg_bs,
                                 "high_momentum": False, "momentum_days": 0, "verdict": "",
                                 "pre_accum": _spk_bs >= 1.5, "top_accum": [], "top_dist": [],
-                                "accum_days": 0, "goapi_confirmed": False
+                                "accum_days": 0, "goapi_confirmed": False,
+                                "asing_net": _asing_bs, "inst_net": "", "retail_net": ""
                             })
                         except: continue
 
@@ -10019,6 +10049,24 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
 # Jalankan scheduler setiap page load
 if st.session_state.get("user"):
     _sigma_run_global_scheduler()
+
+# ── AUTO-INIT IDX PIPELINE (non-blocking) ────────────────────────────────────
+# Inisialisasi DB & auto-fetch data hari ini/kemarin di background.
+# Hanya berjalan sekali per session, tidak block UI.
+if st.session_state.get("user") and not st.session_state.get("_idxdb_startup_done"):
+    st.session_state["_idxdb_startup_done"] = True
+    try:
+        idxdb_init()
+        # Auto-fetch di background (non-blocking — result disimpan ke DB)
+        import threading as _idx_startup_th
+        def _idx_bg_fetch():
+            try:
+                idxdb_auto_fetch_today()
+            except Exception:
+                pass
+        _idx_startup_th.Thread(target=_idx_bg_fetch, daemon=True).start()
+    except Exception:
+        pass
 
 # ── AUTO-REFRESH JAM BURSA ─────────────────────────────────────────
 # Aktif 09:00–16:05 WIB, Senin–Jumat, interval 5 menit.
@@ -24223,44 +24271,153 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
         @st.cache_data(ttl=1800, show_spinner=False)
         def _reco_fetch_prices(tickers):
+            # ── PATCH: Gunakan IDX Pipeline (SQLite) sebagai sumber utama ──
+            # Pipeline menyimpan 6 bulan data OHLCV lengkap → RSI/MACD/BB bisa dihitung akurat.
+            # Fallback ke yfinance jika data pipeline tidak cukup (< 20 baris).
             import threading
             result = {}
             lock = threading.Lock()
 
+            # ── Ambil foreign flow hari terakhir dari pipeline (satu kali, semua ticker) ──
+            _idx_foreign_map = {}
+            try:
+                idxdb_init()
+                _ff_data = idxdb_get_foreign_flow(top_n=500)  # ambil semua
+                for _frow in (_ff_data.get("top_buy", []) + _ff_data.get("top_sell", [])):
+                    _ftk = _frow.get("ticker", "")
+                    if _ftk:
+                        _idx_foreign_map[_ftk] = _frow
+            except Exception:
+                pass
+
+            def _build_result_from_rows(tk, rows):
+                """Bangun dict result dari list rows pipeline (sorted ASC by date)."""
+                closes  = [r["close"]  for r in rows if r.get("close")  is not None]
+                highs   = [r["high"]   for r in rows if r.get("high")   is not None]
+                lows    = [r["low"]    for r in rows if r.get("low")    is not None]
+                vols    = [r["volume"] for r in rows if r.get("volume") is not None]
+                opens   = [r["open"]   for r in rows if r.get("open")   is not None]
+                dates   = [r["date"]   for r in rows if r.get("date")   is not None]
+                if len(closes) < 5:
+                    return None
+                # Pastikan panjang sama
+                _min_len = min(len(closes), len(highs), len(lows), len(vols), len(opens), len(dates))
+                closes, highs, lows, vols, opens, dates = (
+                    closes[-_min_len:], highs[-_min_len:], lows[-_min_len:],
+                    vols[-_min_len:], opens[-_min_len:], dates[-_min_len:],
+                )
+                ema5  = sum(closes[-5:]) / 5
+                ema10 = sum(closes[-10:]) / 10 if len(closes) >= 10 else ema5
+                _vol5_avg = sum(vols[-5:]) / 5 if sum(vols[-5:]) > 0 else 1
+                spike  = vols[-1] / _vol5_avg if _vol5_avg > 0 else 1
+                chg5d  = round((closes[-1]-closes[-6]) / closes[-6] * 100, 2) if len(closes) >= 6 else 0
+                consec_up = 0
+                for _i in range(1, min(6, len(closes))):
+                    if closes[-_i] > closes[-_i-1]: consec_up += 1
+                    else: break
+                day_range = highs[-1] - lows[-1]
+                close_pct_range = round((closes[-1] - lows[-1]) / day_range * 100, 1) if day_range > 0 else 50
+                spike_prev = vols[-2] / (sum(vols[-6:-1]) / 5) if len(vols) >= 6 and sum(vols[-6:-1]) > 0 else 1
+                n5 = min(5, len(closes))
+                # Format tanggal dari date string (YYYY-MM-DD → DD/MM)
+                def _fmt_d(d):
+                    try: return f"{d[8:10]}/{d[5:7]}"
+                    except: return d
+                # Foreign flow dari pipeline map
+                _ff_row  = _idx_foreign_map.get(tk, {})
+                _fn_val  = _ff_row.get("foreign_net")
+                _fb_val  = _ff_row.get("foreign_buy")
+                _fs_val  = _ff_row.get("foreign_sell")
+                if _fn_val is not None:
+                    _fn_b = int(_fn_val)
+                    asing_net_str = f"+{_fn_b:,}" if _fn_b >= 0 else f"{_fn_b:,}"
+                else:
+                    asing_net_str = ""
+                # Juga simpan nilai lot foreign buy/sell untuk rank
+                return {
+                    "price":  round(closes[-1], 0),
+                    "prev":   round(closes[-2], 0),
+                    "high":   round(highs[-1], 0),
+                    "low":    round(lows[-1], 0),
+                    "vol":    int(vols[-1]),
+                    "vol5":   int(_vol5_avg),
+                    "chg":    round((closes[-1]-closes[-2]) / closes[-2] * 100, 2),
+                    "chg2d":  round((closes[-1]-closes[-3]) / closes[-3] * 100, 2) if len(closes) >= 3 else 0,
+                    "chg5d":  chg5d,
+                    "ema5":   round(ema5, 0),
+                    "ema10":  round(ema10, 0),
+                    "spike":  round(spike, 2),
+                    "spike_prev": round(spike_prev, 2),
+                    "consec_up": consec_up,
+                    "close_pct_range": close_pct_range,
+                    "bullish_score": (1 if closes[-1] > ema5 else 0) + (1 if ema5 > ema10 else 0) + (1 if spike >= 1.5 else 0) + (1 if chg5d > 0 else 0),
+                    "bearish_score": (1 if closes[-1] < ema5 else 0) + (1 if ema5 < ema10 else 0) + (1 if spike >= 1.5 and closes[-1] < closes[-2] else 0) + (1 if chg5d < 0 else 0),
+                    # Full closes/highs/lows/vols untuk RSI/MACD/BB (bisa 30+ baris)
+                    "closes":  closes,
+                    "highs":   highs,
+                    "lows":    lows,
+                    "volumes": vols,
+                    # 5-candle mini data untuk visual candlestick
+                    "closes5": [round(closes[-n5+i], 0) for i in range(n5)],
+                    "highs5":  [round(highs[-n5+i],  0) for i in range(n5)],
+                    "lows5":   [round(lows[-n5+i],   0) for i in range(n5)],
+                    "opens5":  [round(opens[-n5+i],  0) for i in range(n5)],
+                    "dates5":  [_fmt_d(dates[-n5+i])    for i in range(n5)],
+                    "vols5":   [int(vols[-n5+i])         for i in range(n5)],
+                    # Foreign flow dari IDX pipeline
+                    "asing_net":  asing_net_str,
+                    "foreign_buy":  int(_fb_val) if _fb_val is not None else None,
+                    "foreign_sell": int(_fs_val) if _fs_val is not None else None,
+                    "foreign_net":  int(_fn_val) if _fn_val is not None else None,
+                    "_source": "idx_pipeline",
+                }
+
             def _fetch_one(tk):
+                # ── Layer 1: IDX Pipeline SQLite (30 hari, paling akurat) ──
                 try:
-                    h = yf.Ticker(f"{tk}.JK").history(period="15d")
+                    _rows = idxdb_get_ticker(tk, days=40)
+                    if len(_rows) >= 20:
+                        _r = _build_result_from_rows(tk, _rows)
+                        if _r:
+                            with lock:
+                                result[tk] = _r
+                            return
+                except Exception:
+                    pass
+
+                # ── Layer 2: yfinance fallback (jika pipeline kosong/kurang) ──
+                try:
+                    import yfinance as _yf_rfp
+                    h = _yf_rfp.Ticker(f"{tk}.JK").history(period="45d")
                     if len(h) >= 5:
                         closes = h["Close"].tolist()
                         vols   = h["Volume"].tolist()
                         highs  = h["High"].tolist()
                         lows   = h["Low"].tolist()
-                        # EMA 5 & 10 sederhana
+                        opens  = h["Open"].tolist()
                         ema5  = sum(closes[-5:]) / 5
                         ema10 = sum(closes[-10:]) / 10 if len(closes) >= 10 else ema5
-                        spike  = vols[-1] / (sum(vols[-5:]) / 5) if sum(vols[-5:]) > 0 else 1
+                        _vol5_avg = sum(vols[-5:]) / 5 if sum(vols[-5:]) > 0 else 1
+                        spike  = vols[-1] / _vol5_avg if _vol5_avg > 0 else 1
                         chg5d  = round((closes[-1]-closes[-6]) / closes[-6] * 100, 2) if len(closes) >= 6 else 0
-                        # ── Consecutive up days (BSJP power signal) ──
                         consec_up = 0
                         for _i in range(1, min(6, len(closes))):
-                            if closes[-_i] > closes[-_i-1]:
-                                consec_up += 1
-                            else:
-                                break
-                        # ── Close position in day range (kuat vs lemah) ──
+                            if closes[-_i] > closes[-_i-1]: consec_up += 1
+                            else: break
                         day_range = highs[-1] - lows[-1]
                         close_pct_range = round((closes[-1] - lows[-1]) / day_range * 100, 1) if day_range > 0 else 50
-                        # ── Volume spike prev day (bsjp: 2 hari volume naik = lebih valid) ──
                         spike_prev = vols[-2] / (sum(vols[-6:-1]) / 5) if len(vols) >= 6 and sum(vols[-6:-1]) > 0 else 1
-                        # ── 5 candle mini data untuk visual ──
                         n5 = min(5, len(closes))
-                        opens  = h["Open"].tolist()
-                        closes5 = [round(closes[-n5+i], 0) for i in range(n5)]
-                        highs5  = [round(highs[-n5+i], 0) for i in range(n5)]
-                        lows5   = [round(lows[-n5+i], 0) for i in range(n5)]
-                        opens5  = [round(opens[-n5+i], 0) for i in range(n5)]
-                        vols5   = [int(vols[-n5+i]) for i in range(n5)]
-                        dates5  = [h.index[-n5+i].strftime("%d/%m") for i in range(n5)]
+                        dates5 = [h.index[-n5+i].strftime("%d/%m") for i in range(n5)]
+                        # Foreign flow dari pipeline map (meski yf yang fetch OHLCV)
+                        _ff_row = _idx_foreign_map.get(tk, {})
+                        _fn_val = _ff_row.get("foreign_net")
+                        _fb_val = _ff_row.get("foreign_buy")
+                        _fs_val = _ff_row.get("foreign_sell")
+                        asing_net_str = ""
+                        if _fn_val is not None:
+                            _fn_b = int(_fn_val)
+                            asing_net_str = f"+{_fn_b:,}" if _fn_b >= 0 else f"{_fn_b:,}"
                         with lock:
                             result[tk] = {
                                 "price":  round(closes[-1], 0),
@@ -24268,7 +24425,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                                 "high":   round(highs[-1], 0),
                                 "low":    round(lows[-1], 0),
                                 "vol":    int(vols[-1]),
-                                "vol5":   int(sum(vols[-5:]) / 5),
+                                "vol5":   int(_vol5_avg),
                                 "chg":    round((closes[-1]-closes[-2]) / closes[-2] * 100, 2),
                                 "chg2d":  round((closes[-1]-closes[-3]) / closes[-3] * 100, 2) if len(closes) >= 3 else 0,
                                 "chg5d":  chg5d,
@@ -24278,24 +24435,31 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                                 "spike_prev": round(spike_prev, 2),
                                 "consec_up": consec_up,
                                 "close_pct_range": close_pct_range,
-                                # bullish: harga > EMA5 > EMA10 dan spike > 1
                                 "bullish_score": (1 if closes[-1] > ema5 else 0) + (1 if ema5 > ema10 else 0) + (1 if spike >= 1.5 else 0) + (1 if chg5d > 0 else 0),
-                                # bearish: harga < EMA5 < EMA10
                                 "bearish_score": (1 if closes[-1] < ema5 else 0) + (1 if ema5 < ema10 else 0) + (1 if spike >= 1.5 and closes[-1] < closes[-2] else 0) + (1 if chg5d < 0 else 0),
-                                # 5-candle data untuk mini visual
-                                "closes5": closes5,
-                                "highs5":  highs5,
-                                "lows5":   lows5,
-                                "opens5":  opens5,
+                                "closes":  closes,
+                                "highs":   highs,
+                                "lows":    lows,
+                                "volumes": vols,
+                                "closes5": [round(closes[-n5+i], 0) for i in range(n5)],
+                                "highs5":  [round(highs[-n5+i],  0) for i in range(n5)],
+                                "lows5":   [round(lows[-n5+i],   0) for i in range(n5)],
+                                "opens5":  [round(opens[-n5+i],  0) for i in range(n5)],
                                 "dates5":  dates5,
-                                "vols5":   vols5,
+                                "vols5":   [int(vols[-n5+i]) for i in range(n5)],
+                                "asing_net":  asing_net_str,
+                                "foreign_buy":  int(_fb_val) if _fb_val is not None else None,
+                                "foreign_sell": int(_fs_val) if _fs_val is not None else None,
+                                "foreign_net":  int(_fn_val) if _fn_val is not None else None,
+                                "_source": "yfinance_fallback",
                             }
-                except Exception: pass
+                except Exception:
+                    pass
 
             # Parallel fetch dengan thread pool
             threads = [threading.Thread(target=_fetch_one, args=(tk,)) for tk in tickers]
             for t in threads: t.start()
-            for t in threads: t.join(timeout=15)
+            for t in threads: t.join(timeout=20)
             return result
 
         def _render_reco_cards(reco_text, accent="#a78bfa"):
@@ -24923,7 +25087,8 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                 _highs_full   = d.get("highs",   d.get("highs5",   []))
                 _lows_full    = d.get("lows",    d.get("lows5",    []))
                 _volumes_full = d.get("volumes", d.get("vols5",    []))
-                if len(_closes_full) >= 15:
+                # Threshold diturunkan 15→5: pipeline IDX sudah menyimpan 30+ baris
+                if len(_closes_full) >= 5:
                     row = _enrich_row_indicators(
                         row,
                         closes=_closes_full,
@@ -24931,6 +25096,14 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                         lows=_lows_full,
                         volumes=_volumes_full,
                     )
+                # ── Inject foreign flow dari pipeline ke row (untuk card Bandar Flow) ──
+                if not row.get("asing_net") and d.get("asing_net"):
+                    row["asing_net"] = d["asing_net"]
+                # inst_net & retail_net: diisi dari GoAPI jika ada, atau kosong (pipeline tidak punya)
+                if not row.get("inst_net"):
+                    row.setdefault("inst_net", "")
+                if not row.get("retail_net"):
+                    row.setdefault("retail_net", "")
                 result_rows.append(row)
 
             avoid_rows = []
@@ -25274,7 +25447,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                 _highs_full   = d.get("highs",   d.get("highs5",   []))
                 _lows_full    = d.get("lows",    d.get("lows5",    []))
                 _volumes_full = d.get("volumes", d.get("vols5",    []))
-                if len(_closes_full) >= 15:
+                if len(_closes_full) >= 5:
                     row = _enrich_row_indicators(
                         row,
                         closes=_closes_full,
@@ -25282,6 +25455,27 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                         lows=_lows_full,
                         volumes=_volumes_full,
                     )
+                # Inject asing_net dari pipeline
+                if not row.get("asing_net") and d.get("asing_net"):
+                    row["asing_net"] = d["asing_net"]
+                # inst_net: proxy dari top_accum broker (GoAPI) → nama broker akumulasi terbesar
+                if not row.get("inst_net"):
+                    _top_acc_bs = bs_data.get("top_accum", [])
+                    if _top_acc_bs:
+                        row["inst_net"] = " · ".join(_top_acc_bs[:2])
+                    else:
+                        row["inst_net"] = ""
+                # bandar_label → bandar_pct jika belum diisi
+                if not row.get("bandar_pct"):
+                    _bpr_v2 = float(bs_data.get("bpr", 50) or 50)
+                    row["bandar_pct"] = int(min(95, max(20, _bpr_v2)))
+                if not row.get("bandar_label"):
+                    row["bandar_label"] = bs_data.get("verdict", "AKUMULASI" if len(screeners_hit) >= 2 else "WATCH")
+                if not row.get("top_accum"):
+                    row["top_accum"] = bs_data.get("top_accum", [])
+                if not row.get("top_dist"):
+                    row["top_dist"] = bs_data.get("top_dist", [])
+                row.setdefault("retail_net", "")
                 result_rows.append(row)
 
             avoid_rows = []
@@ -26333,11 +26527,24 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                         _spk_fr   = round(_tvol_fr / _avg20_fr, 2) if _avg20_fr > 0 else 1.0
                                     if _spk_fr < 1.5: continue
                                     _chg_fr = round((_cs_fr.iloc[-1]-_cs_fr.iloc[-2])/_cs_fr.iloc[-2]*100,2) if len(_cs_fr)>=2 else 0
+                                    # Inject asing_net dari IDX Pipeline
+                                    _fn_fr = None
+                                    try:
+                                        _row_fr = idxdb_get_latest(_tk_fr)
+                                        if _row_fr:
+                                            _fb_fr = _row_fr.get("foreign_buy")
+                                            _fs_fr = _row_fr.get("foreign_sell")
+                                            if _fb_fr is not None and _fs_fr is not None:
+                                                _fn_fr = int(_fb_fr) - int(_fs_fr)
+                                    except Exception:
+                                        pass
+                                    _asing_fr = (f"+{_fn_fr:,}" if _fn_fr >= 0 else f"{_fn_fr:,}") if _fn_fr is not None else ""
                                     _result_fr.append({
                                         "ticker": _tk_fr, "price": _pr_fr, "spike": _spk_fr, "chg1d": _chg_fr,
                                         "high_momentum": False, "momentum_days": 0, "verdict": "",
                                         "pre_accum": _spk_fr >= 1.5, "top_accum": [], "top_dist": [],
-                                        "accum_days": 0, "goapi_confirmed": False
+                                        "accum_days": 0, "goapi_confirmed": False,
+                                        "asing_net": _asing_fr, "inst_net": "", "retail_net": ""
                                     })
                                 except: continue
                             if _result_fr:
@@ -32607,11 +32814,25 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                     _spk = round(_today_vol / _avg20, 2) if _avg20 > 0 else 1.0
                                 if _spk < 1.5: continue
                                 _chg = round((_cs.iloc[-1] - _cs.iloc[-2]) / _cs.iloc[-2] * 100, 2) if len(_cs) >= 2 else 0
+                                # Inject asing_net dari IDX Pipeline
+                                _fn_auto = None
+                                try:
+                                    _row_a = idxdb_get_latest(_atk)
+                                    if _row_a:
+                                        _fba = _row_a.get("foreign_buy")
+                                        _fsa = _row_a.get("foreign_sell")
+                                        if _fba is not None and _fsa is not None:
+                                            _fn_auto = int(_fba) - int(_fsa)
+                                except Exception:
+                                    pass
+                                _asing_auto = (f"+{_fn_auto:,}" if _fn_auto is not None and _fn_auto >= 0 else f"{_fn_auto:,}") if _fn_auto is not None else ""
                                 _aresult.append({"ticker": _atk, "price": _pr, "spike": _spk, "chg1d": _chg,
                                                   "high_momentum": False, "momentum_days": 0,
                                                   "verdict": "", "pre_accum": _spk >= 1.5,
                                                   "top_accum": [], "top_dist": [], "accum_days": 0,
-                                                  "goapi_confirmed": False})
+                                                  "goapi_confirmed": False,
+                                                  "asing_net": _asing_auto,
+                                                  "inst_net": "", "retail_net": ""})
                             except: continue
                         if _aresult:
                             _aresult.sort(key=lambda x: x["spike"], reverse=True)
@@ -33337,6 +33558,27 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                         "n_buyer_brokers":     _n_buyer_brokers,
                                         "n_seller_brokers":    _n_seller_brokers,
                                     })
+                                    # ── PATCH 6: Set asing_net string untuk tampilan card ──
+                                    # Sumber: net_foreign_val (Rp) → konversi ke lot proxy atau format miliar
+                                    _fn_lot_proxy = int(_net_b)  # net lot semua broker sebagai fallback
+                                    _fn_asing_lot = sum(
+                                        int(float(_gr.get("BuyVolume",0) or 0)) - int(float(_gr.get("SellVolume",0) or 0))
+                                        for _gr in (_grows or [])
+                                        if _ALL_BROKERS.get(str(_gr.get("BrokerID","?")),("",""))[1] == "FOREIGN"
+                                    )
+                                    if _fn_asing_lot != 0:
+                                        _si["asing_net"] = f"+{_fn_asing_lot:,}" if _fn_asing_lot > 0 else f"{_fn_asing_lot:,}"
+                                    elif _net_foreign_val != 0:
+                                        _nfv_m = _net_foreign_val / 1_000_000_000
+                                        _si["asing_net"] = f"+{_nfv_m:.1f}M" if _net_foreign_val > 0 else f"{_nfv_m:.1f}M"
+                                    # inst_net: kode broker lokal/BUMN yang net beli terbesar
+                                    _local_acc = [_gbr for _gbr in _top_acc
+                                                  if _ALL_BROKERS.get(_gbr,("",""))[1] in ("BUMN","LOKAL")]
+                                    _si["inst_net"] = " · ".join(_local_acc[:2]) if _local_acc else ""
+                                    # retail_net: proxy sederhana — jika distribusi, lokal sell
+                                    _local_dist = [_gbr for _gbr in _top_dist_g
+                                                   if _ALL_BROKERS.get(_gbr,("",""))[1] in ("LOKAL",)]
+                                    _si["retail_net"] = " · ".join(_local_dist[:2]) if _local_dist else ""
                                     if _goapi_real_confirmed: _confirmed_count += 1
                                 except Exception as _goapi_exc:
                                     _err_msg = f"{_stk}: {type(_goapi_exc).__name__}: {str(_goapi_exc)[:80]}"
@@ -33724,6 +33966,129 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                                 components.html(_bd_html, height=_bd_h, scrolling=True)
                             else:
                                 st.warning(f"⚠️ Data broker summary {_sel_tk} tidak tersedia saat ini.")
+
+                # ══════════════════════════════════════════════════════════
+                # IDX PIPELINE — AKUMULASI / DISTRIBUSI / FOREIGN FLOW
+                # Panel tambahan berbasis data SQLite lokal (tidak butuh GoAPI)
+                # ══════════════════════════════════════════════════════════
+                with bs_tab_screening:
+                    st.markdown(
+                        f"<div style='font-size:0.72rem;font-weight:700;letter-spacing:0.14em;"
+                        f"text-transform:uppercase;color:#26a69a;margin:18px 0 8px;'>"
+                        f"🗄️ IDX FOREIGN FLOW · AKUMULASI & DISTRIBUSI (Pipeline Lokal)</div>",
+                        unsafe_allow_html=True,
+                    )
+                    try:
+                        idxdb_init()
+                        _ff_latest = idxdb_get_foreign_flow(top_n=15)
+                        _ff_date   = _ff_latest.get("date", "")
+                        _ff_buy    = _ff_latest.get("top_buy",  [])
+                        _ff_sell   = _ff_latest.get("top_sell", [])
+                        _vol_spikes= idxdb_get_volume_spike(top_n=10)
+
+                        if _ff_buy or _ff_sell or _vol_spikes:
+                            import json as _ffj
+                            _ff_buy_j   = _ffj.dumps(_ff_buy,    ensure_ascii=False)
+                            _ff_sell_j  = _ffj.dumps(_ff_sell,   ensure_ascii=False)
+                            _spike_j    = _ffj.dumps(_vol_spikes, ensure_ascii=False)
+                            _G = "#26a69a"; _R = "#f23645"; _P = "#a78bfa"
+                            _tbl_bg = "rgba(8,12,22,0.97)" if is_dark else "#ffffff"
+                            _hdr_bg = "rgba(38,166,154,0.08)" if is_dark else "#f0fdf4"
+                            _brd    = "rgba(38,166,154,0.18)" if is_dark else "#d1fae5"
+                            _txt    = text_main; _sub_c = text_sub
+
+                            _ff_html = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_txt};font-size:0.8rem;}}
+.sec{{font-size:0.68rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:{_G};margin:0 0 6px;}}
+.grid{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}}
+.card{{background:{_tbl_bg};border:1px solid {_brd};border-radius:10px;overflow:hidden;}}
+.scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}}
+.scroll::-webkit-scrollbar{{height:4px;}}
+.scroll::-webkit-scrollbar-thumb{{background:{_brd};border-radius:4px;}}
+table{{width:100%;border-collapse:collapse;min-width:380px;}}
+thead th{{background:{_hdr_bg};color:{_G};padding:7px 9px;text-align:left;border-bottom:1px solid {_brd};font-size:0.63rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;white-space:nowrap;}}
+tbody td{{padding:6px 9px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.78rem;white-space:nowrap;}}
+tbody tr:last-child td{{border-bottom:none;}}
+tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
+.tk{{font-weight:700;color:{_P};}}
+.pos{{color:{_G};font-weight:700;}}
+.neg{{color:{_R};font-weight:700;}}
+.hi{{color:#fbbf24;font-weight:700;}}
+@media(max-width:640px){{.grid{{grid-template-columns:1fr;}}}}
+</style></head><body>
+<div style="font-size:0.7rem;color:{_sub_c};margin-bottom:10px;">📅 Data: {_ff_date or "—"} &middot; Sumber: IDX Pipeline (SQLite)</div>
+<div class="grid">
+  <div>
+    <div class="sec"> Top Foreign NET BUY (Akumulasi Asing)</div>
+    <div class="card"><div class="scroll"><table>
+    <thead><tr><th>TICKER</th><th>NET (Lot)</th><th>BUY</th><th>SELL</th><th>CHG%</th></tr></thead>
+    <tbody id="ff-buy"></tbody>
+    </table></div></div>
+  </div>
+  <div>
+    <div class="sec"> Top Foreign NET SELL (Distribusi Asing)</div>
+    <div class="card"><div class="scroll"><table>
+    <thead><tr><th>TICKER</th><th>NET (Lot)</th><th>BUY</th><th>SELL</th><th>CHG%</th></tr></thead>
+    <tbody id="ff-sell"></tbody>
+    </table></div></div>
+  </div>
+</div>
+<div class="sec"> Volume Spike Terbesar (Potensi Akumulasi Aktif)</div>
+<div class="card"><div class="scroll"><table>
+<thead><tr><th>TICKER</th><th>VOL RATIO</th><th>VOLUME</th><th>CLOSE</th><th>CHG%</th><th>F.NET (Lot)</th></tr></thead>
+<tbody id="spikes"></tbody>
+</table></div></div>
+
+<script>
+(function(){{
+  var BUY  = {_ff_buy_j};
+  var SELL = {_ff_sell_j};
+  var SPK  = {_spike_j};
+  function fmt(n){{ return n!=null?parseInt(n).toLocaleString('id-ID'):'-'; }}
+  function chg(c){{ if(c==null) return '-'; var v=parseFloat(c); return '<span class="'+(v>=0?'pos':'neg')+'">'+(v>=0?'+':'')+v.toFixed(2)+'%</span>'; }}
+  var bt=document.getElementById('ff-buy');
+  BUY.forEach(function(r){{
+    bt.innerHTML+='<tr><td><span class="tk">'+r.ticker+'</span></td>'+
+      '<td class="pos">+'+fmt(r.foreign_net)+'</td>'+
+      '<td>'+fmt(r.foreign_buy)+'</td>'+
+      '<td>'+fmt(r.foreign_sell)+'</td>'+
+      '<td>'+chg(r.change_pct)+'</td></tr>';
+  }});
+  if(!BUY.length) bt.innerHTML='<tr><td colspan="5" style="text-align:center;color:{_sub_c};padding:10px;">Tidak ada data</td></tr>';
+  var st2=document.getElementById('ff-sell');
+  SELL.forEach(function(r){{
+    st2.innerHTML+='<tr><td><span class="tk">'+r.ticker+'</span></td>'+
+      '<td class="neg">'+fmt(r.foreign_net)+'</td>'+
+      '<td>'+fmt(r.foreign_buy)+'</td>'+
+      '<td>'+fmt(r.foreign_sell)+'</td>'+
+      '<td>'+chg(r.change_pct)+'</td></tr>';
+  }});
+  if(!SELL.length) st2.innerHTML='<tr><td colspan="5" style="text-align:center;color:{_sub_c};padding:10px;">Tidak ada data</td></tr>';
+  var sp=document.getElementById('spikes');
+  SPK.forEach(function(r){{
+    var fn=r.foreign_net!=null?(r.foreign_net>=0?'<span class="pos">+'+fmt(r.foreign_net)+'</span>':'<span class="neg">'+fmt(r.foreign_net)+'</span>'):'-';
+    sp.innerHTML+='<tr><td><span class="tk">'+r.ticker+'</span></td>'+
+      '<td class="hi">'+(r.vol_ratio||'-')+'x</td>'+
+      '<td>'+fmt(r.volume)+'</td>'+
+      '<td>Rp '+fmt(r.close)+'</td>'+
+      '<td>'+chg(r.change_pct)+'</td>'+
+      '<td>'+fn+'</td></tr>';
+  }});
+  if(!SPK.length) sp.innerHTML='<tr><td colspan="6" style="text-align:center;color:{_sub_c};padding:10px;">Tidak ada data</td></tr>';
+  setTimeout(function(){{window.parent.postMessage({{type:'streamlit:setFrameHeight',height:document.body.scrollHeight+20}},'*');}},400);
+}})();
+</script></body></html>"""
+                            components.html(_ff_html, height=680, scrolling=False)
+                        else:
+                            st.info(
+                                "📭 Data IDX Pipeline belum tersedia. "
+                                "Klik **🔄 Mulai Backfill** di panel Admin untuk mengunduh data historis IDX."
+                            )
+                    except Exception as _ff_err:
+                        st.caption(f"⚠️ IDX Pipeline belum diinisialisasi: {str(_ff_err)[:80]}")
 
                 # ══════════════════════════════════════════════════════════
                 # TAB 2 — HISTORY BROKSUM
