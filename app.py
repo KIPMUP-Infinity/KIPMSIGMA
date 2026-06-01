@@ -14957,20 +14957,20 @@ table{{margin-bottom:0!important;}}
                     {"Bulan": "May 2025", "Indonesia 10Y (%)": 6.98, "DXY": 100.4, "USD/IDR": 16_600},
                     {"Bulan": "Jun 2025", "Indonesia 10Y (%)": 6.85, "DXY": 101.1, "USD/IDR": 16_450},
                     # ── 2025 Q3 ──
-                    {"Bulan": "Jul 2025", "Indonesia 10Y (%)": 6.72, "DXY": 99.8,  "USD/IDR": 16_180},
-                    {"Bulan": "Aug 2025", "Indonesia 10Y (%)": 6.68, "DXY": 101.3, "USD/IDR": 16_250},
-                    {"Bulan": "Sep 2025", "Indonesia 10Y (%)": 6.75, "DXY": 102.5, "USD/IDR": 16_380},
+                    {"Bulan": "Jul 2025", "Indonesia 10Y (%)": 6.72, "DXY": 99.8,  "USD/IDR": 16_280},
+                    {"Bulan": "Aug 2025", "Indonesia 10Y (%)": 6.68, "DXY": 101.3, "USD/IDR": 16_301},
+                    {"Bulan": "Sep 2025", "Indonesia 10Y (%)": 6.75, "DXY": 102.5, "USD/IDR": 16_521},
                     # ── 2025 Q4 ──
-                    {"Bulan": "Oct 2025", "Indonesia 10Y (%)": 6.90, "DXY": 103.8, "USD/IDR": 16_520},
-                    {"Bulan": "Nov 2025", "Indonesia 10Y (%)": 7.05, "DXY": 105.2, "USD/IDR": 16_650},
-                    {"Bulan": "Dec 2025", "Indonesia 10Y (%)": 7.18, "DXY": 107.4, "USD/IDR": 16_780},
+                    {"Bulan": "Oct 2025", "Indonesia 10Y (%)": 6.90, "DXY": 103.8, "USD/IDR": 16_592},
+                    {"Bulan": "Nov 2025", "Indonesia 10Y (%)": 7.05, "DXY": 105.2, "USD/IDR": 16_687},
+                    {"Bulan": "Dec 2025", "Indonesia 10Y (%)": 7.18, "DXY": 107.4, "USD/IDR": 16_690},
                     # ── 2026 Q1 ──
-                    {"Bulan": "Jan 2026", "Indonesia 10Y (%)": 7.25, "DXY": 108.1, "USD/IDR": 16_890},
-                    {"Bulan": "Feb 2026", "Indonesia 10Y (%)": 7.12, "DXY": 106.3, "USD/IDR": 16_720},
-                    {"Bulan": "Mar 2026", "Indonesia 10Y (%)": 7.05, "DXY": 104.2, "USD/IDR": 16_550},
+                    {"Bulan": "Jan 2026", "Indonesia 10Y (%)": 7.25, "DXY": 108.1, "USD/IDR": 16_675},
+                    {"Bulan": "Feb 2026", "Indonesia 10Y (%)": 7.12, "DXY": 106.3, "USD/IDR": 16_860},
+                    {"Bulan": "Mar 2026", "Indonesia 10Y (%)": 7.05, "DXY": 104.2, "USD/IDR": 16_957},
                     # ── 2026 Q2 ──
-                    {"Bulan": "Apr 2026", "Indonesia 10Y (%)": 6.95, "DXY": 99.8,  "USD/IDR": 16_420},
-                    {"Bulan": "May 2026", "Indonesia 10Y (%)": 6.88, "DXY": 99.2,  "USD/IDR": 16_350},
+                    {"Bulan": "Apr 2026", "Indonesia 10Y (%)": 6.95, "DXY": 99.8,  "USD/IDR": 17_245},
+                    {"Bulan": "May 2026", "Indonesia 10Y (%)": 6.88, "DXY": 99.2,  "USD/IDR": 17_800},
                 ]
 
                 import pandas as pd
@@ -15261,20 +15261,20 @@ table{{margin-bottom:0!important;}}
                     {"Bulan": "May 2025", "US 10Y (%)": 4.46, "DXY": 100.4, "USD/IDR": 16_600, "Spread ID-US (%)": 6.98 - 4.46},
                     {"Bulan": "Jun 2025", "US 10Y (%)": 4.35, "DXY": 101.1, "USD/IDR": 16_450, "Spread ID-US (%)": 6.85 - 4.35},
                     # ── 2025 Q3 ──
-                    {"Bulan": "Jul 2025", "US 10Y (%)": 4.28, "DXY": 99.8,  "USD/IDR": 16_180, "Spread ID-US (%)": 6.72 - 4.28},
-                    {"Bulan": "Aug 2025", "US 10Y (%)": 4.22, "DXY": 101.3, "USD/IDR": 16_250, "Spread ID-US (%)": 6.68 - 4.22},
-                    {"Bulan": "Sep 2025", "US 10Y (%)": 4.31, "DXY": 102.5, "USD/IDR": 16_380, "Spread ID-US (%)": 6.75 - 4.31},
+                    {"Bulan": "Jul 2025", "US 10Y (%)": 4.28, "DXY": 99.8,  "USD/IDR": 16_280, "Spread ID-US (%)": 6.72 - 4.28},
+                    {"Bulan": "Aug 2025", "US 10Y (%)": 4.22, "DXY": 101.3, "USD/IDR": 16_301, "Spread ID-US (%)": 6.68 - 4.22},
+                    {"Bulan": "Sep 2025", "US 10Y (%)": 4.31, "DXY": 102.5, "USD/IDR": 16_521, "Spread ID-US (%)": 6.75 - 4.31},
                     # ── 2025 Q4 ──
-                    {"Bulan": "Oct 2025", "US 10Y (%)": 4.38, "DXY": 103.8, "USD/IDR": 16_520, "Spread ID-US (%)": 6.90 - 4.38},
-                    {"Bulan": "Nov 2025", "US 10Y (%)": 4.42, "DXY": 105.2, "USD/IDR": 16_650, "Spread ID-US (%)": 7.05 - 4.42},
-                    {"Bulan": "Dec 2025", "US 10Y (%)": 4.58, "DXY": 107.4, "USD/IDR": 16_780, "Spread ID-US (%)": 7.18 - 4.58},
+                    {"Bulan": "Oct 2025", "US 10Y (%)": 4.38, "DXY": 103.8, "USD/IDR": 16_592, "Spread ID-US (%)": 6.90 - 4.38},
+                    {"Bulan": "Nov 2025", "US 10Y (%)": 4.42, "DXY": 105.2, "USD/IDR": 16_687, "Spread ID-US (%)": 7.05 - 4.42},
+                    {"Bulan": "Dec 2025", "US 10Y (%)": 4.58, "DXY": 107.4, "USD/IDR": 16_690, "Spread ID-US (%)": 7.18 - 4.58},
                     # ── 2026 Q1 ──
-                    {"Bulan": "Jan 2026", "US 10Y (%)": 4.78, "DXY": 108.1, "USD/IDR": 16_890, "Spread ID-US (%)": 7.25 - 4.78},
-                    {"Bulan": "Feb 2026", "US 10Y (%)": 4.52, "DXY": 106.3, "USD/IDR": 16_720, "Spread ID-US (%)": 7.12 - 4.52},
-                    {"Bulan": "Mar 2026", "US 10Y (%)": 4.38, "DXY": 104.2, "USD/IDR": 16_550, "Spread ID-US (%)": 7.05 - 4.38},
+                    {"Bulan": "Jan 2026", "US 10Y (%)": 4.78, "DXY": 108.1, "USD/IDR": 16_675, "Spread ID-US (%)": 7.25 - 4.78},
+                    {"Bulan": "Feb 2026", "US 10Y (%)": 4.52, "DXY": 106.3, "USD/IDR": 16_860, "Spread ID-US (%)": 7.12 - 4.52},
+                    {"Bulan": "Mar 2026", "US 10Y (%)": 4.38, "DXY": 104.2, "USD/IDR": 16_957, "Spread ID-US (%)": 7.05 - 4.38},
                     # ── 2026 Q2 ──
-                    {"Bulan": "Apr 2026", "US 10Y (%)": 4.28, "DXY": 99.8,  "USD/IDR": 16_420, "Spread ID-US (%)": 6.95 - 4.28},
-                    {"Bulan": "May 2026", "US 10Y (%)": 4.35, "DXY": 99.2,  "USD/IDR": 16_350, "Spread ID-US (%)": 6.88 - 4.35},
+                    {"Bulan": "Apr 2026", "US 10Y (%)": 4.28, "DXY": 99.8,  "USD/IDR": 17_245, "Spread ID-US (%)": 6.95 - 4.28},
+                    {"Bulan": "May 2026", "US 10Y (%)": 4.35, "DXY": 99.2,  "USD/IDR": 17_800, "Spread ID-US (%)": 6.88 - 4.35},
                 ]
 
                 import pandas as pd
@@ -17402,7 +17402,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
 
         from datetime import datetime as _dt_reb, timedelta as _td_reb
         _today_reb = _dt_reb.today()
-        _cutoff_reb = _today_reb - _td_reb(days=32)  # hapus jika sudah >1 bulan lalu
+        _cutoff_reb = _today_reb  # hapus langsung jika sudah lewat hari ini
 
         # Data rebalancing: setiap entry punya list tanggal terpisah
         # next_dates: list datetime untuk cek apakah masih relevan
@@ -18168,7 +18168,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
         '</tr>';
     }});
     document.getElementById('ca-tb').innerHTML=h;
-    document.getElementById('ca-pi').textContent='Baris '+(s+1)+'&ndash;'+e+' dari '+tot;
+    document.getElementById('ca-pi').innerHTML='Baris '+(s+1)+'&ndash;'+e+' dari '+tot;
     document.getElementById('ca-pp').disabled=(page<=0);
     document.getElementById('ca-pn').disabled=(page>=maxPg);
     document.getElementById('ca-sb').scrollTop=0;
@@ -30209,7 +30209,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
             '</tr>';
         }});
         document.getElementById('tb_{_uid}').innerHTML=h;
-        document.getElementById('pi_{_uid}').textContent='Baris '+(s+1)+'&ndash;'+e+' dari '+tot;
+        document.getElementById('pi_{_uid}').innerHTML='Baris '+(s+1)+'&ndash;'+e+' dari '+tot;
         document.getElementById('pp_{_uid}').disabled=(page<=0);
         document.getElementById('pn_{_uid}').disabled=(page>=maxPg);
         document.getElementById('sb_{_uid}').scrollTop=0;
