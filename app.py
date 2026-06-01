@@ -21,6 +21,10 @@ import re
 import time
 import random
 import math  # ← FIX #5: diperlukan oleh render_bsjp_cards (math.floor, math.ceil)
+import sqlite3
+import threading
+from typing import Optional
+from datetime import date  # tambahan untuk pipeline (date.today(), dll)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # FIX #4 — SIGMA ERROR LOGGER: Logger terpusat untuk silent exception tracking
@@ -71,6 +75,833 @@ CACHE_CONFIG = {
     "ipo_data":         86400,         # 1 hari — data IPO/prospektus
     "rrg_data":         3600,          # 1 jam — Relative Rotation Graph
 }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# IDX DAILY DATA PIPELINE v1.0 — terintegrasi dari idx_data_pipeline.py
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── Path database (sama dengan DATA_DIR di app) ───────────────────────────────
+_IDX_DATA_DIR = os.path.join(os.path.expanduser("~"), ".sigma_data")
+os.makedirs(_IDX_DATA_DIR, exist_ok=True)
+_IDX_DB_PATH  = os.path.join(_IDX_DATA_DIR, "idx_daily.db")
+
+# ── Hari libur/non-bursa IDX 2025-2026 (opsional, untuk skip fetch) ───────────
+_IDX_HOLIDAYS_2025_2026 = {
+    # 2025
+    "2025-01-01","2025-01-27","2025-01-28","2025-01-29","2025-01-30",
+    "2025-03-28","2025-03-31","2025-04-14","2025-04-17","2025-04-18",
+    "2025-05-01","2025-05-12","2025-05-29","2025-06-01","2025-06-02",
+    "2025-06-06","2025-08-17","2025-09-01","2025-09-02","2025-10-06",
+    "2025-12-25","2025-12-26",
+    # 2026
+    "2026-01-01","2026-01-28","2026-01-29","2026-01-30",
+    "2026-03-20","2026-03-23","2026-04-02","2026-04-03",
+    "2026-05-01","2026-05-14","2026-05-25","2026-08-17",
+    "2026-12-25",
+}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SECTION 1: DATABASE SETUP
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _idxdb_connect() -> sqlite3.Connection:
+    """Buka koneksi SQLite ke idx_daily.db."""
+    conn = sqlite3.connect(_IDX_DB_PATH, timeout=30, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def idxdb_init():
+    """
+    Buat tabel dan index jika belum ada.
+    Panggil sekali saat startup app.
+    """
+    conn = _idxdb_connect()
+    try:
+        conn.executescript("""
+            PRAGMA journal_mode = WAL;
+            PRAGMA synchronous  = NORMAL;
+
+            CREATE TABLE IF NOT EXISTS stock_daily (
+                date                TEXT NOT NULL,
+                ticker              TEXT NOT NULL,
+                name                TEXT,
+                prev                REAL,
+                open                REAL,
+                high                REAL,
+                low                 REAL,
+                close               REAL,
+                change              REAL,
+                change_pct          REAL,
+                volume              INTEGER,
+                value               REAL,
+                frequency           INTEGER,
+                index_individual    REAL,
+                offer               REAL,
+                offer_volume        INTEGER,
+                bid                 REAL,
+                bid_volume          INTEGER,
+                listed_shares       INTEGER,
+                tradeable_shares    INTEGER,
+                weight_for_index    REAL,
+                foreign_sell        INTEGER,
+                foreign_buy         INTEGER,
+                foreign_net         INTEGER,
+                non_reg_volume      INTEGER,
+                non_reg_value       REAL,
+                non_reg_frequency   INTEGER,
+                fetched_at          TEXT,
+                PRIMARY KEY (date, ticker)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_sd_date   ON stock_daily (date);
+            CREATE INDEX IF NOT EXISTS idx_sd_ticker ON stock_daily (date, ticker);
+
+            CREATE TABLE IF NOT EXISTS fetch_log (
+                date        TEXT PRIMARY KEY,
+                status      TEXT,
+                rows_saved  INTEGER,
+                duration_s  REAL,
+                fetched_at  TEXT
+            );
+        """)
+        conn.commit()
+    finally:
+        conn.close()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SECTION 2: FETCH ENGINE
+# ══════════════════════════════════════════════════════════════════════════════
+
+_IDX_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Referer":        "https://www.idx.co.id/id/data-pasar/ringkasan-perdagangan/ringkasan-saham/",
+    "Accept":         "application/json, text/plain, */*",
+    "Accept-Language":"id-ID,id;q=0.9,en-US;q=0.8",
+    "Origin":         "https://www.idx.co.id",
+    "X-Requested-With": "XMLHttpRequest",
+}
+
+_IDX_SUMMARY_URL = "https://www.idx.co.id/primary/TradingSummary/GetStockSummary"
+
+
+def _safe_float(v) -> Optional[float]:
+    try:
+        if v is None or v == "" or v == "-":
+            return None
+        return float(str(v).replace(",", "").strip())
+    except Exception:
+        return None
+
+
+def _safe_int(v) -> Optional[int]:
+    try:
+        if v is None or v == "" or v == "-":
+            return None
+        return int(float(str(v).replace(",", "").strip()))
+    except Exception:
+        return None
+
+
+def _parse_row(raw: dict, trade_date: str) -> dict:
+    """Konversi satu record JSON IDX → dict siap simpan ke DB."""
+    prev  = _safe_float(raw.get("Prev"))
+    close = _safe_float(raw.get("Close"))
+    chg   = _safe_float(raw.get("Change"))
+    chg_pct = None
+    if prev and prev != 0 and chg is not None:
+        chg_pct = round(chg / prev * 100, 2)
+
+    foreign_buy  = _safe_int(raw.get("ForeignBuy"))
+    foreign_sell = _safe_int(raw.get("ForeignSell"))
+    foreign_net  = None
+    if foreign_buy is not None and foreign_sell is not None:
+        foreign_net = foreign_buy - foreign_sell
+
+    return {
+        "date":              trade_date,
+        "ticker":            str(raw.get("StockCode", "")).strip().upper(),
+        "name":              str(raw.get("Name", "")).strip(),
+        "prev":              prev,
+        "open":              _safe_float(raw.get("OpenPrice")),
+        "high":              _safe_float(raw.get("High")),
+        "low":               _safe_float(raw.get("Low")),
+        "close":             close,
+        "change":            chg,
+        "change_pct":        chg_pct,
+        "volume":            _safe_int(raw.get("Volume")),
+        "value":             _safe_float(raw.get("Value")),
+        "frequency":         _safe_int(raw.get("Frequency")),
+        "index_individual":  _safe_float(raw.get("IndexIndividual")),
+        "offer":             _safe_float(raw.get("Offer")),
+        "offer_volume":      _safe_int(raw.get("OfferVolume")),
+        "bid":               _safe_float(raw.get("Bid")),
+        "bid_volume":        _safe_int(raw.get("BidVolume")),
+        "listed_shares":     _safe_int(raw.get("ListedShares")),
+        "tradeable_shares":  _safe_int(raw.get("TradeableShares")),
+        "weight_for_index":  _safe_float(raw.get("WeightForIndex")),
+        "foreign_sell":      foreign_sell,
+        "foreign_buy":       foreign_buy,
+        "foreign_net":       foreign_net,
+        "non_reg_volume":    _safe_int(raw.get("NonRegularVolume")),
+        "non_reg_value":     _safe_float(raw.get("NonRegularValue")),
+        "non_reg_frequency": _safe_int(raw.get("NonRegularFrequency")),
+        "fetched_at":        datetime.utcnow().isoformat(),
+    }
+
+
+def idxdb_fetch_date(trade_date: str, force: bool = False) -> dict:
+    """
+    Fetch dan simpan data semua saham untuk satu tanggal dari IDX API.
+
+    trade_date : "YYYY-MM-DD"
+    force      : True = fetch ulang meski sudah ada di DB
+
+    Returns dict:
+        {"status": "ok"|"skip"|"error", "rows": int, "message": str}
+    """
+    # -- Cek apakah sudah ada di DB
+    if not force:
+        conn = _idxdb_connect()
+        try:
+            row = conn.execute(
+                "SELECT rows_saved FROM fetch_log WHERE date=? AND status='ok'",
+                (trade_date,)
+            ).fetchone()
+            if row:
+                return {"status": "skip", "rows": row["rows_saved"],
+                        "message": f"Sudah ada {row['rows_saved']} baris"}
+        finally:
+            conn.close()
+
+    t_start = time.time()
+    all_rows = []
+    start    = 0
+    length   = 100  # per page
+
+    try:
+        while True:
+            params = {
+                "language": "id",
+                "start":    start,
+                "length":   length,
+                "date":     trade_date,
+            }
+            resp = requests.get(
+                _IDX_SUMMARY_URL,
+                params=params,
+                headers=_IDX_HEADERS,
+                timeout=15,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+            records = data.get("data") or data.get("Data") or []
+            if not records:
+                break
+
+            for raw in records:
+                parsed = _parse_row(raw, trade_date)
+                if parsed["ticker"]:  # skip baris kosong
+                    all_rows.append(parsed)
+
+            total = data.get("recordsTotal", 0)
+            start += length
+            if start >= total:
+                break
+
+            time.sleep(0.3)  # jangan spam IDX
+
+    except requests.HTTPError as e:
+        return {"status": "error", "rows": 0, "message": f"HTTP {e.response.status_code}: {e}"}
+    except Exception as e:
+        return {"status": "error", "rows": 0, "message": str(e)}
+
+    if not all_rows:
+        return {"status": "error", "rows": 0, "message": "Tidak ada data dari IDX (hari libur?)"}
+
+    # -- Simpan ke DB
+    conn = _idxdb_connect()
+    try:
+        conn.executemany("""
+            INSERT OR REPLACE INTO stock_daily
+            (date, ticker, name, prev, open, high, low, close, change, change_pct,
+             volume, value, frequency, index_individual, offer, offer_volume,
+             bid, bid_volume, listed_shares, tradeable_shares, weight_for_index,
+             foreign_sell, foreign_buy, foreign_net,
+             non_reg_volume, non_reg_value, non_reg_frequency, fetched_at)
+            VALUES
+            (:date, :ticker, :name, :prev, :open, :high, :low, :close, :change, :change_pct,
+             :volume, :value, :frequency, :index_individual, :offer, :offer_volume,
+             :bid, :bid_volume, :listed_shares, :tradeable_shares, :weight_for_index,
+             :foreign_sell, :foreign_buy, :foreign_net,
+             :non_reg_volume, :non_reg_value, :non_reg_frequency, :fetched_at)
+        """, all_rows)
+        conn.execute("""
+            INSERT OR REPLACE INTO fetch_log (date, status, rows_saved, duration_s, fetched_at)
+            VALUES (?, 'ok', ?, ?, ?)
+        """, (trade_date, len(all_rows), round(time.time() - t_start, 2),
+              datetime.utcnow().isoformat()))
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {"status": "ok", "rows": len(all_rows),
+            "message": f"{len(all_rows)} saham tersimpan ({round(time.time()-t_start,1)}s)"}
+
+
+def _is_trading_day(d: date) -> bool:
+    """True jika d adalah hari bursa (Senin–Jumat, bukan libur)."""
+    if d.weekday() >= 5:  # Sabtu/Minggu
+        return False
+    if d.strftime("%Y-%m-%d") in _IDX_HOLIDAYS_2025_2026:
+        return False
+    return True
+
+
+def _get_trading_days_range(start_date: date, end_date: date) -> list:
+    """Kembalikan list string 'YYYY-MM-DD' hari bursa dalam range."""
+    result = []
+    cur    = start_date
+    while cur <= end_date:
+        if _is_trading_day(cur):
+            result.append(cur.strftime("%Y-%m-%d"))
+        cur += timedelta(days=1)
+    return result
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SECTION 3: BACKFILL — Tarik 6 bulan ke belakang
+# ══════════════════════════════════════════════════════════════════════════════
+
+def idxdb_backfill(months_back: int = 6, on_progress=None):
+    """
+    Backfill data IDX dari hari ini mundur sejumlah `months_back` bulan.
+    Lewati tanggal yang sudah ada di DB.
+
+    on_progress : callable(done, total, date_str, result) — untuk update UI
+                  jika None, cetak ke console
+
+    Contoh pakai di Streamlit:
+        progress_bar = st.progress(0)
+        status_text  = st.empty()
+
+        def cb(done, total, d, res):
+            progress_bar.progress(done / total)
+            status_text.text(f"[{done}/{total}] {d}: {res['message']}")
+
+        idxdb_backfill(months_back=6, on_progress=cb)
+    """
+    idxdb_init()
+
+    today      = date.today()
+    start_date = today - timedelta(days=months_back * 31)
+    yesterday  = today - timedelta(days=1)
+
+    # Hanya sampai kemarin (hari ini mungkin belum selesai trading)
+    trading_days = _get_trading_days_range(start_date, yesterday)
+
+    total = len(trading_days)
+    for i, d_str in enumerate(trading_days, 1):
+        result = idxdb_fetch_date(d_str)
+        if on_progress:
+            on_progress(i, total, d_str, result)
+        else:
+            status = result["status"]
+            icon   = "✅" if status == "ok" else ("⏭️" if status == "skip" else "❌")
+            print(f"  {icon} [{i}/{total}] {d_str}: {result['message']}")
+
+        if result["status"] == "ok":
+            time.sleep(0.5)   # jangan spam IDX server
+
+    return {"total_days": total}
+
+
+def idxdb_auto_fetch_today():
+    """
+    Fetch data hari ini / kemarin otomatis.
+    Dipanggil di startup app — hanya berjalan setelah jam 16:30 WIB.
+    Safe untuk dipanggil berulang (skip jika sudah ada).
+    """
+    import pytz
+    wib  = pytz.timezone("Asia/Jakarta")
+    now  = datetime.now(wib)
+    today = now.date()
+
+    # Tentukan tanggal target:
+    # Sebelum 16:30 → fetch kemarin | Setelah 16:30 → fetch hari ini
+    if now.hour < 16 or (now.hour == 16 and now.minute < 30):
+        target = today - timedelta(days=1)
+    else:
+        target = today
+
+    # Mundur ke hari bursa terakhir
+    while not _is_trading_day(target):
+        target -= timedelta(days=1)
+
+    date_str = target.strftime("%Y-%m-%d")
+    return idxdb_fetch_date(date_str)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SECTION 4: QUERY HELPERS — Dipakai oleh fitur-fitur SIGMA
+# ══════════════════════════════════════════════════════════════════════════════
+
+def idxdb_get_ticker(ticker: str, days: int = 30) -> list[dict]:
+    """
+    Ambil riwayat harian satu ticker.
+    Returns: list of dict, sorted by date ASC.
+
+    Contoh:
+        rows = idxdb_get_ticker("BBCA", days=30)
+        df = pd.DataFrame(rows)
+    """
+    conn = _idxdb_connect()
+    try:
+        since = (date.today() - timedelta(days=days)).strftime("%Y-%m-%d")
+        cur = conn.execute(
+            "SELECT * FROM stock_daily WHERE ticker=? AND date>=? ORDER BY date ASC",
+            (ticker.upper(), since)
+        )
+        return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def idxdb_get_latest(ticker: str) -> Optional[dict]:
+    """Ambil data hari terakhir yang tersedia untuk satu ticker."""
+    conn = _idxdb_connect()
+    try:
+        cur = conn.execute(
+            "SELECT * FROM stock_daily WHERE ticker=? ORDER BY date DESC LIMIT 1",
+            (ticker.upper(),)
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def idxdb_get_date(trade_date: str) -> list[dict]:
+    """
+    Ambil semua saham untuk satu tanggal.
+    trade_date: "YYYY-MM-DD"
+    Returns: list of dict
+    """
+    conn = _idxdb_connect()
+    try:
+        cur = conn.execute(
+            "SELECT * FROM stock_daily WHERE date=? ORDER BY value DESC",
+            (trade_date,)
+        )
+        return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def idxdb_get_latest_date() -> Optional[str]:
+    """Tanggal terakhir yang ada di DB. Returns 'YYYY-MM-DD' atau None."""
+    conn = _idxdb_connect()
+    try:
+        row = conn.execute("SELECT MAX(date) as d FROM stock_daily").fetchone()
+        return row["d"] if row else None
+    finally:
+        conn.close()
+
+
+def idxdb_get_foreign_flow(date_str: str = None, top_n: int = 20) -> dict:
+    """
+    Ringkasan foreign flow untuk satu hari.
+    Returns {
+        "top_buy":  [...],   # top N saham dengan net foreign buy tertinggi
+        "top_sell": [...],   # top N saham dengan net foreign sell terbesar
+        "date":     str
+    }
+    """
+    if not date_str:
+        date_str = idxdb_get_latest_date()
+    if not date_str:
+        return {}
+
+    conn = _idxdb_connect()
+    try:
+        rows = conn.execute("""
+            SELECT ticker, name, foreign_buy, foreign_sell, foreign_net,
+                   close, change_pct, value
+            FROM stock_daily
+            WHERE date=? AND foreign_net IS NOT NULL
+            ORDER BY foreign_net DESC
+        """, (date_str,)).fetchall()
+
+        data = [dict(r) for r in rows]
+        return {
+            "date":     date_str,
+            "top_buy":  data[:top_n],
+            "top_sell": data[-top_n:][::-1] if len(data) >= top_n else [],
+        }
+    finally:
+        conn.close()
+
+
+def idxdb_get_volume_spike(date_str: str = None, top_n: int = 20) -> list[dict]:
+    """
+    Saham dengan lonjakan volume signifikan dibanding rata-rata 20 hari.
+    Returns list of dict dengan field tambahan 'vol_ratio'.
+    """
+    if not date_str:
+        date_str = idxdb_get_latest_date()
+    if not date_str:
+        return []
+
+    since = (
+        datetime.strptime(date_str, "%Y-%m-%d").date() - timedelta(days=30)
+    ).strftime("%Y-%m-%d")
+
+    conn = _idxdb_connect()
+    try:
+        rows = conn.execute("""
+            WITH avg_vol AS (
+                SELECT ticker, AVG(volume) as avg_volume
+                FROM stock_daily
+                WHERE date >= ? AND date < ? AND volume > 0
+                GROUP BY ticker
+            )
+            SELECT s.ticker, s.name, s.volume, s.close, s.change_pct,
+                   s.foreign_buy, s.foreign_sell, s.foreign_net, s.value,
+                   a.avg_volume,
+                   ROUND(CAST(s.volume AS FLOAT) / NULLIF(a.avg_volume, 0), 2) as vol_ratio
+            FROM stock_daily s
+            JOIN avg_vol a ON s.ticker = a.ticker
+            WHERE s.date = ?
+              AND s.volume > 0
+            ORDER BY vol_ratio DESC
+            LIMIT ?
+        """, (since, date_str, date_str, top_n)).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def idxdb_get_screener(
+    date_str:       str   = None,
+    min_value:      float = 1e9,
+    min_freq:       int   = 100,
+    min_change_pct: float = None,
+    max_change_pct: float = None,
+    foreign_net_min:int   = None,
+) -> list[dict]:
+    """
+    Screener fleksibel berdasarkan parameter hari tertentu.
+    Semua parameter opsional.
+
+    Contoh — cari saham yang hari ini:
+        - Nilai transaksi > 1M
+        - Frekuensi > 100
+        - Net foreign buy positif
+
+        idxdb_get_screener(min_value=1e9, min_freq=100, foreign_net_min=0)
+    """
+    if not date_str:
+        date_str = idxdb_get_latest_date()
+    if not date_str:
+        return []
+
+    filters = ["date = ?"]
+    params  = [date_str]
+
+    if min_value is not None:
+        filters.append("value >= ?")
+        params.append(min_value)
+    if min_freq is not None:
+        filters.append("frequency >= ?")
+        params.append(min_freq)
+    if min_change_pct is not None:
+        filters.append("change_pct >= ?")
+        params.append(min_change_pct)
+    if max_change_pct is not None:
+        filters.append("change_pct <= ?")
+        params.append(max_change_pct)
+    if foreign_net_min is not None:
+        filters.append("foreign_net >= ?")
+        params.append(foreign_net_min)
+
+    where = " AND ".join(filters)
+    conn  = _idxdb_connect()
+    try:
+        rows = conn.execute(
+            f"SELECT * FROM stock_daily WHERE {where} ORDER BY value DESC",
+            params
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def idxdb_get_free_float_from_shares(ticker: str, date_str: str = None) -> Optional[float]:
+    """
+    Hitung free float (%) dari ListedShares vs TradeableShares IDX.
+    Lebih akurat dari hardcoded DB karena data real-time.
+
+    Formula: free_float = (tradeable_shares / listed_shares) * 100
+    """
+    if not date_str:
+        date_str = idxdb_get_latest_date()
+    if not date_str:
+        return None
+
+    conn = _idxdb_connect()
+    try:
+        row = conn.execute("""
+            SELECT listed_shares, tradeable_shares
+            FROM stock_daily
+            WHERE ticker=? AND date<=? AND listed_shares > 0
+            ORDER BY date DESC LIMIT 1
+        """, (ticker.upper(), date_str)).fetchone()
+
+        if not row:
+            return None
+        ls = row["listed_shares"]
+        ts = row["tradeable_shares"]
+        if ls and ts and ls > 0:
+            ff = round(ts / ls * 100, 2)
+            if 0 < ff <= 100:
+                return ff
+        return None
+    finally:
+        conn.close()
+
+
+def idxdb_stats() -> dict:
+    """Statistik isi DB — untuk ditampilkan di UI admin."""
+    conn = _idxdb_connect()
+    try:
+        total_rows = conn.execute("SELECT COUNT(*) FROM stock_daily").fetchone()[0]
+        total_days = conn.execute("SELECT COUNT(DISTINCT date) FROM stock_daily").fetchone()[0]
+        oldest     = conn.execute("SELECT MIN(date) FROM stock_daily").fetchone()[0]
+        newest     = conn.execute("SELECT MAX(date) FROM stock_daily").fetchone()[0]
+        db_size_mb = round(os.path.getsize(_IDX_DB_PATH) / 1024 / 1024, 2) if os.path.exists(_IDX_DB_PATH) else 0
+
+        log_rows = conn.execute(
+            "SELECT date, status, rows_saved FROM fetch_log ORDER BY date DESC LIMIT 7"
+        ).fetchall()
+
+        return {
+            "total_rows": total_rows,
+            "total_days": total_days,
+            "oldest_date": oldest,
+            "newest_date": newest,
+            "db_size_mb":  db_size_mb,
+            "recent_log":  [dict(r) for r in log_rows],
+        }
+    finally:
+        conn.close()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SECTION 5: STREAMLIT UI — Panel Admin & Trigger Backfill
+# ══════════════════════════════════════════════════════════════════════════════
+
+def idxdb_render_admin_panel():
+    """
+    Render panel admin di Streamlit untuk:
+    - Lihat status DB
+    - Trigger backfill manual
+    - Auto-fetch harian
+
+    Tambahkan ke tab Settings/Admin:
+        idxdb_render_admin_panel()
+    """
+    import streamlit as st
+
+    st.markdown("### 🗄️ IDX Data Pipeline")
+
+    # -- Auto-fetch saat startup (background, non-blocking)
+    if not st.session_state.get("_idxdb_auto_fetched"):
+        st.session_state["_idxdb_auto_fetched"] = True
+        idxdb_init()
+        result = idxdb_auto_fetch_today()
+        if result["status"] == "ok":
+            st.session_state["_idxdb_last_fetch"] = result
+
+    # -- Stats
+    stats = idxdb_stats()
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Rows",   f"{stats['total_rows']:,}")
+    col2.metric("Hari Tersimpan", f"{stats['total_days']}")
+    col3.metric("Terlama",      stats.get("oldest_date", "—"))
+    col4.metric("Terbaru",      stats.get("newest_date", "—"))
+    st.caption(f"📦 Ukuran DB: {stats['db_size_mb']} MB  |  Path: {_IDX_DB_PATH}")
+
+    # -- Recent fetch log
+    if stats["recent_log"]:
+        st.markdown("**7 Fetch Terakhir:**")
+        for row in stats["recent_log"]:
+            icon = "✅" if row["status"] == "ok" else "❌"
+            st.caption(f"{icon} {row['date']} — {row['rows_saved']} saham")
+
+    st.markdown("---")
+
+    # -- Manual backfill
+    st.markdown("**Backfill Data Historis**")
+    months = st.slider("Bulan ke belakang", 1, 6, 6, key="idxdb_months_slider")
+
+    if st.button("🔄 Mulai Backfill", key="idxdb_backfill_btn", type="primary"):
+        progress_bar = st.progress(0.0)
+        status_text  = st.empty()
+        results      = {"ok": 0, "skip": 0, "error": 0}
+
+        def on_progress(done, total, d_str, result):
+            pct = done / total
+            progress_bar.progress(pct)
+            icon = "✅" if result["status"] == "ok" else ("⏭️" if result["status"] == "skip" else "❌")
+            status_text.markdown(
+                f"`[{done}/{total}]` {icon} **{d_str}** — {result['message']}"
+            )
+            results[result["status"]] = results.get(result["status"], 0) + 1
+
+        idxdb_backfill(months_back=months, on_progress=on_progress)
+        progress_bar.progress(1.0)
+        status_text.markdown(
+            f"✅ Selesai: **{results['ok']}** hari baru, "
+            f"**{results['skip']}** dilewati, "
+            f"**{results['error']}** gagal"
+        )
+        st.rerun()
+
+    # -- Fetch tanggal spesifik
+    st.markdown("**Fetch Tanggal Tertentu**")
+    col_a, col_b = st.columns([2, 1])
+    with col_a:
+        fetch_date = st.date_input("Tanggal", value=date.today() - timedelta(days=1),
+                                   key="idxdb_fetch_date_input")
+    with col_b:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Fetch", key="idxdb_fetch_single_btn"):
+            with st.spinner("Fetching..."):
+                result = idxdb_fetch_date(fetch_date.strftime("%Y-%m-%d"), force=True)
+            if result["status"] == "ok":
+                st.success(f"✅ {result['message']}")
+            else:
+                st.error(f"❌ {result['message']}")
+            st.rerun()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SECTION 6: INTEGRASI KE FITUR SIGMA
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Panduan cepat penggunaan di masing-masing fitur:
+#
+# ┌─────────────────────────────────────────────────────────────────────────┐
+# │ ALPHA PLAN / DAILY PLAN / WEEKLY PLAN                                   │
+# │                                                                         │
+# │  # Ambil 30 hari data historis untuk sinyal                             │
+# │  rows = idxdb_get_ticker(ticker, days=30)                               │
+# │  df   = pd.DataFrame(rows)                                              │
+# │  # df memiliki kolom: date, close, volume, foreign_net, frequency, ...  │
+# │                                                                         │
+# │  # Deteksi volume spike                                                 │
+# │  spikes = idxdb_get_volume_spike(days=20)                               │
+# ├─────────────────────────────────────────────────────────────────────────┤
+# │ BROKER SUMMARY / FOREIGN FLOW                                           │
+# │                                                                         │
+# │  flow = idxdb_get_foreign_flow(date_str="2026-05-29", top_n=20)         │
+# │  top_buy  = flow["top_buy"]   # saham dengan net asing tertinggi        │
+# │  top_sell = flow["top_sell"]  # saham yang dijual asing terbesar        │
+# ├─────────────────────────────────────────────────────────────────────────┤
+# │ FREE FLOAT (menggantikan _FF_IDX_DB untuk ticker tidak dikenal)         │
+# │                                                                         │
+# │  # Di get_free_float_pct(), tambahkan fallback ini sebelum IDX API:     │
+# │  ff = idxdb_get_free_float_from_shares(ticker)                          │
+# │  if ff: return ff                                                       │
+# ├─────────────────────────────────────────────────────────────────────────┤
+# │ ALPHA STOCK INSIGHT                                                     │
+# │                                                                         │
+# │  # Screener saham aktif dengan foreign buy besar                        │
+# │  candidates = idxdb_get_screener(                                       │
+# │      min_value=5e9, min_freq=500, foreign_net_min=1000000               │
+# │  )                                                                      │
+# └─────────────────────────────────────────────────────────────────────────┘
+#
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SECTION 7: INTEGRASI get_free_float_pct() — PATCH UNTUK app.py
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Ganti fungsi get_free_float_pct() yang sudah ada di app dengan versi di bawah.
+# Urutan lookup:
+#   1. _FF_IDX_DB (70 ticker verified)
+#   2. idxdb_get_free_float_from_shares() ← dari pipeline SQLite (BARU)
+#   3. IDX API endpoint 1
+#   4. IDX API endpoint 2
+#   5. None
+
+def get_free_float_pct_v2(ticker: str, _FF_IDX_DB: dict) -> Optional[float]:
+    """
+    Versi upgrade get_free_float_pct() dengan pipeline SQLite sebagai layer 2.
+    Tidak lagi pakai yfinance.
+
+    Cara pakai: tempel di app.py, ganti nama jadi get_free_float_pct(),
+    dan pastikan _FF_IDX_DB sudah didefinisikan di scope yang sama.
+    """
+    import streamlit as st
+
+    @st.cache_data(ttl=86400, show_spinner=False)
+    def _cached(tk):
+        _tk = tk.upper().replace(".JK", "").strip()
+
+        # Layer 1: Hardcoded verified DB
+        if _tk in _FF_IDX_DB:
+            return _FF_IDX_DB[_tk]
+
+        # Layer 2: Pipeline SQLite (TradeableShares / ListedShares)
+        ff_db = idxdb_get_free_float_from_shares(_tk)
+        if ff_db is not None:
+            return ff_db
+
+        # Layer 3 & 4: IDX API live
+        for endpoint, key_map in [
+            (
+                f"https://www.idx.co.id/primary/TradingSummary/GetStockSummary"
+                f"?stockCode={_tk}&language=id&start=0&length=1",
+                ["FreeFloat", "freeFloat", "free_float"]
+            ),
+            (
+                f"https://www.idx.co.id/primary/StockData/GetCompanyProfiles"
+                f"?stockCode={_tk}&language=id&start=0&length=1",
+                ["FreeFloat", "free_float", "NonControllingInterest"]
+            ),
+        ]:
+            try:
+                r = requests.get(endpoint, headers=_IDX_HEADERS, timeout=8)
+                if r.status_code == 200:
+                    d = r.json()
+                    rows = d.get("data") or d.get("Data") or [d]
+                    if rows:
+                        for k in key_map:
+                            v = rows[0].get(k)
+                            if v is not None:
+                                val = float(str(v).replace("%","").replace(",",".").strip())
+                                if 0 < val <= 100:
+                                    return round(val, 2)
+            except Exception:
+                pass
+
+        return None
+
+    return _cached(ticker)
+
+
+
 
 
 # BSJP CARDS RENDERER v3.0  —  Dark Terminal Edition (embedded)
