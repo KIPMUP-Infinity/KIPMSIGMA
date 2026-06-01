@@ -8733,7 +8733,7 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000, tempera
         return _mimo_resp, _mimo_mdl
     except Exception as _mimo_e:
         # MiMo gagal/rate-limit/key missing → lanjut ke Groq
-        pass
+        _sigma_log_error("_call_groq_primary/MiMo", _mimo_e)
 
     # ── LAYER 2: Groq LLaMA 3.3 70B dengan key rotation ──
     from groq import Groq
@@ -8759,7 +8759,7 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000, tempera
             {"role": m["role"], "content": (m.get("content") or "")[:hist_char_limit]}
             for m in history_msgs
             if m.get("role") in ("user", "assistant")
-        ][-6:]
+        ][-10:]
         if hist_clean and hist_clean[-1]["role"] == "user":
             hist_clean = hist_clean[:-1]
         messages.extend(hist_clean)
@@ -8887,7 +8887,7 @@ def _call_groq_fallback(full_prompt):
         try:
             client = Groq(api_key=key)
             response = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
+                model="llama-3.3-70b-versatile",
                 messages=[
                     {"role": "system", "content": GROQ_SYSTEM_PROMPT},
                     {"role": "user", "content": full_prompt}
@@ -8914,12 +8914,7 @@ def _call_cerebras(full_prompt, history_msgs=None, max_tokens=8000):
     """
     import urllib.request, json as _j
 
-    MAX_CHARS = 20000
-    if len(full_prompt) > MAX_CHARS:
-        cutoff = full_prompt[:MAX_CHARS].rfind('\n')
-        if cutoff < int(MAX_CHARS * 0.8):
-            cutoff = full_prompt[:MAX_CHARS].rfind('. ')
-        full_prompt = full_prompt[:cutoff if cutoff > 0 else MAX_CHARS] + "\n\n[... data dipotong]"
+    full_prompt = _smart_truncate_prompt(full_prompt, max_tokens=5000)
 
     cerebras_key = st.secrets.get("CEREBRAS_API_KEY", "")
     if not cerebras_key or len(cerebras_key) < 10:
@@ -12778,7 +12773,7 @@ def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
     all_keys = _get_gemini_keys()
     if not all_keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
     keys = _get_available_gemini_keys(all_keys)
-    models = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"]
+    models = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
     last_err = ""
     for api_key in keys:
         if not _gemini_key_available(api_key):
@@ -12820,7 +12815,7 @@ def _call_gemini_text(messages):
     if not all_keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
     # Prioritaskan key yang tidak sedang cooldown
     keys = _get_available_gemini_keys(all_keys)
-    models = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"]
+    models = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
     last_err = ""
     for api_key in keys:
         # Skip key yang sedang cooldown (double-check)
@@ -32174,7 +32169,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                 _ec_ai_model = "error"
                 with _sigma_spinner("⚡ SIGMA AI menganalisa dampak data ekonomi ke XAU, IDR, DXY, IHSG..."):
                     try:
-                        _ec_ai_resp, _ec_ai_model = _call_groq_text([{"role":"user","content":_ec_prompt}])
+                        _ec_ai_resp, _ec_ai_model = _call_groq_primary(_ec_prompt, max_tokens=2000)
                     except Exception as _ec_e:
                         try:
                             _ec_ai_resp, _ec_ai_model = _call_gemini_text([{"role":"user","content":_ec_prompt}])
