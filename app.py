@@ -5236,7 +5236,9 @@ BANK_TICKERS = {"BBCA","BBRI","BMRI","BBNI","BBTN","BRIS","BNGA","BDMN",
 # CLEAN: semua duplicate key sudah dihapus — satu entri per ticker
 _FF_IDX_DB: dict[str, float] = {
     # ── PERBANKAN ──────────────────────────────────────────────────────────────
-    "BBCA": 44.13, "BBRI": 43.52, "BMRI": 40.21, "BBNI": 38.85,
+    # Sumber: Databoks/BEI LQ45 Mei-Juli 2026 (update Juni 2026)
+    "BBCA": 42.59, "BBRI": 46.28, "BMRI": 39.16, "BBNI": 38.92,
+    "BBTN": 35.24,
     "BRIS": 27.50, "ARTO": 50.10, "BTPS": 32.00, "BNGA": 25.00,
     "BDMN": 6.50,  "PNBN": 21.00, "AGRO": 40.00, "NISP": 25.00,
     "BJBR": 45.00, "BJTM": 30.00, "MAYA": 20.00, "MEGA": 25.00,
@@ -5246,35 +5248,38 @@ _FF_IDX_DB: dict[str, float] = {
     "BCIC": 20.00, "BANK": 40.00, "BBMD": 30.00, "BBYB": 25.00,
     "BNBA": 22.00, "BINA": 20.00, "BSIM": 25.00,
     # ── TELEKOMUNIKASI & TEKNOLOGI ─────────────────────────────────────────────
-    "TLKM": 47.77, "EXCL": 33.00, "ISAT": 20.00, "FREN": 20.00,
-    "TOWR": 30.00, "TBIG": 32.00, "GOTO": 71.00, "BUKA": 73.00,
-    "EMTK": 20.00, "MNCN": 40.00, "SCMA": 33.00, "MIKA": 32.00,
+    # Sumber: Databoks/BEI LQ45 Mei-Juli 2026
+    "TLKM": 46.97, "EXCL": 30.57, "ISAT": 16.33, "FREN": 20.00,
+    "TOWR": 32.57, "TBIG": 32.00, "GOTO": 71.44, "BUKA": 73.00,
+    "EMTK": 26.93, "MNCN": 40.00, "SCMA": 10.58, "MIKA": 32.00,
     "HEAL": 50.00, "MTDL": 35.00, "ARNA": 40.00, "KBLI": 40.00,
     "MCAS": 25.00, "DMMX": 30.00, "TECH": 35.00, "EDGE": 40.00,
-    "BAIK": 25.00, "INET": 30.00, "WIFI": 35.00, "LUCK": 30.00,
+    "BAIK": 25.00, "INET": 30.00, "WIFI": 40.02, "LUCK": 30.00,
     # ── ENERGI & PERTAMBANGAN ──────────────────────────────────────────────────
-    "ADRO": 43.91, "ITMG": 35.00, "PTBA": 34.92, "BYAN": 7.00,
-    "BUMI": 20.00, "INCO": 20.00, "ANTM": 35.09, "TINS": 34.92,
-    "MDKA": 30.00, "AMMN": 20.10, "DSSA": 15.00, "HRUM": 40.00,
-    "BOSS": 30.00, "ELSA": 35.00, "PGAS": 43.00, "AKRA": 40.00,
-    "MEDC": 40.00, "ENRG": 25.00, "RATU": 20.00, "CITA": 30.00,
+    # Sumber: Databoks/BEI LQ45 Mei-Juli 2026 & keterbukaan BEI Feb 2026
+    "ADRO": 28.34, "ITMG": 33.41, "PTBA": 32.76, "BYAN": 7.00,
+    "BUMI": 41.44, "INCO": 20.40, "ANTM": 34.84, "TINS": 34.92,
+    "MDKA": 47.85, "AMMN": 18.99, "DSSA": 15.00, "HRUM": 40.00,
+    "BOSS": 30.00, "ELSA": 35.00, "PGAS": 43.03, "AKRA": 32.66,
+    "MEDC": 24.26, "ENRG": 25.00, "RATU": 20.00, "CITA": 30.00,
     "CTTH": 25.00, "DOID": 35.00, "GEMS": 30.00, "GTBO": 20.00,
     "HARUM": 40.00,"INDX": 30.00, "KKGI": 30.00, "MBAP": 35.00,
-    "MYOH": 40.00, "PKPK": 20.00, "PTRO": 25.00, "SMMT": 20.00,
+    "MYOH": 40.00, "PKPK": 20.00, "PTRO": 30.09, "SMMT": 20.00,
     "SURE": 25.00, "TOBA": 40.00, "ZATA": 20.00,
     # ── MINYAK & GAS ──────────────────────────────────────────────────────────
     "RUIS": 30.00, "BIPI": 30.00, "ESSA": 25.00, "ARTI": 20.00,
     # ── KONSUMER / FMCG ──────────────────────────────────────────────────────
-    "UNVR": 15.00, "ICBP": 19.30, "INDF": 49.94, "MYOR": 23.60,
-    "MLBI": 18.50, "CLEO": 40.00, "GOOD": 30.00, "AMRT": 20.23,
-    "ROTI": 42.00, "JPFA": 40.00, "CPIN": 44.13, "MAIN": 35.00,
+    # Sumber: Databoks/BEI LQ45 Mei-Juli 2026
+    "UNVR": 14.06, "ICBP": 19.47, "INDF": 48.24, "MYOR": 23.60,
+    "MLBI": 18.50, "CLEO": 40.00, "GOOD": 30.00, "AMRT": 41.03,
+    "ROTI": 42.00, "JPFA": 41.03, "CPIN": 34.14, "MAIN": 35.00,
     "ULTJ": 37.00, "DLTA": 13.00, "AISA": 30.00, "CAMP": 35.00,
     "DMND": 25.00, "FOOD": 30.00, "HOKI": 40.00, "KEJU": 30.00,
     "PCAR": 25.00, "PMMP": 20.00, "PSDN": 30.00, "SKLT": 30.00,
     "SKBM": 40.00, "STTP": 30.00, "TBLA": 35.00, "TSPC": 40.00,
     "CEKA": 40.00, "ADES": 35.00, "SIPD": 30.00,
     # ── FARMASI & KESEHATAN ───────────────────────────────────────────────────
-    "KLBF": 43.46, "KAEF": 42.50, "KVTL": 30.00, "MERK": 7.00,
+    "KLBF": 38.31, "KAEF": 42.50, "KVTL": 30.00, "MERK": 7.00,
     "PYFA": 20.00, "SCPI": 4.00,  "SOHO": 7.00,  "SIDO": 20.00,
     "DVLA": 7.00,  "INAF": 35.00, "PRDA": 35.00, "SILO": 30.00,
     "SAME": 40.00, "RSGK": 30.00, "SRAJ": 25.00, "PRIM": 30.00,
@@ -5291,11 +5296,12 @@ _FF_IDX_DB: dict[str, float] = {
     "DGIK": 30.00, "ACST": 40.00, "IDPR": 40.00, "MTRA": 30.00,
     "NUSA": 25.00, "SSIA": 35.00, "TOTL": 35.00, "TOPS": 30.00,
     # ── OTOMOTIF & TRANSPORTASI ──────────────────────────────────────────────
-    "ASII": 44.13, "AUTO": 20.30, "GJTL": 43.00, "MASA": 30.00,
+    # Sumber: Databoks/BEI LQ45 Mei-Juli 2026
+    "ASII": 43.92, "AUTO": 20.30, "GJTL": 43.00, "MASA": 30.00,
     "LPIN": 20.00, "SMSM": 32.00, "PRAS": 25.00, "BRAM": 20.00,
     "IMAS": 40.00, "INDS": 35.00, "NIPS": 30.00, "SRIL": 40.00,
     "BIRD": 45.00, "BLTZ": 40.00, "GIAA": 49.00, "JSMR": 30.00,
-    "MAPI": 42.00, "MPXL": 35.00, "TAXI": 25.00, "WEHA": 30.00,
+    "MPXL": 35.00, "TAXI": 25.00, "WEHA": 30.00,
     "SAFE": 25.00, "KARW": 25.00, "RIGS": 35.00, "TMAS": 30.00,
     # ── INFRASTRUKTUR & UTILITAS ─────────────────────────────────────────────
     "WEGE": 40.00, "META": 35.00, "PORT": 40.00, "BDKI": 30.00,
@@ -5313,8 +5319,9 @@ _FF_IDX_DB: dict[str, float] = {
     "HERO": 33.00, "ACES": 45.00, "ECII": 30.00, "ERAA": 35.00,
     "KPIG": 30.00, "MIDI": 30.00, "RANC": 25.00, "SONA": 30.00,
     "TELE": 35.00, "TRIO": 25.00,
+    "MAPI": 49.00,   # Sumber: Databoks/BEI LQ45 Mei-Juli 2026
     # ── SEMEN & MATERIAL ─────────────────────────────────────────────────────
-    "SMGR": 48.97, "INTP": 49.96, "SMBR": 30.00, "WTON": 40.00,
+    "SMGR": 48.53, "INTP": 49.96, "SMBR": 30.00, "WTON": 40.00,
     "ALDO": 35.00, "ALKA": 30.00, "ALMI": 30.00, "BTON": 25.00,
     "CTBN": 20.00, "GDST": 30.00, "IFII": 25.00, "IPOL": 30.00,
     "ISSP": 35.00, "JKSW": 20.00, "JPRS": 25.00, "KRAS": 35.00,
@@ -5338,12 +5345,15 @@ _FF_IDX_DB: dict[str, float] = {
     "LTLS": 30.00, "MOLI": 30.00, "SRSN": 30.00, "TKIM": 35.00,
     "UNIC": 30.00, "WICO": 25.00,
     # ── INDEKS IDX30 / LQ45 / IDX80 / MSCI / FTSE tambahan ───────────────────
-    "INKP": 40.00, "UNTR": 40.79, "MTEL": 32.00, "FILM": 40.00,
-    "BREN": 5.00,  "PGEO": 30.00, "CUAN": 10.00, "MAPA": 40.00,
-    "MAPS": 35.00, "SGER": 30.00, "TPIA": 50.50, "DNET": 20.00,
-    "HRTA": 30.00, "AVIA": 40.00, "ARKO": 30.00, "CMNT": 25.00,
+    # Sumber: Databoks/BEI LQ45 Mei-Juli 2026 & keterbukaan BEI Feb 2026
+    "INKP": 40.21, "UNTR": 34.96, "MTEL": 32.00, "FILM": 40.00,
+    "BREN": 12.30, "PGEO": 10.94, "CUAN": 14.94, "MAPA": 40.00,
+    "MAPS": 35.00, "SGER": 30.00, "TPIA": 10.68, "DNET": 20.00,
+    "HRTA": 28.46, "AVIA": 40.00, "ARKO": 30.00, "CMNT": 25.00,
     "RAJA": 30.00, "FITT": 35.00, "BRMS": 25.00, "PANI": 30.00,
-    "MBMA": 30.00, "NCKL": 30.00, "AADI": 35.00, "CMRY": 40.00,
+    "MBMA": 26.77, "NCKL": 30.00, "AADI": 19.34, "CMRY": 40.00,
+    "BRPT": 26.73, "ADMR": 11.75, "DEWA": 62.19, "ESSA": 54.69,
+    "CDIA": 9.97,
 }
 
 @st.cache_data(ttl=86400, show_spinner=False)
