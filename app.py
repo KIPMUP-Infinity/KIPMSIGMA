@@ -1,4 +1,11 @@
-# ─────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+# SIGMA v21.1 | Last updated: 2026-06-01
+# Patch: pytz top-level, double cache_data, EC Groq rotation, IPO 3-kondisi
+#        konsisten, holiday 2026 lengkap, _alpha_chart_ → _sigma_chart_,
+#        load_user migration legacy keys, alias var None dihapus, import time
+#        duplikat dihapus, prompt Stockbit → platform-agnostic,
+#        _call_groq_fallback alias, TTL → CACHE_CONFIG
+# ══════════════════════════════════════════════════════════════════════════════
 # PART 1: IMPORTS & BASIC FETCHERS
 # ─────────────────────────────────────────────
 import streamlit as st
@@ -25,6 +32,10 @@ import sqlite3
 import threading
 from typing import Optional
 from datetime import date  # tambahan untuk pipeline (date.today(), dll)
+try:
+    import pytz                    # top-level import — tersedia di seluruh modul tanpa re-import per fungsi
+except ImportError:
+    pytz = None                    # fallback: timezone via timedelta(hours=7)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # FIX #4 — SIGMA ERROR LOGGER: Logger terpusat untuk silent exception tracking
@@ -97,8 +108,13 @@ _IDX_HOLIDAYS_2025_2026 = {
     # 2026
     "2026-01-01","2026-01-28","2026-01-29","2026-01-30",
     "2026-03-20","2026-03-23","2026-04-02","2026-04-03",
-    "2026-05-01","2026-05-14","2026-05-25","2026-08-17",
-    "2026-12-25",
+    "2026-05-01","2026-05-14","2026-05-25",
+    "2026-06-01",  # Hari Lahir Pancasila
+    "2026-07-27",  # Tahun Baru Islam 1448H (estimasi)
+    "2026-08-17",  # HUT RI
+    "2026-09-15",  # Maulid Nabi (estimasi — konfirmasi SKB 3 Menteri)
+    "2026-12-24",  # Cuti Bersama Natal
+    "2026-12-25",  # Natal
 }
 
 
@@ -430,8 +446,7 @@ def idxdb_auto_fetch_today():
     Dipanggil di startup app — hanya berjalan setelah jam 16:30 WIB.
     Safe untuk dipanggil berulang (skip jika sudah ada).
     """
-    import pytz
-    wib  = pytz.timezone("Asia/Jakarta")
+    wib  = pytz.timezone("Asia/Jakarta") if pytz else __import__('datetime').timezone(__import__('datetime').timedelta(hours=7))
     now  = datetime.now(wib)
     today = now.date()
 
@@ -855,7 +870,7 @@ def get_free_float_pct_v2(ticker: str, _FF_IDX_DB: dict) -> Optional[float]:
     """
     import streamlit as st
 
-    @st.cache_data(ttl=86400, show_spinner=False)
+    @st.cache_data(ttl=CACHE_CONFIG["ipo_data"], show_spinner=False)
     def _cached(tk):
         _tk = tk.upper().replace(".JK", "").strip()
 
@@ -950,16 +965,16 @@ _DEFAULT_META = _RATING_META["BUY"]
 
 
 try:
-    import pytz as _pytz
-    _WIB = _pytz.timezone("Asia/Jakarta")
-except ImportError:
+    _pytz = pytz
+    _WIB = _pytz.timezone("Asia/Jakarta") if _pytz else timezone(timedelta(hours=7))
+except Exception:
     _pytz = None
     _WIB = timezone(timedelta(hours=7))
 
 
 
 # ── Rate Limiter — cegah spam klik tombol berat (Bug#19 fix) ─────────────────
-import time as _time_module
+_time_module = time  # alias untuk backward compat — time sudah di-import top-level (baris 21)
 
 def _sigma_check_cooldown(action_key: str, min_seconds: int = 300) -> tuple:
     """Cek apakah action boleh dijalankan. Returns (allowed, remaining_seconds)."""
@@ -4300,12 +4315,11 @@ def add_zone_columns_to_rows(rows: list, C: dict) -> list:
 # ─────────────────────────────────────────────
 
 # ── Zone Engine: Streamlit cache wrappers ──
-@st.cache_data(ttl=3600)
-@st.cache_data(ttl=3600, show_spinner=False)
+@st.cache_data(ttl=CACHE_CONFIG["rrg_data"], show_spinner=False)
 def _cached_detect_zones_multi_tf(ticker: str) -> ZoneResult:
     return detect_zones_multi_tf(ticker)
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=CACHE_CONFIG["rrg_data"])
 def _cached_batch_detect_zones(tickers: tuple) -> dict:
     return batch_detect_zones(tickers)
 
@@ -4615,7 +4629,7 @@ def _goapi_resolve_base(force: bool = False) -> str:
     # Tidak ada yang cocok — kembalikan default
     return GOAPI_BASE
 
-@st.cache_data(ttl=90, show_spinner=False)
+@st.cache_data(ttl=CACHE_CONFIG["price_live"], show_spinner=False)
 def goapi_get_price(ticker: str) -> dict:
     """Harga real-time satu saham dari GoAPI. Endpoint: /stock/idx/{symbol}
     Cache 90 detik — semua user dalam window ini pakai data yang sama."""
@@ -4639,7 +4653,7 @@ def goapi_get_price(ticker: str) -> dict:
     except Exception:
         return {}
 
-@st.cache_data(ttl=90, show_spinner=False)
+@st.cache_data(ttl=CACHE_CONFIG["price_live"], show_spinner=False)
 def goapi_get_prices(tickers: tuple) -> dict:
     """Harga real-time multiple ticker. Endpoint: /stock/idx/prices?symbols=A,B,C
     PATCH: parameter list→tuple agar cacheable. Panggil dengan tuple(sorted(list)).
@@ -5284,7 +5298,7 @@ def _fetch_fmp(ticker, api_key=None):
     return {}
 
 # PENGAMAN LIMIT API: Menyimpan memori selama 1 jam (3600 detik)
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=CACHE_CONFIG["rrg_data"])
 def _fetch_multi_fundamental(ticker):
     """Fetch fundamental berlapis - saling melengkapi. GoAPI = layer utama."""
     import threading
@@ -5834,7 +5848,7 @@ IDX_SUSPENDED_TICKERS_GLOBAL = {
 # suspend/unsuspend terbaru tanpa harus edit kode secara manual.
 import functools as _functools
 
-@st.cache_data(ttl=21600, show_spinner=False)  # cache 6 jam
+@st.cache_data(ttl=CACHE_CONFIG["suspended"], show_spinner=False)  # cache 6 jam
 def _fetch_live_suspended_tickers() -> dict:
     """
     Coba ambil daftar suspend terkini dari IDX RDIS API.
@@ -6219,7 +6233,7 @@ _FF_IDX_DB: dict[str, float] = {
     "ESSA": 54.69,  # [IDX_EV / LQ45]
 }
 
-@st.cache_data(ttl=86400, show_spinner=False)
+@st.cache_data(ttl=CACHE_CONFIG["ipo_data"], show_spinner=False)
 def get_free_float_pct(ticker: str) -> float | None:
     """
     Ambil Free Float (%) dengan hybrid approach:
@@ -6702,7 +6716,7 @@ def _cleanup_session_state_bloat():
       - sigma_bs30_history   → max 14 entri
       - tr_records           → max 200 entri
       - sigma_insight_*      → max 10 ticker (FIX B7)
-      - _alpha_chart_*       → max 10 ticker (FIX B7)
+      - _sigma_chart_*       → max 10 ticker (FIX B7)
       - _zone_cache_*        → max 10 ticker (FIX B7)
     """
     import sys
@@ -6732,7 +6746,7 @@ def _cleanup_session_state_bloat():
         st.session_state["tr_records"] = _tr[-200:]  # ambil 200 terbaru
 
     # ── FIX B7: Bersihkan insight/chart/zone cache — max 10 ticker terakhir ──
-    for _prefix in ("sigma_insight_", "_alpha_chart_", "_zone_cache_", "_prefetch_done_"):
+    for _prefix in ("sigma_insight_", "_sigma_chart_", "_zone_cache_", "_prefetch_done_"):
         _keys = [k for k in st.session_state if k.startswith(_prefix)]
         if len(_keys) > 10:
             for k in sorted(_keys)[:-10]:
@@ -6835,6 +6849,25 @@ def load_user(email: str):
                 with open(p) as f:
                     result = json.load(f)
         except Exception: pass
+
+    # Migration: rename legacy sigma_insight_last_* → alpha_insight_last_* (one-time backward compat)
+    if result:
+        _LEGACY_KEY_MAP = {
+            "sigma_insight_last_key":    "alpha_insight_last_key",
+            "sigma_insight_last_data":   "alpha_insight_last_data",
+            "sigma_insight_last_ticker": "alpha_insight_last_ticker",
+        }
+        _migrated = False
+        for old_k, new_k in _LEGACY_KEY_MAP.items():
+            if old_k in result and new_k not in result:
+                result[new_k] = result.pop(old_k)
+                _migrated = True
+        # Kalau ada migrasi, langsung persist supaya tidak diulang next load
+        if _migrated:
+            try:
+                save_user(email, result)
+            except Exception:
+                pass
 
     return result if result else None
 
@@ -7348,9 +7381,9 @@ Output: Menggunakan TEMPLATE_DAMPAK_EMITEN
 
 --- PERINTAH 3: "Bandarmologi [emiten]" ---
 Trigger: "kesimpulan bandarmologi / bandarmologi / analisa broker [TICKER]"
-Data BUTUH dari user: SS broker Stockbit + Price table + Volume
+Data BUTUH dari user: SS broker (Stockbit/RTI/platform lain) + Price table + Volume
 Data otomatis: volume harian (yfinance) + rata-rata volume (averageVolume)
-Kalau SS belum ada -> "Mohon kirim screenshot SS broker Stockbit, Price Table, dan Volume untuk [TICKER] ya."
+Kalau SS belum ada -> "Mohon kirim screenshot Broker Summary (Stockbit/RTI/platform lain), Price Table, dan Volume untuk [TICKER] ya."
 Output: Menggunakan TEMPLATE_BANDARMOLOGI (Menerapkan Pure Bandarmologi).
 
 --- PERINTAH 4: "Fundamental [emiten]" ---
@@ -7368,7 +7401,7 @@ Output: Menggunakan TEMPLATE_TEKNIKAL (Format 3 Model Eksekusi).
 --- PERINTAH 6: "Analisa Lengkap [emiten]" - PERINTAH SAKTI ---
 Trigger: "analisa lengkap / full analisa / semua / 7 Sigma [TICKER]"
 Alias: "7 Sigma [TICKER]" = sama dengan "analisa lengkap [TICKER]"
-Data BUTUH: screenshot chart MOONSIDE Strategy+ + SS broker Stockbit
+Data BUTUH: screenshot chart MOONSIDE Strategy+ + SS broker (Stockbit/RTI/platform lain)
 Data otomatis: fundamental + makro
 Kalau belum lengkap -> minta yang kurang, analisa yang sudah ada dulu
 Output: Menggunakan TEMPLATE_LENGKAP (Quad Confluence).
@@ -7444,18 +7477,23 @@ Jika menganalisa dokumen IPO (Menu 7), SIGMA WAJIB menghitung dan menyimpulkan h
    LANGKAH WAJIB:
    Step 1: Baca angka dari PDF (dalam lembar)
    Step 2: Konversi → Total Lot = angka lembar ÷ 100
-   Step 3: Tentukan Kondisi A atau B berdasarkan Total Lot (BUKAN lembar)
+   Step 3: Tentukan Kondisi A, B, atau C berdasarkan Total Lot (BUKAN lembar)
    Step 4: Hitung Risk 1 dan Risk 2 dari Total Lot
 
-   -> KONDISI A (Total Lot DITAWARKAN < 20 Juta Lot):
-      • Risk 1 (Mulai Waspada)    = 30% × Total Lot
+   -> KONDISI A (Total Lot DITAWARKAN < 12 Juta Lot):
+      • Risk 1 (Mulai Waspada)      = 30% × Total Lot
       • Risk 2 (Take Profit/Bahaya) = 50% × Total Lot
-      ⚠️ Contoh: 18 Juta Lot → Kondisi A → Risk 1 = 5,4 Juta Lot | Risk 2 = 9 Juta Lot
+      ⚠️ Contoh: 8 Juta Lot → Kondisi A → Risk 1 = 2,4 Juta Lot | Risk 2 = 4 Juta Lot
 
-   -> KONDISI B (Total Lot DITAWARKAN ≥ 20 Juta Lot):
-      • Risk 1 (Mulai Waspada)    = 10% × Total Lot
+   -> KONDISI B (Total Lot DITAWARKAN 12–30 Juta Lot):
+      • Risk 1 (Mulai Waspada)      = 10% × Total Lot
       • Risk 2 (Take Profit/Bahaya) = 30% × Total Lot
-      ⚠️ Contoh: 50 Juta Lot → Kondisi B → Risk 1 = 5 Juta Lot | Risk 2 = 15 Juta Lot
+      ⚠️ Contoh: 18 Juta Lot → Kondisi B → Risk 1 = 1,8 Juta Lot | Risk 2 = 5,4 Juta Lot
+
+   -> KONDISI C (Total Lot DITAWARKAN > 30 Juta Lot):
+      • Risk 1 (Mulai Waspada)      = 10% × Total Lot
+      • Risk 2 (Take Profit/Bahaya) = 20% × Total Lot
+      ⚠️ Contoh: 50 Juta Lot → Kondisi C → Risk 1 = 5 Juta Lot | Risk 2 = 10 Juta Lot
 
    -> SETELAH menghitung, WAJIB sebutkan dalam output:
       "Total saham ditawarkan: [X] lembar = [Y] Juta Lot (setelah konversi ÷100)"
@@ -8492,8 +8530,9 @@ RUMUS: Total Lot = Total Lembar ÷ 100  (1 LOT = 100 LEMBAR)
 Contoh: 1.800.000.000 lembar ÷ 100 = 18.000.000 Lot = 18 Juta Lot
 JANGAN gunakan angka lembar untuk Kondisi A/B atau Risk 1/2. Selalu pakai LOT.
 
-KONDISI A (< 20 Juta Lot): Risk1 = 30% × Lot | Risk2 = 50% × Lot
-KONDISI B (≥ 20 Juta Lot): Risk1 = 10% × Lot | Risk2 = 30% × Lot
+KONDISI A (< 12 Juta Lot): Risk1 = 30% × Lot | Risk2 = 50% × Lot
+KONDISI B (12–30 Juta Lot): Risk1 = 10% × Lot | Risk2 = 30% × Lot
+KONDISI C (> 30 Juta Lot):  Risk1 = 10% × Lot | Risk2 = 20% × Lot
 
 SKALA VALUASI (Harga Penawaran ÷ Nilai Nominal):
 ≤2x = Sangat Menarik | 2–4x = Menarik/Wajar | >4–7x = Waspada/Mahal | >7x = Hati-Hati Tinggi
@@ -8817,7 +8856,7 @@ def _call_groq_streaming(full_prompt, max_tokens=2000, temperature=0.4):
 
     full_prompt = _smart_truncate_prompt(full_prompt, max_tokens=22000)
     messages = [
-        {"role": "system", "content": GROQ_SYSTEM_PROMPT},
+        {"role": "system", "content": GROQ_SYSTEM_PROMPT},  # Intentional: versi ringkas untuk hemat token budget streaming
         {"role": "user", "content": full_prompt},
     ]
 
@@ -8905,6 +8944,10 @@ def _call_groq_fallback(full_prompt):
             raise e
 
     raise Exception(f"Semua Groq key kena rate limit (8B). Error terakhir: {last_err}")
+
+# Alias: _call_groq_fallback sekarang pakai 70B (sama dengan primary).
+# Nama "fallback" sudah tidak akurat — gunakan _call_groq_secondary untuk kode baru.
+_call_groq_secondary = _call_groq_fallback
 
 
 def _call_cerebras(full_prompt, history_msgs=None, max_tokens=8000):
@@ -9608,13 +9651,8 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
 
                     if not _dr_result:
                         try:
-                            _groq_sch = Groq(api_key=st.secrets.get("GROQ_API_KEY",""))
-                            _resp_sch  = _groq_sch.chat.completions.create(
-                                model="llama-3.3-70b-versatile",
-                                messages=[{"role":"user","content":_dr_prompt}],
-                                max_tokens=3000,
-                            )
-                            _dr_result = _resp_sch.choices[0].message.content
+                            _dr_result, _ = _call_groq_primary(_dr_prompt, max_tokens=3000)
+                            if not _dr_result: _dr_result = None
                         except Exception: pass
 
                     if _dr_result:
@@ -11319,7 +11357,7 @@ function _showTransitionOverlay() {{
         var ov = pd.createElement('div');
         ov.id = 'sigma-transition-overlay';
         ov.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:#020617;z-index:9999999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;';
-        ov.innerHTML = '<div style="font-family:ui-sans-serif,system-ui,sans-serif;font-size:2rem;font-weight:700;color:#a78bfa;letter-spacing:0.05em;">\u03A3</div><div style="width:120px;height:3px;background:rgba(124,58,237,0.2);border-radius:99px;overflow:hidden;"><div id="sigma-ov-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#7c3aed,#3b82f6);border-radius:99px;transition:width 0.4s ease;"></div></div><div style="font-size:0.72rem;letter-spacing:0.15em;color:rgba(167,139,250,0.6);text-transform:uppercase;">Memuat...</div>';
+        ov.innerHTML = '<div style="font-family:ui-sans-serif,system-ui,sans-serif;font-size:2rem;font-weight:700;color:#a78bfa;letter-spacing:0.05em;">\u03A3</div><div style="width:120px;height:3px;background:rgba(124,58,237,0.2);border-radius:99px;overflow:hidden;"><div id="sigma-ov-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#7c3aed,#3b82f6);border-radius:99px;transition:width 0.4s ease;"></div></div><div style="font-size:0.72rem;letter-spacing:0.15em;color:rgba(167,139,250,0.6);text-transform:uppercase;">LOADING INTELLIGENCE...</div>';
         pd.body.appendChild(ov);
         setTimeout(function(){{ var b=pd.getElementById('sigma-ov-bar'); if(b) b.style.width='70%'; }}, 50);
         setTimeout(function(){{ var b=pd.getElementById('sigma-ov-bar'); if(b) b.style.width='90%'; }}, 800);
@@ -11947,7 +11985,7 @@ pd.addEventListener('click',function(e){{ if(!btn.contains(e.target) && !m.conta
 active = get_active()
 current_view = st.session_state.get("current_view", "chat")
 # =========================================================
-# PART 8: MAIN CHAT ENGINE & UI — SIGMA v4.2 (Google-only Auth, Modules Always Active)
+# PART 8: MAIN CHAT ENGINE & UI — SIGMA v21.1 (Google-only Auth, Modules Always Active)
 # =========================================================
 # [removed duplicate import] import requests
 # [removed duplicate import] import re
@@ -12934,26 +12972,46 @@ div[data-testid="stDecoration"] {{ display: none !important; height: 0 !importan
 }}
 
 /* --- FIX: HIDE DUPLICATE UPLOAD TEXT IN FILE UPLOADER ---------------------
-   Streamlit internal file_uploader renders a drag-drop instruction span
-   "Drag and drop file here" / "upload" yang tumpang tindih saat label_visibility
-   collapsed. Sembunyikan span instruksi internal, bukan browse button-nya. */
+   Root cause: Streamlit merender label teks "upload"/"Browse files" DUA kali —
+   satu dari label prop komponen, satu dari instruksi internal dropzone.
+   Solusi: hide semua label & span instruksi, tapi JAGA tombol browse tetap visible. */
+
+/* 1. Sembunyikan label prop Streamlit (semua versi) */
+[data-testid="stFileUploader"] label,
+[data-testid="stFileUploader"] > label,
+[data-testid="stFileUploaderDropzone"] label,
+.stFileUploader label {{
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    overflow: hidden !important;
+}}
+/* 2. Sembunyikan teks instruksi dropzone "Drag and drop" */
+[data-testid="stFileUploaderDropzoneInstructions"],
+[data-testid="stFileUploaderDropzoneInstructions"] span,
 [data-testid="stFileUploaderDropzoneInstructions"] > div > span {{
     display: none !important;
 }}
+/* 3. Sembunyikan span teks "upload" yang muncul di atas/dalam dropzone */
+[data-testid="stFileUploaderDropzone"] span,
+[data-testid="stFileUploaderDropzone"] > div > div > span:first-child,
+[data-testid="stFileUploader"] > div > span,
+[data-testid="stFileUploader"] > div > div > div:first-child > div > span {{
+    display: none !important;
+}}
+/* 4. Preserve: tombol browse TIDAK boleh disembunyikan */
+[data-testid="stFileUploader"] button,
+[data-testid="stFileUploaderDropzone"] button {{
+    display: inline-flex !important;
+    visibility: visible !important;
+}}
+/* 5. Size info tetap tampil (opsional) */
 [data-testid="stFileUploaderDropzoneInstructions"] > div > small {{
     font-size: 0.72rem !important;
     color: #64748b !important;
 }}
-/* Additional selectors for different Streamlit versions */
-[data-testid="stFileUploaderDropzone"] > div > div > span:first-child {{
-    display: none !important;
-}}
 section[data-testid="stFileUploaderDropzone"] small {{
     font-size: 0.7rem !important;
-}}
-/* Hide the "upload" text label that appears above browse button */
-[data-testid="stFileUploader"] label {{
-    display: none !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -13223,7 +13281,7 @@ def _sigma_spinner(msg: str = "Memproses..."):
 # menyebabkan Python membuat function object baru setiap kali → cache miss.
 # ═════════════════════════════════════════════════════════════════════════════
 
-@st.cache_data(ttl=1800, show_spinner=False)  # 30 menit
+@st.cache_data(ttl=CACHE_CONFIG["news"], show_spinner=False)  # 30 menit
 def _tl_fetch_ticker_tape(items_tuple, slot_key: str = ""):
     import yfinance as _yf
     from concurrent.futures import ThreadPoolExecutor, as_completed as _tape_asc
@@ -13251,7 +13309,7 @@ def _tl_fetch_ticker_tape(items_tuple, slot_key: str = ""):
     # Preserve original order
     return [results_dict[n] for n, _ in items_tuple if n in results_dict]
 
-@st.cache_data(ttl=604800, show_spinner=False)
+@st.cache_data(ttl=CACHE_CONFIG["market_data"], show_spinner=False)
 def _tl_fetch_market_data(names_tuple, tickers_tuple, weekly_slot: str = ""):
     import yfinance as yf
     import pandas as pd
@@ -13318,7 +13376,7 @@ _SIGMA_ASSET_CATEGORIES = {
 # Sebelumnya didefinisikan di dalam conditional block → @st.cache_data dapat
 # function object baru setiap rerun → cache miss setiap kali → yfinance
 # di-download ulang meskipun data belum expire.
-@st.cache_data(ttl=90, show_spinner=False)
+@st.cache_data(ttl=CACHE_CONFIG["price_live"], show_spinner=False)
 def _sigma_cached_yf_history(yf_ticker: str, period: str = "6mo"):
     try:
         import yfinance as _yf_ins
@@ -14278,7 +14336,7 @@ if current_view == "dashboard":
     _tape_slot_min = 0 if _tm < 30 else 30
     _tape_slot = _tape_wib.strftime("%Y%m%d_%H") + f"_{_tape_slot_min:02d}" if _tape_trading else _tape_wib.strftime("%Y%m%d_%H") + "_00"
 
-    @st.cache_data(ttl=1800, show_spinner=False)  # 30 menit
+    @st.cache_data(ttl=CACHE_CONFIG["news"], show_spinner=False)  # 30 menit
     def _fetch_ticker_tape(items_tuple, slot_key: str = ""):
         import yfinance as _yf
         results = []
@@ -14309,7 +14367,7 @@ if current_view == "dashboard":
         """, unsafe_allow_html=True)
 
     # ── LIVE MARKET: cache harus di luar tab scope agar tidak di-redefine tiap rerun ──
-    @st.cache_data(ttl=604800, show_spinner=False)  # TTL 1 minggu — refresh dikontrol slot Minggu 06:00 WIB
+    @st.cache_data(ttl=CACHE_CONFIG["market_data"], show_spinner=False)  # TTL 1 minggu — refresh dikontrol slot Minggu 06:00 WIB
     def _fetch_market_data_cached(names_tuple, tickers_tuple, weekly_slot: str = ""):
         """Batch fetch semua ticker sekaligus. Dipanggil dengan tuple agar hashable untuk cache."""
         import yfinance as yf
@@ -14766,7 +14824,7 @@ if current_view == "dashboard":
             _slot_min = 0  # per-jam
         _lm_slot = _lm_wib.strftime("%Y%m%d_%H") + f"_{_slot_min:02d}"
 
-        @st.cache_data(ttl=1800, show_spinner=False)  # TTL 30 menit — cache invalidate otomatis
+        @st.cache_data(ttl=CACHE_CONFIG["global_rates"], show_spinner=False)  # TTL → CACHE_CONFIG["global_rates"]
         def _fetch_tickers_v3(ticker_key, slot_key: str = ""):
             import yfinance as yf
             from concurrent.futures import ThreadPoolExecutor, as_completed as _v3_asc
@@ -17298,7 +17356,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📢 INDEX ANNOUNCEMENTS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:12px;text-transform:uppercase;'>Pengumuman resmi terbaru dari MSCI · IDX · FTSE Russell · JP Morgan</p>", unsafe_allow_html=True)
 
-        @st.cache_data(ttl=1800)
+        @st.cache_data(ttl=CACHE_CONFIG["news"])
         def _fetch_index_announcements():
             """Fetch press releases / announcements dari MSCI, IDX, FTSE, JP Morgan via RSS / API."""
             import feedparser, urllib.request, json as _j, time as _t
@@ -17846,7 +17904,7 @@ tbody td{{padding:7px 10px;color:{text_main};vertical-align:middle;font-size:0.7
         # ─────────────────────────────────────────────────────────
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>UPCOMING CORPORATE ACTION</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
-        @st.cache_data(ttl=3600)
+        @st.cache_data(ttl=CACHE_CONFIG["rrg_data"])
         def fetch_idx_corporate_actions():
             """
             Fetch corporate actions dari IDX resmi (idx.co.id) untuk semua saham.
@@ -18539,7 +18597,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 except Exception: pass
             st.session_state["_rrg_prev_slot"] = _update_slot
 
-            @st.cache_data(ttl=3600, show_spinner=False)
+            @st.cache_data(ttl=CACHE_CONFIG["rrg_data"], show_spinner=False)
             def _compute_rrg_live(slot_key: str):
                 """
                 Hitung RS ratio & momentum tiap sektor vs IHSG secara real-time.
@@ -18632,7 +18690,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 )
 
             # ── MARKET CAP SCREENING - Top 500 IDX, exclude suspended >1 bulan ─
-            @st.cache_data(ttl=86400, show_spinner=False)
+            @st.cache_data(ttl=CACHE_CONFIG["ipo_data"], show_spinner=False)
             def _screen_top500_by_mktcap():
                 """
                 Ambil 500 saham IDX berdasarkan market cap terbesar.
@@ -20487,7 +20545,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
             # ════════════════════════════════════════════════════════════════
             # LIVE FETCH PEMEGANG SAHAM - MULTI-SOURCE UNTUK SEMUA SAHAM BEI
             # ════════════════════════════════════════════════════════════════
-            @st.cache_data(ttl=3600*6, show_spinner=False)
+            @st.cache_data(ttl=CACHE_CONFIG["suspended"], show_spinner=False)
             def _rot_fetch_sh_live(ticker):
                 """
                 Fetch jumlah pemegang saham untuk SEMUA emiten BEI.
@@ -20629,7 +20687,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
                 return sorted(results, key=lambda x: x["date"]) if results else []
 
-            @st.cache_data(ttl=3600*24, show_spinner=False)
+            @st.cache_data(ttl=CACHE_CONFIG["ipo_data"], show_spinner=False)
             def _rot_fetch_sh_hist_est(ticker, manual_db):
                 """
                 Jika semua live fetch gagal, buat estimasi historis dari:
@@ -20793,7 +20851,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                             target="_blank" style="color:#4285F4;">idx.co.id</a> atau
                             <a href="https://ksei.co.id" target="_blank" style="color:#4285F4;">ksei.co.id</a>.
                         </div>""", unsafe_allow_html=True)
-                    @st.cache_data(ttl=3600, show_spinner=False)
+                    @st.cache_data(ttl=CACHE_CONFIG["rrg_data"], show_spinner=False)
                     def _rot_fetch_price_1y(ticker):
                         try:
                             import yfinance as yf
@@ -21601,12 +21659,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
             "  📋 ANALISA IPO  ",
             "  🏦 BROKER SUMMARY  ",
         ])
-        # Alias agar blok lama yang referensi tab_daily/weekly/bsjp/trackrecord tetap berjalan
-        # (akan dirender di tab_sigma_plan di bawah)
-        sigma_tab_daily = None
-        sigma_tab_weekly = None
-        sigma_tab_bsjp = None
-        sigma_tab_trackrecord = None
+        # Alias tab lama dihapus — tidak dipakai (refactor cleanup v21.1)
 
         with sigma_tab_ipo:
             # ════════════════════════════════════════════════════════════════
@@ -21671,6 +21724,43 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
             )
 
             # ── Upload PDF ─────────────────────────────────────────────────
+            # Inject CSS global untuk force-hide semua label internal file_uploader Streamlit
+            # Ini mencegah double teks "upload" / "Upload" yang muncul dari komponen Streamlit
+            st.markdown("""
+                <style>
+                /* Hide semua label di dalam file uploader Streamlit - semua versi */
+                [data-testid="stFileUploader"] label,
+                [data-testid="stFileUploader"] > label,
+                [data-testid="stFileUploaderDropzone"] label,
+                [data-testid="stFileUploaderDropzone"] > div > label,
+                .stFileUploader label,
+                section[data-testid="stFileUploaderDropzone"] label {
+                    display: none !important;
+                    visibility: hidden !important;
+                    height: 0 !important;
+                    overflow: hidden !important;
+                }
+                /* Hide instructions text "Drag and drop" dan semua span di dropzone */
+                [data-testid="stFileUploaderDropzoneInstructions"],
+                [data-testid="stFileUploaderDropzoneInstructions"] span,
+                [data-testid="stFileUploaderDropzone"] span,
+                [data-testid="stFileUploaderDropzone"] > section > div > span {
+                    display: none !important;
+                }
+                /* Sembunyikan teks "upload" yang muncul DI ATAS tombol browse (Streamlit 1.28+) */
+                [data-testid="stFileUploader"] > div > div > div:first-child > div > span,
+                [data-testid="stFileUploader"] > div:first-child > span,
+                [data-testid="stFileUploader"] > div > span {
+                    display: none !important;
+                }
+                /* Khusus: tombol browse jangan disembunyikan */
+                [data-testid="stFileUploader"] button,
+                [data-testid="stFileUploaderDropzone"] button {
+                    display: inline-flex !important;
+                    visibility: visible !important;
+                }
+                </style>""", unsafe_allow_html=True)
+            # Custom label di atas uploader (bukan dari Streamlit)
             st.markdown(
                 f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
                 f"letter-spacing:0.08em;color:{text_sub};margin-bottom:4px;margin-top:8px;'>"
@@ -21678,7 +21768,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                 unsafe_allow_html=True
             )
             _ipo_pdf_file = st.file_uploader(
-                "Upload Prospektus IPO (PDF)",
+                " ",
                 type=["pdf"],
                 key="ipo_tab_pdf_uploader",
                 help="Download PDF dari e-IPO.co.id atau idx.co.id/prospektus. Max ~200MB.",
@@ -23200,7 +23290,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
                         from plotly.subplots import make_subplots
 
                         # ── Chart cache: skip rebuild jika ticker + ai_data tidak berubah ──
-                        _chart_cache_key = f"_alpha_chart_{ticker_input}_{hash(str(ai_data))}"
+                        _chart_cache_key = f"_sigma_chart_{ticker_input}_{hash(str(ai_data))}"
                         _skip_chart_build = False
                         _cached_fig = st.session_state.get(_chart_cache_key)
                         if _cached_fig is not None and not run_analysis:
@@ -24400,7 +24490,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
             </div>""", unsafe_allow_html=True)
 
 
-        @st.cache_data(ttl=1800, show_spinner=False)
+        @st.cache_data(ttl=CACHE_CONFIG["news"], show_spinner=False)
         def _reco_fetch_prices(tickers):
             # ── PATCH: Gunakan IDX Pipeline (SQLite) sebagai sumber utama ──
             # Pipeline menyimpan 6 bulan data OHLCV lengkap → RSI/MACD/BB bisa dihitung akurat.
@@ -28439,7 +28529,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:#888;margin-bottom:8px;'>📡 STATUS API: {_api_stat_html}</p>", unsafe_allow_html=True)
 
                         with _sigma_spinner(f"Mengambil data fundamental {len(_fs_tickers)} saham IDX via yfinance..."):
-                            @st.cache_data(ttl=3600, show_spinner=False)
+                            @st.cache_data(ttl=CACHE_CONFIG["rrg_data"], show_spinner=False)
                             def _fetch_fundamental_batch(tickers_tuple):
                                 import yfinance as _yf2, threading as _thr, time as _tsl
                                 results = {}
@@ -29273,7 +29363,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
             # ════════════════════════════════════════════════════════════════
             # LIVE FETCH PEMEGANG SAHAM - MULTI-SOURCE UNTUK SEMUA SAHAM BEI
             # ════════════════════════════════════════════════════════════════
-            @st.cache_data(ttl=3600*6, show_spinner=False)
+            @st.cache_data(ttl=CACHE_CONFIG["suspended"], show_spinner=False)
             def fetch_sh_live(ticker):
                 """
                 Fetch jumlah pemegang saham untuk SEMUA emiten BEI.
@@ -29415,7 +29505,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
 
                 return sorted(results, key=lambda x: x["date"]) if results else []
 
-            @st.cache_data(ttl=3600*24, show_spinner=False)
+            @st.cache_data(ttl=CACHE_CONFIG["ipo_data"], show_spinner=False)
             def fetch_sh_historical_estimate(ticker, manual_db):
                 """
                 Jika semua live fetch gagal, buat estimasi historis dari:
@@ -29579,7 +29669,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                             target="_blank" style="color:#4285F4;">idx.co.id</a> atau
                             <a href="https://ksei.co.id" target="_blank" style="color:#4285F4;">ksei.co.id</a>.
                         </div>""", unsafe_allow_html=True)
-                    @st.cache_data(ttl=3600, show_spinner=False)
+                    @st.cache_data(ttl=CACHE_CONFIG["rrg_data"], show_spinner=False)
                     def fetch_price_1y(ticker):
                         try:
                             import yfinance as yf
@@ -31297,7 +31387,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                 ]
 
                 # ── Fetch live rates via yfinance fallback ──
-                @st.cache_data(ttl=1800, show_spinner=False)
+                @st.cache_data(ttl=CACHE_CONFIG["news"], show_spinner=False)
                 def _fetch_global_rates():
                     """Fetch rates via yfinance + FRED API fallback. Hardcoded hanya sebagai last resort."""
                     # ── Nilai hardcoded (last resort) — UPDATE MANUAL jika FRED dan yfinance gagal semua ──
@@ -32936,7 +33026,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                 # ══════════════════════════════════════════════════════════
                 # AUTO-GENERATE SCREENING JAM 20:30 WIB
                 # ══════════════════════════════════════════════════════════
-                @st.cache_data(ttl=300, show_spinner=False)
+                @st.cache_data(ttl=CACHE_CONFIG["broker_data"], show_spinner=False)
                 def _fetch_foreign_flow_market():
                     import urllib.request, json as _j
                     result = {}
