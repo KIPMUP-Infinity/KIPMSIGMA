@@ -14681,7 +14681,7 @@ if current_view == "dashboard":
         "  📊 SECTOR DATA  ",
         "  🗓️ SIGMA PLAN  ",
         "  ⚡ SIGMA SCREENER  ",
-        "  🔧 TOOLS  ",
+        "  🔧 SIGMA CALC  ",
         "  📖 PANDUAN  ",
     ])
     # tab_idxmap alias ke tab_live agar blok lama (globe dkk) tetap berjalan
@@ -35590,7 +35590,7 @@ function calc(){{
             "  📈 MARKET DATA  ",
             "  📊 SECTOR DATA  ",
             "  ⚡ SIGMA SCREENER  ",
-            "  🔧 TOOLS  ",
+            "  🔧 SIGMA CALC  ",
             "  📖 PANDUAN  ",
             "  🔍 CEK API  ",
         ])
@@ -37349,7 +37349,7 @@ components.html("""
 
     // ── SMART RESTORE: Retry sampai berhasil atau timeout ──────────────────
     var _restoreAttempts = 0;
-    var _maxAttempts = 12;  // 12 x 200ms = 2.4 detik max
+    var _maxAttempts = 20;  // 20 x 200ms = 4 detik max (lebih lama untuk render berat)
     var _lastTabCount = 0;
 
     function smartRestore() {
@@ -37390,7 +37390,8 @@ components.html("""
 
     // ── MUTATION OBSERVER: Deteksi Streamlit rerun yang inject ulang DOM ───
     var _mutationTimer = null;
-    var _userClicked = false;
+    var _userClickedTab = false;   // true hanya jika klik tab button
+    var _userClickedBtn = false;   // true jika klik button biasa (GENERATE/ANALYZE/dll)
 
     var observer = new MutationObserver(function(mutations) {
         // Throttle: jangan fire terlalu sering
@@ -37403,12 +37404,16 @@ components.html("""
             if (tabs.length !== _lastTabCount) {
                 _lastTabCount = tabs.length;
                 // DOM berubah (rerun) — restore tab setelah Streamlit selesai render
-                if (!_userClicked) {
+                // KECUALI jika user baru saja klik tab button sendiri
+                if (!_userClickedTab) {
                     _restoreAttempts = 0;
-                    setTimeout(smartRestore, 300);
+                    // Jika rerun dari button berat (GENERATE/ANALYZE), tunggu lebih lama
+                    var delay = _userClickedBtn ? 600 : 300;
+                    setTimeout(smartRestore, delay);
                 }
             }
-            _userClicked = false;
+            _userClickedTab = false;
+            _userClickedBtn = false;
         }, 80);
     });
 
@@ -37419,18 +37424,25 @@ components.html("""
         characterData: false
     });
 
-    // ── SAVE on click ───────────────────────────────────────────────────────
+    // ── SAVE on any click (tab button atau action button) ──────────────────
     pd.addEventListener('click', function(e) {
         var t = e.target;
-        // Cari tab button, termasuk klik pada child element (icon, span, dll)
-        var tabEl = t;
-        while (tabEl && tabEl !== pd.body) {
-            if (tabEl.getAttribute && tabEl.getAttribute('role') === 'tab') {
-                _userClicked = true;
+        // Cari tab button atau button biasa
+        var el = t;
+        while (el && el !== pd.body) {
+            if (el.getAttribute && el.getAttribute('role') === 'tab') {
+                // Klik tab button → simpan setelah tab berubah
+                _userClickedTab = true;
                 setTimeout(saveTabs, 150);
                 break;
             }
-            tabEl = tabEl.parentElement;
+            if (el.tagName === 'BUTTON' && el.getAttribute('role') !== 'tab') {
+                // Klik action button (GENERATE/ANALYZE/dll) → simpan SEKARANG sebelum rerun
+                _userClickedBtn = true;
+                saveTabs();  // simpan langsung tanpa delay
+                break;
+            }
+            el = el.parentElement;
         }
     }, true);
 
