@@ -34447,9 +34447,10 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
             _kc_sub     = text_sub
 
             # ── Sub-tabs
-            ktab_ara, ktab_avg = st.tabs([
+            ktab_ara, ktab_avg, ktab_spread = st.tabs([
                 "  📈 ARA / ARB Calculator  ",
                 "  📉 Average Down Calculator  ",
+                "  🌍 EM Spread Calculator  ",
             ])
 
             # ══════════════════════════════════════════════
@@ -35036,6 +35037,487 @@ function calculate() {{
 </body></html>"""
 
             components.html(_avg_html, height=1400, scrolling=True)
+
+        # ══════════════════════════════════════════════
+        # SUB-TAB 3 - EM SPREAD CALCULATOR
+        # ══════════════════════════════════════════════
+        with ktab_spread:
+            st.markdown(f"""
+            <div style='background:{_kc_bg};border:1px solid {_kc_border};border-left:3px solid {_kc_blue};
+            border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:20px;
+            font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{_kc_sub};line-height:1.85;'>
+            <span style='color:{_kc_blue};font-weight:700;letter-spacing:0.1em;font-size:0.8rem;'>🌍 TENTANG EM SPREAD CALCULATOR</span><br>
+            Kalkulator spread suku bunga <b style='color:{_kc_green};'>Emerging Market vs Developed Market</b> untuk menilai daya tarik investasi obligasi/instrumen pasar modal lintas negara.<br><br>
+            <b>Komponen Analisis:</b> Yield riil · Risk-adjusted spread · Credit premium · FX risk · Political risk · GDP growth · Debt/GDP ratio<br>
+            <b>Output:</b> Skor 0–100 · Rating: Sangat Menarik → Moderat → Hati-hati → Tidak Menarik · Sinyal: BUY / HOLD / AVOID
+            </div>
+            """, unsafe_allow_html=True)
+
+            _spread_html = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_kc_text};font-size:14px;}}
+.wrap{{max-width:900px;margin:0 auto;padding:0 4px;}}
+.section-title{{font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:{_kc_sub};
+  margin:20px 0 10px;display:flex;align-items:center;gap:10px;}}
+.section-title::before,.section-title::after{{content:'';flex:1;height:1px;background:{_kc_border};}}
+.grid2{{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:12px;}}
+.card{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:12px;padding:18px 20px;}}
+.card-em{{border-top:3px solid {_kc_blue};}}
+.card-dm{{border-top:3px solid {_kc_sub};}}
+.card-title{{font-size:0.8rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+  margin-bottom:14px;display:flex;align-items:center;gap:8px;}}
+.card-title.em{{color:{_kc_blue};}}
+.card-title.dm{{color:{_kc_sub};}}
+.field-lbl{{font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};
+  margin-bottom:4px;display:block;margin-top:10px;}}
+.inp{{width:100%;padding:9px 12px;background:rgba(255,255,255,0.04);border:1px solid {_kc_border};
+  border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:0.95rem;font-weight:600;
+  color:{_kc_text};outline:none;transition:border-color 0.18s;}}
+.inp:focus{{border-color:{_kc_blue};box-shadow:0 0 0 2px rgba(96,165,250,0.08);}}
+select.inp{{cursor:pointer;}}
+.presets{{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}}
+.preset-btn{{padding:5px 10px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;
+  font-weight:600;letter-spacing:0.06em;border:1px solid {_kc_border};border-radius:6px;
+  background:rgba(255,255,255,0.03);color:{_kc_sub};cursor:pointer;transition:all 0.15s;}}
+.preset-btn:hover{{border-color:{_kc_blue};color:{_kc_blue};background:rgba(96,165,250,0.06);}}
+.preset-btn.active{{border-color:{_kc_blue};color:{_kc_blue};background:rgba(96,165,250,0.1);}}
+.calc-btn{{width:100%;padding:13px;background:linear-gradient(135deg,rgba(96,165,250,0.18),rgba(96,165,250,0.12));
+  border:1px solid rgba(96,165,250,0.35);border-radius:8px;font-family:'IBM Plex Mono',monospace;
+  font-size:0.875rem;font-weight:700;letter-spacing:0.1em;color:{_kc_blue};cursor:pointer;
+  transition:all 0.18s;text-transform:uppercase;margin-top:16px;}}
+.calc-btn:hover{{background:linear-gradient(135deg,rgba(96,165,250,0.28),rgba(96,165,250,0.2));
+  box-shadow:0 0 18px rgba(96,165,250,0.15);}}
+.result-wrap{{display:none;margin-top:20px;}}
+.result-wrap.show{{display:block;}}
+.score-card{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:14px;padding:22px 24px;
+  text-align:center;margin-bottom:16px;position:relative;overflow:hidden;}}
+.score-card::before{{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--sig-color);}}
+.score-big{{font-size:3.5rem;font-weight:700;line-height:1;color:var(--sig-color);}}
+.score-label{{font-size:0.7rem;letter-spacing:0.14em;text-transform:uppercase;color:{_kc_sub};margin-top:4px;}}
+.rating-text{{font-size:1.2rem;font-weight:700;color:var(--sig-color);margin-top:8px;}}
+.signal-badge{{display:inline-block;padding:5px 18px;border-radius:20px;font-size:0.8rem;
+  font-weight:700;letter-spacing:0.1em;background:rgba(0,0,0,0.3);
+  border:2px solid var(--sig-color);color:var(--sig-color);margin-top:8px;}}
+.metrics-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}}
+.metric-card{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:10px;padding:14px 12px;text-align:center;}}
+.metric-val{{font-size:1.3rem;font-weight:700;line-height:1;}}
+.metric-lbl{{font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-top:4px;}}
+.factors-card{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:12px;padding:18px 20px;margin-bottom:16px;}}
+.fac-row{{display:flex;align-items:center;gap:10px;margin-bottom:10px;}}
+.fac-lbl{{width:80px;font-size:0.72rem;color:{_kc_sub};text-align:right;flex-shrink:0;}}
+.fac-bar-bg{{flex:1;height:18px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden;}}
+.fac-bar{{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;
+  font-size:0.68rem;font-weight:700;transition:width 0.6s ease;}}
+.fac-val{{width:44px;font-size:0.8rem;font-weight:700;text-align:right;flex-shrink:0;}}
+.breakdown-grid{{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}}
+.breakdown-card{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:10px;padding:14px 16px;}}
+.breakdown-title{{font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;font-weight:700;}}
+.breakdown-row{{display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:5px;color:{_kc_sub};}}
+.breakdown-row span:last-child{{color:{_kc_text};font-weight:600;}}
+.compare-section{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:12px;padding:18px 20px;margin-bottom:16px;}}
+.compare-title{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:14px;text-align:center;}}
+.country-row{{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);}}
+.country-row:last-child{{border-bottom:none;}}
+.country-flag{{font-size:1.1rem;width:28px;flex-shrink:0;}}
+.country-name{{width:110px;font-size:0.75rem;font-weight:600;flex-shrink:0;}}
+.country-bar-bg{{flex:1;height:16px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;}}
+.country-bar{{height:100%;border-radius:3px;transition:width 0.6s ease;}}
+.country-spread{{width:55px;text-align:right;font-size:0.75rem;font-weight:700;flex-shrink:0;}}
+.country-signal{{width:48px;text-align:center;font-size:0.65rem;font-weight:700;letter-spacing:0.06em;
+  padding:2px 6px;border-radius:10px;flex-shrink:0;}}
+.sig-buy{{background:rgba(38,166,154,0.15);color:{_kc_green};border:1px solid rgba(38,166,154,0.3);}}
+.sig-hold{{background:rgba(167,139,250,0.15);color:{_kc_gold};border:1px solid rgba(167,139,250,0.3);}}
+.sig-avoid{{background:rgba(242,54,69,0.15);color:{_kc_red};border:1px solid rgba(242,54,69,0.3);}}
+.info-row{{font-size:0.7rem;color:{_kc_sub};text-align:center;margin-top:12px;}}
+@media(max-width:640px){{
+  .grid2,.metrics-grid,.breakdown-grid{{grid-template-columns:1fr;}}
+  .score-big{{font-size:2.5rem;}}
+  .country-name{{width:80px;}}
+}}
+</style></head><body>
+<div class="wrap">
+
+<div class="section-title">BENCHMARK CEPAT</div>
+<div style="margin-bottom:14px;">
+  <div style="font-size:0.68rem;letter-spacing:0.08em;color:{_kc_sub};margin-bottom:8px;">Pilih negara EM (vs benchmark DM):</div>
+  <div class="presets" id="presets-em">
+    <button class="preset-btn" onclick="loadPreset('id')">🇮🇩 Indonesia</button>
+    <button class="preset-btn" onclick="loadPreset('br')">🇧🇷 Brasil</button>
+    <button class="preset-btn" onclick="loadPreset('in')">🇮🇳 India</button>
+    <button class="preset-btn" onclick="loadPreset('tr')">🇹🇷 Turki</button>
+    <button class="preset-btn" onclick="loadPreset('mx')">🇲🇽 Meksiko</button>
+    <button class="preset-btn" onclick="loadPreset('za')">🇿🇦 Afrika Selatan</button>
+    <button class="preset-btn" onclick="loadPreset('vn')">🇻🇳 Vietnam</button>
+    <button class="preset-btn" onclick="loadPreset('th')">🇹🇭 Thailand</button>
+  </div>
+  <div style="font-size:0.68rem;letter-spacing:0.08em;color:{_kc_sub};margin:8px 0;">Pilih negara DM (benchmark):</div>
+  <div class="presets" id="presets-dm">
+    <button class="preset-btn active" onclick="loadDM('us')">🇺🇸 AS (10Y)</button>
+    <button class="preset-btn" onclick="loadDM('de')">🇩🇪 Jerman</button>
+    <button class="preset-btn" onclick="loadDM('jp')">🇯🇵 Jepang</button>
+    <button class="preset-btn" onclick="loadDM('gb')">🇬🇧 Inggris</button>
+    <button class="preset-btn" onclick="loadDM('au')">🇦🇺 Australia</button>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card card-em">
+    <div class="card-title em">🔵 Emerging Market</div>
+    <label class="field-lbl" style="margin-top:0;">Yield Obligasi (%)</label>
+    <input class="inp" id="em-yield" type="number" step="0.1" placeholder="mis. 7.0">
+    <label class="field-lbl">Inflasi (%)</label>
+    <input class="inp" id="em-infl" type="number" step="0.1" placeholder="mis. 3.0">
+    <label class="field-lbl">Credit Rating</label>
+    <select class="inp" id="em-rating">
+      <option value="AAA">AAA</option><option value="AA">AA</option><option value="A">A</option>
+      <option value="BBB" selected>BBB</option><option value="BB">BB</option>
+      <option value="B">B</option><option value="CCC">CCC</option>
+    </select>
+    <label class="field-lbl">Risiko FX (%)</label>
+    <input class="inp" id="em-fx" type="number" step="0.1" placeholder="mis. 2.0">
+    <label class="field-lbl">Risiko Politik (0–10)</label>
+    <input class="inp" id="em-pol" type="number" step="0.5" min="0" max="10" placeholder="mis. 3.5">
+    <label class="field-lbl">Pertumbuhan GDP (%)</label>
+    <input class="inp" id="em-gdp" type="number" step="0.1" placeholder="mis. 5.1">
+    <label class="field-lbl">Debt/GDP (%)</label>
+    <input class="inp" id="em-debt" type="number" step="1" placeholder="mis. 40">
+  </div>
+  <div class="card card-dm">
+    <div class="card-title dm">⚪ Developed Market</div>
+    <label class="field-lbl" style="margin-top:0;">Yield Obligasi (%)</label>
+    <input class="inp" id="dm-yield" type="number" step="0.1" placeholder="mis. 4.5">
+    <label class="field-lbl">Inflasi (%)</label>
+    <input class="inp" id="dm-infl" type="number" step="0.1" placeholder="mis. 2.8">
+    <label class="field-lbl">Credit Rating</label>
+    <select class="inp" id="dm-rating">
+      <option value="AAA" selected>AAA</option><option value="AA">AA</option><option value="A">A</option>
+      <option value="BBB">BBB</option><option value="BB">BB</option>
+      <option value="B">B</option><option value="CCC">CCC</option>
+    </select>
+    <label class="field-lbl">Risiko FX (%)</label>
+    <input class="inp" id="dm-fx" type="number" step="0.1" placeholder="mis. 0.0">
+    <label class="field-lbl">Risiko Politik (0–10)</label>
+    <input class="inp" id="dm-pol" type="number" step="0.5" min="0" max="10" placeholder="mis. 1.5">
+    <label class="field-lbl">Pertumbuhan GDP (%)</label>
+    <input class="inp" id="dm-gdp" type="number" step="0.1" placeholder="mis. 2.5">
+    <label class="field-lbl">Debt/GDP (%)</label>
+    <input class="inp" id="dm-debt" type="number" step="1" placeholder="mis. 122">
+  </div>
+</div>
+
+<button class="calc-btn" onclick="calculate()">&#9654; HITUNG SPREAD &amp; DAYA TARIK</button>
+
+<div class="result-wrap" id="result-wrap">
+  <div class="section-title">HASIL ANALISIS</div>
+
+  <div class="score-card" id="score-card">
+    <div class="score-big" id="score-val">—</div>
+    <div class="score-label">SKOR DAYA TARIK (0–100)</div>
+    <div class="rating-text" id="rating-text">—</div>
+    <div class="signal-badge" id="signal-badge">—</div>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-val" id="m-nominal">—</div>
+      <div class="metric-lbl">Spread Nominal</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val" id="m-real">—</div>
+      <div class="metric-lbl">Spread Riil</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val" id="m-radj">—</div>
+      <div class="metric-lbl">Risk-Adjusted</div>
+    </div>
+  </div>
+
+  <div class="factors-card">
+    <div class="section-title" style="margin-top:0;">FAKTOR SKOR</div>
+    <div class="fac-row">
+      <div class="fac-lbl">Spread</div>
+      <div class="fac-bar-bg"><div class="fac-bar" id="fb-spread" style="width:0%"></div></div>
+      <div class="fac-val" id="fv-spread">—</div>
+    </div>
+    <div class="fac-row">
+      <div class="fac-lbl">GDP</div>
+      <div class="fac-bar-bg"><div class="fac-bar" id="fb-gdp" style="width:0%"></div></div>
+      <div class="fac-val" id="fv-gdp">—</div>
+    </div>
+    <div class="fac-row">
+      <div class="fac-lbl">Debt</div>
+      <div class="fac-bar-bg"><div class="fac-bar" id="fb-debt" style="width:0%"></div></div>
+      <div class="fac-val" id="fv-debt">—</div>
+    </div>
+    <div class="fac-row">
+      <div class="fac-lbl">Politik</div>
+      <div class="fac-bar-bg"><div class="fac-bar" id="fb-pol" style="width:0%"></div></div>
+      <div class="fac-val" id="fv-pol">—</div>
+    </div>
+  </div>
+
+  <div class="breakdown-grid">
+    <div class="breakdown-card">
+      <div class="breakdown-title" style="color:{_kc_blue};">🔵 EM Breakdown</div>
+      <div class="breakdown-row"><span>Yield nominal</span><span id="em-b-ny">—</span></div>
+      <div class="breakdown-row"><span>Yield riil</span><span id="em-b-ry">—</span></div>
+      <div class="breakdown-row"><span>Credit premium</span><span id="em-b-cp">—</span></div>
+      <div class="breakdown-row"><span>FX risk</span><span id="em-b-fx">—</span></div>
+      <div class="breakdown-row"><span>Political premium</span><span id="em-b-pp">—</span></div>
+      <div class="breakdown-row"><span>Debt premium</span><span id="em-b-dp">—</span></div>
+      <div class="breakdown-row" style="border-top:1px solid {_kc_border};padding-top:5px;margin-top:5px;color:{_kc_text};">
+        <span style="font-weight:700;">Net yield</span><span id="em-b-net" style="font-weight:700;">—</span>
+      </div>
+    </div>
+    <div class="breakdown-card">
+      <div class="breakdown-title" style="color:{_kc_sub};">⚪ DM Breakdown</div>
+      <div class="breakdown-row"><span>Yield nominal</span><span id="dm-b-ny">—</span></div>
+      <div class="breakdown-row"><span>Yield riil</span><span id="dm-b-ry">—</span></div>
+      <div class="breakdown-row"><span>Credit premium</span><span id="dm-b-cp">—</span></div>
+      <div class="breakdown-row"><span>FX risk</span><span id="dm-b-fx">—</span></div>
+      <div class="breakdown-row"><span>Political premium</span><span id="dm-b-pp">—</span></div>
+      <div class="breakdown-row"><span>Debt premium</span><span id="dm-b-dp">—</span></div>
+      <div class="breakdown-row" style="border-top:1px solid {_kc_border};padding-top:5px;margin-top:5px;color:{_kc_text};">
+        <span style="font-weight:700;">Net yield</span><span id="dm-b-net" style="font-weight:700;">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="compare-section">
+    <div class="compare-title">PERBANDINGAN 10 NEGARA EM vs BENCHMARK DM SAAT INI</div>
+    <div id="country-list"></div>
+    <div class="info-row" id="compare-info">Pilih DM benchmark di atas lalu hitung untuk memperbarui tabel.</div>
+  </div>
+</div>
+</div>
+
+<script>
+const RATING_PREMIUM = {{AAA:0,AA:0.3,A:0.6,BBB:1.2,BB:2.0,B:3.5,CCC:5.5}};
+
+const PRESETS_EM = {{
+  id:{{name:"🇮🇩 Indonesia",yield_pct:7.0,inflation:3.0,credit_rating:"BBB",fx_risk:2.0,political_risk:3.5,gdp_growth:5.1,debt_to_gdp:40}},
+  br:{{name:"🇧🇷 Brasil",yield_pct:13.5,inflation:4.8,credit_rating:"BB",fx_risk:4.0,political_risk:5.5,gdp_growth:2.8,debt_to_gdp:88}},
+  in:{{name:"🇮🇳 India",yield_pct:7.1,inflation:4.5,credit_rating:"BBB",fx_risk:2.5,political_risk:4.0,gdp_growth:6.5,debt_to_gdp:84}},
+  tr:{{name:"🇹🇷 Turki",yield_pct:28.0,inflation:45.0,credit_rating:"B",fx_risk:8.0,political_risk:7.0,gdp_growth:3.5,debt_to_gdp:45}},
+  mx:{{name:"🇲🇽 Meksiko",yield_pct:10.5,inflation:4.2,credit_rating:"BBB",fx_risk:3.0,political_risk:4.5,gdp_growth:1.8,debt_to_gdp:55}},
+  za:{{name:"🇿🇦 Afrika Selatan",yield_pct:10.8,inflation:5.5,credit_rating:"BB",fx_risk:4.5,political_risk:6.0,gdp_growth:1.5,debt_to_gdp:72}},
+  vn:{{name:"🇻🇳 Vietnam",yield_pct:5.8,inflation:3.5,credit_rating:"BB",fx_risk:2.0,political_risk:3.0,gdp_growth:6.0,debt_to_gdp:37}},
+  th:{{name:"🇹🇭 Thailand",yield_pct:3.5,inflation:1.5,credit_rating:"BBB",fx_risk:1.5,political_risk:4.0,gdp_growth:3.2,debt_to_gdp:62}},
+}};
+const PRESETS_DM = {{
+  us:{{name:"🇺🇸 AS",yield_pct:4.5,inflation:2.8,credit_rating:"AAA",fx_risk:0.0,political_risk:1.5,gdp_growth:2.5,debt_to_gdp:122}},
+  de:{{name:"🇩🇪 Jerman",yield_pct:2.8,inflation:2.2,credit_rating:"AAA",fx_risk:0.5,political_risk:1.0,gdp_growth:0.5,debt_to_gdp:65}},
+  jp:{{name:"🇯🇵 Jepang",yield_pct:1.0,inflation:2.5,credit_rating:"A",fx_risk:1.0,political_risk:1.0,gdp_growth:1.0,debt_to_gdp:255}},
+  gb:{{name:"🇬🇧 Inggris",yield_pct:4.3,inflation:2.6,credit_rating:"AA",fx_risk:0.5,political_risk:1.5,gdp_growth:1.2,debt_to_gdp:98}},
+  au:{{name:"🇦🇺 Australia",yield_pct:4.4,inflation:3.2,credit_rating:"AAA",fx_risk:0.5,political_risk:1.0,gdp_growth:2.0,debt_to_gdp:55}},
+}};
+
+let activeDM = 'us';
+
+function analyzeMarket(m) {{
+  const rp = RATING_PREMIUM[m.credit_rating] || 0;
+  const realYield = m.yield_pct - m.inflation;
+  const creditPremium = rp;
+  const polPremium = m.political_risk * 0.3;
+  const excessDebt = Math.max(0, m.debt_to_gdp - (m.debt_threshold || 80));
+  const debtPremium = excessDebt * 0.02;
+  const totalRisk = creditPremium + m.fx_risk + polPremium + debtPremium;
+  const netYield = realYield - totalRisk;
+  return {{nominal_yield:m.yield_pct,real_yield:realYield,credit_premium:creditPremium,
+    fx_risk:m.fx_risk,political_premium:polPremium,debt_premium:debtPremium,
+    total_risk:totalRisk,net_yield:netYield}};
+}}
+
+function calcSpread(em, dm) {{
+  const ea = analyzeMarket(em), da = analyzeMarket(dm);
+  const nomSpread = ea.nominal_yield - da.nominal_yield;
+  const realSpread = ea.real_yield - da.real_yield;
+  const raSpread = ea.net_yield - da.net_yield;
+  let score = 50 + Math.min(raSpread*8,25) + Math.min((em.gdp_growth-dm.gdp_growth)*2.5,15)
+              - Math.max((em.debt_to_gdp-dm.debt_to_gdp)*0.05,0)
+              - (em.political_risk-dm.political_risk)*1.5;
+  score = Math.max(0,Math.min(100,score));
+  let rating,signal;
+  if(raSpread>2.0){{rating="Sangat Menarik";signal="BUY";}}
+  else if(raSpread>0.5){{rating="Moderat";signal="HOLD";}}
+  else if(raSpread>0.0){{rating="Hati-hati";signal="HOLD";}}
+  else{{rating="Tidak Menarik";signal="AVOID";}}
+  const spreadF = Math.max(0,Math.min(100,50+raSpread*10));
+  const gdpF = Math.max(0,Math.min(100,50+(em.gdp_growth-dm.gdp_growth)*10));
+  const debtF = Math.max(0,Math.min(100,100-Math.max(0,em.debt_to_gdp-dm.debt_to_gdp)*0.5));
+  const polF = Math.max(0,Math.min(100,100-(em.political_risk-dm.political_risk)*10));
+  return {{em:ea,dm:da,nominal_spread:nomSpread,real_spread:realSpread,
+    risk_adjusted_spread:raSpread,score:Math.round(score*100)/100,
+    rating,signal,factors:{{spread:spreadF,gdp:gdpF,debt:debtF,politics:polF}}}};
+}}
+
+function fmt(v,dec=2){{const s=v>=0?'+':'';return s+v.toFixed(dec)+'%';}}
+function fmtN(v,dec=2){{return v.toFixed(dec)+'%';}}
+
+function sigColor(sig){{
+  if(sig==='BUY')return'{_kc_green}';
+  if(sig==='AVOID')return'{_kc_red}';
+  return'{_kc_gold}';
+}}
+function scoreColor(score){{
+  if(score>=65)return'{_kc_green}';
+  if(score>=45)return'{_kc_gold}';
+  return'{_kc_red}';
+}}
+
+function loadPreset(key) {{
+  const p = PRESETS_EM[key]; if(!p)return;
+  document.getElementById('em-yield').value=p.yield_pct;
+  document.getElementById('em-infl').value=p.inflation;
+  document.getElementById('em-rating').value=p.credit_rating;
+  document.getElementById('em-fx').value=p.fx_risk;
+  document.getElementById('em-pol').value=p.political_risk;
+  document.getElementById('em-gdp').value=p.gdp_growth;
+  document.getElementById('em-debt').value=p.debt_to_gdp;
+  document.querySelectorAll('#presets-em .preset-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+}}
+
+function loadDM(key) {{
+  const p = PRESETS_DM[key]; if(!p)return;
+  activeDM = key;
+  document.getElementById('dm-yield').value=p.yield_pct;
+  document.getElementById('dm-infl').value=p.inflation;
+  document.getElementById('dm-rating').value=p.credit_rating;
+  document.getElementById('dm-fx').value=p.fx_risk;
+  document.getElementById('dm-pol').value=p.political_risk;
+  document.getElementById('dm-gdp').value=p.gdp_growth;
+  document.getElementById('dm-debt').value=p.debt_to_gdp;
+  document.querySelectorAll('#presets-dm .preset-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+}}
+
+function getEM() {{
+  return {{
+    yield_pct:parseFloat(document.getElementById('em-yield').value)||0,
+    inflation:parseFloat(document.getElementById('em-infl').value)||0,
+    credit_rating:document.getElementById('em-rating').value,
+    fx_risk:parseFloat(document.getElementById('em-fx').value)||0,
+    political_risk:parseFloat(document.getElementById('em-pol').value)||0,
+    gdp_growth:parseFloat(document.getElementById('em-gdp').value)||0,
+    debt_to_gdp:parseFloat(document.getElementById('em-debt').value)||0,
+    debt_threshold:80
+  }};
+}}
+function getDM() {{
+  return {{
+    yield_pct:parseFloat(document.getElementById('dm-yield').value)||0,
+    inflation:parseFloat(document.getElementById('dm-infl').value)||0,
+    credit_rating:document.getElementById('dm-rating').value,
+    fx_risk:parseFloat(document.getElementById('dm-fx').value)||0,
+    political_risk:parseFloat(document.getElementById('dm-pol').value)||0,
+    gdp_growth:parseFloat(document.getElementById('dm-gdp').value)||0,
+    debt_to_gdp:parseFloat(document.getElementById('dm-debt').value)||0,
+    debt_threshold:120
+  }};
+}}
+
+function setBar(barId,valId,val,color){{
+  const pct=Math.max(0,Math.min(100,val));
+  document.getElementById(barId).style.width=pct+'%';
+  document.getElementById(barId).style.background=color;
+  document.getElementById(barId).textContent=Math.round(pct);
+  document.getElementById(valId).textContent=Math.round(pct);
+  document.getElementById(valId).style.color=color;
+}}
+
+function calculate() {{
+  const em=getEM(), dm=getDM();
+  const r=calcSpread(em,dm);
+  const col=scoreColor(r.score), sigCol=sigColor(r.signal);
+
+  document.getElementById('result-wrap').classList.add('show');
+  const sc=document.getElementById('score-card');
+  sc.style.setProperty('--sig-color',col);
+  document.getElementById('score-val').textContent=r.score.toFixed(1);
+  document.getElementById('score-val').style.color=col;
+  document.getElementById('rating-text').textContent=r.rating;
+  document.getElementById('rating-text').style.color=col;
+  const sb=document.getElementById('signal-badge');
+  sb.textContent=r.signal;
+  sb.style.setProperty('--sig-color',sigCol);
+
+  document.getElementById('m-nominal').textContent=fmt(r.nominal_spread);
+  document.getElementById('m-nominal').style.color=r.nominal_spread>=0?'{_kc_green}':'{_kc_red}';
+  document.getElementById('m-real').textContent=fmt(r.real_spread);
+  document.getElementById('m-real').style.color=r.real_spread>=0?'{_kc_green}':'{_kc_red}';
+  document.getElementById('m-radj').textContent=fmt(r.risk_adjusted_spread);
+  document.getElementById('m-radj').style.color=r.risk_adjusted_spread>=0?'{_kc_green}':'{_kc_red}';
+
+  const fColor=(v)=>v>=65?'{_kc_green}':v>=40?'{_kc_gold}':'{_kc_red}';
+  setBar('fb-spread','fv-spread',r.factors.spread,fColor(r.factors.spread));
+  setBar('fb-gdp','fv-gdp',r.factors.gdp,fColor(r.factors.gdp));
+  setBar('fb-debt','fv-debt',r.factors.debt,fColor(r.factors.debt));
+  setBar('fb-pol','fv-pol',r.factors.politics,fColor(r.factors.politics));
+
+  const ea=r.em, da=r.dm;
+  const sign=(v)=>(v>=0?'+':'')+v.toFixed(2)+'%';
+  document.getElementById('em-b-ny').textContent=fmtN(ea.nominal_yield);
+  document.getElementById('em-b-ry').textContent=sign(ea.real_yield);
+  document.getElementById('em-b-cp').textContent=fmtN(ea.credit_premium);
+  document.getElementById('em-b-fx').textContent=fmtN(ea.fx_risk);
+  document.getElementById('em-b-pp').textContent=fmtN(ea.political_premium);
+  document.getElementById('em-b-dp').textContent=fmtN(ea.debt_premium);
+  document.getElementById('em-b-net').textContent=sign(ea.net_yield);
+  document.getElementById('em-b-net').style.color=ea.net_yield>=0?'{_kc_green}':'{_kc_red}';
+  document.getElementById('dm-b-ny').textContent=fmtN(da.nominal_yield);
+  document.getElementById('dm-b-ry').textContent=sign(da.real_yield);
+  document.getElementById('dm-b-cp').textContent=fmtN(da.credit_premium);
+  document.getElementById('dm-b-fx').textContent=fmtN(da.fx_risk);
+  document.getElementById('dm-b-pp').textContent=fmtN(da.political_premium);
+  document.getElementById('dm-b-dp').textContent=fmtN(da.debt_premium);
+  document.getElementById('dm-b-net').textContent=sign(da.net_yield);
+  document.getElementById('dm-b-net').style.color=da.net_yield>=0?'{_kc_green}':'{_kc_red}';
+
+  // Country comparison table
+  const dmData=PRESETS_DM[activeDM]||PRESETS_DM['us'];
+  const dmM={{...dmData,debt_threshold:120}};
+  const allEM=[
+    {{key:'id',flag:'🇮🇩',name:'Indonesia'}},{{key:'br',flag:'🇧🇷',name:'Brasil'}},
+    {{key:'in',flag:'🇮🇳',name:'India'}},{{key:'tr',flag:'🇹🇷',name:'Turki'}},
+    {{key:'mx',flag:'🇲🇽',name:'Meksiko'}},{{key:'za',flag:'🇿🇦',name:'Afr Selatan'}},
+    {{key:'vn',flag:'🇻🇳',name:'Vietnam'}},{{key:'th',flag:'🇹🇭',name:'Thailand'}},
+    {{key:'br',flag:'🇧🇷',name:'Brasil2'}}
+  ];
+  const rows=[];
+  for(const c of [{{'key':'id','flag':'🇮🇩','name':'Indonesia'}},{{'key':'br','flag':'🇧🇷','name':'Brasil'}},{{'key':'in','flag':'🇮🇳','name':'India'}},{{'key':'tr','flag':'🇹🇷','name':'Turki'}},{{'key':'mx','flag':'🇲🇽','name':'Meksiko'}},{{'key':'za','flag':'🇿🇦','name':'Afr Selatan'}},{{'key':'vn','flag':'🇻🇳','name':'Vietnam'}},{{'key':'th','flag':'🇹🇭','name':'Thailand'}}]){{
+    const emD=PRESETS_EM[c.key]; if(!emD)continue;
+    const res=calcSpread({{...emD,debt_threshold:80}},dmM);
+    rows.push({{...c,ra:res.risk_adjusted_spread,sig:res.signal}});
+  }}
+  rows.sort((a,b)=>b.ra-a.ra);
+  const maxRA=Math.max(...rows.map(r=>Math.abs(r.ra)),1);
+  let html='';
+  for(const row of rows){{
+    const pct=Math.max(2,Math.min(100,(row.ra/maxRA)*50+50));
+    const bc=row.ra>=2?'{_kc_green}':row.ra>=0.5?'{_kc_gold}':row.ra>=0?'#f59e0b':'{_kc_red}';
+    const sc2=row.sig==='BUY'?'sig-buy':row.sig==='AVOID'?'sig-avoid':'sig-hold';
+    html+=`<div class="country-row">
+      <div class="country-flag">${{row.flag}}</div>
+      <div class="country-name">${{row.name}}</div>
+      <div class="country-bar-bg"><div class="country-bar" style="width:${{pct}}%;background:${{bc}};"></div></div>
+      <div class="country-spread" style="color:${{bc}}">${{fmt(row.ra)}}</div>
+      <div class="country-signal ${{sc2}}">${{row.sig}}</div>
+    </div>`;
+  }}
+  document.getElementById('country-list').innerHTML=html;
+  document.getElementById('compare-info').textContent='Risk-adjusted spread vs '+dmData.name+' · Urutan dari terbaik ke terburuk';
+}}
+
+// Load default: Indonesia vs AS
+loadDM('us');
+loadPreset('id');
+</script>
+</body></html>"""
+
+            components.html(_spread_html, height=1800, scrolling=True)
 
 
     with tab_panduan:
