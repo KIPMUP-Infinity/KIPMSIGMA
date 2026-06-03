@@ -34447,9 +34447,10 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
             _kc_sub     = text_sub
 
             # ── Sub-tabs
-            ktab_ara, ktab_avg = st.tabs([
+            ktab_ara, ktab_avg, ktab_spread = st.tabs([
                 "  📈 ARA / ARB Calculator  ",
                 "  📉 Average Down Calculator  ",
+                "  🌍 EM Spread Calculator  ",
             ])
 
             # ══════════════════════════════════════════════
@@ -35036,6 +35037,459 @@ function calculate() {{
 </body></html>"""
 
             components.html(_avg_html, height=1400, scrolling=True)
+
+        # ══════════════════════════════════════════════
+        # SUB-TAB 3 — EM SPREAD CALCULATOR
+        # ══════════════════════════════════════════════
+        with ktab_spread:
+            st.markdown(f"""
+            <div style='background:{_kc_bg};border:1px solid {_kc_border};border-left:3px solid {_kc_blue};
+            border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:20px;
+            font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{_kc_sub};line-height:1.85;'>
+            <span style='color:{_kc_blue};font-weight:700;letter-spacing:0.1em;font-size:0.8rem;'>🌍 TENTANG EM SPREAD CALCULATOR</span><br>
+            Kalkulator spread suku bunga <b style='color:{_kc_green};'>Emerging Market vs Developed Market</b> untuk menilai daya tarik investasi obligasi &amp; instrumen pasar modal lintas negara.<br><br>
+            <b>Komponen:</b> Yield riil · Risk-adjusted spread · Credit premium · FX risk · Political risk · GDP growth · Debt/GDP<br>
+            <b>Output:</b> Skor 0–100 · Rating: Sangat Menarik → Moderat → Hati-hati → Tidak Menarik · Sinyal: BUY / HOLD / AVOID
+            </div>
+            """, unsafe_allow_html=True)
+
+            _spread_html = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_kc_text};font-size:14px;}}
+.wrap{{max-width:900px;margin:0 auto;padding:0 4px 40px;}}
+
+/* Section divider */
+.sec-title{{font-size:0.68rem;letter-spacing:0.16em;text-transform:uppercase;color:{_kc_sub};
+  margin:22px 0 12px;display:flex;align-items:center;gap:10px;}}
+.sec-title::before,.sec-title::after{{content:'';flex:1;height:1px;background:{_kc_border};}}
+
+/* Preset buttons */
+.presets{{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;}}
+.pre-lbl{{font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:6px;}}
+.pbtn{{padding:5px 11px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;font-weight:600;
+  letter-spacing:0.05em;border:1px solid {_kc_border};border-radius:6px;
+  background:rgba(255,255,255,0.03);color:{_kc_sub};cursor:pointer;transition:all 0.15s;}}
+.pbtn:hover{{border-color:{_kc_blue};color:{_kc_blue};background:rgba(96,165,250,0.06);}}
+.pbtn.active{{border-color:{_kc_blue};color:{_kc_blue};background:rgba(96,165,250,0.1);font-weight:700;}}
+
+/* Input cards */
+.grid2{{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0;}}
+.icard{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:12px;padding:16px 18px;}}
+.icard-em{{border-top:3px solid {_kc_blue};}}
+.icard-dm{{border-top:3px solid rgba(100,116,139,0.6);}}
+.icard-title{{font-size:0.75rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+  margin-bottom:12px;}}
+.icard-title.em{{color:{_kc_blue};}}
+.icard-title.dm{{color:#64748b;}}
+.flbl{{font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};
+  margin-bottom:3px;display:block;margin-top:9px;}}
+.inp{{width:100%;padding:8px 11px;background:rgba(255,255,255,0.04);border:1px solid {_kc_border};
+  border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:0.9rem;font-weight:600;
+  color:{_kc_text};outline:none;transition:border-color 0.18s;}}
+.inp:focus{{border-color:{_kc_blue};box-shadow:0 0 0 2px rgba(96,165,250,0.08);}}
+select.inp{{cursor:pointer;}}
+
+/* Calc button */
+.calc-btn{{width:100%;padding:13px;background:linear-gradient(135deg,rgba(96,165,250,0.15),rgba(96,165,250,0.1));
+  border:1px solid rgba(96,165,250,0.35);border-radius:9px;font-family:'IBM Plex Mono',monospace;
+  font-size:0.875rem;font-weight:700;letter-spacing:0.12em;color:{_kc_blue};cursor:pointer;
+  transition:all 0.18s;text-transform:uppercase;margin-top:4px;}}
+.calc-btn:hover{{background:linear-gradient(135deg,rgba(96,165,250,0.25),rgba(96,165,250,0.18));
+  box-shadow:0 0 20px rgba(96,165,250,0.12);transform:translateY(-1px);}}
+
+/* Result section */
+.res{{display:none;}}
+.res.show{{display:block;}}
+
+/* Score card */
+.score-card{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:14px;
+  padding:24px;text-align:center;margin-bottom:14px;position:relative;overflow:hidden;}}
+.score-card::before{{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--sc);}}
+.score-num{{font-size:3.8rem;font-weight:700;line-height:1;color:var(--sc);font-variant-numeric:tabular-nums;}}
+.score-lbl{{font-size:0.65rem;letter-spacing:0.16em;text-transform:uppercase;color:{_kc_sub};margin-top:3px;}}
+.rating-txt{{font-size:1.15rem;font-weight:700;margin-top:10px;color:var(--sc);}}
+.sig-badge{{display:inline-block;margin-top:8px;padding:5px 20px;border-radius:20px;
+  font-size:0.8rem;font-weight:700;letter-spacing:0.12em;border:2px solid var(--sc);
+  color:var(--sc);background:rgba(0,0,0,0.25);}}
+
+/* 3 metric cards */
+.m3{{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}}
+.mc{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:10px;padding:13px 10px;text-align:center;}}
+.mc-val{{font-size:1.25rem;font-weight:700;line-height:1;}}
+.mc-lbl{{font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-top:4px;}}
+
+/* Factor bars */
+.fac-card{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:12px;padding:16px 18px;margin-bottom:14px;}}
+.fac-row{{display:flex;align-items:center;gap:10px;margin-bottom:9px;}}
+.fac-lbl{{width:72px;font-size:0.7rem;color:{_kc_sub};text-align:right;flex-shrink:0;}}
+.fac-bg{{flex:1;height:18px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden;}}
+.fac-bar{{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:7px;
+  font-size:0.65rem;font-weight:700;transition:width 0.55s ease;white-space:nowrap;}}
+.fac-num{{width:38px;font-size:0.78rem;font-weight:700;text-align:right;flex-shrink:0;}}
+
+/* Breakdown */
+.bk-grid{{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}}
+.bk-card{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:10px;padding:14px 15px;}}
+.bk-title{{font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin-bottom:10px;}}
+.bk-row{{display:flex;justify-content:space-between;font-size:0.72rem;margin-bottom:4px;color:{_kc_sub};}}
+.bk-row b{{color:{_kc_text};font-weight:600;}}
+.bk-sep{{border-top:1px solid {_kc_border};margin:6px 0;}}
+
+/* Country compare */
+.cmp-card{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:12px;padding:16px 18px;margin-bottom:14px;}}
+.cmp-title{{font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:{_kc_sub};
+  text-align:center;margin-bottom:14px;}}
+.crow{{display:flex;align-items:center;gap:9px;padding:7px 0;
+  border-bottom:1px solid rgba(255,255,255,0.04);}}
+.crow:last-child{{border-bottom:none;}}
+.crow-flag{{font-size:1.05rem;width:26px;flex-shrink:0;text-align:center;}}
+.crow-name{{width:105px;font-size:0.72rem;font-weight:600;flex-shrink:0;}}
+.crow-bg{{flex:1;height:15px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;}}
+.crow-bar{{height:100%;border-radius:3px;transition:width 0.55s ease;}}
+.crow-val{{width:52px;text-align:right;font-size:0.72rem;font-weight:700;flex-shrink:0;}}
+.crow-sig{{width:44px;text-align:center;font-size:0.62rem;font-weight:700;letter-spacing:0.05em;
+  padding:2px 5px;border-radius:8px;flex-shrink:0;}}
+.s-buy{{background:rgba(38,166,154,0.12);color:{_kc_green};border:1px solid rgba(38,166,154,0.25);}}
+.s-hold{{background:rgba(167,139,250,0.12);color:#a78bfa;border:1px solid rgba(167,139,250,0.25);}}
+.s-avoid{{background:rgba(242,54,69,0.12);color:{_kc_red};border:1px solid rgba(242,54,69,0.25);}}
+.cmp-note{{font-size:0.65rem;color:{_kc_sub};text-align:center;margin-top:10px;}}
+
+@media(max-width:640px){{
+  .grid2,.m3,.bk-grid{{grid-template-columns:1fr;}}
+  .score-num{{font-size:2.8rem;}}
+  .crow-name{{width:72px;font-size:0.65rem;}}
+}}
+</style></head><body>
+<div class="wrap">
+
+<!-- PRESET AREA -->
+<div class="sec-title">BENCHMARK CEPAT</div>
+<div class="pre-lbl">Pilih negara EM:</div>
+<div class="presets" id="pem">
+  <button class="pbtn active" onclick="loadEM(this,'id')">🇮🇩 Indonesia</button>
+  <button class="pbtn" onclick="loadEM(this,'br')">🇧🇷 Brasil</button>
+  <button class="pbtn" onclick="loadEM(this,'in')">🇮🇳 India</button>
+  <button class="pbtn" onclick="loadEM(this,'tr')">🇹🇷 Turki</button>
+  <button class="pbtn" onclick="loadEM(this,'mx')">🇲🇽 Meksiko</button>
+  <button class="pbtn" onclick="loadEM(this,'za')">🇿🇦 Afr. Selatan</button>
+  <button class="pbtn" onclick="loadEM(this,'vn')">🇻🇳 Vietnam</button>
+  <button class="pbtn" onclick="loadEM(this,'th')">🇹🇭 Thailand</button>
+</div>
+<div class="pre-lbl" style="margin-top:10px;">Pilih negara DM (benchmark):</div>
+<div class="presets" id="pdm">
+  <button class="pbtn active" onclick="loadDM(this,'us')">🇺🇸 AS (10Y)</button>
+  <button class="pbtn" onclick="loadDM(this,'de')">🇩🇪 Jerman</button>
+  <button class="pbtn" onclick="loadDM(this,'jp')">🇯🇵 Jepang</button>
+  <button class="pbtn" onclick="loadDM(this,'gb')">🇬🇧 Inggris</button>
+  <button class="pbtn" onclick="loadDM(this,'au')">🇦🇺 Australia</button>
+</div>
+
+<!-- INPUT GRID -->
+<div class="grid2">
+  <div class="icard icard-em">
+    <div class="icard-title em">🔵 Emerging Market</div>
+    <label class="flbl" style="margin-top:0;">Yield Obligasi (%)</label>
+    <input class="inp" id="em-y" type="number" step="0.1" placeholder="mis. 7.0">
+    <label class="flbl">Inflasi (%)</label>
+    <input class="inp" id="em-i" type="number" step="0.1" placeholder="mis. 3.0">
+    <label class="flbl">Credit Rating</label>
+    <select class="inp" id="em-r">
+      <option value="AAA">AAA</option><option value="AA">AA</option>
+      <option value="A">A</option><option value="BBB" selected>BBB</option>
+      <option value="BB">BB</option><option value="B">B</option><option value="CCC">CCC</option>
+    </select>
+    <label class="flbl">Risiko FX (%)</label>
+    <input class="inp" id="em-f" type="number" step="0.1" placeholder="mis. 2.0">
+    <label class="flbl">Risiko Politik (0–10)</label>
+    <input class="inp" id="em-p" type="number" step="0.5" min="0" max="10" placeholder="mis. 3.5">
+    <label class="flbl">Pertumbuhan GDP (%)</label>
+    <input class="inp" id="em-g" type="number" step="0.1" placeholder="mis. 5.1">
+    <label class="flbl">Debt / GDP (%)</label>
+    <input class="inp" id="em-d" type="number" step="1" placeholder="mis. 40">
+  </div>
+  <div class="icard icard-dm">
+    <div class="icard-title dm">⚪ Developed Market</div>
+    <label class="flbl" style="margin-top:0;">Yield Obligasi (%)</label>
+    <input class="inp" id="dm-y" type="number" step="0.1" placeholder="mis. 4.5">
+    <label class="flbl">Inflasi (%)</label>
+    <input class="inp" id="dm-i" type="number" step="0.1" placeholder="mis. 2.8">
+    <label class="flbl">Credit Rating</label>
+    <select class="inp" id="dm-r">
+      <option value="AAA" selected>AAA</option><option value="AA">AA</option>
+      <option value="A">A</option><option value="BBB">BBB</option>
+      <option value="BB">BB</option><option value="B">B</option><option value="CCC">CCC</option>
+    </select>
+    <label class="flbl">Risiko FX (%)</label>
+    <input class="inp" id="dm-f" type="number" step="0.1" placeholder="mis. 0.0">
+    <label class="flbl">Risiko Politik (0–10)</label>
+    <input class="inp" id="dm-p" type="number" step="0.5" min="0" max="10" placeholder="mis. 1.5">
+    <label class="flbl">Pertumbuhan GDP (%)</label>
+    <input class="inp" id="dm-g" type="number" step="0.1" placeholder="mis. 2.5">
+    <label class="flbl">Debt / GDP (%)</label>
+    <input class="inp" id="dm-d" type="number" step="1" placeholder="mis. 122">
+  </div>
+</div>
+<button class="calc-btn" onclick="calc()">▶ HITUNG SPREAD &amp; DAYA TARIK</button>
+
+<!-- RESULTS -->
+<div class="res" id="res">
+  <div class="sec-title">HASIL ANALISIS</div>
+
+  <div class="score-card" id="sc-card">
+    <div class="score-num" id="sc-num">—</div>
+    <div class="score-lbl">SKOR DAYA TARIK (0–100)</div>
+    <div class="rating-txt" id="sc-rat">—</div>
+    <div class="sig-badge" id="sc-sig">—</div>
+  </div>
+
+  <div class="m3">
+    <div class="mc"><div class="mc-val" id="mn">—</div><div class="mc-lbl">Spread Nominal</div></div>
+    <div class="mc"><div class="mc-val" id="mr">—</div><div class="mc-lbl">Spread Riil</div></div>
+    <div class="mc"><div class="mc-val" id="ma">—</div><div class="mc-lbl">Risk-Adjusted</div></div>
+  </div>
+
+  <div class="fac-card">
+    <div class="sec-title" style="margin-top:0;">FAKTOR SKOR</div>
+    <div class="fac-row"><div class="fac-lbl">Spread</div>
+      <div class="fac-bg"><div class="fac-bar" id="fb0"></div></div>
+      <div class="fac-num" id="fn0">—</div></div>
+    <div class="fac-row"><div class="fac-lbl">GDP</div>
+      <div class="fac-bg"><div class="fac-bar" id="fb1"></div></div>
+      <div class="fac-num" id="fn1">—</div></div>
+    <div class="fac-row"><div class="fac-lbl">Debt</div>
+      <div class="fac-bg"><div class="fac-bar" id="fb2"></div></div>
+      <div class="fac-num" id="fn2">—</div></div>
+    <div class="fac-row"><div class="fac-lbl">Politik</div>
+      <div class="fac-bg"><div class="fac-bar" id="fb3"></div></div>
+      <div class="fac-num" id="fn3">—</div></div>
+  </div>
+
+  <div class="bk-grid">
+    <div class="bk-card">
+      <div class="bk-title" style="color:{_kc_blue};">🔵 EM Breakdown</div>
+      <div class="bk-row"><span>Yield nominal</span><b id="e-ny">—</b></div>
+      <div class="bk-row"><span>Yield riil</span><b id="e-ry">—</b></div>
+      <div class="bk-row"><span>Credit premium</span><b id="e-cp">—</b></div>
+      <div class="bk-row"><span>FX risk</span><b id="e-fx">—</b></div>
+      <div class="bk-row"><span>Political premium</span><b id="e-pp">—</b></div>
+      <div class="bk-row"><span>Debt premium</span><b id="e-dp">—</b></div>
+      <div class="bk-sep"></div>
+      <div class="bk-row" style="color:{_kc_text};font-weight:700;">
+        <span>Net yield</span><b id="e-net">—</b></div>
+    </div>
+    <div class="bk-card">
+      <div class="bk-title" style="color:#64748b;">⚪ DM Breakdown</div>
+      <div class="bk-row"><span>Yield nominal</span><b id="d-ny">—</b></div>
+      <div class="bk-row"><span>Yield riil</span><b id="d-ry">—</b></div>
+      <div class="bk-row"><span>Credit premium</span><b id="d-cp">—</b></div>
+      <div class="bk-row"><span>FX risk</span><b id="d-fx">—</b></div>
+      <div class="bk-row"><span>Political premium</span><b id="d-pp">—</b></div>
+      <div class="bk-row"><span>Debt premium</span><b id="d-dp">—</b></div>
+      <div class="bk-sep"></div>
+      <div class="bk-row" style="color:{_kc_text};font-weight:700;">
+        <span>Net yield</span><b id="d-net">—</b></div>
+    </div>
+  </div>
+
+  <div class="cmp-card">
+    <div class="cmp-title" id="cmp-title">PERBANDINGAN 8 NEGARA EM vs BENCHMARK DM</div>
+    <div id="cmp-rows"></div>
+    <div class="cmp-note" id="cmp-note">—</div>
+  </div>
+</div>
+</div>
+
+<script>
+const RP={{'AAA':0,'AA':0.3,'A':0.6,'BBB':1.2,'BB':2.0,'B':3.5,'CCC':5.5}};
+const PEM={{
+  id:{{y:7.0,i:3.0,r:'BBB',f:2.0,p:3.5,g:5.1,d:40,dt:80}},
+  br:{{y:13.5,i:4.8,r:'BB',f:4.0,p:5.5,g:2.8,d:88,dt:80}},
+  in:{{y:7.1,i:4.5,r:'BBB',f:2.5,p:4.0,g:6.5,d:84,dt:80}},
+  tr:{{y:28.0,i:45.0,r:'B',f:8.0,p:7.0,g:3.5,d:45,dt:80}},
+  mx:{{y:10.5,i:4.2,r:'BBB',f:3.0,p:4.5,g:1.8,d:55,dt:80}},
+  za:{{y:10.8,i:5.5,r:'BB',f:4.5,p:6.0,g:1.5,d:72,dt:80}},
+  vn:{{y:5.8,i:3.5,r:'BB',f:2.0,p:3.0,g:6.0,d:37,dt:80}},
+  th:{{y:3.5,i:1.5,r:'BBB',f:1.5,p:4.0,g:3.2,d:62,dt:80}},
+}};
+const PDM={{
+  us:{{name:'🇺🇸 AS',y:4.5,i:2.8,r:'AAA',f:0.0,p:1.5,g:2.5,d:122,dt:120}},
+  de:{{name:'🇩🇪 Jerman',y:2.8,i:2.2,r:'AAA',f:0.5,p:1.0,g:0.5,d:65,dt:120}},
+  jp:{{name:'🇯🇵 Jepang',y:1.0,i:2.5,r:'A',f:1.0,p:1.0,g:1.0,d:255,dt:120}},
+  gb:{{name:'🇬🇧 Inggris',y:4.3,i:2.6,r:'AA',f:0.5,p:1.5,g:1.2,d:98,dt:120}},
+  au:{{name:'🇦🇺 Australia',y:4.4,i:3.2,r:'AAA',f:0.5,p:1.0,g:2.0,d:55,dt:120}},
+}};
+const EMLIST=[
+  {{k:'id',flag:'🇮🇩',name:'Indonesia'}},{{k:'br',flag:'🇧🇷',name:'Brasil'}},
+  {{k:'in',flag:'🇮🇳',name:'India'}},{{k:'tr',flag:'🇹🇷',name:'Turki'}},
+  {{k:'mx',flag:'🇲🇽',name:'Meksiko'}},{{k:'za',flag:'🇿🇦',name:'Afr. Selatan'}},
+  {{k:'vn',flag:'🇻🇳',name:'Vietnam'}},{{k:'th',flag:'🇹🇭',name:'Thailand'}},
+];
+let curDM='us';
+
+function mkt(o){{
+  const ry=o.y-o.i, cp=RP[o.r]||0, pp=o.p*0.3;
+  const dp=Math.max(0,o.d-(o.dt||80))*0.02;
+  const tr=cp+o.f+pp+dp;
+  return{{ny:o.y,ry,cp,fx:o.f,pp,dp,tr,net:ry-tr}};
+}}
+function spread(em,dm){{
+  const e=mkt(em),d=mkt(dm);
+  const ns=e.ny-d.ny, rs=e.ry-d.ry, ra=e.net-d.net;
+  let sc=50+Math.min(ra*8,25)+Math.min((em.g-dm.g)*2.5,15)
+         -Math.max((em.d-dm.d)*0.05,0)-(em.p-dm.p)*1.5;
+  sc=Math.max(0,Math.min(100,sc));
+  let rat,sig;
+  if(ra>2){{rat='Sangat Menarik';sig='BUY';}}
+  else if(ra>0.5){{rat='Moderat';sig='HOLD';}}
+  else if(ra>0){{rat='Hati-hati';sig='HOLD';}}
+  else{{rat='Tidak Menarik';sig='AVOID';}}
+  const sf=Math.max(0,Math.min(100,50+ra*10));
+  const gf=Math.max(0,Math.min(100,50+(em.g-dm.g)*10));
+  const df=Math.max(0,Math.min(100,100-Math.max(0,em.d-dm.d)*0.5));
+  const pf=Math.max(0,Math.min(100,100-(em.p-dm.p)*10));
+  return{{e,d,ns,rs,ra,sc:Math.round(sc*10)/10,rat,sig,fac:[sf,gf,df,pf]}};
+}}
+
+function col(v){{return v>=65?'{_kc_green}':v>=40?'#f59e0b':'{_kc_red}';}}
+function sigC(s){{return s==='BUY'?'{_kc_green}':s==='AVOID'?'{_kc_red}':'#a78bfa';}}
+function pm(v,d=2){{return(v>=0?'+':'')+v.toFixed(d)+'%';}}
+function pct(v,d=2){{return v.toFixed(d)+'%';}}
+
+function setBar(i,v){{
+  const c=col(v),pct2=Math.max(0,Math.min(100,v));
+  document.getElementById('fb'+i).style.width=pct2+'%';
+  document.getElementById('fb'+i).style.background=c;
+  document.getElementById('fb'+i).textContent=Math.round(pct2);
+  document.getElementById('fn'+i).textContent=Math.round(pct2);
+  document.getElementById('fn'+i).style.color=c;
+}}
+function setText(id,txt,color){{
+  const el=document.getElementById(id);
+  el.textContent=txt;
+  if(color)el.style.color=color;
+}}
+
+function loadEM(btn,k){{
+  const p=PEM[k]; if(!p)return;
+  document.getElementById('em-y').value=p.y;
+  document.getElementById('em-i').value=p.i;
+  document.getElementById('em-r').value=p.r;
+  document.getElementById('em-f').value=p.f;
+  document.getElementById('em-p').value=p.p;
+  document.getElementById('em-g').value=p.g;
+  document.getElementById('em-d').value=p.d;
+  document.querySelectorAll('#pem .pbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}}
+function loadDM(btn,k){{
+  const p=PDM[k]; if(!p)return;
+  curDM=k;
+  document.getElementById('dm-y').value=p.y;
+  document.getElementById('dm-i').value=p.i;
+  document.getElementById('dm-r').value=p.r;
+  document.getElementById('dm-f').value=p.f;
+  document.getElementById('dm-p').value=p.p;
+  document.getElementById('dm-g').value=p.g;
+  document.getElementById('dm-d').value=p.d;
+  document.querySelectorAll('#pdm .pbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}}
+
+function getEM(){{return{{
+  y:parseFloat(document.getElementById('em-y').value)||0,
+  i:parseFloat(document.getElementById('em-i').value)||0,
+  r:document.getElementById('em-r').value,
+  f:parseFloat(document.getElementById('em-f').value)||0,
+  p:parseFloat(document.getElementById('em-p').value)||0,
+  g:parseFloat(document.getElementById('em-g').value)||0,
+  d:parseFloat(document.getElementById('em-d').value)||0,
+  dt:80
+}};}}
+function getDM(){{return{{
+  y:parseFloat(document.getElementById('dm-y').value)||0,
+  i:parseFloat(document.getElementById('dm-i').value)||0,
+  r:document.getElementById('dm-r').value,
+  f:parseFloat(document.getElementById('dm-f').value)||0,
+  p:parseFloat(document.getElementById('dm-p').value)||0,
+  g:parseFloat(document.getElementById('dm-g').value)||0,
+  d:parseFloat(document.getElementById('dm-d').value)||0,
+  dt:120
+}};}}
+
+function calc(){{
+  const em=getEM(),dm=getDM(),R=spread(em,dm);
+  const sc=R.sc,sCol=col(sc),sigCol=sigC(R.sig);
+
+  document.getElementById('res').classList.add('show');
+  const card=document.getElementById('sc-card');
+  card.style.setProperty('--sc',sCol);
+  setText('sc-num',sc.toFixed(1),sCol);
+  setText('sc-rat',R.rat,sCol);
+  const sb=document.getElementById('sc-sig');
+  sb.textContent=R.sig; sb.style.setProperty('--sc',sigCol);
+  sb.style.borderColor=sigCol; sb.style.color=sigCol;
+
+  const nc=R.ns>=0?'{_kc_green}':'{_kc_red}';
+  const rc=R.rs>=0?'{_kc_green}':'{_kc_red}';
+  const ac=R.ra>=0?'{_kc_green}':'{_kc_red}';
+  setText('mn',pm(R.ns),nc);
+  setText('mr',pm(R.rs),rc);
+  setText('ma',pm(R.ra),ac);
+
+  R.fac.forEach((v,i)=>setBar(i,v));
+
+  const E=R.e,D=R.d;
+  setText('e-ny',pct(E.ny)); setText('e-ry',pm(E.ry));
+  setText('e-cp',pct(E.cp)); setText('e-fx',pct(E.fx));
+  setText('e-pp',pct(E.pp)); setText('e-dp',pct(E.dp));
+  setText('e-net',pm(E.net),E.net>=0?'{_kc_green}':'{_kc_red}');
+  setText('d-ny',pct(D.ny)); setText('d-ry',pm(D.ry));
+  setText('d-cp',pct(D.cp)); setText('d-fx',pct(D.fx));
+  setText('d-pp',pct(D.pp)); setText('d-dp',pct(D.dp));
+  setText('d-net',pm(D.net),D.net>=0?'{_kc_green}':'{_kc_red}');
+
+  // Country comparison
+  const dmP=PDM[curDM]||PDM['us'];
+  const rows=EMLIST.map(c=>{{
+    const ep=PEM[c.k]; if(!ep)return null;
+    const res=spread(ep,{{...dmP,dt:120}});
+    return{{...c,ra:res.ra,sig:res.sig}};
+  }}).filter(Boolean).sort((a,b)=>b.ra-a.ra);
+
+  const maxA=Math.max(...rows.map(r=>Math.abs(r.ra)),0.1);
+  let html='';
+  rows.forEach(r=>{{
+    const pct2=Math.max(3,Math.min(100,(r.ra/maxA)*50+50));
+    const bc=r.ra>=2?'{_kc_green}':r.ra>=0.5?'#a78bfa':r.ra>=0?'#f59e0b':'{_kc_red}';
+    const sc2=r.sig==='BUY'?'s-buy':r.sig==='AVOID'?'s-avoid':'s-hold';
+    html+=`<div class="crow">
+      <div class="crow-flag">${{r.flag}}</div>
+      <div class="crow-name">${{r.name}}</div>
+      <div class="crow-bg"><div class="crow-bar" style="width:${{pct2}}%;background:${{bc}};"></div></div>
+      <div class="crow-val" style="color:${{bc}}">${{pm(r.ra)}}</div>
+      <div class="crow-sig ${{sc2}}">${{r.sig}}</div>
+    </div>`;
+  }});
+  document.getElementById('cmp-rows').innerHTML=html;
+  document.getElementById('cmp-title').textContent=
+    'PERBANDINGAN 8 NEGARA EM vs '+dmP.name.replace(/[^\w\s]/g,'').trim();
+  document.getElementById('cmp-note').textContent=
+    'Risk-adjusted spread · diurutkan terbaik ke terburuk · data preset per Jun 2026';
+}}
+
+// Auto-load default: Indonesia vs AS
+(function(){{
+  const em0=document.querySelector('#pem .pbtn');
+  const dm0=document.querySelector('#pdm .pbtn');
+  if(em0)loadEM(em0,'id');
+  if(dm0)loadDM(dm0,'us');
+}})();
+</script>
+</body></html>"""
+
+            components.html(_spread_html, height=1800, scrolling=True)
 
 
     with tab_panduan:
