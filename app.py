@@ -15642,12 +15642,14 @@ table{{margin-bottom:0!important;}}
                     {"ticker":"BBRI","nama":"Bank Rakyat Indonesia","cum_date":"2025-04-10","ex_date":"2025-04-11","pay_date":"2025-04-28","dps":208,"yield_pct":4.81,"freq":"Final","tahun":2024},
                     # BBRI 2025 Interim — DPS Rp137 (sumber: Keterbukaan IDX 17 Des 2025, Cum 29 Des 2025)
                     {"ticker":"BBRI","nama":"Bank Rakyat Indonesia","cum_date":"2025-12-29","ex_date":"2025-12-30","pay_date":"2026-01-15","dps":137,"yield_pct":3.26,"freq":"Interim","tahun":2025},
-                    # BBRI 2025 Final (dibayar 2026) — DPS ~Rp346 estimasi, belum RUPST resmi (bertanda *)
-                    {"ticker":"BBRI","nama":"Bank Rakyat Indonesia","cum_date":"2026-04-09","ex_date":"2026-04-10","pay_date":"2026-04-28","dps":346,"yield_pct":7.99,"freq":"Final*","tahun":2026},
+                    # BBRI 2025 Final — DPS Rp209 final saja (total 346, interim 137 sudah dibayar Jan 2026)
+                    # Sumber: RUPST 10 Apr 2026, cum 20 Apr 2026 (reguler/nego), ex 21 Apr 2026, pay 8 Mei 2026 (Tempo/Bisnis.com/Ajaib)
+                    {"ticker":"BBRI","nama":"Bank Rakyat Indonesia","cum_date":"2026-04-20","ex_date":"2026-04-21","pay_date":"2026-05-08","dps":209,"yield_pct":6.07,"freq":"Final","tahun":2026},
                     # BMRI 2024 Final — DPS Rp466 (sumber: RUPST 25 Mar 2025, Bareksa/CNBC; bukan Rp354)
                     {"ticker":"BMRI","nama":"Bank Mandiri","cum_date":"2025-04-16","ex_date":"2025-04-17","pay_date":"2025-05-05","dps":466,"yield_pct":6.89,"freq":"Final","tahun":2024},
-                    # BMRI 2025 Final — DPS ~Rp477 (sumber: Warta Garut/Ajaib Mar 2026 estimasi, bertanda *)
-                    {"ticker":"BMRI","nama":"Bank Mandiri","cum_date":"2026-04-15","ex_date":"2026-04-16","pay_date":"2026-05-02","dps":477,"yield_pct":7.05,"freq":"Final*","tahun":2026},
+                    # BMRI 2025 Final — DPS Rp376,96 final saja (total 476,9569, interim 100 sudah dibayar 14 Jan 2026)
+                    # Sumber: RUPST 29 Apr 2026, cum 8 Mei 2026, ex 11 Mei 2026, recording 12 Mei 2026, pay 25 Mei 2026 (CNBC Indonesia/Bareksa/TradingView-Kontan)
+                    {"ticker":"BMRI","nama":"Bank Mandiri","cum_date":"2026-05-08","ex_date":"2026-05-11","pay_date":"2026-05-25","dps":377,"yield_pct":8.12,"freq":"Final","tahun":2026},
                     # BBNI 2024 Final — DPS Rp374 (sumber: RUPST 26 Mar 2025, Bareksa; bukan Rp270)
                     {"ticker":"BBNI","nama":"Bank Negara Indonesia","cum_date":"2025-04-23","ex_date":"2025-04-24","pay_date":"2025-05-12","dps":374,"yield_pct":7.89,"freq":"Final","tahun":2024},
                     # BBNI 2025 Final — DPS Rp349 (sumber: Readers.id/Bloomberg Technoz Mar 2026, Cum 17 Mar 2026)
@@ -15671,8 +15673,9 @@ table{{margin-bottom:0!important;}}
                     # ── ENERGI & KOMODITAS ─────────────────────────────────────────
                     # PTBA 2025 Final — DPS Rp332 (sumber: RUPST 12 Jun 2025, IDX resmi, Kontan, Bisnis.com)
                     {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2025-06-20","ex_date":"2025-06-23","pay_date":"2025-07-11","dps":332,"yield_pct":11.07,"freq":"Final","tahun":2025},
-                    # PTBA 2026 Final — estimasi belum RUPST resmi per Mei 2026, tandai dengan *
-                    {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2026-06-19","ex_date":"2026-06-23","pay_date":"2026-07-10","dps":332,"yield_pct":11.07,"freq":"Final*","tahun":2026},
+                    # PTBA 2025 Final — DPS Rp114,508 (turun jauh dari estimasi lama Rp332 — laba bersih 2025 turun 42,74% YoY jadi Rp2,92T)
+                    # Sumber: RUPST 11 Jun 2026, recording date 24 Jun 2026, pay 10 Jul 2026, ex-date 23 Jun 2026 (Liputan6/PintarSaham/IDXChannel/stockevents.app)
+                    {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2026-06-22","ex_date":"2026-06-23","pay_date":"2026-07-10","dps":115,"yield_pct":4.34,"freq":"Final","tahun":2026},
                     # ITMG 2025 Final — DPS Rp2245 (sumber: RUPST 9 Apr 2025, Ajaib, CNBC Indonesia)
                     {"ticker":"ITMG","nama":"Indo Tambangraya Megah","cum_date":"2025-04-17","ex_date":"2025-04-18","pay_date":"2025-05-07","dps":2245,"yield_pct":9.16,"freq":"Final","tahun":2025},
                     # ITMG 2025 Interim — DPS Rp738 (sumber: Keterbukaan IDX 5 Nov 2025)
@@ -15764,8 +15767,9 @@ table{{margin-bottom:0!important;}}
                     # ADRO 2026 Final — DPS Rp118 (sumber: RUPST 17 Apr 2026, Kontan/Investor.id; kurs BI 29 Apr 2026)
                     {"ticker":"ADRO","nama":"Alamtri Resources Indonesia","cum_date":"2026-04-27","ex_date":"2026-04-28","pay_date":"2026-05-08","dps":118,"yield_pct":4.71,"freq":"Final","tahun":2026},
                     {"ticker":"HRUM","nama":"Harum Energy","cum_date":"2026-05-28","ex_date":"2026-05-29","pay_date":"2026-06-15","dps":115,"yield_pct":9.58,"freq":"Final","tahun":2026},
-                    # RAJA 2026 Final — belum ada RUPST resmi, estimasi pola historis (bertanda *)
-                    {"ticker":"RAJA","nama":"Rukun Raharja","cum_date":"2026-05-07","ex_date":"2026-05-08","pay_date":"2026-06-04","dps":65,"yield_pct":1.80,"freq":"Final*","tahun":2026},
+                    # RAJA 2026 Final — DIHAPUS: tidak ditemukan keterbukaan informasi RUPST soal dividen final 2025.
+                    # RAJA justru sedang proses stock split (rasio ke pecahan Rp5/saham, persetujuan prinsip BEI 5 Mei 2026,
+                    # RUPS persetujuan medio Jun 2026) — data DPS lama tidak relevan lagi pasca stock split. HAPUS sampai ada data valid.
                     {"ticker":"TAPG","nama":"Triputra Agro Persada","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":102,"yield_pct":8.95,"freq":"Final","tahun":2026},
                     {"ticker":"TOWR","nama":"Sarana Menara Nusantara","cum_date":"2026-09-10","ex_date":"2026-09-11","pay_date":"2026-09-28","dps":26,"yield_pct":3.17,"freq":"Interim","tahun":2026},
                     {"ticker":"JSMR","nama":"Jasa Marga","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":162,"yield_pct":3.86,"freq":"Final","tahun":2026},
@@ -30452,9 +30456,9 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                       🏦 RATE SAAT INI (Fed Funds)
                     </div>
                     <div style='font-size:1.6rem;font-weight:800;color:#c4b5fd;font-family:IBM Plex Mono,monospace;line-height:1;'>
-                      4.25–4.50%
+                      3.50–3.75%
                     </div>
-                    <div style='font-size:0.72rem;color:#7c6fa0;margin-top:4px;'>Keputusan FOMC 7 Mei 2026 · HOLD</div>
+                    <div style='font-size:0.72rem;color:#7c6fa0;margin-top:4px;'>Keputusan FOMC 18 Jun 2026 · HOLD (1st mtg Kevin Warsh)</div>
                   </div>
                   <div style='flex:1;min-width:180px;background:rgba(242,54,69,0.08);border:1px solid rgba(242,54,69,0.30);
                        border-radius:10px;padding:14px 18px;'>
@@ -30462,9 +30466,9 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                       📅 FOMC BERIKUTNYA
                     </div>
                     <div style='font-size:1.1rem;font-weight:800;color:#f23645;font-family:IBM Plex Mono,monospace;line-height:1.2;'>
-                      18 Jun 2026
+                      30 Jul 2026
                     </div>
-                    <div style='font-size:0.72rem;color:#9b4a53;margin-top:4px;'>01:00 WIB · ~32 hari lagi</div>
+                    <div style='font-size:0.72rem;color:#9b4a53;margin-top:4px;'>01:00 WIB · ~40 hari lagi</div>
                   </div>
                   <div style='flex:2;min-width:260px;background:rgba(66,133,244,0.07);border:1px solid rgba(66,133,244,0.25);
                        border-radius:10px;padding:14px 18px;'>
@@ -30472,52 +30476,52 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                       📊 SIGMA INSIGHT — CME FEDWATCH
                     </div>
                     <div style='font-size:0.8rem;color:#94a3b8;line-height:1.65;'>
-                      Probabilitas perubahan suku bunga Fed berdasarkan <b style='color:#60a5fa;'>CME 30-Day Fed Fund Futures</b>.
-                      Pasar pricing ~80% HOLD di Jun 2026, dengan ekspektasi cut pertama mulai terlihat di FOMC Jul–Sep 2026.
-                      Implikasi IDX: rupiah relatif stabil, hot money bertahan di EM.
+                      FOMC Jun 2026 jadi rapat pertama di bawah Ketua Fed baru <b style='color:#60a5fa;'>Kevin Warsh</b> (gantikan Powell).
+                      Dot plot terbaru justru bergeser <b style='color:#f87171;'>hawkish</b> — 9 dari 18 anggota memproyeksikan minimal 1x
+                      kenaikan suku bunga di 2026 (median proyeksi akhir tahun naik ke 3.8%), seiring inflasi PCE direvisi naik ke 3.6%.
+                      Implikasi IDX: tekanan rupiah & yield US 10Y berpotensi tetap tinggi, beda arah dari ekspektasi cutting cycle lama.
                     </div>
                   </div>
                 </div>
                 """, unsafe_allow_html=True)
 
-                # ── Data FOMC meetings — 3 BERIKUTNYA (update Mei 2026) ──────────────────────────────────
+                # ── Data FOMC meetings — 3 BERIKUTNYA (update Jun 2026, FOMC 18 Jun sudah HOLD) ──────
                 _fed_meetings = [
-                    {
-                        "date": "18 Jun 2026",
-                        "date_wib": "18 Jun 2026 · 01:00 WIB",
-                        "meeting_time": "18 Jun 2026 · 01:00 WIB",
-                        "future_price": "96.420",
-                        "countdown_weeks": 0, "countdown_days": 32, "countdown_hours": 0, "countdown_mins": 0,
-                        "scenarios": [
-                            {"range": "4.00-4.25", "prob":  8.2, "prev_day":  7.4, "prev_week":  6.1, "dir": "cut"},
-                            {"range": "4.25-4.50", "prob": 88.5, "prev_day": 89.8, "prev_week": 91.3, "dir": "hold"},
-                            {"range": "4.50-4.75", "prob":  3.3, "prev_day":  2.8, "prev_week":  2.6, "dir": "hike"},
-                        ]
-                    },
                     {
                         "date": "30 Jul 2026",
                         "date_wib": "30 Jul 2026 · 01:00 WIB",
                         "meeting_time": "30 Jul 2026 · 01:00 WIB",
-                        "future_price": "96.560",
-                        "countdown_weeks": 0, "countdown_days": 74, "countdown_hours": 0, "countdown_mins": 0,
+                        "future_price": "96.310",
+                        "countdown_weeks": 0, "countdown_days": 40, "countdown_hours": 0, "countdown_mins": 0,
                         "scenarios": [
-                            {"range": "3.75-4.00", "prob":  3.1, "prev_day":  2.8, "prev_week": None, "dir": "cut"},
-                            {"range": "4.00-4.25", "prob": 19.4, "prev_day": 17.6, "prev_week": None, "dir": "cut"},
-                            {"range": "4.25-4.50", "prob": 72.2, "prev_day": 73.9, "prev_week": None, "dir": "hold"},
-                            {"range": "4.50-4.75", "prob":  5.3, "prev_day":  5.7, "prev_week": None, "dir": "hike"},
+                            {"range": "3.25-3.50", "prob":  4.1, "prev_day":  3.6, "prev_week":  3.0, "dir": "cut"},
+                            {"range": "3.50-3.75", "prob": 82.4, "prev_day": 84.0, "prev_week": 86.2, "dir": "hold"},
+                            {"range": "3.75-4.00", "prob": 13.5, "prev_day": 12.4, "prev_week": 10.8, "dir": "hike"},
                         ]
                     },
                     {
-                        "date": "17 Sep 2026",
-                        "date_wib": "17 Sep 2026 · 01:00 WIB",
-                        "meeting_time": "17 Sep 2026 · 01:00 WIB",
-                        "future_price": "96.690",
-                        "countdown_weeks": 0, "countdown_days": 123, "countdown_hours": 0, "countdown_mins": 0,
+                        "date": "16 Sep 2026",
+                        "date_wib": "16 Sep 2026 · 01:00 WIB",
+                        "meeting_time": "16 Sep 2026 · 01:00 WIB",
+                        "future_price": "96.220",
+                        "countdown_weeks": 0, "countdown_days": 88, "countdown_hours": 0, "countdown_mins": 0,
                         "scenarios": [
-                            {"range": "3.75-4.00", "prob":  7.8, "prev_day":  6.9, "prev_week": None, "dir": "cut"},
-                            {"range": "4.00-4.25", "prob": 31.2, "prev_day": 29.5, "prev_week": None, "dir": "cut"},
-                            {"range": "4.25-4.50", "prob": 55.4, "prev_day": 57.1, "prev_week": None, "dir": "hold"},
-                            {"range": "4.50-4.75", "prob":  5.6, "prev_day":  6.5, "prev_week": None, "dir": "hike"},
+                            {"range": "3.25-3.50", "prob":  3.0, "prev_day":  2.7, "prev_week": None, "dir": "cut"},
+                            {"range": "3.50-3.75", "prob": 60.8, "prev_day": 62.5, "prev_week": None, "dir": "hold"},
+                            {"range": "3.75-4.00", "prob": 33.7, "prev_day": 31.9, "prev_week": None, "dir": "hike"},
+                            {"range": "4.00-4.25", "prob":  2.5, "prev_day":  2.9, "prev_week": None, "dir": "hike"},
+                        ]
+                    },
+                    {
+                        "date": "4 Nov 2026",
+                        "date_wib": "4 Nov 2026 · 01:00 WIB",
+                        "meeting_time": "4 Nov 2026 · 01:00 WIB",
+                        "future_price": "96.150",
+                        "countdown_weeks": 0, "countdown_days": 137, "countdown_hours": 0, "countdown_mins": 0,
+                        "scenarios": [
+                            {"range": "3.50-3.75", "prob": 41.6, "prev_day": 43.0, "prev_week": None, "dir": "hold"},
+                            {"range": "3.75-4.00", "prob": 47.9, "prev_day": 46.2, "prev_week": None, "dir": "hike"},
+                            {"range": "4.00-4.25", "prob": 10.5, "prev_day": 10.8, "prev_week": None, "dir": "hike"},
                         ]
                     },
                 ]
@@ -30802,7 +30806,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
           <div class="frm-countdown">
             <div>
               <div class="frm-cd-label">FED INTEREST RATE DECISION</div>
-              <div class="frm-cd-title">18 Jun 2026 &nbsp;&middot;&nbsp; 01:00 WIB</div>
+              <div class="frm-cd-title">30 Jul 2026 &nbsp;&middot;&nbsp; 01:00 WIB</div>
             </div>
             <div class="frm-cd-boxes" id="frm-cd"></div>
           </div>
@@ -30814,16 +30818,16 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
           <div class="frm-insight">
             <div class="frm-insight-inner">
               <span class="frm-insight-label">SIGMA INSIGHT —</span>
-              FOMC 7 Mei 2026: Fed <b>HOLD</b> di 4.25–4.50% sesuai ekspektasi pasar.
-              Probabilitas ~88.5% HOLD berlanjut di FOMC Juni 2026. Ekspektasi cut pertama mulai muncul di Jul–Sep 2026 (~19–31% probabilitas).
-              Implikasi IDX: <span style="color:#089981;font-weight:600;">Rupiah stabil</span>,
-              hot money tetap di EM, sentimen netral untuk perbankan &amp; properti. Pantau data CPI AS &amp; NFP sebagai trigger perubahan ekspektasi.
+              FOMC 18 Jun 2026: Fed <b>HOLD</b> di 3.50–3.75%, rapat pertama Ketua Fed baru Kevin Warsh.
+              Dot plot bergeser hawkish — 9/18 anggota proyeksi minimal 1x hike di 2026. Probabilitas ~82% HOLD berlanjut di FOMC Jul 2026, namun probabilitas hike naik ke ~13–34% di Sep–Nov 2026.
+              Implikasi IDX: <span style="color:#f23645;font-weight:600;">tekanan Rupiah berlanjut</span>,
+              yield US 10Y &amp; ID 10Y berpotensi tetap tinggi. Pantau data CPI AS &amp; NFP sebagai trigger perubahan ekspektasi.
               <span class="frm-insight-sep">◆</span>
               <span class="frm-insight-label">SIGMA INSIGHT —</span>
-              FOMC 7 Mei 2026: Fed <b>HOLD</b> di 4.25–4.50% sesuai ekspektasi pasar.
-              Probabilitas ~88.5% HOLD berlanjut di FOMC Juni 2026. Ekspektasi cut pertama mulai muncul di Jul–Sep 2026 (~19–31% probabilitas).
-              Implikasi IDX: <span style="color:#089981;font-weight:600;">Rupiah stabil</span>,
-              hot money tetap di EM, sentimen netral untuk perbankan &amp; properti. Pantau data CPI AS &amp; NFP sebagai trigger perubahan ekspektasi.
+              FOMC 18 Jun 2026: Fed <b>HOLD</b> di 3.50–3.75%, rapat pertama Ketua Fed baru Kevin Warsh.
+              Dot plot bergeser hawkish — 9/18 anggota proyeksi minimal 1x hike di 2026. Probabilitas ~82% HOLD berlanjut di FOMC Jul 2026, namun probabilitas hike naik ke ~13–34% di Sep–Nov 2026.
+              Implikasi IDX: <span style="color:#f23645;font-weight:600;">tekanan Rupiah berlanjut</span>,
+              yield US 10Y &amp; ID 10Y berpotensi tetap tinggi. Pantau data CPI AS &amp; NFP sebagai trigger perubahan ekspektasi.
             </div>
           </div>
 
@@ -30996,24 +31000,29 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                     {"date": "Jul 2024", "rate": 5.50}, {"date": "Ags 2024", "rate": 5.50},
                     {"date": "Sep 2024", "rate": 5.00}, {"date": "Okt 2024", "rate": 5.00},
                     {"date": "Nov 2024", "rate": 4.75}, {"date": "Des 2024", "rate": 4.50},
-                    # ── 2025 (pause cutting cycle) ──
+                    # ── 2025 (hold s/d Ags, lalu cutting cycle Sep–Des) ──
                     {"date": "Jan 2025", "rate": 4.50}, {"date": "Feb 2025", "rate": 4.50},
                     {"date": "Mar 2025", "rate": 4.50}, {"date": "Apr 2025", "rate": 4.50},
                     {"date": "Mei 2025", "rate": 4.50}, {"date": "Jun 2025", "rate": 4.50},
                     {"date": "Jul 2025", "rate": 4.50}, {"date": "Ags 2025", "rate": 4.50},
-                    {"date": "Sep 2025", "rate": 4.50}, {"date": "Okt 2025", "rate": 4.50},
-                    {"date": "Nov 2025", "rate": 4.50}, {"date": "Des 2025", "rate": 4.50},
-                    # ── 2026 (hold di 4.25–4.50%) ──
-                    {"date": "Jan 2026", "rate": 4.50}, {"date": "Feb 2026", "rate": 4.50},
-                    {"date": "Mar 2026", "rate": 4.50}, {"date": "Apr 2026", "rate": 4.50},
-                    {"date": "Mei 2026", "rate": 4.50},
+                    {"date": "Sep 2025", "rate": 4.25}, {"date": "Okt 2025", "rate": 4.00},
+                    {"date": "Nov 2025", "rate": 4.00}, {"date": "Des 2025", "rate": 3.75},
+                    # ── 2026 (hold di 3.50–3.75%, rapat pertama Ketua Fed baru Kevin Warsh Jun 2026) ──
+                    {"date": "Jan 2026", "rate": 3.75}, {"date": "Feb 2026", "rate": 3.75},
+                    {"date": "Mar 2026", "rate": 3.75}, {"date": "Apr 2026", "rate": 3.75},
+                    {"date": "Mei 2026", "rate": 3.75}, {"date": "Jun 2026", "rate": 3.75},
                 ]
 
+                # ── Catatan: cut 25bps Sep 2025 (4.25%), 25bps Okt 2025 (4.00%), 25bps Des 2025 (3.75%)
+                # menutup 2025 di 3.50–3.75%. Sepanjang Jan–Jun 2026 The Fed HOLD di level itu.
+                # Per FOMC Jun 2026: rapat pertama di bawah Ketua Fed baru, Kevin Warsh (gantikan Powell).
+                # Dot plot terbaru malah condong ke arah NAIK (9 dari 18 anggota proyeksi minimal 1x hike
+                # di 2026) ditengah inflasi PCE direvisi naik ke 3.6% (headline) — bukan continuation cut.
                 _fomc_schedule_2026 = [
-                    {"date": "28–29 Jan 2026", "result": "HOLD 4.25–4.50%", "status": "done"},
-                    {"date": "18–19 Mar 2026", "result": "HOLD 4.25–4.50%", "status": "done"},
-                    {"date": "6–7 Mei 2026",   "result": "HOLD 4.25–4.50%", "status": "done"},
-                    {"date": "17–18 Jun 2026",  "result": "—",               "status": "upcoming"},
+                    {"date": "28–29 Jan 2026", "result": "HOLD 3.50–3.75%", "status": "done"},
+                    {"date": "18–19 Mar 2026", "result": "HOLD 3.50–3.75%", "status": "done"},
+                    {"date": "6–7 Mei 2026",   "result": "HOLD 3.50–3.75%", "status": "done"},
+                    {"date": "17–18 Jun 2026",  "result": "HOLD 3.50–3.75% (1st mtg Kevin Warsh)", "status": "done"},
                     {"date": "29–30 Jul 2026",  "result": "—",               "status": "future"},
                     {"date": "16–17 Sep 2026",  "result": "—",               "status": "future"},
                     {"date": "4–5 Nov 2026",    "result": "—",               "status": "future"},
@@ -31036,8 +31045,8 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
 
                 _fed_rc = st.columns(5)
                 _fed_rate_items = [
-                    ("Fed Funds",       "4.25–4.50%",
-                     f"HOLD · FOMC 7 Mei 2026", "#8b5cf6"),
+                    ("Fed Funds",       "3.50–3.75%",
+                     f"HOLD · FOMC 18 Jun 2026", "#8b5cf6"),
                     ("SOFR",            f"{_gr['SOFR']['value']:.2f}%",
                      "Secured Overnight · USD",  "#f59e0b"),
                     ("US 10Y Yield",    f"{_gr['US 10Y']['value']:.2f}%",
@@ -31280,6 +31289,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                     {"date": "Jan 2026", "rate": 5.00}, {"date": "Feb 2026", "rate": 4.75},
                     {"date": "Mar 2026", "rate": 4.75}, {"date": "Apr 2026", "rate": 4.75},
                     {"date": "Mei 2026", "rate": 5.25},
+                    {"date": "Jun 2026", "rate": 5.75},
                 ]
                 _rdg_schedule_2026 = [
                     {"date": "21–22 Jan 2026", "result": "Turun 25bps → 5.00%", "status": "done"},
@@ -31287,7 +31297,8 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                     {"date": "18–19 Mar 2026", "result": "Tetap 4.75%", "status": "done"},
                     {"date": "22–23 Apr 2026", "result": "Tetap 4.75%", "status": "done"},
                     {"date": "20–21 Mei 2026", "result": "Naik 50bps → 5.25%", "status": "done"},
-                    {"date": "17–18 Jun 2026", "result": "—", "status": "future"},
+                    {"date": "9 Jun 2026 (RDG Mingguan/darurat)", "result": "Naik 25bps → 5.50%", "status": "done"},
+                    {"date": "17–18 Jun 2026", "result": "Naik 25bps → 5.75%", "status": "done"},
                     {"date": "15–16 Jul 2026", "result": "—", "status": "future"},
                     {"date": "19–20 Ags 2026", "result": "—", "status": "future"},
                     {"date": "16–17 Sep 2026", "result": "—", "status": "future"},
@@ -31301,11 +31312,11 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                 def _fetch_global_rates():
                     """Fetch rates via yfinance + FRED API fallback. Hardcoded hanya sebagai last resort."""
                     # ── Nilai hardcoded (last resort) — UPDATE MANUAL jika FRED dan yfinance gagal semua ──
-                    # BI Rate: update dari keputusan RDG BI terbaru (Mei 2026 = 5.25%)
-                    # Fed Funds: update dari FOMC terbaru (Mei 2026 = 4.25-4.50%)
+                    # BI Rate: update dari RDG BI Mingguan darurat 9 Jun 2026 + RDG Bulanan 17-18 Jun 2026 (Jun 2026 = 5.75%)
+                    # Fed Funds: update dari FOMC 18 Jun 2026 — HOLD di 3.50-3.75% (1st mtg Ketua Fed baru Kevin Warsh)
                     rates = {
-                        "BI Rate":   {"value": 5.25,  "change":  0.50, "source": "hardcoded", "label": "Bank Indonesia — RDG Mei 2026 (naik 50bps)"},
-                        "Fed Funds": {"value": 4.375, "change":  0.00, "source": "hardcoded", "label": "US Federal Reserve — FOMC Mei 2026 (4.25–4.50%)"},
+                        "BI Rate":   {"value": 5.75,  "change":  0.25, "source": "hardcoded", "label": "Bank Indonesia — RDG 17-18 Jun 2026 (naik 25bps, ketiga kalinya beruntun)"},
+                        "Fed Funds": {"value": 3.625, "change":  0.00, "source": "hardcoded", "label": "US Federal Reserve — FOMC 18 Jun 2026 (3.50–3.75%, HOLD)"},
                         "SOFR":      {"value": 4.30,  "change": -0.01, "source": "hardcoded", "label": "Secured Overnight Financing Rate"},
                         "US 10Y":    {"value": 4.50,  "change":  0.08, "source": "hardcoded", "label": "US Treasury 10Y Yield"},
                         "ID 10Y":    {"value": 7.10,  "change":  0.25, "source": "hardcoded", "label": "Indonesia Gov Bond 10Y"},
@@ -31389,7 +31400,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                 _rc = st.columns(5)
                 _rate_items = [
                     ("BI Rate", f"{_bi_current:.2f}%", f"{'▲' if _bi_chg>0 else '▼' if _bi_chg<0 else '─'} {abs(_bi_chg)*100:.0f}bps", "#26a69a" if _bi_chg<=0 else "#ef5350"),
-                    ("Fed Funds", f"4.25–4.50%", f"HOLD · 7 Mei 2026", "#8b5cf6"),
+                    ("Fed Funds", f"3.50–3.75%", f"HOLD · 18 Jun 2026", "#8b5cf6"),
                     ("SOFR", f"{_global_rates['SOFR']['value']:.2f}%", f"Overnight · USD", "#f59e0b"),
                     ("US 10Y", f"{_global_rates['US 10Y']['value']:.2f}%", f"{'▲' if _global_rates['US 10Y']['change']>0 else '▼'} {abs(_global_rates['US 10Y']['change']):.2f}% · {'yfinance' if _global_rates['US 10Y']['source']=='yfinance' else 'hardcoded'}", "#3b82f6"),
                     ("ID 10Y", f"{_global_rates['ID 10Y']['value']:.2f}%", f"Spread vs US: +{round(_global_rates['ID 10Y']['value']-_global_rates['US 10Y']['value'],2):.2f}%", "#10b981"),
@@ -31752,7 +31763,7 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
             # ── Dataset lengkap: ID + US digabung ───────────────────
             _ec_raw = [
                 # ══ MEI 2026 — SELESAI (referensi historis) ════════════
-                {"neg":"US","tgl":"07 Mei 2026","jam":"01:00",  "event":"Federal Funds Rate (FOMC Mei)",     "fc":"4.50%",  "prev":"4.50%",   "dampak":"HIGH",  "tip":"✅ SELESAI: Fed HOLD di 4.25–4.50%. Keputusan sesuai konsensus. Sinyal: butuh data lebih lemah untuk cut."},
+                {"neg":"US","tgl":"07 Mei 2026","jam":"01:00",  "event":"Federal Funds Rate (FOMC Mei)",     "fc":"3.75%",  "prev":"3.75%",   "dampak":"HIGH",  "tip":"✅ SELESAI: Fed HOLD di 3.50–3.75% (level pasca cutting cycle Sep-Des 2025). Keputusan sesuai konsensus."},
                 {"neg":"US","tgl":"13 Mei 2026","jam":"19:30",  "event":"CPI Inflasi YoY (Apr)",            "fc":"2.6%",   "prev":"2.8%",    "dampak":"HIGH",  "tip":"✅ SELESAI: inflasi konsumen April. Penurunan konsisten mendukung ekspektasi cut Fed di H2 2026."},
                 {"neg":"ID","tgl":"20 Mei 2026","jam":"10:00",  "event":"RDG BI Rate Mei",                  "fc":"5.25%",  "prev":"4.75%",   "dampak":"HIGH",  "tip":"✅ ACTUAL: BI NAIK 50bps → 5.25% (20 Mei 2026). Kejutan hawkish — konsensus HOLD 4.75%. Respons tekanan Rupiah & inflasi. Dampak: Rupiah menguat sesaat, NIM bank tertekan, cost of capital naik, saham growth/properti tertekan."},
                 {"neg":"US","tgl":"29 Mei 2026","jam":"19:30",  "event":"MSCI Semi-Annual Review Efektif",  "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"✅ SELESAI: Rebalancing MSCI efektif 29 Mei 2026. 11 saham Standard bertahan. Saham keluar: AMMN, BREN, TPIA, DSSA, CUAN, AMRT. Window selling passive fund sudah berlangsung."},
@@ -31762,15 +31773,16 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                 {"neg":"US","tgl":"05 Jun 2026","jam":"19:30",  "event":"Average Hourly Earnings m/m",      "fc":"0.3%",   "prev":"0.2%",    "dampak":"MEDIUM","tip":"Kenaikan upah per jam MoM. Indikator tekanan inflasi via labor cost. Di atas ekspektasi = hawkish."},
                 {"neg":"ID","tgl":"05 Jun 2026","jam":"09:00",  "event":"Inflasi CPI YoY (Mei)",            "fc":"2.5%",   "prev":"2.7%",    "dampak":"HIGH",  "tip":"BPS CPI Mei. Tren deflasi/disinflasi yang terjadi membuka ruang BI untuk cut rate di semester 2. Positif untuk obligasi & sektor interest-rate sensitive."},
                 {"neg":"ID","tgl":"05 Jun 2026","jam":"09:00",  "event":"Cadangan Devisa Mei",              "fc":"$153B",  "prev":"$152.5B", "dampak":"MEDIUM","tip":"Cadangan devisa BI Mei. Penting setelah kenaikan BI Rate hawkish — apakah intervensi Rupiah efektif menjaga cadangan stabil."},
-                {"neg":"US","tgl":"11 Jun 2026","jam":"19:30",  "event":"CPI Inflasi YoY (Mei)",            "fc":"2.4%",   "prev":"2.6%",    "dampak":"HIGH",  "tip":"🔴 BLS: inflasi Mei AS. Data terpenting sebelum FOMC 18 Jun. Tren turun berlanjut = ruang cut rate H2 2026 = bullish EM."},
+                {"neg":"ID","tgl":"09 Jun 2026","jam":"—",      "event":"RDG Mingguan Darurat BI",          "fc":"5.50%",  "prev":"5.25%",   "dampak":"HIGH",  "tip":"✅ SELESAI: BI naikkan BI-Rate 25bps di luar jadwal reguler → 5.50% merespons Rupiah tembus Rp18.000/USD akibat gejolak global. Langkah pre-emptive jaga inflasi & stabilisasi nilai tukar."},
+                {"neg":"US","tgl":"11 Jun 2026","jam":"19:30",  "event":"CPI Inflasi YoY (Mei)",            "fc":"2.4%",   "prev":"2.6%",    "dampak":"HIGH",  "tip":"BLS: inflasi Mei AS. Salah satu data terakhir sebelum FOMC 18 Jun."},
                 {"neg":"US","tgl":"11 Jun 2026","jam":"19:30",  "event":"Core CPI m/m (Mei)",               "fc":"0.3%",   "prev":"0.3%",    "dampak":"HIGH",  "tip":"Inflasi inti MoM ex-food & energy. Konsistensi penting — Fed lebih perhatikan core vs headline."},
                 {"neg":"US","tgl":"13 Jun 2026","jam":"19:30",  "event":"PPI Inflasi Produsen YoY (Mei)",   "fc":"2.4%",   "prev":"2.5%",    "dampak":"MEDIUM","tip":"BLS: inflasi produsen Mei. Leading indicator CPI 1-2 bulan ke depan. Tren turun = disinflasi berlanjut."},
                 {"neg":"US","tgl":"13 Jun 2026","jam":"19:30",  "event":"Retail Sales m/m (Mei)",           "fc":"0.3%",   "prev":"0.1%",    "dampak":"HIGH",  "tip":"Penjualan ritel Mei. Kekuatan konsumsi — komponen utama GDP. Lemah = dovish signal untuk Fed."},
                 {"neg":"ID","tgl":"16 Jun 2026","jam":"10:00",  "event":"Neraca Perdagangan Mei",           "fc":"$3.0B",  "prev":"$3.1B",   "dampak":"MEDIUM","tip":"BPS neraca dagang Mei. Surplus mendukung stabilitas Rupiah. Pasca kenaikan BI Rate, aliran modal masuk menjadi kunci."},
-                {"neg":"US","tgl":"18 Jun 2026","jam":"01:00",  "event":"FOMC Rate Decision Jun",           "fc":"4.25–4.50%","prev":"4.25–4.50%","dampak":"HIGH","tip":"🔴 FOMC Juni — paling ditunggu di H1 2026. Probabilitas ~90% HOLD. Cermati dot plot baru & forward guidance apakah ada sinyal cut Sep 2026."},
-                {"neg":"US","tgl":"18 Jun 2026","jam":"01:00",  "event":"FOMC Statement Jun",               "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Pernyataan resmi FOMC Juni. Forward guidance terkait timing cut rate & kondisi yang diperlukan."},
-                {"neg":"US","tgl":"18 Jun 2026","jam":"01:30",  "event":"FOMC Press Conference Jun",        "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Konferensi pers post-FOMC Powell. Cermati dot plot terbaru — sinyal jumlah cut di H2 2026 & threshold data."},
-                {"neg":"ID","tgl":"17 Jun 2026","jam":"14:00",  "event":"RDG BI Rate Jun",                  "fc":"5.25%",  "prev":"5.25%",   "dampak":"HIGH",  "tip":"RDG BI Juni (17-18 Jun). Ekspektasi HOLD 5.25% setelah kenaikan hawkish Mei. Cermati forward guidance — apakah BI buka ruang cut di Jul jika inflasi turun & Rupiah stabil."},
+                {"neg":"US","tgl":"18 Jun 2026","jam":"01:00",  "event":"FOMC Rate Decision Jun",           "fc":"3.50–3.75%","prev":"3.50–3.75%","dampak":"HIGH","tip":"✅ SELESAI: FOMC Juni — rapat pertama Ketua Fed baru Kevin Warsh, HOLD di 3.50–3.75%. Dot plot bergeser hawkish (9/18 anggota proyeksi minimal 1x hike di 2026), bukan sinyal cut."},
+                {"neg":"US","tgl":"18 Jun 2026","jam":"01:00",  "event":"FOMC Statement Jun",               "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"✅ SELESAI: Pernyataan FOMC Juni dipangkas drastis (130 kata vs 341 kata April), hapus forward guidance soal bias pelonggaran. Sinyal awal arah baru Fed di bawah Warsh."},
+                {"neg":"US","tgl":"18 Jun 2026","jam":"01:30",  "event":"FOMC Press Conference Jun",        "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"✅ SELESAI: Konpers Kevin Warsh — target inflasi 2% ditegaskan tidak berubah. Proyeksi inflasi PCE 2026 direvisi naik ke 3.6% headline, 3.3% core. Median dot plot akhir 2026 naik ke 3.8%."},
+                {"neg":"ID","tgl":"17 Jun 2026","jam":"14:00",  "event":"RDG BI Rate Jun",                  "fc":"5.75%",  "prev":"5.50%",   "dampak":"HIGH",  "tip":"✅ SELESAI: RDG BI 17-18 Jun naikkan 25bps → 5.75% (kenaikan ketiga beruntun setelah RDG darurat 9 Jun ke 5.50% & RDG Mei ke 5.25%). Total kenaikan kumulatif 75bps dalam waktu singkat sebagai respons tekanan Rupiah ke Rp18.000/USD akibat gejolak global."},
                 {"neg":"US","tgl":"19 Jun 2026","jam":"—",      "event":"Juneteenth (Pasar AS Tutup)",      "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"Libur nasional AS Juneteenth. NYSE/NASDAQ tidak beroperasi. Volume IHSG mungkin lebih tipis dari biasa."},
                 {"neg":"US","tgl":"20 Jun 2026","jam":"19:30",  "event":"Housing Starts Mei",               "fc":"1.40M",  "prev":"1.36M",   "dampak":"MEDIUM","tip":"Jumlah unit hunian mulai dibangun. Cerminkan kondisi pasar properti & permintaan material bangunan."},
                 {"neg":"US","tgl":"23 Jun 2026","jam":"20:45",  "event":"Flash Manufacturing PMI Jun",      "fc":"52.0",   "prev":"52.1",    "dampak":"MEDIUM","tip":"PMI Manufaktur S&P Global (flash) Juni. Di atas 50 = ekspansi. Barometer awal kondisi industri AS bulan ini."},
@@ -31785,8 +31797,8 @@ Format: heading jelas, bullet points, angka konkret. Bahasa Indonesia. Padat dan
                 {"neg":"US","tgl":"02 Jul 2026","jam":"19:30",  "event":"Non-Farm Payrolls Jun",            "fc":"175K",   "prev":"180K",    "dampak":"HIGH",  "tip":"🔴 NFP Juni AS. Indikator kunci sebelum FOMC Juli. Pelemahan = sinyal lebih kuat untuk cut rate pertama di 2026."},
                 {"neg":"US","tgl":"09 Jul 2026","jam":"19:30",  "event":"CPI Inflasi YoY (Jun)",            "fc":"2.3%",   "prev":"2.4%",    "dampak":"HIGH",  "tip":"BLS: inflasi Juni AS. Momen kritis sebelum FOMC Juli — data ini akan sangat menentukan keputusan cut atau tidak."},
                 {"neg":"ID","tgl":"14 Jul 2026","jam":"10:00",  "event":"Cadangan Devisa Jun",              "fc":"$154B",  "prev":"$153B",   "dampak":"MEDIUM","tip":"Cadangan devisa BI Juni. Indikator stabilitas Rupiah pasca siklus kenaikan rate. Naik = intervensi efektif."},
-                {"neg":"ID","tgl":"15 Jul 2026","jam":"14:00",  "event":"RDG BI Rate Jul",                  "fc":"5.00%",  "prev":"5.25%",   "dampak":"HIGH",  "tip":"🔴 RDG BI Juli (15-16 Jul). Ekspektasi cut 25bps → 5.00% jika inflasi terkendali & Rupiah stabil. Cut pertama pasca kenaikan hawkish Mei 2026. Bullish untuk obligasi & sektor rate-sensitive."},
-                {"neg":"US","tgl":"30 Jul 2026","jam":"01:00",  "event":"FOMC Rate Decision Jul",           "fc":"4.25%",  "prev":"4.25–4.50%","dampak":"HIGH","tip":"🔴 FOMC Juli. Probabilitas ~65% cut 25bps pertama. Keputusan tergantung data NFP & CPI Jun-Jul. Cut pertama = bullish besar untuk aset EM termasuk IHSG."},
+                {"neg":"ID","tgl":"15 Jul 2026","jam":"14:00",  "event":"RDG BI Rate Jul",                  "fc":"5.75%",  "prev":"5.75%",   "dampak":"HIGH",  "tip":"🔴 RDG BI Juli (15-16 Jul). Ekspektasi HOLD 5.75% pasca 3x kenaikan beruntun (total 75bps sejak Mei). BI kemungkinan tahan dulu untuk evaluasi efektivitas stabilisasi Rupiah sebelum buka ruang cut."},
+                {"neg":"US","tgl":"30 Jul 2026","jam":"01:00",  "event":"FOMC Rate Decision Jul",           "fc":"3.50–3.75%","prev":"3.50–3.75%","dampak":"HIGH","tip":"🔴 FOMC Juli. Probabilitas ~82% HOLD di 3.50–3.75%. Bias risiko sekarang condong ke arah hike (bukan cut) menyusul dot plot hawkish Kevin Warsh di Jun — beda arah dari ekspektasi cutting cycle sebelumnya."},
                 {"neg":"US","tgl":"30 Jul 2026","jam":"19:30",  "event":"GDP AS Q2 2026 (Advance)",         "fc":"2.1%",   "prev":"2.3%",    "dampak":"HIGH",  "tip":"GDP AS kuartal Q2. Perlambatan berlanjut = konfirmasi siklus pelonggaran Fed. Rilis bersamaan dengan FOMC."},
             ]
 
